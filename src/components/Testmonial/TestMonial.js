@@ -53,7 +53,7 @@ const TestMonial = () => {
               <div className=" rounded-2xl shadow-lg p-8 flex flex-col items-center text-center text-black">
                 <FaQuoteLeft className="text-blue-500 text-3xl mb-4" />
                 <p className=" mb-6 leading-relaxed italic">
-                  "{item.text}"
+                  &quot;{item.text}&quot;
                 </p>
                 <img
                   src={item.image}
