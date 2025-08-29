@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const products = [
@@ -28,6 +28,16 @@ const Categories = () => {
     const [selectedColor, setSelectedColor] = useState("All");
     const [priceRange, setPriceRange] = useState(100);
     const [sortBy, setSortBy] = useState(sortOptions[0]);
+    const [showFilters, setShowFilters] = useState(false);
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
 
     // Filter products
     let filteredProducts = products.filter((p) => {
@@ -42,121 +52,126 @@ const Categories = () => {
     else filteredProducts.sort((a, b) => b.price - a.price);
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro">
-            {/* Sidebar */}
-            <div className="w-full md:w-1/4 bg-white p-6  space-y-6">
-                <h2 className="text-xl font-bold">Filters</h2>
-
-                {/* Category */}
-                <div>
-                    <h3 className="font-semibold mb-2">Category</h3>
-                    <ul className="flex flex-col gap-2">
-                        {categories.map((cat) => (
-                            <li
-                                key={cat}
-                                onClick={() => setSelectedCategory(cat)}
-                                className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedCategory === cat ? "bg-blue-200 font-semibold" : ""
-                                    }`}
-                            >
-                                {cat}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                {/* Color */}
-                <div>
-                    <h3 className="font-semibold mb-2">Color</h3>
-                    <div className="flex flex-wrap gap-2">
-                        <div
-                            onClick={() => setSelectedColor("All")}
-                            className={`w-6 h-6 rounded-full border cursor-pointer ${selectedColor === "All" ? "ring-2 ring-blue-500" : "border-gray-300"
-                                }`}
-                            title="All"
-                        ></div>
-                        {colors.map((c) => (
-                            <div
-                                key={c}
-                                onClick={() => setSelectedColor(c)}
-                                className={`w-6 h-6 rounded-full border cursor-pointer`}
-                                style={{
-                                    backgroundColor: colorMap[c],
-                                    border: selectedColor === c ? "2px solid #3b82f6" : "1px solid #d1d5db",
-                                }}
-                                title={c}
-                            ></div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Price */}
-                <div>
-                    <h3 className="font-semibold mb-2">Price: Up to ${priceRange}</h3>
-                    <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={priceRange}
-                        onChange={(e) => setPriceRange(e.target.value)}
-                        className="w-full"
-                    />
-                </div>
-
-                {/* Sort */}
-                <div>
-                    <h3 className="font-semibold mb-2">Sort By</h3>
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="w-full p-2 border rounded"
-                    >
-                        {sortOptions.map((opt) => (
-                            <option key={opt} value={opt}>
-                                {opt}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            </div>
-
-            {/* Products */}
-            <div className="w-full md:w-3/4">
-                {/* Sort Dropdown Above Grid */}
-                {/* <div className="flex justify-end mb-4">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="p-2 border rounded"
-          >
-            {sortOptions.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
-        </div> */}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 cursor-pointer">
-                    {filteredProducts.map((product) => (
-                        <div
-                            key={product.id}
-                            className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition transform hover:scale-105"
-                            onClick={() => router.push(`/product/${product.id}`)}
+        <>
+            <div className=" md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro">
+                {!isDesktop && (
+                    <div className="mb-4 flex justify-end">
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="bg-blue-500 text-white px-4 py-2 rounded"
                         >
-                            <div className="h-72 relative mb-4 rounded overflow-hidden ">
-                                <Image src={product.image} alt={product.name} fill className="object-cover" />
+                            {showFilters ? "Hide Filters" : "Show Filters"}
+                        </button>
+                    </div>
+
+                )}
+
+                <div className={`flex ${isDesktop ? "flex-row gap-6" : "flex-col"} `}>
+                    {/* Sidebar */}
+                    {(isDesktop || showFilters) && (
+                        <div className="w-full md:w-1/4 bg-white p-6 space-y-6 mb-4 md:mb-0">
+                            <h2 className="text-xl font-bold">Filters</h2>
+
+                            {/* Category */}
+                            <div>
+                                <h3 className="font-semibold mb-2">Category</h3>
+                                <ul className="flex flex-col gap-2">
+                                    {categories.map((cat) => (
+                                        <li
+                                            key={cat}
+                                            onClick={() => setSelectedCategory(cat)}
+                                            className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedCategory === cat ? "bg-blue-200 font-semibold" : ""
+                                                }`}
+                                        >
+                                            {cat}
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
 
-                            <h3 className="text-lg font-semibold">{product.name}</h3>
-                            <p className="text-gray-600">${product.price}</p>
-                            <p className="text-sm text-gray-400">{product.category}</p>
-                            <p className="text-sm text-gray-400">Color: {product.color}</p>
+                            {/* Color */}
+                            <div>
+                                <h3 className="font-semibold mb-2">Color</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    <div
+                                        onClick={() => setSelectedColor("All")}
+                                        className={`w-6 h-6 rounded-full border cursor-pointer ${selectedColor === "All" ? "ring-2 ring-blue-500" : "border-gray-300"
+                                            }`}
+                                        title="All"
+                                    ></div>
+                                    {colors.map((c) => (
+                                        <div
+                                            key={c}
+                                            onClick={() => setSelectedColor(c)}
+                                            className={`w-6 h-6 rounded-full border cursor-pointer`}
+                                            style={{
+                                                backgroundColor: colorMap[c],
+                                                border: selectedColor === c ? "2px solid #3b82f6" : "1px solid #d1d5db",
+                                            }}
+                                            title={c}
+                                        ></div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Price */}
+                            <div>
+                                <h3 className="font-semibold mb-2">Price: Up to ${priceRange}</h3>
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={100}
+                                    value={priceRange}
+                                    onChange={(e) => setPriceRange(e.target.value)}
+                                    className="w-full"
+                                />
+                            </div>
+
+                            {/* Sort */}
+                            <div>
+                                <h3 className="font-semibold mb-2">Sort By</h3>
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="w-full p-2 border rounded"
+                                >
+                                    {sortOptions.map((opt) => (
+                                        <option key={opt} value={opt}>
+                                            {opt}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
-                    ))}
+                    )}
+
+                    {/* Products */}
+                    <div className="w-full md:w-3/4">
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 cursor-pointer">
+                            {filteredProducts.map((product) => (
+                                <div
+                                    key={product.id}
+                                    className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition transform hover:scale-105"
+                                    onClick={() => router.push(`/product/${product.id}`)}
+                                >
+                                    <div className="h-72 relative mb-4 rounded overflow-hidden ">
+                                        <Image src={product.image} alt={product.name} fill className="object-cover" />
+                                    </div>
+
+                                    <h3 className="text-lg font-semibold">{product.name}</h3>
+                                    <p className="text-gray-600">${product.price}</p>
+                                    <p className="text-sm text-gray-400">{product.category}</p>
+                                    <p className="text-sm text-gray-400">Color: {product.color}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
-};
+        </>
+
+    )
+}
 
 export default Categories;

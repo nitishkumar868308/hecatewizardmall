@@ -30,7 +30,9 @@ export default function RootLayout({ children }) {
         className={`${firaSans.variable} ${firaCode.variable} antialiased`}
       >
         {!isAdmin && <DefaultPage />}
-        {children}
+        <main className="pt-[60px] md:pt-0">
+          {children}
+        </main>
         {!isAdmin && <Footer />}
       </body>
     </html>

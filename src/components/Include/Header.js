@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { ShoppingCart, User, Menu, X } from "lucide-react";
+import { ShoppingCart, User, Menu, X, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Login from "./Login";
@@ -14,8 +14,22 @@ const Header = () => {
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState("");
     const [openItem, setOpenItem] = useState(false);
     const router = useRouter();
+
+
+    const sampleData = [
+        { id: 1, name: "Red T-shirt", price: 25, category: "Clothing", color: "Red", image: "/products/product1.webp" },
+        { id: 2, name: "Blue Jeans", price: 40, category: "Clothing", color: "Blue", image: "/products/product1.webp" },
+        { id: 3, name: "Black Cap", price: 15, category: "Accessories", color: "Black", image: "/products/product1.webp" },
+        { id: 4, name: "Sneakers", price: 60, category: "Footwear", color: "White", image: "/products/product1.webp" },
+        { id: 5, name: "Jacket", price: 80, category: "Clothing", color: "Black", image: "/products/product1.webp" },
+    ];
+
+    const filtered = sampleData.filter((item) =>
+        item.name.toLowerCase().includes(query.toLowerCase())
+    );
 
 
     //const menuItems = ["Home", "Candles", "About", "Contact", "Oil"];
@@ -72,7 +86,7 @@ const Header = () => {
 
     return (
         <>
-            <header className="w-full bg-[#161619] shadow-md sticky top-0 z-50">
+            <header className="w-full bg-[#161619] shadow-md md:relative fixed md:static top-0 z-50">
                 <div className="max-w-screen-2xl mx-auto flex items-center justify-between px-6 py-3">
 
                     {/* Logo */}
@@ -264,6 +278,77 @@ const Header = () => {
 
                     {/* Icons */}
                     <div className="font-functionPro flex items-center gap-4 md:gap-6">
+                        <button
+                            className="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition text-white font-functionPro"
+                            onClick={() => setOpen(true)}
+                        >
+                            <Search className="h-6 w-6" />
+                            <span className="hidden md:inline font-medium">Search</span>
+                        </button>
+
+                        {/* Top Search Bar */}
+                        {open && (
+                            <div className="fixed inset-0 z-50 flex items-start justify-center backdrop-blur-sm bg-gray-200/40 pt-24 transition-all">
+                                <div className="w-11/12 md:w-1/2 lg:w-2/5 bg-white rounded-xl shadow-lg p-6 relative">
+                                    {/* Close Button */}
+                                    <button
+                                        className="absolute top-0 right-2 text-gray-600 hover:text-red-500 text-3xl font-bold cursor-pointer"
+                                        onClick={() => { setOpen(false); setQuery(""); }}
+                                    >
+                                        &times;
+                                    </button>
+
+                                    {/* Search Input */}
+                                    <div className="flex items-center gap-2">
+                                        <Search className="h-6 w-6 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search for products..."
+                                            className="w-full text-lg border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            autoFocus
+                                            value={query}
+                                            onChange={(e) => setQuery(e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Search Results */}
+                                    {query && (
+                                        <div className="mt-4 bg-gray-50 rounded-xl shadow-inner max-h-80 overflow-y-auto">
+                                            {filtered.length > 0 ? (
+                                                filtered.map((item) => (
+                                                    <div
+                                                        key={item.id}
+                                                        onClick={() => {
+                                                            router.push(`/categories?id=${item.id}`);
+                                                            setQuery("");
+                                                            setOpen(false)
+                                                        }}
+                                                        //onClick={() => router.push(`/test?id=${item.id}`)}
+                                                        className="flex items-center gap-4 px-4 py-3 hover:bg-gray-100 cursor-pointer rounded-lg transition"
+                                                    >
+                                                        <div className="w-12 h-12 relative flex-shrink-0">
+                                                            <Image
+                                                                src={item.image}
+                                                                alt={item.name}
+                                                                fill
+                                                                className="object-cover rounded-lg"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-medium">{item.name}</div>
+                                                            <div className="text-gray-500 text-sm">${item.price}</div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="px-4 py-3 text-gray-500">No results found</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         <button onClick={() => setIsOpen(true)} className="relative cursor-pointer">
                             <ShoppingCart className="h-6 w-6 text-white" />
                             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
@@ -294,12 +379,13 @@ const Header = () => {
                                     <div className="flex-1 overflow-y-auto">
                                         <p>Cart items will be here...</p>
                                     </div>
-                                    <button className="mt-4 w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors cursor-pointer">
+                                    <button onClick={() => router.push(`/checkout`)} className="mt-4 w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors cursor-pointer">
                                         Checkout
                                     </button>
                                 </div>
                             </div>
                         )}
+
 
 
 

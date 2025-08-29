@@ -39,14 +39,14 @@ const StorySection = () => {
     return (
         <div className="bg-gray-50 py-6 px-4">
             <h2 className="text-2xl  mb-6 font-functionPro">Stories</h2>
-            <div className="flex gap-6 overflow-x-auto">
+            <div className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide px-1">
                 {stories.map((story) => (
                     <div
                         key={story.id}
-                        className="flex flex-col items-center min-w-[90px] md:min-w-[120px]"
+                        className="flex flex-col items-center flex-shrink-0 w-20 sm:w-28 md:w-32"
                     >
                         <div
-                            className="w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-gradient-to-tr from-pink-500 to-yellow-500 cursor-pointer flex items-center justify-center transition-transform hover:scale-105"
+                            className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-gradient-to-tr from-pink-500 to-yellow-500 cursor-pointer flex items-center justify-center transition-transform hover:scale-105"
                             onClick={() => openModal(story.id)}
                         >
                             <img
@@ -55,20 +55,20 @@ const StorySection = () => {
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <span className="mt-2 text-xs md:text-sm text-gray-700 font-functionPro text-center">
+                        <span className="mt-2 text-xs sm:text-sm text-gray-700 font-functionPro text-center truncate w-full">
                             {story.title}
                         </span>
                     </div>
                 ))}
             </div>
 
+
             {/* Modal */}
             {modalOpen && activeStory && (
-                <div className="fixed inset-0  bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="relative w-[90vw] max-w-4xl h-[70vh] bg-black rounded-2xl overflow-hidden flex items-center justify-center">
-                        {/* Close Button */}
-                        
+                <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="relative w-full max-w-4xl h-[60vh] sm:h-[70vh] mx-2 bg-black rounded-2xl overflow-hidden flex items-center justify-center">
 
+                        {/* Close Button */}
                         <button
                             onClick={closeModal}
                             className="absolute top-3 right-3 text-white text-3xl font-bold z-50 hover:text-red-300 cursor-pointer"
@@ -81,7 +81,7 @@ const StorySection = () => {
                             src={stories.find((s) => s.id === activeStory).video}
                             autoPlay
                             controls
-                            className="w-full h-full object-contain"
+                            className="w-full h-full object-contain max-h-screen"
                         />
                     </div>
                 </div>
