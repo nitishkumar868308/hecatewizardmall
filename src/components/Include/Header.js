@@ -1,12 +1,20 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { ShoppingCart, User, Menu, X, Search } from "lucide-react";
+import { ShoppingCart, User, Menu, X, Search, LogOut, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Login from "./Login";
 import Modal from "./Modal";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchMe, logoutUser } from "@/app/redux/slices/meProfile/meSlice";
+import {
+    fetchHeaders,
+} from "@/app/redux/slices/addHeader/addHeaderSlice";
+import {
+    fetchCategories,
+} from "@/app/redux/slices/addCategory/addCategorySlice";
 
 const Header = () => {
     const [active, setActive] = useState("Home");
@@ -17,7 +25,34 @@ const Header = () => {
     const [query, setQuery] = useState("");
     const [openItem, setOpenItem] = useState(false);
     const router = useRouter();
+    const dispatch = useDispatch();
+    const { user } = useSelector((state) => state.me);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const { headers } = useSelector((state) => state.headers);
+    const { categories, loading, error } = useSelector((state) => state.category);
 
+    useEffect(() => {
+        dispatch(fetchCategories());
+    }, [dispatch]);
+
+    useEffect(() => {
+        dispatch(fetchHeaders());
+    }, [dispatch]);
+
+    useEffect(() => {
+        dispatch(fetchMe());
+    }, [dispatch]);
+
+    console.log("user", user)
+
+    const getInitials = (name) => {
+        if (!name) return "";
+        return name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase();
+    };
 
     const sampleData = [
         { id: 1, name: "Red T-shirt", price: 25, category: "Clothing", color: "Red", image: "/products/product1.webp" },
@@ -33,39 +68,51 @@ const Header = () => {
 
 
     //const menuItems = ["Home", "Candles", "About", "Contact", "Oil"];
-    const menuItems = ["Home", "Categories", "About", "Contact"];
-    const categories = [
-        {
-            name: "Electronics",
-            sub: ["Mobiles", "Laptops", "Cameras", "Headphones"],
-            img: "/image/banner1.jpg",
-        },
-        {
-            name: "Fashion",
-            sub: ["Men", "Women", "Kids", "Accessories"],
-            img: "/image/banner7.jpg",
-        },
-        {
-            name: "Home & Furniture",
-            sub: ["Sofas", "Beds", "Dining", "Lighting"],
-            img: "/image/banner8.jpg",
-        },
-        {
-            name: "Sports",
-            sub: ["Cricket", "Football", "Tennis", "Gym"],
-            img: "/image/banner6.jpg",
-        },
-        {
-            name: "Books",
-            sub: ["Fiction", "Non-fiction", "Comics", "Study"],
-            img: "/image/banner1.jpg",
-        },
-        {
-            name: "Beauty",
-            sub: ["Makeup", "Skincare", "Haircare", "Perfume"],
-            img: "/image/banner8.jpg",
-        },
-    ];
+    // const menuItems = ["Home", "Categories", "About", "Contact"];
+    const menuItems = headers
+        .filter(h => h.active === true)
+        .slice()
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+        .map(h => h.name);
+
+    const mappedCategories  = categories.map(cat => ({
+        name: cat.name,
+        sub: cat.sub || [],  
+        img: cat.image || "/default-image.jpg",
+    }));
+
+    // const categories = [
+    //     {
+    //         name: "Electronics",
+    //         sub: ["Mobiles", "Laptops", "Cameras", "Headphones"],
+    //         img: "/image/banner1.jpg",
+    //     },
+    //     {
+    //         name: "Fashion",
+    //         sub: ["Men", "Women", "Kids", "Accessories"],
+    //         img: "/image/banner7.jpg",
+    //     },
+    //     {
+    //         name: "Home & Furniture",
+    //         sub: ["Sofas", "Beds", "Dining", "Lighting"],
+    //         img: "/image/banner8.jpg",
+    //     },
+    //     {
+    //         name: "Sports",
+    //         sub: ["Cricket", "Football", "Tennis", "Gym"],
+    //         img: "/image/banner6.jpg",
+    //     },
+    //     {
+    //         name: "Books",
+    //         sub: ["Fiction", "Non-fiction", "Comics", "Study"],
+    //         img: "/image/banner1.jpg",
+    //     },
+    //     {
+    //         name: "Beauty",
+    //         sub: ["Makeup", "Skincare", "Haircare", "Perfume"],
+    //         img: "/image/banner8.jpg",
+    //     },
+    // ];
     // const dropdownItems = {
     //     Categories:
     //         [{ name: "Tech", subItems: [{ name: "AI" }, { name: "Blockchain" }], },
@@ -83,6 +130,14 @@ const Header = () => {
     useEffect(() => {
         setOpenItem(null);
     }, [pathname]);
+
+    // if (loading) return <p>Loading...</p>;
+    // if (error) return <p>Error: {error}</p>;
+
+    const handleLogout = () => {
+        dispatch(logoutUser());
+        setDropdownOpen(false);
+    };
 
     return (
         <>
@@ -168,8 +223,8 @@ const Header = () => {
 
                                         {/* Dropdown only for Categories */}
                                         {item === "Categories" && openItem === "Categories" && (
-                                            <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 w-[1200px] bg-[#161619] text-white shadow-lg py-8 px-10 grid grid-cols-3 gap-10 z-50">
-                                                {categories.map((cat) => (
+                                            <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 w-[1500px] bg-[#161619] text-white shadow-lg py-8 px-10 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 z-50">
+                                                {mappedCategories.map((cat) => (
                                                     <div
                                                         key={cat.name}
                                                         className="flex items-start gap-6 border-b border-gray-700 pb-6 last:border-0"
@@ -389,10 +444,71 @@ const Header = () => {
 
 
 
-                        <button onClick={() => setLoginModalOpen(true)} className="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition text-white font-functionPro">
+                        {/* <button onClick={() => setLoginModalOpen(true)} className="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition text-white font-functionPro">
                             <User className="h-6 w-6" />
                             <span className="hidden md:inline font-medium">Login</span>
-                        </button>
+                        </button> */}
+
+                        <div className="relative">
+                            {!user ? (
+                                <button
+                                    onClick={() => setLoginModalOpen(true)}
+                                    className="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition text-white font-functionPro"
+                                >
+                                    <User className="h-6 w-6" />
+                                    <span className="hidden md:inline font-medium">Login</span>
+                                </button>
+                            ) : (
+                                <div
+                                    className="relative"
+                                    onMouseEnter={() => setDropdownOpen(true)}
+                                    onMouseLeave={() => setDropdownOpen(false)}
+                                >
+                                    <div className="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition text-white font-functionPro">
+                                        <span className="font-medium">Welcome,</span>
+                                        <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                                            {getInitials(user.name)}
+                                        </div>
+                                    </div>
+
+                                    {/* Dropdown */}
+                                    {dropdownOpen && (
+                                        <div
+                                            className="absolute z-50 w-40 bg-white shadow-lg rounded-md font-functionPro cursor-pointer"
+                                            style={{
+                                                top: "calc(100% - 4px)",
+                                            }}
+                                        >
+                                            <Link
+                                                href={
+                                                    user.role === "USER"
+                                                        ? "/dashboard"
+                                                        : "/admin/dashboard"
+                                                }
+                                            >
+                                                <button
+                                                    className="flex items-center gap-2 px-4 py-2 w-full hover:bg-gray-100 cursor-pointer"
+                                                    onClick={() => setDropdownOpen(false)}
+                                                >
+                                                    <LayoutDashboard className="h-4 w-4" />
+                                                    Dashboard
+                                                </button>
+                                            </Link>
+
+                                            <button
+                                                className="flex items-center gap-2 px-4 py-2 w-full hover:bg-gray-100 text-red-500 cursor-pointer"
+                                                onClick={handleLogout}
+                                            >
+                                                <LogOut className="h-4 w-4" />
+                                                Logout
+                                            </button>
+                                        </div>
+                                    )}
+
+                                </div>
+
+                            )}
+                        </div>
 
                         {/* Hamburger for mobile */}
                         <button
@@ -427,7 +543,7 @@ const Header = () => {
             </header>
 
             <Modal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)}>
-                <Login />
+                <Login onClose={() => setLoginModalOpen(false)} />
             </Modal>
 
         </>

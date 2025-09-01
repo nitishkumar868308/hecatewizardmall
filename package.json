@@ -16,6 +16,8 @@
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.5.0",
     "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "formidable": "^3.5.4",
     "formik": "^2.4.6",
     "framer-motion": "^12.23.12",
     "iron-session": "^6.3.1",

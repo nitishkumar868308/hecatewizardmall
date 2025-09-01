@@ -1,9 +1,11 @@
 "use client";
-import React from "react";
-import { Home, BarChart, Users, Settings, LogOut, X } from "lucide-react";
+import React, { useState } from "react";
+import { Home, Users, Settings, LogOut, X, Plus, ChevronDown, ChevronUp, LayoutGrid  } from "lucide-react";
 import Link from "next/link";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
+    const [menuOpen, setMenuOpen] = useState(false);
+
     return (
         <>
             {/* Overlay for mobile */}
@@ -16,7 +18,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
             <aside
                 className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg p-6 transform transition-transform duration-300 font-functionPro 
-        ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 flex flex-col`}
             >
                 {/* Close btn mobile */}
                 <div className="flex justify-between items-center mb-8 md:hidden">
@@ -31,39 +33,72 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     Admin
                 </h2>
 
-                {/* <nav className="flex flex-col gap-4 text-gray-700 ">
-                    <button className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer">
-                        <Home className="w-5 h-5" /> Home
-                    </button>
-                    <button className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer">
-                        <BarChart className="w-5 h-5" /> Analytics
-                    </button>
-                    <button className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer">
-                        <Users className="w-5 h-5" /> Users
-                    </button>
-                    <button className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer">
-                        <Settings className="w-5 h-5" /> Settings
-                    </button>
-                </nav> */}
-
-                <nav className="flex flex-col gap-4 text-gray-700">
-                    <Link href="/admin/dashboard" className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition">
+                {/* Sidebar Navigation */}
+                <nav className="flex flex-col gap-2 text-gray-700">
+                    <Link
+                        href="/admin/dashboard"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition"
+                    >
                         <Home className="w-5 h-5" /> Home
                     </Link>
 
-                    <Link href="/analytics" className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition">
-                        <BarChart className="w-5 h-5" /> Analytics
-                    </Link>
+                    {/* Menus with dropdown */}
+                    <div>
+                        <button
+                            onClick={() => setMenuOpen(!menuOpen)}
+                            className="flex items-center justify-between w-full px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer"
+                        >
+                            <span className="flex items-center gap-3">
+                                <LayoutGrid className="w-5 h-5" /> Menus
+                            </span>
+                            {menuOpen ? (
+                                <ChevronUp className="w-4 h-4" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4" />
+                            )}
+                        </button>
 
-                    <Link href="/users" className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition">
+                        {/* Dropdown items */}
+                        {menuOpen && (
+                            <div className="ml-8 mt-2 flex flex-col gap-2">
+                                <Link
+                                    href="/admin/header"
+                                    className="px-3 py-1 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition text-sm"
+                                >
+                                    ➕ Add Header
+                                </Link>
+                                <Link
+                                    href="/admin/category"
+                                    className="px-3 py-1 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition text-sm"
+                                >
+                                    ➕ Add Category
+                                </Link>
+                                <Link
+                                    href="/admin/subcategory"
+                                    className="px-3 py-1 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition text-sm"
+                                >
+                                    ➕ Add Subcategory
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+
+                    <Link
+                        href="/admin/users"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition"
+                    >
                         <Users className="w-5 h-5" /> Users
                     </Link>
 
-                    <Link href="/settings" className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition">
+                    <Link
+                        href="/admin/settings"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition"
+                    >
                         <Settings className="w-5 h-5" /> Settings
                     </Link>
                 </nav>
 
+                {/* Logout Button */}
                 <div className="mt-auto pt-6">
                     <button className="flex items-center gap-3 px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 transition cursor-pointer">
                         <LogOut className="w-5 h-5" /> Logout

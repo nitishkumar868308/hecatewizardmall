@@ -5,8 +5,9 @@ import * as Yup from 'yup';
 import { loginUser, registerUser } from '@/app/redux/slices/authSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
+import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 
-const AuthPage = () => {
+const AuthPage = ({ onClose }) => {
     const [isLogin, setIsLogin] = useState(true);
     const dispatch = useDispatch();
     const { loading, error } = useSelector((state) => state.auth);
@@ -33,7 +34,9 @@ const AuthPage = () => {
             if (isLogin) {
                 const resultAction = await dispatch(loginUser({ email: values.email, password: values.password }));
                 if (loginUser.fulfilled.match(resultAction)) {
+                    await dispatch(fetchMe());
                     toast.success(resultAction.payload.message || 'Login successful');
+                    onClose?.()
                 } else {
                     toast.error(resultAction.payload?.message || 'Login failed');
                 }
@@ -44,7 +47,9 @@ const AuthPage = () => {
                     password: values.password,
                 }));
                 if (registerUser.fulfilled.match(resultAction)) {
+
                     toast.success(resultAction.payload.message || 'Registration successful');
+                    onClose?.()
                 } else {
                     toast.error(resultAction.payload?.message || 'Registration failed');
                 }

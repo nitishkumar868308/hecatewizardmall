@@ -1,10 +1,22 @@
 "use client";
 import React from "react";
 import { Menu } from "lucide-react";
+import { useSelector } from "react-redux";
 
 const Header = ({ toggleSidebar }) => {
+    const { user } = useSelector((state) => state.me);
+
+    const getInitials = (name) => {
+        if (!name) return "";
+        return name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase();
+    };
+
     return (
-        <header className="bg-white shadow-md px-6 py-4 flex justify-between items-center font-functionPro ">
+        <header className="bg-white shadow-md px-6 py-4 flex justify-between items-center font-functionPro">
             <div className="flex items-center gap-3">
                 {/* Hamburger for mobile */}
                 <button
@@ -17,14 +29,18 @@ const Header = ({ toggleSidebar }) => {
             </div>
 
             <div className="flex items-center gap-4">
-                <span className="text-gray-600 hidden sm:block cursor-pointer">
-                    Welcome, Nitish 👋
-                </span>
-                <img
-                    src="https://i.pravatar.cc/40"
-                    alt="User"
-                    className="w-10 h-10 rounded-full border cursor-pointer"
-                />
+                {user && (
+                    <>
+                        <span className="text-gray-600 hidden sm:block cursor-pointer">
+                            Welcome, {getInitials(user.name)} 👋
+                        </span>
+                        <img
+                            src={user.avatar || "https://i.pravatar.cc/40"}
+                            alt="User"
+                            className="w-10 h-10 rounded-full border cursor-pointer"
+                        />
+                    </>
+                )}
             </div>
         </header>
     );
