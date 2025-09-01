@@ -5,15 +5,15 @@ import "./globals.css";
 import DefaultPage from "@/components/Include/DefaultPage";
 import Footer from "@/components/Include/Footer";
 import { usePathname } from "next/navigation";
+import { Provider } from 'react-redux';
+import store from './redux/store';
+import { Toaster } from 'react-hot-toast';
 
-// Use Fira Sans for general text (like Function Pro regular)
 const firaSans = Fira_Sans({
   variable: "--font-fira-sans",
   subsets: ["latin"],
   weight: ["400", "700"],
 });
-
-// Use Fira Code for monospace / technical text (like Function Pro mono)
 const firaCode = Fira_Code({
   variable: "--font-fira-code",
   subsets: ["latin"],
@@ -26,14 +26,15 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en">
-      <body
-        className={`${firaSans.variable} ${firaCode.variable} antialiased`}
-      >
-        {!isAdmin && <DefaultPage />}
-        <main className="pt-[60px] md:pt-0">
-          {children}
-        </main>
-        {!isAdmin && <Footer />}
+      <body className={`${firaSans.variable} ${firaCode.variable} antialiased`}>
+        <Provider store={store}>
+          {!isAdmin && <DefaultPage />}
+          <main className="pt-[60px] md:pt-0">
+            {children}
+          </main>
+          {!isAdmin && <Footer />}
+          <Toaster position="top-right" reverseOrder={false} />
+        </Provider>
       </body>
     </html>
   );

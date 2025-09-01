@@ -2,9 +2,14 @@
 import React, { useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
+import { loginUser, registerUser } from '@/app/redux/slices/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
 
 const AuthPage = () => {
     const [isLogin, setIsLogin] = useState(true);
+    const dispatch = useDispatch();
+    const { loading, error } = useSelector((state) => state.auth);
 
     // Login validation schema
     const loginValidation = Yup.object().shape({
@@ -22,10 +27,35 @@ const AuthPage = () => {
             .required('Confirm Password is required'),
     });
 
-    const handleSubmit = (values, { setSubmitting }) => {
-        console.log(isLogin ? 'Login Data:' : 'Signup Data:', values);
-        setTimeout(() => setSubmitting(false), 1000);
+
+    const handleSubmit = async (values, { setSubmitting }) => {
+        try {
+            if (isLogin) {
+                const resultAction = await dispatch(loginUser({ email: values.email, password: values.password }));
+                if (loginUser.fulfilled.match(resultAction)) {
+                    toast.success(resultAction.payload.message || 'Login successful');
+                } else {
+                    toast.error(resultAction.payload?.message || 'Login failed');
+                }
+            } else {
+                const resultAction = await dispatch(registerUser({
+                    name: values.name,
+                    email: values.email,
+                    password: values.password,
+                }));
+                if (registerUser.fulfilled.match(resultAction)) {
+                    toast.success(resultAction.payload.message || 'Registration successful');
+                } else {
+                    toast.error(resultAction.payload?.message || 'Registration failed');
+                }
+            }
+        } catch (error) {
+            toast.error(error.message || 'Something went wrong!');
+        } finally {
+            setSubmitting(false);
+        }
     };
+
 
     return (
         <div className="flex items-center justify-center  bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 p-4">
@@ -34,6 +64,9 @@ const AuthPage = () => {
                 <h2 className="text-2xl font-functionPro text-center mb-6 text-gray-800">
                     {isLogin ? 'Login to Your Account' : 'Create an Account'}
                 </h2>
+
+                {error && <p className="text-red-500 text-center mb-3">{error.message || JSON.stringify(error)}</p>}
+
 
                 <Formik
                     initialValues={{
@@ -102,10 +135,10 @@ const AuthPage = () => {
 
                             <button
                                 type="submit"
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || loading}
                                 className="w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition duration-200  cursor-pointer"
                             >
-                                {isSubmitting ? (isLogin ? 'Logging in...' : 'Signing up...') : isLogin ? 'Login' : 'Sign Up'}
+                                {loading ? (isLogin ? 'Logging in...' : 'Signing up...') : isLogin ? 'Login' : 'Sign Up'}
                             </button>
                         </Form>
                     )}
