@@ -30,6 +30,8 @@ const AddProducts = () => {
         description: "",
         image: null,
         active: true,
+        colors: [],      // <--- initialize as empty array
+  sizes: []
     });
     const [editProductData, setEditProductData] = useState({});
     const [deleteProductId, setDeleteProductId] = useState(null);
@@ -276,184 +278,10 @@ const AddProducts = () => {
                 </div>
             </div>
 
-            {/* Add/Edit Modal */}
-            {/* {(modalOpen || editModalOpen) && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 overflow-auto">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl md:max-w-4xl p-8 relative animate-fade-in">
-
-                       
-                        <button
-                            onClick={() => { setModalOpen(false); setEditModalOpen(false); }}
-                            className="absolute top-5 right-5 text-gray-400 hover:text-gray-700 transition"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-
-                   
-                        <h2 className="text-3xl font-semibold mb-8 text-center text-gray-800">
-                            {modalOpen ? "Add New Product" : "Edit Product"}
-                        </h2>
-
-                   
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                            <div className="flex flex-col">
-                                <label className="mb-1 font-medium text-gray-700">Product Name</label>
-                                <input
-                                    type="text"
-                                    placeholder="Enter product name"
-                                    value={modalOpen ? newProduct.name : editProductData.name || ""}
-                                    onChange={(e) => modalOpen
-                                        ? setNewProduct({ ...newProduct, name: e.target.value })
-                                        : setEditProductData({ ...editProductData, name: e.target.value })}
-                                    className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                                />
-                            </div>
-
-                       
-                            <div className="flex flex-col">
-                                <label className="mb-1 font-medium text-gray-700">Subcategory</label>
-                                <select
-                                    value={modalOpen ? newProduct.subcategoryId : editProductData.subcategoryId || ""}
-                                    onChange={(e) => modalOpen
-                                        ? setNewProduct({ ...newProduct, subcategoryId: e.target.value })
-                                        : setEditProductData({ ...editProductData, subcategoryId: e.target.value })}
-                                    className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                                >
-                                    <option value="">Select Subcategory</option>
-                                    {subcategories.map((s) => (
-                                        <option key={s.id} value={s.id}>{s.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                  
-                            <div className="flex flex-col">
-                                <label className="mb-1 font-medium text-gray-700">Price</label>
-                                <input
-                                    type="number"
-                                    placeholder="Enter price"
-                                    value={modalOpen ? newProduct.price || "" : editProductData.price || ""}
-                                    onChange={(e) => modalOpen
-                                        ? setNewProduct({ ...newProduct, price: parseFloat(e.target.value) })
-                                        : setEditProductData({ ...editProductData, price: parseFloat(e.target.value) })}
-                                    className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                                />
-                            </div>
-
-                 
-                            <div className="flex flex-col">
-                                <label className="mb-1 font-medium text-gray-700">Stock</label>
-                                <input
-                                    type="number"
-                                    placeholder="Available stock"
-                                    value={modalOpen ? newProduct.stock || "" : editProductData.stock || ""}
-                                    onChange={(e) => modalOpen
-                                        ? setNewProduct({ ...newProduct, stock: parseInt(e.target.value) })
-                                        : setEditProductData({ ...editProductData, stock: parseInt(e.target.value) })}
-                                    className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                                />
-                            </div>
-
-         
-                            <div className="flex flex-col">
-                                <label className="mb-1 font-medium text-gray-700">Size</label>
-                                <select
-                                    value={modalOpen ? newProduct.size : editProductData.size || ""}
-                                    onChange={(e) => modalOpen
-                                        ? setNewProduct({ ...newProduct, size: e.target.value })
-                                        : setEditProductData({ ...editProductData, size: e.target.value })}
-                                    className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                                >
-                                    <option value="">Select Size</option>
-                                    <option value="S">S</option>
-                                    <option value="M">M</option>
-                                    <option value="L">L</option>
-                                    <option value="XL">XL</option>
-                                </select>
-                            </div>
-
-                        
-                            <div className="flex flex-col">
-                                <label className="mb-1 font-medium text-gray-700">Color</label>
-                                <select
-                                    value={modalOpen ? newProduct.color : editProductData.color || ""}
-                                    onChange={(e) => modalOpen
-                                        ? setNewProduct({ ...newProduct, color: e.target.value })
-                                        : setEditProductData({ ...editProductData, color: e.target.value })}
-                                    className="border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                                >
-                                    <option value="">Select Color</option>
-                                    <option value="Red">Red</option>
-                                    <option value="Blue">Blue</option>
-                                    <option value="Green">Green</option>
-                                    <option value="Black">Black</option>
-                                </select>
-                            </div>
-
-                            <div className="flex flex-col md:col-span-2">
-                                <label className="mb-1 font-medium text-gray-700">Description</label>
-                                <textarea
-                                    placeholder="Enter product description"
-                                    value={modalOpen ? newProduct.description : editProductData.description || ""}
-                                    onChange={(e) => modalOpen
-                                        ? setNewProduct({ ...newProduct, description: e.target.value })
-                                        : setEditProductData({ ...editProductData, description: e.target.value })}
-                                    className="border border-gray-300 rounded-xl px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 transition resize-none"
-                                    rows={2}
-                                />
-                            </div>
-
-                         
-                            <div className="flex flex-col md:col-span-2">
-                                <label className="mb-1 font-medium text-gray-700">Product Image</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageChange}
-                                    className="border border-gray-300 rounded-xl px-4 py-3 mb-3 cursor-pointer"
-                                />
-                                {(modalOpen ? newProduct.image : editProductData.image || newImage) && (
-                                    <div className="relative w-40 h-40 md:w-48 md:h-48 mx-auto">
-                                        <Image
-                                            src={newImage
-                                                ? URL.createObjectURL(newImage)
-                                                : editProductData.image?.startsWith("http")
-                                                    ? editProductData.image
-                                                    : `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}${editProductData.image}`
-                                            }
-                                            alt={modalOpen ? newProduct.name : editProductData.name}
-                                            fill
-                                            className="object-cover rounded-2xl border border-gray-200 shadow-sm"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        
-            <div className="flex flex-col md:flex-row justify-end gap-4 mt-4">
-                <button
-                    onClick={() => { setModalOpen(false); setEditModalOpen(false); }}
-                    className="px-6 py-3 rounded-xl border border-gray-300 hover:bg-gray-100 transition"
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={modalOpen ? handleAddProduct : handleEditProduct}
-                    className="px-6 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition"
-                >
-                    {loading ? (modalOpen ? "Adding..." : "Updating...") : (modalOpen ? "Add" : "Update")}
-                </button>
-            </div>
-
-        </div>
-                </div >
-            )}  */}
 
             {(modalOpen || editModalOpen) && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl p-6 md:p-8 relative animate-fade-in overflow-auto max-h-[90vh]">
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl p-6 md:p-8 relative animate-fade-in overflow-auto max-h-[90vh]">
 
                         {/* Close Button */}
                         <button
@@ -468,40 +296,62 @@ const AddProducts = () => {
                             {modalOpen ? "Add New Product" : "Edit Product"}
                         </h2>
 
-                        <button
-                            type="button"
-                            onClick={() => setVariations([...variations, { type: "", value: "" }])}
-                            className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm mb-3"
-                        >
-                            Add Variation
-                        </button>
 
-                        {variations.map((variation, index) => (
-                            <div key={index} className="flex gap-3 items-center mb-3">
-                                <select
-                                    value={variation.type}
-                                    onChange={(e) => {
-                                        const newVars = [...variations];
-                                        newVars[index].type = e.target.value;
-                                        newVars[index].value = ""; // reset value
-                                        setVariations(newVars);
-                                    }}
-                                    className="border rounded-lg px-3 py-2"
-                                >
-                                    <option value="">Select Variation</option>
-                                    <option value="size">Size</option>
-                                    <option value="color">Color</option>
-                                    <option value="waxType">Wax Type</option>
-                                </select>
-
-                                {/* Show corresponding input based on type */}
-                                {variation.type === "size" && (
-                                    <select
-                                        value={variation.value}
+                        <div className="mb-4">
+                            <h3 className="font-medium mb-2 text-gray-800 dark:text-gray-200">Colors & Images</h3>
+                            {newProduct.colors.map((c, idx) => (
+                                <div key={idx} className="flex gap-3 items-center mb-2">
+                                    <input
+                                        type="color"
+                                        value={c.color}
                                         onChange={(e) => {
-                                            const newVars = [...variations];
-                                            newVars[index].value = e.target.value;
-                                            setVariations(newVars);
+                                            const updatedColors = [...newProduct.colors];
+                                            updatedColors[idx].color = e.target.value;
+                                            setNewProduct({ ...newProduct, colors: updatedColors });
+                                        }}
+                                        className="w-10 h-10 border rounded-lg cursor-pointer"
+                                    />
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const updatedColors = [...newProduct.colors];
+                                            updatedColors[idx].image = e.target.files[0];
+                                            setNewProduct({ ...newProduct, colors: updatedColors });
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const updatedColors = newProduct.colors.filter((_, i) => i !== idx);
+                                            setNewProduct({ ...newProduct, colors: updatedColors });
+                                        }}
+                                        className="text-red-500 px-2 py-1 border rounded-lg"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setNewProduct({ ...newProduct, colors: [...newProduct.colors, { color: "#ffffff", image: null }] })}
+                                className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm"
+                            >
+                                Add Color
+                            </button>
+                        </div>
+
+                        {/* Dynamic Size Mapping */}
+                        <div className="mb-4">
+                            <h3 className="font-medium mb-2 text-gray-800 dark:text-gray-200">Sizes & Stock</h3>
+                            {newProduct.sizes.map((s, idx) => (
+                                <div key={idx} className="flex gap-3 items-center mb-2">
+                                    <select
+                                        value={s.size}
+                                        onChange={(e) => {
+                                            const updatedSizes = [...newProduct.sizes];
+                                            updatedSizes[idx].size = e.target.value;
+                                            setNewProduct({ ...newProduct, sizes: updatedSizes });
                                         }}
                                         className="border rounded-lg px-3 py-2"
                                     >
@@ -511,56 +361,37 @@ const AddProducts = () => {
                                         <option value="L">L</option>
                                         <option value="XL">XL</option>
                                     </select>
-                                )}
-
-                                {variation.type === "color" && (
-                                    <select
-                                        value={variation.value}
+                                    <input
+                                        type="number"
+                                        placeholder="Stock"
+                                        value={s.stock}
                                         onChange={(e) => {
-                                            const newVars = [...variations];
-                                            newVars[index].value = e.target.value;
-                                            setVariations(newVars);
+                                            const updatedSizes = [...newProduct.sizes];
+                                            updatedSizes[idx].stock = parseInt(e.target.value);
+                                            setNewProduct({ ...newProduct, sizes: updatedSizes });
                                         }}
-                                        className="border rounded-lg px-3 py-2"
-                                    >
-                                        <option value="">Select Color</option>
-                                        <option value="Red">Red</option>
-                                        <option value="Blue">Blue</option>
-                                        <option value="Green">Green</option>
-                                        <option value="Black">Black</option>
-                                    </select>
-                                )}
-
-                                {variation.type === "waxType" && (
-                                    <select
-                                        value={variation.value}
-                                        onChange={(e) => {
-                                            const newVars = [...variations];
-                                            newVars[index].value = e.target.value;
-                                            setVariations(newVars);
+                                        className="border rounded-lg px-3 py-2 w-24"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const updatedSizes = newProduct.sizes.filter((_, i) => i !== idx);
+                                            setNewProduct({ ...newProduct, sizes: updatedSizes });
                                         }}
-                                        className="border rounded-lg px-3 py-2"
+                                        className="text-red-500 px-2 py-1 border rounded-lg"
                                     >
-                                        <option value="">Select Wax Type</option>
-                                        <option value="soy_blended">Soy Blended Wax</option>
-                                        <option value="pure_soy">Pure Soy Wax</option>
-                                        <option value="pure_beeswax">Pure Beeswax</option>
-                                    </select>
-                                )}
-
-                                {/* Remove button */}
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const newVars = variations.filter((_, i) => i !== index);
-                                        setVariations(newVars);
-                                    }}
-                                    className="text-red-500"
-                                >
-                                    X
-                                </button>
-                            </div>
-                        ))}
+                                        Remove
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setNewProduct({ ...newProduct, sizes: [...newProduct.sizes, { size: "", stock: 0 }] })}
+                                className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm"
+                            >
+                                Add Size
+                            </button>
+                        </div>
 
 
                         {/* Form */}
