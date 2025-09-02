@@ -31,7 +31,7 @@ const AddProducts = () => {
         image: null,
         active: true,
         colors: [],      // <--- initialize as empty array
-  sizes: []
+        sizes: []
     });
     const [editProductData, setEditProductData] = useState({});
     const [deleteProductId, setDeleteProductId] = useState(null);
