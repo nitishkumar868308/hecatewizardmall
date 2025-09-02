@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  
 }
 
 datasource db {
@@ -13,7 +12,7 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      String   @default("USER") 
+  role      String   @default("USER")
   createdAt DateTime @default(now())
 }
 
@@ -21,17 +20,49 @@ model Header {
   id        Int      @id @default(autoincrement())
   name      String
   active    Boolean  @default(true)
-  deleted   Int      @default(0)  // 0 = not deleted, 1 = deleted
+  deleted   Int      @default(0) // 0 = not deleted, 1 = deleted
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Category {
-  id        Int      @id @default(autoincrement())
-  name      String
-  image     String?
-  active    Boolean  @default(true)
-  deleted   Int      @default(0)  // 0 = not deleted, 1 = deleted
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int           @id @default(autoincrement())
+  name          String
+  image         String?
+  active        Boolean       @default(true)
+  deleted       Int           @default(0) // 0 = not deleted, 1 = deleted
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  subcategories Subcategory[]
+}
+
+model Subcategory {
+  id         Int      @id @default(autoincrement())
+  name       String
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  image      String?
+  active     Boolean  @default(true)
+  products   Product[]
+  deleted    Int      @default(0) // 0 = not deleted, 1 = deleted
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Product {
+  id              String      @id @default(cuid())
+  name            String
+  subcategoryId   Int
+  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id])
+  sku             String      @unique       // Unique SKU
+  image           String?
+  description     String?
+  active          Boolean     @default(true)
+  deleted         Int         @default(0)
+  slug            String?     @unique       // SEO-friendly URL
+  metaTitle       String?     // SEO title
+  metaDescription String?     // SEO description
+  keywords        String?     // Optional keywords for SEO
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }

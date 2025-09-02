@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, Plus, ChevronDown, ChevronUp, LayoutGrid  } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, Plus, ChevronDown, ChevronUp, LayoutGrid, ShoppingBag  } from "lucide-react";
 import Link from "next/link";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
@@ -17,19 +17,19 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             )}
 
             <aside
-                className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg p-6 transform transition-transform duration-300 font-functionPro 
+                className={`fixed top-0 left-0 h-full w-64 bg-[#161619] shadow-lg p-6 transform transition-transform duration-300 font-functionPro 
         ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 flex flex-col`}
             >
                 {/* Close btn mobile */}
                 <div className="flex justify-between items-center mb-8 md:hidden">
-                    <h2 className="text-xl font-bold text-blue-600 text-center">Admin</h2>
+                    <h2 className="text-xl font-bold text-white text-center">Admin</h2>
                     <button onClick={toggleSidebar}>
                         <X className="w-6 h-6 text-gray-700" />
                     </button>
                 </div>
 
                 {/* Logo Desktop */}
-                <h2 className="text-2xl font-bold text-blue-600 mb-8 hidden md:block text-center">
+                <h2 className="text-2xl font-bold text-gray-100 mb-8 hidden md:block text-center">
                     Admin
                 </h2>
 
@@ -37,7 +37,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 <nav className="flex flex-col gap-2 text-gray-700">
                     <Link
                         href="/admin/dashboard"
-                        className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition"
+
                     >
                         <Home className="w-5 h-5" /> Home
                     </Link>
@@ -46,7 +47,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     <div>
                         <button
                             onClick={() => setMenuOpen(!menuOpen)}
-                            className="flex items-center justify-between w-full px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer"
+                            className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                         >
                             <span className="flex items-center gap-3">
                                 <LayoutGrid className="w-5 h-5" /> Menus
@@ -63,21 +64,21 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             <div className="ml-8 mt-2 flex flex-col gap-2">
                                 <Link
                                     href="/admin/header"
-                                    className="px-3 py-1 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition text-sm"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
                                 >
-                                    ➕ Add Header
+                                    Add Header
                                 </Link>
                                 <Link
                                     href="/admin/category"
-                                    className="px-3 py-1 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition text-sm"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
                                 >
-                                    ➕ Add Category
+                                    Add Category
                                 </Link>
                                 <Link
                                     href="/admin/subcategory"
-                                    className="px-3 py-1 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition text-sm"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
                                 >
-                                    ➕ Add Subcategory
+                                    Add Subcategory
                                 </Link>
                             </div>
                         )}
@@ -85,14 +86,21 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
                     <Link
                         href="/admin/users"
-                        className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                     >
                         <Users className="w-5 h-5" /> Users
                     </Link>
 
                     <Link
+                        href="/admin/products"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                    >
+                        <ShoppingBag className="w-5 h-5" /> Products
+                    </Link>
+
+                    <Link
                         href="/admin/settings"
-                        className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                     >
                         <Settings className="w-5 h-5" /> Settings
                     </Link>

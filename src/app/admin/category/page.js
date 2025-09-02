@@ -21,10 +21,11 @@ const AddCategory = () => {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [newCategory, setNewCategory] = useState("");
-    const [editCategory, setEditCategory] = useState({ id: null, name: "" });
+    const [editCategory, setEditCategory] = useState({ id: null, name: "", image: null, });
     const [deleteCategoryId, setDeleteCategoryId] = useState(null);
     const [newCategoryImage, setNewCategoryImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    console.log("categories", categories)
 
     useEffect(() => {
         dispatch(fetchCategories());
@@ -153,6 +154,16 @@ const AddCategory = () => {
         c.name.toLowerCase().includes(search.toLowerCase())
     );
 
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+    console.log("Image Preview URL =>", newCategoryImage
+        ? URL.createObjectURL(newCategoryImage)
+        : editCategory.image?.startsWith("http")
+            ? editCategory.image
+            : `${baseUrl}/uploads/${editCategory.image}`);
+
+    console.log("editCategory =>", editCategory);
+
     return (
         <DefaultPageAdmin>
             {/* Header + Search + Add Button */}
@@ -249,7 +260,15 @@ const AddCategory = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap flex gap-3">
                                         <button
-                                            onClick={() => { setEditCategory({ id: c.id, name: c.name }); setEditModalOpen(true); }}
+                                            onClick={() => {
+                                                setEditCategory({
+                                                    id: c.id,
+                                                    name: c.name,
+                                                    image: c.image || null,
+                                                });
+                                                setNewCategoryImage(null);
+                                                setEditModalOpen(true);
+                                            }}
                                             className="text-blue-500 hover:text-blue-700 cursor-pointer"
                                         >
                                             <Edit className="w-5 h-5" />
@@ -351,13 +370,27 @@ const AddCategory = () => {
                             className="border rounded-lg px-4 py-2 w-full mb-4"
                         />
 
+                        {/* {newCategoryImage ? (
+                            <div className="text-sm text-gray-700 mb-2">{newCategoryImage.name}</div>
+                        ) : editCategory.image ? (
+                            <div className="text-sm text-gray-700 mb-2">
+                                {editCategory.image.split('/').pop()}
+                            </div>
+                        ) : null} */}
+
                         {/* Image Preview */}
                         {editCategory.image || newCategoryImage ? (
                             <div className="mb-4">
                                 <div className="relative w-24 h-24">
                                     <Image
-                                        src={newCategoryImage ? URL.createObjectURL(newCategoryImage) : editCategory.image}
-                                        alt={editCategory.name}
+                                        src={
+                                            newCategoryImage
+                                                ? URL.createObjectURL(newCategoryImage)
+                                                : editCategory.image?.startsWith("http")
+                                                    ? editCategory.image
+                                                    : `${baseUrl}${editCategory.image}`
+                                        }
+                                        alt={editCategory.name || "Category"}
                                         fill
                                         className="object-cover rounded-md"
                                     />
@@ -366,7 +399,6 @@ const AddCategory = () => {
                         ) : (
                             <span className="text-gray-400 italic mb-4 block">No Image</span>
                         )}
-
 
                         <div className="flex justify-end gap-2">
                             <button
@@ -385,6 +417,11 @@ const AddCategory = () => {
                     </div>
                 </div>
             )}
+
+           
+
+
+
 
 
             {/* Delete Confirmation Modal */}

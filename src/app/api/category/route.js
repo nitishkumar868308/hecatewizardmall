@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 export async function GET(req) {
     try {
         const categories = await prisma.category.findMany({
-            where: { deleted: 0, active: true }, 
+            where: { deleted: 0 }, 
             orderBy: { createdAt: "desc" },
         });
 

@@ -16,7 +16,7 @@ const Header = ({ toggleSidebar }) => {
     };
 
     return (
-        <header className="bg-white shadow-md px-6 py-4 flex justify-between items-center font-functionPro">
+        <header className="bg-[#161619] shadow-md px-6 py-4 flex justify-between items-center font-functionPro text-white">
             <div className="flex items-center gap-3">
                 {/* Hamburger for mobile */}
                 <button
@@ -31,7 +31,7 @@ const Header = ({ toggleSidebar }) => {
             <div className="flex items-center gap-4">
                 {user && (
                     <>
-                        <span className="text-gray-600 hidden sm:block cursor-pointer">
+                        <span className="text-gray-200 hidden sm:block cursor-pointer">
                             Welcome, {getInitials(user.name)} 👋
                         </span>
                         <img

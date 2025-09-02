@@ -2,6 +2,12 @@
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {
+    fetchProducts,
+} from "@/app/redux/slices/products/productSlice";
+import { fetchSubcategories } from "@/app/redux/slices/subcategory/subcategorySlice";
+import { fetchCategories } from "@/app/redux/slices/addCategory/addCategorySlice";
+import { useDispatch, useSelector } from "react-redux";
 
 const products = [
     { id: 1, name: "Red T-shirt", price: 25, category: "Clothing", color: "Red", image: "/products/product1.webp" },
@@ -30,6 +36,16 @@ const Categories = () => {
     const [sortBy, setSortBy] = useState(sortOptions[0]);
     const [showFilters, setShowFilters] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
+    const dispatch = useDispatch();
+    const { products, loading } = useSelector((state) => state.products);
+    const { subcategories } = useSelector((state) => state.subcategory);
+    const { categories } = useSelector((state) => state.category);
+
+    useEffect(() => {
+        dispatch(fetchProducts());
+        dispatch(fetchSubcategories());
+        dispatch(fetchCategories());
+    }, [dispatch]);
 
     useEffect(() => {
         const handleResize = () => setIsDesktop(window.innerWidth >= 768);

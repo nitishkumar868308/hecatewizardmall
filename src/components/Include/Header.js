@@ -15,6 +15,9 @@ import {
 import {
     fetchCategories,
 } from "@/app/redux/slices/addCategory/addCategorySlice";
+import {
+    fetchSubcategories,
+} from "@/app/redux/slices/subcategory/subcategorySlice";
 
 const Header = () => {
     const [active, setActive] = useState("Home");
@@ -30,9 +33,13 @@ const Header = () => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const { headers } = useSelector((state) => state.headers);
     const { categories, loading, error } = useSelector((state) => state.category);
+    const { subcategories } = useSelector((state) => state.subcategory);
+
+    console.log("subcategories", subcategories)
 
     useEffect(() => {
         dispatch(fetchCategories());
+        dispatch(fetchSubcategories());
     }, [dispatch]);
 
     useEffect(() => {
@@ -75,11 +82,32 @@ const Header = () => {
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         .map(h => h.name);
 
-    const mappedCategories  = categories.map(cat => ({
-        name: cat.name,
-        sub: cat.sub || [],  
-        img: cat.image || "/default-image.jpg",
-    }));
+    // Step 1: Map all categories first
+    const categoriesMap = {};
+    categories
+        .filter(cat => cat.active)
+        .forEach(cat => {
+            categoriesMap[cat.id] = {
+                name: cat.name,
+                sub: [], // initially empty
+                img: cat.image || "/default-image.jpg",
+            };
+        });
+
+    // Step 2: Fill subcategories
+    subcategories
+        .filter(sub => sub.active)
+        .forEach(sub => {
+            const catId = sub.category.id;
+            if (categoriesMap[catId]) {
+                categoriesMap[catId].sub.push(sub.name);
+            }
+        });
+
+    // Step 3: Convert to array
+    const mappedCategories = Object.values(categoriesMap);
+
+
 
     // const categories = [
     //     {
@@ -464,9 +492,9 @@ const Header = () => {
                                     onMouseEnter={() => setDropdownOpen(true)}
                                     onMouseLeave={() => setDropdownOpen(false)}
                                 >
-                                    <div className="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition text-white font-functionPro">
+                                    <div className="flex items-center gap-2 cursor-pointer hover:text-blue-200 transition text-white font-functionPro">
                                         <span className="font-medium">Welcome,</span>
-                                        <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                                        <div className="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center text-black font-bold">
                                             {getInitials(user.name)}
                                         </div>
                                     </div>
