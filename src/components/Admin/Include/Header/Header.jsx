@@ -21,9 +21,9 @@ const Header = ({ toggleSidebar }) => {
                 {/* Hamburger for mobile */}
                 <button
                     onClick={toggleSidebar}
-                    className="md:hidden p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
+                    className="md:hidden p-2 rounded-lg hover:bg-gray-800 cursor-pointer"
                 >
-                    <Menu className="w-6 h-6 text-gray-700" />
+                    <Menu className="w-6 h-6 text-white" />
                 </button>
                 <h1 className="text-xl font-semibold">Dashboard</h1>
             </div>
@@ -31,13 +31,14 @@ const Header = ({ toggleSidebar }) => {
             <div className="flex items-center gap-4">
                 {user && (
                     <>
+                        {/* Ye sirf text mobile me hide karega, avatar hamesha visible rahega */}
                         <span className="text-gray-200 hidden sm:block cursor-pointer">
                             Welcome, {getInitials(user.name)} 👋
                         </span>
                         <img
                             src={user.avatar || "https://i.pravatar.cc/40"}
                             alt="User"
-                            className="w-10 h-10 rounded-full border cursor-pointer"
+                            className="w-10 h-10 rounded-full border-2 border-white cursor-pointer"
                         />
                     </>
                 )}

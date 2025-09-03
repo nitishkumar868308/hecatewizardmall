@@ -159,20 +159,23 @@ const AddHeader = () => {
                                             </span>
                                         </label>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap flex gap-3">
-                                        <button
-                                            onClick={() => { setEditHeader({ id: h.id, name: h.name }); setEditModalOpen(true); }}
-                                            className="text-blue-500 hover:text-blue-700 cursor-pointer"
-                                        >
-                                            <Edit className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            onClick={() => { setDeleteHeaderId(h.id); setDeleteModalOpen(true); }}
-                                            className="text-red-500 hover:text-red-700 cursor-pointer"
-                                        >
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => { setEditHeader({ id: h.id, name: h.name }); setEditModalOpen(true); }}
+                                                className="text-blue-500 hover:text-blue-700 cursor-pointer"
+                                            >
+                                                <Edit className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => { setDeleteHeaderId(h.id); setDeleteModalOpen(true); }}
+                                                className="text-red-500 hover:text-red-700 cursor-pointer"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
                                     </td>
+
                                 </tr>
                             ))}
                             {filteredHeaders.length === 0 && (

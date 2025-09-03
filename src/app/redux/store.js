@@ -6,6 +6,8 @@ import getAllUserReducer from './slices/getAllUser/getAllUser'
 import addCategory from './slices/addCategory/addCategorySlice'
 import subcategoryReducer from './slices/subcategory/subcategorySlice';
 import productsReducer from './slices/products/productSlice';
+import attributesReducer from './slices/attribute/attributeSlice';
+
 
 const store = configureStore({
     reducer: {
@@ -16,6 +18,7 @@ const store = configureStore({
         category: addCategory,
         subcategory: subcategoryReducer,
         products: productsReducer,
+        attributes: attributesReducer, 
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

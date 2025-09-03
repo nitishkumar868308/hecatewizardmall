@@ -119,7 +119,7 @@ const AddSubcategory = () => {
         s.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    console.log("filteredSubcategories" , filteredSubcategories)
+    console.log("filteredSubcategories", filteredSubcategories)
 
     return (
         <DefaultPageAdmin>
@@ -174,25 +174,27 @@ const AddSubcategory = () => {
                                             </span>
                                         </label>
                                     </td>
-                                    <td className="px-6 py-4 flex gap-3">
-                                        <button
-                                            onClick={() => {
-                                                setEditSubcategory({
-                                                    ...s
-                                                });
-                                                setNewImage(null);
-                                                setEditModalOpen(true);
-                                            }}
-                                            className="text-blue-500 hover:text-blue-700 cursor-pointer"
-                                        >
-                                            <Edit className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            onClick={() => { setDeleteSubcategoryId(s.id); setDeleteModalOpen(true); }}
-                                            className="text-red-500 hover:text-red-700 cursor-pointer"
-                                        >
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
+                                    <td className="px-6 py-4 ">
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => {
+                                                    setEditSubcategory({
+                                                        ...s
+                                                    });
+                                                    setNewImage(null);
+                                                    setEditModalOpen(true);
+                                                }}
+                                                className="text-blue-500 hover:text-blue-700 cursor-pointer"
+                                            >
+                                                <Edit className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => { setDeleteSubcategoryId(s.id); setDeleteModalOpen(true); }}
+                                                className="text-red-500 hover:text-red-700 cursor-pointer"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

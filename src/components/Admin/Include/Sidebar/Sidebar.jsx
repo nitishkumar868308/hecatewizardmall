@@ -1,10 +1,11 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, Plus, ChevronDown, ChevronUp, LayoutGrid, ShoppingBag  } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, Plus, ChevronDown, ChevronUp, LayoutGrid, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [menuOpen, setMenuOpen] = useState(false);
+    const [menuOpenProduct, setMenuOpenProduct] = useState(false);
 
     return (
         <>
@@ -91,12 +92,39 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                         <Users className="w-5 h-5" /> Users
                     </Link>
 
-                    <Link
-                        href="/admin/products"
-                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
-                    >
-                        <ShoppingBag className="w-5 h-5" /> Products
-                    </Link>
+                    <div>
+                        <button
+                            onClick={() => setMenuOpenProduct(!menuOpenProduct)}
+                            className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                        >
+                            <span className="flex items-center gap-3">
+                                <LayoutGrid className="w-5 h-5" /> Products
+                            </span>
+                            {menuOpenProduct ? (
+                                <ChevronUp className="w-4 h-4" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4" />
+                            )}
+                        </button>
+
+                        {/* Dropdown items */}
+                        {menuOpenProduct && (
+                            <div className="ml-8 mt-2 flex flex-col gap-2">
+                                <Link
+                                    href="/admin/products"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Add Products
+                                </Link>
+                                <Link
+                                    href="/admin/attribute"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Attribute
+                                </Link>
+                            </div>
+                        )}
+                    </div>
 
                     <Link
                         href="/admin/settings"

@@ -94,12 +94,12 @@ const Categories = () => {
                                 <ul className="flex flex-col gap-2">
                                     {categories.map((cat) => (
                                         <li
-                                            key={cat}
+                                            key={cat.id || cat.slug}
                                             onClick={() => setSelectedCategory(cat)}
                                             className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedCategory === cat ? "bg-blue-200 font-semibold" : ""
                                                 }`}
                                         >
-                                            {cat}
+                                            {cat.name}
                                         </li>
                                     ))}
                                 </ul>
