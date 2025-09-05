@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import DefaultPageAdmin from "@/components/Admin/Include/DefaultPageAdmin/DefaultPageAdmin";
-import { Plus, Edit, Trash2, X } from "lucide-react";
+import { Plus, Edit, Trash2, X, View, Copy } from "lucide-react";
 import {
     fetchProducts,
     createProduct,
-    updateProduct,
     deleteProduct,
+    updateProduct
 } from "@/app/redux/slices/products/productSlice";
 import { fetchSubcategories } from "@/app/redux/slices/subcategory/subcategorySlice";
 import { fetchCategories } from "@/app/redux/slices/addCategory/addCategorySlice";
@@ -16,24 +16,34 @@ import Image from "next/image";
 import {
     fetchAttributes,
 } from "@/app/redux/slices/attribute/attributeSlice";
+import ProductModal from "@/components/ProductModal";
+import ConfirmModal from "@/components/ConfirmModal";
+import { fetchOffers } from '@/app/redux/slices/offer/offerSlice'
+import Loader from "@/components/Include/Loader";
+import { uploadToCloudinary } from "@/utils/uploadToCloudinary";
 
 const productFields = [
     { key: "name", type: "text", placeholder: "Product Name" },
+    { key: "short", type: "text", placeholder: "Short Description" },
     { key: "description", type: "textarea", placeholder: "Description" },
     { key: "price", type: "number", placeholder: "Price" },
-    { key: "stock", type: "number", placeholder: "Stock" }, // optional
+    { key: "stock", type: "number", placeholder: "Stock" },
+    { key: "otherCountriesPrice", type: "text", placeholder: "otherCountries Price" },
     { key: "image", type: "file", placeholder: "Product Image" },
+    // { key: "offer", type: "text", placeholder: "offer" },
     { key: "category", type: "select", placeholder: "Category" },
     { key: "subcategory", type: "select", placeholder: "Subcategory" }
 ];
 
 const AddProducts = () => {
     const dispatch = useDispatch();
-    const { products, loading } = useSelector((state) => state.products);
+    const [loading, setLoading] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [modalOpenProduct, setModalOpenProduct] = useState(false);
+    const { products } = useSelector((state) => state.products);
     const { subcategories } = useSelector((state) => state.subcategory);
     const [activeSection, setActiveSection] = useState("product");
     const { categories } = useSelector((state) => state.category);
-    const [variations, setVariations] = useState([]);
     const [search, setSearch] = useState("");
     const [modalOpen, setModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
@@ -41,37 +51,46 @@ const AddProducts = () => {
     const [newProduct, setNewProduct] = useState({
         name: "",
         description: "",
+        short: "",
         price: "",
         stock: "",
         image: null,
+        offer: null,
         category: "",
         subcategoryId: "",
+        otherCountriesPrice: null,
         colors: [],
-        sizes: []
+        sizes: [],
     });
     const [editProductData, setEditProductData] = useState({});
     const [deleteProductId, setDeleteProductId] = useState(null);
-    const [newImage, setNewImage] = useState(null);
+    const [newImage, setNewImage] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [attributess, setAttributess] = useState([]);
-    const [attrName, setAttrName] = useState("");
-    const [attrValues, setAttrValues] = useState("");
     const [selectedAttributes, setSelectedAttributes] = useState({});
-    // Variations expanded state and details
     const [expandedVariations, setExpandedVariations] = useState({});
-    const [variationDetails, setVariationDetails] = useState({}); // { "Red + S": {name, description, price, stock, image, preview} }
+    const [variationDetails, setVariationDetails] = useState({});
     const [currentVariations, setCurrentVariations] = useState([]);
-    const [variationAttributes, setVariationAttributes] = useState({});
     const { attributes } = useSelector((state) => state.attributes);
-    console.log("attributes", attributes)
     const [expandedAttrs, setExpandedAttrs] = useState({});
-
+    const { offers } = useSelector((state) => state.offers);
+    console.log("offers", offers)
     useEffect(() => {
         dispatch(fetchAttributes())
         dispatch(fetchProducts());
         dispatch(fetchSubcategories());
         dispatch(fetchCategories());
+        dispatch(fetchOffers());
     }, [dispatch]);
+
+    const openModal = (product) => {
+        setSelectedProduct(product);
+        setModalOpenProduct(true);
+    };
+
+    const closeModal = () => {
+        setSelectedProduct(null);
+        setModalOpenProduct(false);
+    };
 
     useEffect(() => {
         const attrValues = Object.values(selectedAttributes)
@@ -135,12 +154,19 @@ const AddProducts = () => {
         });
     };
 
-    const handleImageUpload = async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        const res = await fetch("/api/upload", { method: "POST", body: formData });
-        const data = await res.json();
-        return data.url;
+    const mergeMissingVariations = (dbVariations) => {
+        setCurrentVariations(prev => {
+            const all = Array.from(new Set([...prev, ...dbVariations])); // merge & remove duplicates
+            return all;
+        });
+
+        setVariationDetails(prev => {
+            const newDetails = { ...prev };
+            dbVariations.forEach(v => {
+                if (!newDetails[v]) newDetails[v] = {}; // create empty object for missing variations
+            });
+            return newDetails;
+        });
     };
 
     // ----------------- SEO Helpers -----------------
@@ -158,47 +184,126 @@ const AddProducts = () => {
     };
     // -----------------------------------------------
 
+    const generateSKU = (productName, variationName) => {
+        if (!productName || !variationName) return null;
+
+        // Clean the variation name: replace spaces and slashes with dash
+        const cleanVariation = variationName
+            .trim()
+            .replace(/\s+/g, '-')   // spaces → dash
+            .replace(/\//g, '-')    // slashes → dash
+            .toUpperCase();
+
+        // Generate slug for product name
+        const productSlug = generateSlug(productName);
+
+        // Combine to form SKU
+        return `${productSlug}-${cleanVariation}`;
+    };
+
+    const variationsData = currentVariations.map(variation => {
+        const details = variationDetails[variation] || {};
+        return {
+            variation_name: variation,
+            price: details.price ?? newProduct.price ?? null,
+            stock: details.stock ?? newProduct.stock ?? null,
+            image: details.preview ?? null,
+            name: details.name ?? newProduct.name ?? null,
+            description: details.description ?? newProduct.description ?? null,
+            otherCountriesPrice: details.otherCountriesPrice ?? newProduct.otherCountriesPrice ?? null,
+            sku: generateSKU(newProduct.name, variation),
+        };
+    });
+
+    const handleImageUpload = async (file) => {
+        if (!file) throw new Error('No file provided');
+
+        try {
+            const url = await uploadToCloudinary(file, 'products');
+            return url;
+        } catch (err) {
+            console.error('Upload failed:', err);
+            throw err;
+        }
+    };
+
+
+
     const handleAddProduct = async () => {
-        // Required fields validation
+        console.log("offer:", newProduct.offer);
+
         if (!newProduct.name.trim() || !newProduct.subcategoryId) {
             return toast.error("Name and subcategory are required");
         }
-
-        // Image preview URL (optional)
+        setLoading(true);
         let imageUrl = null;
         if (newImage) {
-            imageUrl = URL.createObjectURL(newImage);
+            imageUrl = await handleImageUpload(newImage);;
         }
 
-        // Prepare product data dynamically
+        const productSKU = `${generateSlug(name)}-MAIN-${Date.now()}`;
+
+        const subcategoryId = parseInt(newProduct.subcategoryId);
+        if (!subcategoryId) return toast.error("Subcategory is required");
+
+        const categoryId = newProduct.category ? parseInt(newProduct.category) : null;
+
+        // Prepare product data including variations
         const productData = {
             name: newProduct.name.trim(),
-            subcategoryId: parseInt(newProduct.subcategoryId),
+            //categoryId: newProduct.category,
+            //subcategoryId: parseInt(newProduct.subcategoryId),
+            //subcategory: { connect: { id: Number(newProduct.subcategoryId) } },
+            short: newProduct.short || null,
             description: newProduct.description || null,
             image: imageUrl,
             active: newProduct.active ?? true,
             slug: generateSlug(newProduct.name),
             metaTitle: generateMetaTitle(newProduct.name),
             metaDescription: generateMetaDescription(newProduct.description),
-            // Optional / dynamic fields
             price: newProduct.price ?? null,
             stock: newProduct.stock ?? null,
-            size: newProduct.size || null,
-            color: newProduct.color || null,
-            waxType: newProduct.waxType || null,
+            size: newProduct.sizes || [],
+            color: newProduct.colors || [],
+            sku: productSKU,
+            otherCountriesPrice: newProduct.otherCountriesPrice ?? null,
+            offer: newProduct.offer ? { connect: { id: parseInt(newProduct.offer) } } : undefined,
+            category: categoryId ? { connect: { id: categoryId } } : undefined,
+            subcategory: { connect: { id: subcategoryId } },
+
+            variations: variationsData
         };
 
-        // For debugging: just log the data instead of calling API
-        console.log("Product Data:", productData);
-        toast.success("Check console for product data");
-
-        // Optional: reset state if needed
-        // setNewProduct({ ... });
-        // setNewImage(null);
-        // setModalOpen(false);
+        dispatch(createProduct(productData))
+            .unwrap()
+            .then((res) => {
+                toast.success("Product created successfully!");
+                setSelectedProduct(res.data);
+                setNewProduct({
+                    name: "",
+                    category: "",
+                    subcategoryId: "",
+                    short: "",
+                    description: "",
+                    price: "",
+                    stock: "",
+                    sizes: null,
+                    colors: null,
+                    active: true,
+                    image: null,
+                });
+                setSelectedAttributes({})
+                setActiveSection("product")
+                setCurrentVariations([]);
+                setVariationDetails({});
+                setNewImage(null);
+                setModalOpen(false)
+                setLoading(false);
+            })
+            .catch((err) => {
+                toast.error(err.message || "Failed to create product");
+            });
     };
-
-
 
     const handleEditProduct = async () => {
         if (!editProductData.name.trim() || !editProductData.subcategoryId)
@@ -231,21 +336,27 @@ const AddProducts = () => {
     };
 
     const handleDelete = async () => {
+        setLoading(true);
         try {
             await dispatch(deleteProduct(deleteProductId)).unwrap();
             toast.success("Product deleted successfully");
             setDeleteModalOpen(false);
         } catch (err) {
             toast.error(err.message || "Failed to delete product");
+        } finally {
+            setLoading(false);
         }
     };
 
     const toggleActive = async (id, currentActive) => {
+        setLoading(true);
         try {
             await dispatch(updateProduct({ id, active: !currentActive })).unwrap();
             toast.success("Product status updated");
         } catch (err) {
             toast.error(err.message || "Failed to update status");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -284,9 +395,48 @@ const AddProducts = () => {
         });
     };
 
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        if (active.id !== over.id) {
+            const oldIndex = products.findIndex(p => p.id === active.id);
+            const newIndex = products.findIndex(p => p.id === over.id);
+            const newProducts = [...products];
+            const [movedItem] = newProducts.splice(oldIndex, 1);
+            newProducts.splice(newIndex, 0, movedItem);
+            setProducts(newProducts);
+            console.log("New Order:", newProducts.map(p => p.name));
+        }
+    };
+
+    const copyModal = (id) => {
+        console.log("id", id)
+    }
+
+    useEffect(() => {
+        if (modalOpen) {
+            setNewProduct({
+                name: "",
+                category: "",
+                subcategoryId: "",
+                short: "",
+                description: "",
+                price: "",
+                stock: "",
+                sizes: null,
+                colors: null,
+                active: true,
+                image: null,
+                variations: []
+            });
+            setNewImage(null);
+        }
+    }, [modalOpen]);
+
+
 
     return (
         <DefaultPageAdmin>
+            {loading && <Loader />}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                 <h1 className="text-2xl font-bold text-gray-800">Products</h1>
                 <div className="flex gap-2 flex-wrap md:flex-nowrap items-center w-full md:w-auto">
@@ -314,10 +464,11 @@ const AddProducts = () => {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sku Number</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subcategory</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
@@ -327,21 +478,11 @@ const AddProducts = () => {
                                 <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">{idx + 1}</td>
                                     <td className="px-6 py-4">{p.name}</td>
-                                    <td className="px-6 py-4">{p.sku}</td>
-                                    <td className="px-6 py-4">
-                                        {p.image ? (
-                                            <div className="relative w-16 h-16">
-                                                <Image
-                                                    src={p.image.startsWith("http") ? p.image : `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}${p.image}`}
-                                                    alt={p.name}
-                                                    fill
-                                                    className="object-cover rounded-md"
-                                                />
-                                            </div>
-                                        ) : "-"}
-                                    </td>
-                                    <td className="px-6 py-4">{p.description || "-"}</td>
+                                    <td className="px-6 py-4">{categories.find(s => s.id === p.categoryId)?.name || "-"}</td>
                                     <td className="px-6 py-4">{subcategories.find(s => s.id === p.subcategoryId)?.name || "-"}</td>
+                                    <td className="px-6 py-4">{p.price}</td>
+                                    <td className="px-6 py-4">{p.stock}</td>
+
                                     <td className="px-6 py-4">
                                         <label className="inline-flex items-center cursor-pointer">
                                             <input
@@ -356,6 +497,12 @@ const AddProducts = () => {
                                         </label>
                                     </td>
                                     <td className="px-6 py-4 flex gap-3">
+                                        <button
+                                            className="text-blue-500 hover:text-blue-700 cursor-pointer"
+                                            onClick={() => openModal(p)}
+                                        >
+                                            <View className="w-5 h-5" />
+                                        </button>
                                         <button
                                             onClick={() => {
                                                 setEditProductData({ ...p });
@@ -372,6 +519,25 @@ const AddProducts = () => {
                                         >
                                             <Trash2 className="w-5 h-5" />
                                         </button>
+                                        {/* <button
+                                            onClick={() => {
+                                                setNewProduct({
+                                                    ...p,
+                                                    id: null, // important: naya product create ho, existing id na ho
+                                                    subcategoryId: p.subcategoryId || null,
+                                                    category: p.categoryId || null,
+                                                });
+                                                setNewImage(null); // reset image
+                                                setModalOpen(true); // modal open
+                                                setActiveSection("product"); // product section dikhe
+                                                setEditModalOpen(false); // edit mode off
+                                            }}
+                                            className="text-green-500 hover:text-green-700 cursor-pointer"
+                                        >
+                                            <Copy className="w-5 h-5" />
+                                        </button> */}
+
+
                                     </td>
                                 </tr>
                             ))}
@@ -450,6 +616,21 @@ const AddProducts = () => {
                                                 />
                                             </div>
 
+
+                                            {/* Short Description */}
+                                            <div >
+                                                <label className="block mb-1 font-medium">Short Description</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Short Description"
+                                                    value={currentData.short || ""}
+                                                    onChange={(e) =>
+                                                        setCurrentData({ ...currentData, short: e.target.value })
+                                                    }
+                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                />
+                                            </div>
+
                                             {/* Category */}
                                             <div>
                                                 <label className="block mb-1 font-medium">Category</label>
@@ -475,9 +656,12 @@ const AddProducts = () => {
                                             <div>
                                                 <label className="block mb-1 font-medium">Subcategory</label>
                                                 <select
-                                                    value={currentData.subcategory || ""}
+                                                    value={currentData.subcategoryId || ""}
                                                     onChange={(e) =>
-                                                        setCurrentData({ ...currentData, subcategory: Number(e.target.value) })
+                                                        setCurrentData({
+                                                            ...currentData,
+                                                            subcategoryId: e.target.value ? Number(e.target.value) : "", // keep as string
+                                                        })
                                                     }
                                                     disabled={!currentData.category}
                                                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
@@ -487,23 +671,22 @@ const AddProducts = () => {
                                                     </option>
                                                     {currentData.category &&
                                                         subcategories
-                                                            .filter(sub => sub.categoryId === Number(currentData.category))
+                                                            .filter(sub => sub.categoryId.toString() === currentData.category.toString())
                                                             .map(sub => (
-                                                                <option key={sub.id} value={sub.id}>{sub.name}</option>
-                                                            ))
-                                                    }
+                                                                <option key={sub.id} value={sub.id}>
+                                                                    {sub.name}
+                                                                </option>
+                                                            ))}
                                                 </select>
                                             </div>
 
 
-
-
-                                            {/* Price */}
+                                            {/* Base Price (INR) */}
                                             <div>
-                                                <label className="block mb-1 font-medium">Price</label>
+                                                <label className="block mb-1 font-medium">Price (INR) - India</label>
                                                 <input
                                                     type="number"
-                                                    placeholder="Price"
+                                                    placeholder="Price (INR) - India"
                                                     value={currentData.price || ""}
                                                     onChange={(e) =>
                                                         setCurrentData({ ...currentData, price: e.target.value })
@@ -512,7 +695,19 @@ const AddProducts = () => {
                                                 />
                                             </div>
 
-
+                                            {/* Other Countries Price */}
+                                            <div>
+                                                <label className="block mb-1 font-medium">Price for Other Countries</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="Price in INR for other countries"
+                                                    value={currentData.otherCountriesPrice || ""}
+                                                    onChange={(e) =>
+                                                        setCurrentData({ ...currentData, otherCountriesPrice: Number(e.target.value) })
+                                                    }
+                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                />
+                                            </div>
 
                                             {/* Stock */}
                                             <div>
@@ -528,12 +723,32 @@ const AddProducts = () => {
                                                 />
                                             </div>
 
-
-
-
+                                            {/* Offer */}
+                                            <div>
+                                                <label className="block mb-1 font-medium">Offer</label>
+                                                <select
+                                                    value={currentData.offer || ""}
+                                                    onChange={(e) =>
+                                                        setCurrentData({
+                                                            ...currentData,
+                                                            offer: Number(e.target.value),
+                                                        })
+                                                    }
+                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                                >
+                                                    <option value="">Select Offer</option>
+                                                    {offers
+                                                        .filter((offer) => offer.type.includes("category"))
+                                                        .map((catOffer) => (
+                                                            <option key={catOffer.id} value={catOffer.id}>
+                                                                {catOffer.name}
+                                                            </option>
+                                                        ))}
+                                                </select>
+                                            </div>
 
                                             {/* Description */}
-                                            <div>
+                                            <div className="col-span-2">
                                                 <label className="block mb-1 font-medium">Description</label>
                                                 <textarea
                                                     placeholder="Description"
@@ -545,37 +760,44 @@ const AddProducts = () => {
                                                 />
                                             </div>
 
-
-
                                             {/* Image Upload (full width) */}
                                             <div className="col-span-2">
-                                                <label className="block mb-1 font-medium">Product Image</label>
+                                                <label className="block mb-1 font-medium">Product Images</label>
                                                 <input
                                                     type="file"
                                                     accept="image/*"
-                                                    onChange={(e) => setNewImage(e.target.files[0])}
+                                                    multiple // ← allow multiple selection
+                                                    onChange={(e) => setNewImage(Array.from(e.target.files))}
                                                 />
-                                                {newImage ? (
-                                                    <img
-                                                        src={URL.createObjectURL(newImage)}
-                                                        alt="Product Preview"
-                                                        className="w-32 h-32 object-cover mt-2 rounded-lg"
-                                                    />
-                                                ) : currentData.image ? (
-                                                    <img
-                                                        src={currentData.image}
-                                                        alt="Product"
-                                                        className="w-32 h-32 object-cover mt-2 rounded-lg"
-                                                    />
-                                                ) : null}
+
+                                                <div className="flex gap-2 mt-2 flex-wrap">
+                                                    {newImage && newImage.length > 0
+                                                        ? newImage.map((img, idx) => (
+                                                            <img
+                                                                key={idx}
+                                                                src={URL.createObjectURL(img)}
+                                                                alt={`Preview ${idx}`}
+                                                                className="w-32 h-32 object-cover rounded-lg"
+                                                            />
+                                                        ))
+                                                        : currentData.images && currentData.images.length > 0
+                                                            ? currentData.images.map((img, idx) => (
+                                                                <img
+                                                                    key={idx}
+                                                                    src={img}
+                                                                    alt={`Product ${idx}`}
+                                                                    className="w-32 h-32 object-cover rounded-lg"
+                                                                />
+                                                            ))
+                                                            : null}
+                                                </div>
                                             </div>
+
 
                                         </form>
                                     </div>
                                 );
                             })()}
-
-
 
                             {/* Attributes Section */}
                             {activeSection === "attributes" && (
@@ -600,7 +822,7 @@ const AddProducts = () => {
 
                                                 {/* Attribute Header */}
                                                 <button
-                                                    className="w-full flex justify-between items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-t-lg"
+                                                    className="w-full flex justify-between items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-t-lg cursor-pointer"
                                                     onClick={() =>
                                                         setExpandedAttrs((prev) => ({
                                                             ...prev,
@@ -631,6 +853,33 @@ const AddProducts = () => {
                                                             }
                                                             className="w-full mb-2 border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                         />
+
+                                                        {/* ✅ Select All / Deselect All option */}
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={
+                                                                    selectedAttributes[attr.name]?.values?.length === attr.values.length
+                                                                }
+                                                                onChange={(e) => {
+                                                                    setSelectedAttributes((prev) => ({
+                                                                        ...prev,
+                                                                        [attr.name]: {
+                                                                            ...prev[attr.name],
+                                                                            values: e.target.checked ? [...attr.values] : [],
+                                                                            searchTerm: prev[attr.name]?.searchTerm || "",
+                                                                        },
+                                                                    }));
+                                                                }}
+                                                                className="accent-gray-600"
+                                                            />
+                                                            <span className="text-sm font-medium">
+                                                                {selectedAttributes[attr.name]?.values?.length === attr.values.length
+                                                                    ? "Deselect All"
+                                                                    : "Select All"}
+                                                            </span>
+                                                        </div>
+
 
                                                         {/* Scrollable values */}
                                                         <div className="max-h-32 overflow-auto grid grid-cols-2 gap-2">
@@ -691,9 +940,9 @@ const AddProducts = () => {
                                                 {Object.entries(selectedAttributes)
                                                     .filter(([_, v]) => v.values?.length)
                                                     .flatMap(([attrName, v]) =>
-                                                        v.values.map((val) => (
+                                                        v.values.map((val, idx) => (
                                                             <span
-                                                                key={`${attrName}-${val}`}
+                                                                key={`${attrName}-${val}-${idx}`}
                                                                 className="bg-black text-white px-2 py-1 rounded-full text-sm"
                                                             >
                                                                 {attrName}: {val}
@@ -709,8 +958,8 @@ const AddProducts = () => {
                             {/* Variations Section */}
                             {activeSection === "variations" && (
                                 <div className="max-h-[400px] overflow-auto space-y-2">
-                                    {currentVariations.map((variation) => (
-                                        <div key={variation} className="border rounded-lg mb-2">
+                                    {currentVariations.map((variation, idx) => (
+                                        <div key={`${variation}-${idx}`} className="border rounded-lg mb-2">
 
                                             {/* Variation Header */}
                                             <div
@@ -786,16 +1035,17 @@ const AddProducts = () => {
                                 </div>
                             )}
 
-
                             {/* Buttons */}
                             <div className="mt-6 flex justify-end gap-4">
                                 <button
+                                    type="button"
                                     onClick={() => setModalOpen(false)}
                                     className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition cursor-pointer"
                                 >
                                     Cancel
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={handleAddProduct}
                                     className="px-4 py-2 rounded-lg bg-gray-500 text-white hover:bg-black transition cursor-pointer"
                                 >
@@ -807,6 +1057,17 @@ const AddProducts = () => {
                     </div>
                 </div>
             )}
+
+            <ProductModal isOpen={modalOpenProduct} closeModal={closeModal} product={selectedProduct} />
+
+            <ConfirmModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={handleDelete}
+                title="Delete Product"
+                message="Are you sure you want to delete this product? This action cannot be undone."
+            />
+
 
         </DefaultPageAdmin >
     );

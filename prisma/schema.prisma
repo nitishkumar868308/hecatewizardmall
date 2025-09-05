@@ -34,6 +34,7 @@ model Category {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   subcategories Subcategory[]
+  products  Product[]
 }
 
 model Subcategory {
@@ -52,8 +53,11 @@ model Subcategory {
 model Product {
   id              String      @id @default(cuid())
   name            String
+  short           String?
+  categoryId      Int?
+  category        Category?   @relation(fields: [categoryId], references: [id])
   subcategoryId   Int
-  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id])
+  subcategory     Subcategory? @relation(fields: [subcategoryId], references: [id])
   sku             String      @unique       // Unique SKU
   image           String?
   description     String?
@@ -63,9 +67,39 @@ model Product {
   metaTitle       String?     // SEO title
   metaDescription String?     // SEO description
   keywords        String?     // Optional keywords for SEO
+  price           String?     // store as string
+  stock           String?     // store as string
+  size            String[]    @default([])  // array, default empty
+  color           String[]    @default([])  // array, default empty
+  otherCountriesPrice String?
+  offerId         Int?
+  offer           Offer?      @relation("OfferToProduct", fields: [offerId], references: [id])
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+
+  variations      ProductVariation[]
 }
+
+model ProductVariation {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  variationName String
+  sku         String   @unique
+  price       String?
+  otherCountriesPrice String?
+  stock       String?
+  image       String?
+  name       String?
+  description String?
+  offerId       Int?
+  offer         Offer?   @relation("OfferToVariation", fields: [offerId], references: [id])
+  active          Boolean     @default(true)
+  deleted         Int         @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 
 model Attribute {
   id        Int      @id @default(autoincrement())
@@ -76,4 +110,21 @@ model Attribute {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Offer {
+  id            Int      @id @default(autoincrement())
+  name          String
+  discountType  String   
+  discountValue Json     
+  type          Json     
+  description   String?
+  active        Boolean  @default(true)
+  deleted       Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  products          Product[]           @relation("OfferToProduct")
+  productVariations ProductVariation[]  @relation("OfferToVariation")
+}
+
 

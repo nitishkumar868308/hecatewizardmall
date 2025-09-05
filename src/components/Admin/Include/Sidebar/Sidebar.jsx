@@ -122,6 +122,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                 >
                                     Attribute
                                 </Link>
+                                <Link
+                                    href="/admin/offer"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Offer
+                                </Link>
                             </div>
                         )}
                     </div>

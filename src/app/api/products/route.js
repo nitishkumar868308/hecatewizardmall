@@ -2,18 +2,102 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Helper function to generate slug from name
-function generateSlug(name) {
-    return name
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9\-]/g, "");
-}
+// Post Products
+export async function POST(req) {
+    try {
+        const body = await req.json();
+        const {
+            name,
+            offer,
+            category,
+            subcategory,
+            short,
+            image,
+            description,
+            active,
+            sku,
+            slug,
+            metaTitle,
+            metaDescription,
+            price,
+            otherCountriesPrice,
+            stock,
+            size,
+            color,
+            variations
+        } = body;
 
-// Helper function to generate random SKU
-function generateSKU() {
-    return `PROD-${Math.floor(100000 + Math.random() * 900000)}`;
+        // Create main product
+        const product = await prisma.product.create({
+            data: {
+                name,
+                offer,
+                category,
+                subcategory,
+                image: image ?? null,
+                description: description ?? null,
+                active: active ?? true,
+                sku,
+                slug,
+                short,
+                metaTitle: metaTitle ?? `${name} | YourStore`,
+                metaDescription: metaDescription ?? description ?? "",
+                otherCountriesPrice: otherCountriesPrice?.toString() ?? null,
+                price: price?.toString() ?? null,
+                stock: stock?.toString() ?? null,
+                size: size ?? null,
+                color: color ?? null,
+                variations: variations && Array.isArray(variations) && variations.length > 0
+                    ? {
+                        create: variations.map(v => ({
+                            variationName: v.variation_name,
+                            sku: v.sku,
+                            price: v.price?.toString() ?? price?.toString() ?? null,
+                            stock: v.stock?.toString() ?? stock?.toString() ?? null,
+                            image: v.image ?? null,
+                            description: v.description ?? description ?? null,
+                            name: v.name ?? name,
+                            otherCountriesPrice: v.otherCountriesPrice?.toString() ?? otherCountriesPrice?.toString() ?? null
+                        }))
+                    }
+                    : undefined
+            },
+            include: {
+                variations: true,
+                category: true,
+                subcategory: true
+            }
+        });
+
+        // Create variations
+        // if (variations && Array.isArray(variations) && variations.length > 0) {
+        //     const variationsData = variations.map(v => ({
+        //         productId: product.id,
+        //         variationName: v.variation_name,
+        //         price: v.price?.toString() ?? price?.toString() ?? null,
+        //         stock: v.stock?.toString() ?? stock?.toString() ?? null,
+        //         sku: v.sku,
+        //         image: v.image ?? null,
+        //         description: v.description ?? description ?? null,
+        //         name: v.name ?? name
+        //     }));
+
+        //     await prisma.productVariation.createMany({
+        //         data: variationsData
+        //     });
+        // }
+
+        return new Response(
+            JSON.stringify({ message: "Product created successfully with variations", data: product }),
+            { status: 201 }
+        );
+
+    } catch (error) {
+        return new Response(
+            JSON.stringify({ message: "Failed to create product", error: error.message }),
+            { status: 500 }
+        );
+    }
 }
 
 // GET all products
@@ -22,7 +106,7 @@ export async function GET(req) {
         const products = await prisma.product.findMany({
             where: { deleted: 0 },
             orderBy: { createdAt: "desc" },
-            include: { subcategory: true } // include subcategory info
+            include: { subcategory: true, variations: true }
         });
 
         return new Response(
@@ -32,94 +116,6 @@ export async function GET(req) {
     } catch (error) {
         return new Response(
             JSON.stringify({ message: "Failed to fetch products", error: error.message }),
-            { status: 500 }
-        );
-    }
-}
-
-// POST create product
-export async function POST(req) {
-    try {
-        const body = await req.json();
-        const { name, subcategoryId, image, description, active, sku, slug, metaTitle, metaDescription, keywords } = body;
-
-        // Validation
-        if (!name || typeof name !== "string") {
-            return new Response(JSON.stringify({ message: "Name is required and must be a string" }), { status: 400 });
-        }
-        if (!subcategoryId) {
-            return new Response(JSON.stringify({ message: "subcategoryId is required" }), { status: 400 });
-        }
-        if (active !== undefined && typeof active !== "boolean") {
-            return new Response(JSON.stringify({ message: "Active must be true or false" }), { status: 400 });
-        }
-
-        const product = await prisma.product.create({
-            data: {
-                name,
-                subcategoryId,
-                image: image ?? null,
-                description: description ?? null,
-                active: active ?? true,
-                sku: sku ?? generateSKU(),
-                slug: slug ?? generateSlug(name),
-                metaTitle: metaTitle ?? name,
-                metaDescription: metaDescription ?? description ?? "",
-                keywords: keywords ?? "",
-            },
-        });
-
-        return new Response(
-            JSON.stringify({ message: "Product created successfully", data: product }),
-            { status: 201 }
-        );
-    } catch (error) {
-        return new Response(
-            JSON.stringify({ message: "Failed to create product", error: error.message }),
-            { status: 500 }
-        );
-    }
-}
-
-// PUT update product
-export async function PUT(req) {
-    try {
-        const body = await req.json();
-        const { id, name, subcategoryId, image, description, active, deleted, sku, slug, metaTitle, metaDescription, keywords } = body;
-
-        if (!id) {
-            return new Response(JSON.stringify({ message: "Product ID is required" }), { status: 400 });
-        }
-
-        const existing = await prisma.product.findUnique({ where: { id } });
-        if (!existing) {
-            return new Response(JSON.stringify({ message: "Product not found" }), { status: 404 });
-        }
-
-        const updatedProduct = await prisma.product.update({
-            where: { id },
-            data: {
-                name: name ?? existing.name,
-                subcategoryId: subcategoryId ?? existing.subcategoryId,
-                image: image ?? existing.image,
-                description: description ?? existing.description,
-                active: active ?? existing.active,
-                deleted: deleted ?? existing.deleted,
-                sku: sku ?? existing.sku,
-                slug: slug ?? (name ? generateSlug(name) : existing.slug),
-                metaTitle: metaTitle ?? (name ?? existing.name),
-                metaDescription: metaDescription ?? (description ?? existing.description ?? ""),
-                keywords: keywords ?? existing.keywords,
-            },
-        });
-
-        return new Response(
-            JSON.stringify({ message: "Product updated successfully", data: updatedProduct }),
-            { status: 200 }
-        );
-    } catch (error) {
-        return new Response(
-            JSON.stringify({ message: "Failed to update product", error: error.message }),
             { status: 500 }
         );
     }
@@ -135,18 +131,26 @@ export async function DELETE(req) {
             return new Response(JSON.stringify({ message: "Product ID is required" }), { status: 400 });
         }
 
+        // check if product exists
         const existing = await prisma.product.findUnique({ where: { id } });
         if (!existing) {
             return new Response(JSON.stringify({ message: "Product not found" }), { status: 404 });
         }
 
-        const deletedProduct = await prisma.product.update({
-            where: { id },
-            data: { deleted: 1 }, // soft delete
-        });
+        // Start a transaction to update both product and variations together
+        const [deletedProduct] = await prisma.$transaction([
+            prisma.product.update({
+                where: { id },
+                data: { deleted: 1 }, // soft delete product
+            }),
+            prisma.productVariation.updateMany({
+                where: { productId: id },
+                data: { deleted: 1 }, // soft delete variations
+            }),
+        ]);
 
         return new Response(
-            JSON.stringify({ message: "Product deleted successfully", data: deletedProduct }),
+            JSON.stringify({ message: "Product and its variations deleted successfully", data: deletedProduct }),
             { status: 200 }
         );
     } catch (error) {
@@ -156,3 +160,96 @@ export async function DELETE(req) {
         );
     }
 }
+
+// PUT update product
+export async function PUT(req) {
+    try {
+        const body = await req.json();
+        const {
+            id,
+            name,
+            subcategoryId,
+            image,
+            description,
+            active,
+            deleted,
+            sku,
+            slug,
+            metaTitle,
+            metaDescription,
+            keywords,
+            variations = [], // frontend se array aayega
+        } = body;
+
+        if (!id) {
+            return new Response(
+                JSON.stringify({ message: "Product ID is required" }),
+                { status: 400 }
+            );
+        }
+
+        const existing = await prisma.product.findUnique({
+            where: { id },
+            include: { variations: true }, // product ke variations bhi lao
+        });
+        if (!existing) {
+            return new Response(
+                JSON.stringify({ message: "Product not found" }),
+                { status: 404 }
+            );
+        }
+
+        // 🔹 Update product
+        const updatedProduct = await prisma.product.update({
+            where: { id },
+            data: {
+                name: name ?? existing.name,
+                subcategoryId: subcategoryId ?? existing.subcategoryId,
+                image: image ?? existing.image,
+                description: description ?? existing.description,
+                active: active ?? existing.active,
+                deleted: deleted ?? existing.deleted,
+                sku: sku ?? existing.sku,
+                slug: slug ?? (name ? generateSlug(name) : existing.slug),
+                metaTitle: metaTitle ?? (name ?? existing.name),
+                metaDescription:
+                    metaDescription ?? (description ?? existing.description ?? ""),
+                keywords: keywords ?? existing.keywords,
+            },
+        });
+
+        // 🔹 Sirf existing variations update karo
+        for (const v of variations) {
+            if (v.id) {
+                await prisma.productVariation.update({
+                    where: { id: v.id },
+                    data: {
+                        variationName: v.variationName,
+                        price: v.price,
+                        stock: v.stock,
+                        sku: v.sku,
+                        image: v.image,
+                        description: v.description,
+                    },
+                });
+            }
+        }
+
+        return new Response(
+            JSON.stringify({
+                message: "Product and variations updated successfully",
+                data: updatedProduct,
+            }),
+            { status: 200 }
+        );
+    } catch (error) {
+        return new Response(
+            JSON.stringify({
+                message: "Failed to update product",
+                error: error.message,
+            }),
+            { status: 500 }
+        );
+    }
+}
+

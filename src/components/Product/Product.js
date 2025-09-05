@@ -10,74 +10,10 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { HandRaisedIcon } from '@heroicons/react/24/outline';
-
-const products = [
-    {
-        id: 1,
-        name: "Red T-shirt",
-        price: "$25",
-        image: "/products/product1.webp",
-        sizes: ["S", "M", "L", "XL"],
-        colors: ["#FF0000", "#000000", "#FFFFFF"],
-    },
-    {
-        id: 2,
-        name: "Blue Hoodie",
-        price: "$40",
-        image: "/products/product2.webp",
-        sizes: ["S", "M", "L", "XL"],
-        colors: ["#FF0000", "#000000", "#FFFFFF"],
-    },
-    {
-        id: 3,
-        name: "Black Cap",
-        price: "$15",
-        image: "/products/product3.webp",
-        sizes: ["S", "M", "L", "XL"],
-        colors: ["#FF0000", "#000000", "#FFFFFF"],
-    },
-    {
-        id: 4,
-        name: "Sneakers",
-        price: "$60",
-        image: "/products/product4.webp",
-        sizes: ["S", "M", "L", "XL"],
-        colors: ["#FF0000", "#000000", "#FFFFFF"],
-    },
-    {
-        id: 5,
-        name: "Jeans",
-        price: "$35",
-        image: "/products/product5.webp",
-        sizes: ["S", "M", "L", "XL"],
-        colors: ["#FF0000", "#000000", "#FFFFFF"],
-    },
-    {
-        id: 6,
-        name: "Jeans",
-        price: "$35",
-        image: "/products/product6.webp",
-        sizes: ["S", "M", "L", "XL"],
-        colors: ["#FF0000", "#000000", "#FFFFFF"],
-    },
-    {
-        id: 7,
-        name: "Jeans",
-        price: "$35",
-        image: "/products/product7.webp",
-        sizes: ["S", "M", "L", "XL"],
-        colors: ["#FF0000", "#000000", "#FFFFFF"],
-    },
-    {
-        id: 8,
-        name: "Jeans",
-        price: "$35",
-        image: "/products/product8.webp",
-        sizes: ["S", "M", "L", "XL"],
-        colors: ["#FF0000", "#000000", "#FFFFFF"],
-    },
-
-];
+import {
+    fetchProducts,
+} from "@/app/redux/slices/products/productSlice";
+import { useSelector, useDispatch } from "react-redux";
 
 function useInView(threshold = 0.2) {
     const ref = useRef(null);
@@ -105,7 +41,11 @@ const ProductSlider = () => {
     const [showDemo, setShowDemo] = useState(true);
     const router = useRouter();
     const { ref, inView } = useInView(0.2);
-
+    const { products, loading } = useSelector((state) => state.products);
+    const dispatch = useDispatch();
+     useEffect(() => {
+            dispatch(fetchProducts());
+        }, [dispatch]);
     useEffect(() => {
         if (inView) {
             setShowDemo(true);

@@ -11,11 +11,12 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import toast from 'react-hot-toast';
 import Image from "next/image";
+import { uploadToCloudinary } from "@/utils/uploadToCloudinary";
+import Loader from "@/components/Include/Loader";
 
 const AddCategory = () => {
     const dispatch = useDispatch();
-    const { categories, loading, error } = useSelector((state) => state.category);
-    console.log("categories", categories)
+    const { categories } = useSelector((state) => state.category);
     const [search, setSearch] = useState("");
     const [modalOpen, setModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
@@ -25,7 +26,7 @@ const AddCategory = () => {
     const [deleteCategoryId, setDeleteCategoryId] = useState(null);
     const [newCategoryImage, setNewCategoryImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
-    console.log("categories", categories)
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         dispatch(fetchCategories());
@@ -68,22 +69,21 @@ const AddCategory = () => {
     // };
 
     const handleImageUpload = async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
+        if (!file) throw new Error('No file provided');
 
-        const res = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData,
-        });
-
-        const data = await res.json();
-        return data.url; // ye URL category API me bhejenge
+        try {
+            const url = await uploadToCloudinary(file, 'products');
+            return url;
+        } catch (err) {
+            console.error('Upload failed:', err);
+            throw err;
+        }
     };
 
 
     const handleAddCategory = async () => {
         if (!newCategory.trim()) return toast.error("Category name cannot be empty");
-
+        setLoading(true);
         let imageUrl = null;
         if (newCategoryImage) {
             imageUrl = await handleImageUpload(newCategoryImage);
@@ -92,11 +92,15 @@ const AddCategory = () => {
         try {
             await dispatch(createCategory({ name: newCategory.trim(), active: true, image: imageUrl })).unwrap();
             toast.success("Category added successfully");
+            await fetchCategories();
             setNewCategory("");
             setNewCategoryImage(null);
+            setImagePreview(null);
             setModalOpen(false);
         } catch (err) {
             toast.error(err.message || "Failed to add category");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -106,7 +110,7 @@ const AddCategory = () => {
             toast.error("Category name cannot be empty");
             return;
         }
-
+        setLoading(true);
         let imageUrl = editCategory.image ?? null;
 
         if (newCategoryImage) {
@@ -127,26 +131,36 @@ const AddCategory = () => {
             setEditCategory({});
         } catch (err) {
             toast.error(err.message || "Failed to update category");
+        } finally {
+            setLoading(false);
         }
     };
 
 
     const toggleActive = async (id, currentActive) => {
+        setLoading(true);
         try {
             await dispatch(updateCategory({ id, active: !currentActive })).unwrap();
             toast.success("Category status updated");
         } catch (err) {
             toast.error(err.message || "Failed to update status");
         }
+        finally {
+            setLoading(false);
+        }
     };
 
     const handleDelete = async () => {
+        setLoading(true);
         try {
             await dispatch(deleteCategory(deleteCategoryId)).unwrap();
             toast.success("Category deleted successfully");
             setDeleteModalOpen(false);
         } catch (err) {
             toast.error(err.message || "Failed to delete category");
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -166,6 +180,7 @@ const AddCategory = () => {
 
     return (
         <DefaultPageAdmin>
+            {loading && <Loader />}
             {/* Header + Search + Add Button */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                 <h1 className="text-2xl font-bold text-gray-800">Categories</h1>
@@ -318,8 +333,8 @@ const AddCategory = () => {
                             type="file"
                             accept="image/*"
                             onChange={handleImageChange}
-                            className="border rounded-lg px-4 py-2 w-full mb-4"
                         />
+
                         {imagePreview && (
                             <img src={imagePreview} alt="Preview" className="mb-4 w-32 h-32 object-cover rounded-lg" />
                         )}
