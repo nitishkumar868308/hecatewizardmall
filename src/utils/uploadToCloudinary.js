@@ -1,9 +1,11 @@
 export async function uploadToCloudinary(files, folderName = 'default') {
-    if (!files || files.length === 0) throw new Error('No files provided');
+    if (!files) throw new Error('No files provided');
+
+    const fileArray = Array.isArray(files) ? files : [files]; // ensure iterable
 
     const uploadedUrls = [];
 
-    for (const file of files) {
+    for (const file of fileArray) {
         const formData = new FormData();
         formData.append('file', file);
 
@@ -17,5 +19,5 @@ export async function uploadToCloudinary(files, folderName = 'default') {
         uploadedUrls.push(data.url);
     }
 
-    return uploadedUrls; // returns array of Cloudinary URLs
+    return uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls; // return single URL if one file
 }

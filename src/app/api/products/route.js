@@ -34,7 +34,7 @@ export async function POST(req) {
                 offer,
                 category,
                 subcategory,
-                image: image ?? null,
+                image: Array.isArray(image) ? image : [],
                 description: description ?? null,
                 active: active ?? true,
                 sku,
@@ -54,7 +54,7 @@ export async function POST(req) {
                             sku: v.sku,
                             price: v.price?.toString() ?? price?.toString() ?? null,
                             stock: v.stock?.toString() ?? stock?.toString() ?? null,
-                            image: v.image ?? null,
+                            image: Array.isArray(v.image) ? v.image : (v.image ? [v.image] : []),
                             description: v.description ?? description ?? null,
                             name: v.name ?? name,
                             otherCountriesPrice: v.otherCountriesPrice?.toString() ?? otherCountriesPrice?.toString() ?? null

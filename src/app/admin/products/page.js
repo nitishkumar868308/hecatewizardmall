@@ -92,6 +92,29 @@ const AddProducts = () => {
         setModalOpenProduct(false);
     };
 
+    // useEffect(() => {
+    //     const attrValues = Object.values(selectedAttributes)
+    //         .filter(a => a.values?.length)
+    //         .map(a => a.values);
+
+    //     if (attrValues.length === 0) {
+    //         setCurrentVariations([]);
+    //         return;
+    //     }
+
+    //     // Cartesian product of all attribute values
+    //     const cartesian = (arr) =>
+    //         arr.reduce((a, b) => a.flatMap(d => b.map(e => [...d, e])), [[]]);
+
+    //     const combinations = cartesian(attrValues);
+
+    //     // Join each combination to a string to use as key
+    //     const variationKeys = combinations.map(comb => comb.join(" / "));
+    //     setCurrentVariations(variationKeys);
+
+    // }, [selectedAttributes]);
+
+
     useEffect(() => {
         const attrValues = Object.values(selectedAttributes)
             .filter(a => a.values?.length)
@@ -102,41 +125,68 @@ const AddProducts = () => {
             return;
         }
 
-        // Cartesian product of all attribute values
+        // Cartesian product
         const cartesian = (arr) =>
             arr.reduce((a, b) => a.flatMap(d => b.map(e => [...d, e])), [[]]);
 
         const combinations = cartesian(attrValues);
 
-        // Join each combination to a string to use as key
-        const variationKeys = combinations.map(comb => comb.join(" / "));
-        setCurrentVariations(variationKeys);
+        const attrNames = Object.keys(selectedAttributes);
+
+        const newVariationDetails = {}; // temp object
+        const variationsWithKeys = combinations.map(comb => {
+            const variationObj = comb.reduce((acc, val, idx) => {
+                acc[attrNames[idx]] = val;
+                return acc;
+            }, {});
+
+            const variationKey = JSON.stringify(variationObj);
+
+            newVariationDetails[variationKey] = {
+                ...(variationDetails[variationKey] || {}),
+                price: variationDetails[variationKey]?.price || newProduct.price,
+                stock: variationDetails[variationKey]?.stock || newProduct.stock,
+                image: variationDetails[variationKey]?.image || newProduct.image?.[0] || null,
+                name: variationDetails[variationKey]?.name || newProduct.name,
+                description: variationDetails[variationKey]?.description || newProduct.description,
+                otherCountriesPrice: variationDetails[variationKey]?.otherCountriesPrice || newProduct.otherCountriesPrice,
+                sku: variationDetails[variationKey]?.sku || generateSKU(newProduct.name, Object.values(variationObj).filter(Boolean).join(" / ")),
+            };
+
+            return variationObj;
+        });
+
+        setVariationDetails(newVariationDetails); // single update
+        setCurrentVariations(variationsWithKeys);
 
     }, [selectedAttributes]);
 
-    const handleVariationChange = (variation, key, value) => {
+
+
+
+    const handleVariationChange = (variationKey, key, value) => {
         setVariationDetails(prev => ({
             ...prev,
-            [variation]: {
-                ...prev[variation],
+            [variationKey]: {
+                ...prev[variationKey],
                 [key]: value,
             },
         }));
     };
 
-    const handleVariationImage = (variation, e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const preview = URL.createObjectURL(file);
-        setVariationDetails(prev => ({
-            ...prev,
-            [variation]: {
-                ...prev[variation],
-                image: file,
-                preview,
-            },
-        }));
-    };
+    // const handleVariationImage = (variation, e) => {
+    //     const file = e.target.files[0];
+    //     if (!file) return;
+    //     const preview = URL.createObjectURL(file);
+    //     setVariationDetails(prev => ({
+    //         ...prev,
+    //         [variation]: {
+    //             ...prev[variation],
+    //             image: file,
+    //             preview,
+    //         },
+    //     }));
+    // };
 
     const toggleExpand = (variation) => {
         setExpandedVariations(prev => ({
@@ -183,37 +233,68 @@ const AddProducts = () => {
         return "Shop the best products online at YourStore.";
     };
     // -----------------------------------------------
+    const generateSKU = (productName, variation) => {
+        if (!productName || !variation) return null;
+        const variationName = typeof variation === "string"
+            ? variation
+            : Array.isArray(variation)
+                ? variation.join("-")
+                : Object.values(variation).join("-");
 
-    const generateSKU = (productName, variationName) => {
-        if (!productName || !variationName) return null;
-
-        // Clean the variation name: replace spaces and slashes with dash
         const cleanVariation = variationName
             .trim()
-            .replace(/\s+/g, '-')   // spaces → dash
-            .replace(/\//g, '-')    // slashes → dash
+            .replace(/\s+/g, '-')
+            .replace(/\//g, '-')
             .toUpperCase();
 
-        // Generate slug for product name
         const productSlug = generateSlug(productName);
-
-        // Combine to form SKU
         return `${productSlug}-${cleanVariation}`;
     };
+    const variationsData = currentVariations.map(variationObj => {
+        const variationKey = JSON.stringify(variationObj); // stringify here too
+        const details = variationDetails[variationKey] || {};
 
-    const variationsData = currentVariations.map(variation => {
-        const details = variationDetails[variation] || {};
         return {
-            variation_name: variation,
+            // variation_name: Object.values(variationObj)
+            //     .map(val => String(val).trim())
+            //     .filter(Boolean)
+            //     .join(" / "),
+            variation_name: Object.entries(variationObj)
+                .map(([key, val]) => `${key}: ${String(val).trim()}`)
+                .filter(Boolean)
+                .join(" / "),
             price: details.price ?? newProduct.price ?? null,
             stock: details.stock ?? newProduct.stock ?? null,
-            image: details.preview ?? null,
+            image: details.image ?? null,
             name: details.name ?? newProduct.name ?? null,
             description: details.description ?? newProduct.description ?? null,
             otherCountriesPrice: details.otherCountriesPrice ?? newProduct.otherCountriesPrice ?? null,
-            sku: generateSKU(newProduct.name, variation),
+            //sku: details.sku ?? generateSKU(newProduct.name, Object.values(variationObj).filter(Boolean).join(" / ")),
+            sku: details.sku ?? generateSKU(
+                newProduct.name,
+                Object.entries(variationObj)
+                    .map(([k, v]) => `${k}-${v}`)
+                    .join("-")
+            ),
         };
     });
+
+
+
+
+    // const variationsData = currentVariations.map(variation => {
+    //     const details = variationDetails[variation] || {};
+    //     return {
+    //         variation_name: variation,
+    //         price: details.price ?? newProduct.price ?? null,
+    //         stock: details.stock ?? newProduct.stock ?? null,
+    //         image: details.preview ?? null,
+    //         name: details.name ?? newProduct.name ?? null,
+    //         description: details.description ?? newProduct.description ?? null,
+    //         otherCountriesPrice: details.otherCountriesPrice ?? newProduct.otherCountriesPrice ?? null,
+    //         sku: generateSKU(newProduct.name, variation),
+    //     };
+    // });
 
     const handleImageUpload = async (file) => {
         if (!file) throw new Error('No file provided');
@@ -465,7 +546,7 @@ const AddProducts = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subcategory</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sub Category</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
 
@@ -958,82 +1039,104 @@ const AddProducts = () => {
                             {/* Variations Section */}
                             {activeSection === "variations" && (
                                 <div className="max-h-[400px] overflow-auto space-y-2">
-                                    {currentVariations.map((variation, idx) => (
-                                        <div key={`${variation}-${idx}`} className="border rounded-lg mb-2">
+                                    {currentVariations.map((variation, idx) => {
+                                        const variationKey = JSON.stringify(variation);
 
-                                            {/* Variation Header */}
-                                            <div
-                                                className="flex justify-between items-center p-2 bg-gray-100 cursor-pointer"
-                                                onClick={() => toggleExpand(variation)}
-                                            >
-                                                <span>{variation}</span>
-                                                <div className="flex gap-2">
-                                                    <span>{expandedVariations[variation] ? "-" : "+"}</span>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); removeVariation(variation); }}
-                                                        className="text-red-500 hover:text-red-700"
-                                                    >
-                                                        Remove
-                                                    </button>
+                                        return (
+                                            <div key={variationKey} className="border rounded-lg mb-2">
+
+                                                {/* Variation Header */}
+                                                <div
+                                                    className="flex justify-between items-center p-2 bg-gray-100 cursor-pointer"
+                                                    onClick={() => toggleExpand(variationKey)}
+                                                >
+                                                    <span>{Object.values(variation).join(" / ")}</span>
+
+                                                    <div className="flex gap-2">
+                                                        <span>{expandedVariations[variationKey] ? "-" : "+"}</span>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); removeVariation(variationKey); }}
+                                                            className="text-red-500 hover:text-red-700"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            {/* Show product fields inside variation */}
-                                            {expandedVariations[variation] && (
-                                                <div className="p-2 space-y-2 bg-gray-50">
-                                                    {productFields.map((field) => {
-                                                        if (field.key === "category" || field.key === "subcategory") return null;
-                                                        const value = field.type === "file"
-                                                            ? variationDetails[variation]?.[field.key]
-                                                            : variationDetails[variation]?.[field.key] ?? newProduct[field.key];
+                                                {/* Show product fields inside variation */}
+                                                {expandedVariations[variationKey] && (
+                                                    <div className="p-2 space-y-2 bg-gray-50">
+                                                        {productFields.map((field) => {
+                                                            if (field.key === "category" || field.key === "subcategory") return null;
 
-                                                        if (field.type === "textarea") {
-                                                            return (
-                                                                <textarea
-                                                                    key={field.key}
-                                                                    placeholder={field.placeholder}
-                                                                    value={value || ""}
-                                                                    onChange={(e) => handleVariationChange(variation, field.key, e.target.value)}
-                                                                    className="w-full border border-gray-300 rounded-lg px-3 py-1"
-                                                                />
-                                                            );
-                                                        } else if (field.type === "file") {
-                                                            return (
-                                                                <div key={field.key}>
-                                                                    <label className="block mb-1 font-medium">{field.placeholder}</label>
-                                                                    <input
-                                                                        type="file"
-                                                                        accept="image/*"
-                                                                        onChange={(e) => handleVariationImage(variation, e)}
+                                                            const value = field.type === "file"
+                                                                ? variationDetails[variationKey]?.[field.key]
+                                                                : variationDetails[variationKey]?.[field.key] ?? newProduct[field.key];
+
+                                                            if (field.type === "textarea") {
+                                                                return (
+                                                                    <textarea
+                                                                        key={field.key}
+                                                                        placeholder={field.placeholder}
+                                                                        value={value || ""}
+                                                                        onChange={(e) => handleVariationChange(variationKey, field.key, e.target.value)}
+                                                                        className="w-full border border-gray-300 rounded-lg px-3 py-1"
                                                                     />
-                                                                    {variationDetails[variation]?.preview && (
-                                                                        <img
-                                                                            src={variationDetails[variation].preview}
-                                                                            alt={variation}
-                                                                            className="w-32 h-32 object-cover mt-1 rounded-lg"
+                                                                );
+                                                            } else if (field.type === "file") {
+                                                                return (
+                                                                    <div key={field.key}>
+                                                                        <label className="block mb-1 font-medium">{field.placeholder}</label>
+                                                                        <input
+                                                                            type="file"
+                                                                            accept="image/*"
+                                                                            onChange={async (e) => {
+                                                                                const file = e.target.files?.[0];
+                                                                                if (!file) return;
+
+                                                                                const uploadedUrl = await handleImageUpload(file);
+
+                                                                                setVariationDetails(prev => ({
+                                                                                    ...prev,
+                                                                                    [variationKey]: {
+                                                                                        ...prev[variationKey],
+                                                                                        preview: URL.createObjectURL(file),
+                                                                                        image: uploadedUrl
+                                                                                    }
+                                                                                }));
+                                                                            }}
                                                                         />
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        } else {
-                                                            return (
-                                                                <input
-                                                                    key={field.key}
-                                                                    type={field.type}
-                                                                    placeholder={field.placeholder}
-                                                                    value={value || ""}
-                                                                    onChange={(e) => handleVariationChange(variation, field.key, e.target.value)}
-                                                                    className="w-full border border-gray-300 rounded-lg px-3 py-1"
-                                                                />
-                                                            );
-                                                        }
-                                                    })}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+
+                                                                        {variationDetails[variationKey]?.preview && (
+                                                                            <img
+                                                                                src={variationDetails[variationKey].preview}
+                                                                                alt={variationKey}
+                                                                                className="w-32 h-32 object-cover mt-1 rounded-lg"
+                                                                            />
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            } else {
+                                                                return (
+                                                                    <input
+                                                                        key={field.key}
+                                                                        type={field.type}
+                                                                        placeholder={field.placeholder}
+                                                                        value={value || ""}
+                                                                        onChange={(e) => handleVariationChange(variationKey, field.key, e.target.value)}
+                                                                        className="w-full border border-gray-300 rounded-lg px-3 py-1"
+                                                                    />
+                                                                );
+                                                            }
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
                                 </div>
                             )}
+
 
                             {/* Buttons */}
                             <div className="mt-6 flex justify-end gap-4">

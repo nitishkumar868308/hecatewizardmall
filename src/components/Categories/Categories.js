@@ -32,7 +32,7 @@ const Categories = () => {
     const router = useRouter();
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [selectedColor, setSelectedColor] = useState("All");
-    const [priceRange, setPriceRange] = useState(100);
+    const [priceRange, setPriceRange] = useState(200);
     const [sortBy, setSortBy] = useState(sortOptions[0]);
     const [showFilters, setShowFilters] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
@@ -136,7 +136,7 @@ const Categories = () => {
                                 <input
                                     type="range"
                                     min={0}
-                                    max={100}
+                                    max={200}
                                     value={priceRange}
                                     onChange={(e) => setPriceRange(e.target.value)}
                                     className="w-full"
@@ -171,9 +171,25 @@ const Categories = () => {
                                     className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition transform hover:scale-105"
                                     onClick={() => router.push(`/product/${product.id}`)}
                                 >
-                                    <div className="h-72 relative mb-4 rounded overflow-hidden ">
-                                        <Image src={product.image} alt={product.name} fill className="object-cover" />
+                                    <div className="h-72 relative mb-4 rounded overflow-hidden">
+                                        {(
+                                            Array.isArray(product.image)
+                                                ? product.image[0] // agar array hai to first image
+                                                : product.image     // agar string hai to direct use karo
+                                        ) ? (
+                                            <Image
+                                                src={Array.isArray(product.image) ? product.image[0] : product.image}
+                                                alt={product.name || "Product Image"}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                                No Image
+                                            </div>
+                                        )}
                                     </div>
+
 
                                     <h3 className="text-lg font-semibold">{product.name}</h3>
                                     <p className="text-gray-600">${product.price}</p>

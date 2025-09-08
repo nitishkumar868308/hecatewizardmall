@@ -59,7 +59,7 @@ model Product {
   subcategoryId   Int
   subcategory     Subcategory? @relation(fields: [subcategoryId], references: [id])
   sku             String      @unique       // Unique SKU
-  image           String?
+  image           String[]
   description     String?
   active          Boolean     @default(true)
   deleted         Int         @default(0)
@@ -89,7 +89,7 @@ model ProductVariation {
   price       String?
   otherCountriesPrice String?
   stock       String?
-  image       String?
+  image       String[]
   name       String?
   description String?
   offerId       Int?

@@ -43,9 +43,9 @@ const ProductSlider = () => {
     const { ref, inView } = useInView(0.2);
     const { products, loading } = useSelector((state) => state.products);
     const dispatch = useDispatch();
-     useEffect(() => {
-            dispatch(fetchProducts());
-        }, [dispatch]);
+    useEffect(() => {
+        dispatch(fetchProducts());
+    }, [dispatch]);
     useEffect(() => {
         if (inView) {
             setShowDemo(true);
@@ -53,7 +53,7 @@ const ProductSlider = () => {
             return () => clearTimeout(timer);
         }
     }, [inView]);
-
+console.log("products", products)
     const handleProductClick = (id) => {
         router.push(`/product/${id}`);
     };
@@ -99,13 +99,20 @@ const ProductSlider = () => {
                         <SwiperSlide key={product.id}>
                             <div className="relative group overflow-hidden">
                                 <div className="relative w-full h-[400px] md:h-[400px] lg:h-[500px]">
-                                    <Image
-                                        src={product.image}
-                                        alt={product.name}
-                                        fill
-                                        className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105 cursor-pointer"
-                                        onClick={() => handleProductClick(product.id)}
-                                    />
+                                    {product.image ? (
+                                        <Image
+                                            src={Array.isArray(product.image) ? product.image[0] : product.image}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105 cursor-pointer rounded-lg"
+                                            onClick={() => handleProductClick(product.id)}
+                                        />
+                                    ) : (
+                                        // fallback agar image nahi hai
+                                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 rounded-lg">
+                                            No Image
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Hover icons */}
@@ -153,13 +160,20 @@ const ProductSlider = () => {
                         <SwiperSlide key={product.id}>
                             <div className="relative group overflow-hidden">
                                 <div className="relative w-full h-[400px] md:h-[400px] lg:h-[500px]">
-                                    <Image
-                                        src={product.image}
-                                        alt={product.name}
-                                        fill
-                                        className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105 cursor-pointer"
-                                        onClick={() => handleProductClick(product.id)}
-                                    />
+                                    {product.image ? (
+                                        <Image
+                                            src={Array.isArray(product.image) ? product.image[0] : product.image}
+                                            alt={product.name}
+                                            fill
+                                            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105 cursor-pointer rounded-lg"
+                                            onClick={() => handleProductClick(product.id)}
+                                        />
+                                    ) : (
+                                        // fallback agar image nahi hai
+                                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 rounded-lg">
+                                            No Image
+                                        </div>
+                                    )}
                                 </div>
 
 
