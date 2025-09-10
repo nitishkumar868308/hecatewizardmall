@@ -133,7 +133,7 @@ console.log("products", products)
 
                                 <div className="p-4 bg-white rounded-b-lg text-center font-functionPro">
                                     <h3 className="text-lg text-gray-900 truncate">{product.name}</h3>
-                                    <p className="mt-1 text-gray-500 text-sm">{product.price}</p>
+                                    <p className="mt-1 text-gray-500 text-sm">{product.currencySymbol}{product.price}</p>
                                 </div>
                             </div>
                         </SwiperSlide>
@@ -194,7 +194,7 @@ console.log("products", products)
                                 </div>
                                 <div className="p-4 bg-white rounded-b-lg text-center font-functionPro">
                                     <h3 className="text-lg  text-gray-900 truncate font-functionPro">{product.name}</h3>
-                                    <p className="mt-1 text-gray-500 text-sm">{product.price}</p>
+                                    <p className="mt-1 text-gray-500 text-sm">{product.currencySymbol}{product.price}</p>
                                 </div>
                             </div>
                         </SwiperSlide>

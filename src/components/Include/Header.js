@@ -18,6 +18,7 @@ import {
 import {
     fetchSubcategories,
 } from "@/app/redux/slices/subcategory/subcategorySlice";
+import { addToCartAsync, fetchCart } from "@/app/redux/slices/addToCart/addToCartSlice";
 
 const Header = () => {
     const [active, setActive] = useState("Home");
@@ -34,6 +35,11 @@ const Header = () => {
     const { headers } = useSelector((state) => state.headers);
     const { categories, loading, error } = useSelector((state) => state.category);
     const { subcategories } = useSelector((state) => state.subcategory);
+    const { items } = useSelector((state) => state.cart);
+
+    const userCart = items?.filter((item) => item.userId === String(user?.id)) || [];
+    console.log("userCart", userCart)
+    const userCartCount = userCart.length;
 
     console.log("subcategories", subcategories)
 
@@ -434,10 +440,13 @@ const Header = () => {
 
                         <button onClick={() => setIsOpen(true)} className="relative cursor-pointer">
                             <ShoppingCart className="h-6 w-6 text-white" />
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                                3
-                            </span>
+                            {userCartCount > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                    {userCartCount}
+                                </span>
+                            )}
                         </button>
+
 
                         {isOpen && (
                             <div className="fixed inset-0 z-50 flex">
@@ -450,7 +459,7 @@ const Header = () => {
                                 {/* Drawer */}
                                 <div
                                     className="ml-auto w-80 h-full bg-white shadow-2xl p-6 flex flex-col transform transition-transform duration-300 ease-in-out z-50"
-                                    onClick={(e) => e.stopPropagation()} // <-- Drawer ke andar click pe close na ho
+                                    onClick={(e) => e.stopPropagation()}
                                 >
                                     <button
                                         className="self-end w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-red-500 hover:text-white shadow-md transition-colors duration-200"
@@ -459,12 +468,61 @@ const Header = () => {
                                         ✕
                                     </button>
                                     <h2 className="text-xl font-bold text-center mt-4 mb-6">Your Cart</h2>
-                                    <div className="flex-1 overflow-y-auto">
-                                        <p>Cart items will be here...</p>
+                                    <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                                        {userCartCount > 0 ? (
+                                            userCart.map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    className="flex items-center gap-4 p-3 border rounded-lg shadow-sm hover:shadow-md transition"
+                                                >
+                                                    {/* Product Image */}
+                                                    <img
+                                                        src={item.image || "/placeholder.png"}
+                                                        alt={item.productName}
+                                                        className="w-16 h-16 object-cover rounded-md border"
+                                                    />
+
+                                                    {/* Product Details */}
+                                                    <div className="flex-1">
+                                                        <h3 className="text-sm font-semibold text-gray-800 line-clamp-1">
+                                                            {item.productName}
+                                                        </h3>
+                                                        <p className="text-xs text-gray-500">
+                                                            {Object.entries(item.attributes || {})
+                                                                .map(([key, val]) => `${key}: ${val}`)
+                                                                .join(", ")}
+                                                        </p>
+                                                        <p className="text-sm font-medium text-gray-700 mt-1">
+                                                            {item.currencySymbol}
+                                                            {item.pricePerItem} × {item.quantity}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Total Price */}
+                                                    <div className="text-sm font-bold text-gray-900 whitespace-nowrap">
+                                                        {item.currencySymbol}
+                                                        {item.totalPrice}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
+                                        )}
                                     </div>
-                                    <button onClick={() => router.push(`/checkout`)} className="mt-4 w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors cursor-pointer">
-                                        Checkout
-                                    </button>
+                                    {userCartCount > 0 && (
+                                        <div className="mt-4">
+                                            <button
+                                                onClick={() => {
+                                                    setIsOpen(false);
+                                                    router.push(`/checkout`);
+                                                }}
+                                                className="w-full bg-red-500 text-white py-3 rounded-lg text-lg font-semibold hover:bg-red-600 transition-colors cursor-pointer"
+                                            >
+                                                Checkout
+                                            </button>
+                                        </div>
+                                    )}
+
                                 </div>
                             </div>
                         )}

@@ -128,6 +128,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                 >
                                     Offer
                                 </Link>
+                                <Link
+                                    href="/admin/countryPricing"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Pricing
+                                </Link>
                             </div>
                         )}
                     </div>

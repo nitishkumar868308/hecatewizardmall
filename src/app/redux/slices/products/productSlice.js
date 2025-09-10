@@ -1,18 +1,38 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
+// // Fetch all products
+// export const fetchProducts = createAsyncThunk(
+//     "products/fetchProducts",
+//     async (_, { rejectWithValue }) => {
+//         try {
+//             const response = await axios.get("/api/products");
+//             return response.data.data;
+//         } catch (err) {
+//             return rejectWithValue(err.response?.data || "Failed to fetch products");
+//         }
+//     }
+// );
+
 // Fetch all products
 export const fetchProducts = createAsyncThunk(
-    "products/fetchProducts",
-    async (_, { rejectWithValue }) => {
-        try {
-            const response = await axios.get("/api/products");
-            return response.data.data; // API returns { message, data }
-        } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to fetch products");
-        }
+  "products/fetchProducts",
+  async (_, { getState, rejectWithValue }) => { // use getState
+    try {
+      const state = getState();
+      const countryCode = state.country || "IN"; // read from Redux
+      const response = await axios.get("/api/products", {
+        headers: { "x-country": countryCode },
+      });
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "Failed to fetch products");
     }
+  }
 );
+
+
+
 
 // Create new product
 export const createProduct = createAsyncThunk(

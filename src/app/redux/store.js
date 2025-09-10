@@ -8,7 +8,9 @@ import subcategoryReducer from './slices/subcategory/subcategorySlice';
 import productsReducer from './slices/products/productSlice';
 import attributesReducer from './slices/attribute/attributeSlice';
 import offersReducer from './slices/offer/offerSlice'
-
+import countryPricingReducer from './slices/countryPricing/countryPricingSlice';
+import countryReducer from "./slices/countrySlice";
+import cartReducer from './slices/addToCart/addToCartSlice'
 
 const store = configureStore({
     reducer: {
@@ -21,6 +23,9 @@ const store = configureStore({
         products: productsReducer,
         attributes: attributesReducer,
         offers: offersReducer,
+        countryPricing: countryPricingReducer, 
+        country: countryReducer,
+        cart: cartReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

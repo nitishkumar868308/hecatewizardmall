@@ -10,7 +10,7 @@ import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 const AuthPage = ({ onClose }) => {
     const [isLogin, setIsLogin] = useState(true);
     const dispatch = useDispatch();
-    const { loading, error } = useSelector((state) => state.auth);
+    const { user,loading, error } = useSelector((state) => state.auth);
 
     // Login validation schema
     const loginValidation = Yup.object().shape({

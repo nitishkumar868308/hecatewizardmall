@@ -27,7 +27,7 @@ const PrivateRoute = ({ children, roles = [] }) => {
     }
   }, [mounted, loading, user?.role, roles.join(","), router]);
 
-  if (!mounted || loading) 
+  if (!mounted || loading)
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   if (!user) return null;
   if (accessDenied)

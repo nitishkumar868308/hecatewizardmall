@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { convertProducts } from "@/lib/priceConverter";
 
 const prisma = new PrismaClient();
 
@@ -101,18 +102,49 @@ export async function POST(req) {
 }
 
 // GET all products
+// export async function GET(req) {
+//     try {
+//         const products = await prisma.product.findMany({
+//             where: { deleted: 0 },
+//             orderBy: { createdAt: "desc" },
+//             include: { subcategory: true, variations: true }
+//         });
+
+//         return new Response(
+//             JSON.stringify({ message: "Products fetched successfully", data: products }),
+//             { status: 200 }
+//         );
+//     } catch (error) {
+//         return new Response(
+//             JSON.stringify({ message: "Failed to fetch products", error: error.message }),
+//             { status: 500 }
+//         );
+//     }
+// }
+
 export async function GET(req) {
     try {
-        const products = await prisma.product.findMany({
-            where: { deleted: 0 },
-            orderBy: { createdAt: "desc" },
-            include: { subcategory: true, variations: true }
+        // Get country code from frontend or fallback to "IN"
+        const countryCode = req.headers.get("x-country") || "IN";
+
+        // Fetch all country pricing
+        const countryPricingList = await prisma.countryPricing.findMany({
+            where: { deleted: 0, active: true },
         });
 
-        return new Response(
-            JSON.stringify({ message: "Products fetched successfully", data: products }),
-            { status: 200 }
-        );
+        // Fetch products with variations, category, subcategory
+        const products = await prisma.product.findMany({
+            include: {
+                variations: true,
+                category: true,
+                subcategory: true,
+            },
+        });
+
+        // Convert product prices based on country
+        const updatedProducts = convertProducts(products, countryCode, countryPricingList);
+
+        return new Response(JSON.stringify(updatedProducts), { status: 200 });
     } catch (error) {
         return new Response(
             JSON.stringify({ message: "Failed to fetch products", error: error.message }),

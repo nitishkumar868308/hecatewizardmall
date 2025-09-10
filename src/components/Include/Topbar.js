@@ -1,37 +1,67 @@
-import React from 'react'
-
+"use client";
+import React, { useState, useEffect } from "react";
+import { fetchCountryPricing } from "@/app/redux/slices/countryPricing/countryPricingSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { setCountry } from "@/app/redux/slices/countrySlice";
+import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 
 const Topbar = () => {
+    const dispatch = useDispatch();
+    const { countryPricing } = useSelector((state) => state.countryPricing);
+    const country = useSelector((state) => state.country);
+    useEffect(() => {
+        dispatch(fetchCountryPricing());
+    }, [dispatch]);
+
+    useEffect(() => {
+        if (countryPricing.length && !country) {
+            dispatch(setCountry(countryPricing[0].code)); // default to first country
+        }
+    }, [countryPricing, country, dispatch]);
+
+
+    const countries = [...countryPricing] // create a shallow copy
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // sort ascending
+        .map((c) => ({
+            code: c.code,
+            name: c.country,
+        }));
+
+
+
+
+    const handleChange = (e) => {
+        const selectedCountry = e.target.value;
+        dispatch(setCountry(selectedCountry));
+        dispatch(fetchProducts(selectedCountry))
+    };
+
+
     return (
         <div className="w-full bg-black text-white">
             <div className="mx-auto max-w-screen-2xl px-4">
-                <div className="flex items-center justify-center py-2 md:py-3">
-                    <h1 className="font-libreBaskerville tracking-wide text-base sm:text-lg md:text-2xl  uppercase">
+                <div className="flex items-center justify-between py-2 md:py-3">
+                    <div className="w-1/3"></div>
+                    <h1 className="font-libreBaskerville tracking-wide text-base sm:text-lg md:text-2xl uppercase text-center w-1/3">
                         hecate wizard mall
                     </h1>
+                    <div className="w-1/3 flex justify-end">
+                        <select
+                            value={country}
+                            onChange={handleChange}
+                            className="bg-black border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base"
+                        >
+                            {countries.map((c) => (
+                                <option key={c.code} value={c.code}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default Topbar
-
-// "use client";
-// import Marquee from "react-fast-marquee";
-
-// export default function Topbar() {
-//     return (
-//         <div className="w-full bg-black text-white">
-//             <Marquee
-//                 speed={60}
-//                 gradient={false}
-//                 pauseOnHover={true}
-//             >
-//                 <h1 className="font-semibold tracking-wide  py-2 md:py-3 text-base sm:text-lg md:text-2xl leading-none select-none uppercase mx-8">
-//                     hecate wizard mall
-//                 </h1>
-//             </Marquee>
-//         </div>
-//     );
-// }
+export default Topbar;
