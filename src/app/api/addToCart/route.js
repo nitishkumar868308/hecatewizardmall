@@ -35,6 +35,7 @@ export async function POST(req) {
             totalPrice,
             attributes,
             userId,
+            image
         } = body;
 
         if (!productId || !productName) {
@@ -55,6 +56,7 @@ export async function POST(req) {
                 totalPrice,
                 attributes: attributes || {},
                 userId: userId || null,
+                image
             },
         });
 

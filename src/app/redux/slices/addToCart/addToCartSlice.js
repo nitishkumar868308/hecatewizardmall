@@ -8,7 +8,7 @@ export const fetchCart = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axios.get("/api/addToCart");
-            console.log("response" , response)
+            console.log("response", response)
             return response.data.data; // API returns { message, data }
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to fetch cart items");
@@ -119,9 +119,7 @@ const cartSlice = createSlice({
             })
             .addCase(deleteCartItem.fulfilled, (state, action) => {
                 state.loading = false;
-                state.items = state.items.filter(
-                    (item) => item.id !== action.payload.id
-                );
+                state.items = state.items.filter(item => item.id !== action.payload);
             })
             .addCase(deleteCartItem.rejected, (state, action) => {
                 state.loading = false;

@@ -1,21 +1,21 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "supersecret"; // change in .env
+const SECRET = process.env.JWT_SECRET || "supersecret";
 
 // Save session (set cookie)
 export function setSession(user) {
   const token = jwt.sign(
-    { id: user.id, name: user.name, email: user.email, role: user.role },
+    { id: user.id, name: user.name, email: user.email, role: user.role, gender: user.gender, phone: user.phone, address: user.address, profileImage: user.profileImage },
     SECRET,
-    { expiresIn: "7d" } // 7 days session
+    { expiresIn: "7d" }
   );
 
   cookies().set("session", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: 60 * 60 * 24 * 7,
     path: "/",
   });
 

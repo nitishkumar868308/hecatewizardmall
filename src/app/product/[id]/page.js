@@ -151,10 +151,6 @@ const ProductDetail = () => {
     if (!product)
         return <p className="text-center mt-20 text-gray-500 text-xl">Product not found</p>;
 
-
-
-    console.log("userCart", userCart)
-
     const addToCart = async () => {
         if (!user || !user.id) {
             toast.error("Please login to add items to your cart.");
@@ -191,7 +187,8 @@ const ProductDetail = () => {
             productId: product.id,
             variationId: selectedVariation?.id || null,
             attributes: flatAttributes,
-            userId: String(user.id)
+            userId: String(user.id),
+            image: mainImage || "No Image",
         };
 
         try {
@@ -202,8 +199,48 @@ const ProductDetail = () => {
         } finally {
             setLoading(false);
         }
-
     };
+
+    // const buyNow = async () => {
+    //     if (!user || !user.id) {
+    //         toast.error("Please login to continue.");
+    //         return;
+    //     }
+
+    //     setLoading(true);
+    //     const price = selectedVariation?.price || product.price;
+    //     const currencySymbol = selectedVariation?.currencySymbol || product.currencySymbol || "₹";
+    //     const totalPrice = price * quantity;
+
+    //     const flatAttributes = {};
+    //     Object.entries(selectedAttributes).forEach(([key, val]) => {
+    //         if (val && val !== "N/A") flatAttributes[key.toLowerCase()] = val;
+    //     });
+
+    //     const cartItem = {
+    //         productName: product.name,
+    //         quantity,
+    //         pricePerItem: price,
+    //         currencySymbol,
+    //         totalPrice,
+    //         productId: product.id,
+    //         variationId: selectedVariation?.id || null,
+    //         attributes: flatAttributes,
+    //         userId: String(user.id),
+    //         image: mainImage || "No Image",
+    //     };
+
+    //     try {
+    //         const result = await dispatch(addToCartAsync(cartItem)).unwrap();
+    //         toast.success("Redirecting to checkout...");
+    //         router.push("/checkout"); // 👈 Seedha checkout page pe le jao
+    //     } catch (err) {
+    //         toast.error(err.message || "Failed to process Buy Now");
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
 
     return (
         <>
@@ -314,6 +351,7 @@ const ProductDetail = () => {
                             >
                                 Add to Cart
                             </button>
+                            
 
                         </div>
                     </div>

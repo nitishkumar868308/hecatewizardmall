@@ -11,6 +11,7 @@ import offersReducer from './slices/offer/offerSlice'
 import countryPricingReducer from './slices/countryPricing/countryPricingSlice';
 import countryReducer from "./slices/countrySlice";
 import cartReducer from './slices/addToCart/addToCartSlice'
+// import updateUserReducer from './slices/userSlice';
 
 const store = configureStore({
     reducer: {

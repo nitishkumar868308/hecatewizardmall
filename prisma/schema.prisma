@@ -7,13 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
+  profileImage     String?
   password  String
   role      String   @default("USER")
+  gender    Gender?
+  phone     String?
+  address   String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model Header {
@@ -150,7 +161,8 @@ model Cart {
   currencySymbol String
   totalPrice    Float
   attributes    Json       // store size, color, etc. dynamically
-  userId        String?    // if you want cart linked to user
+  userId        String?    
+  image         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }

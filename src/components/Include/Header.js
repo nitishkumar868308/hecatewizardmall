@@ -18,7 +18,7 @@ import {
 import {
     fetchSubcategories,
 } from "@/app/redux/slices/subcategory/subcategorySlice";
-import { addToCartAsync, fetchCart } from "@/app/redux/slices/addToCart/addToCartSlice";
+import { fetchCart } from "@/app/redux/slices/addToCart/addToCartSlice";
 
 const Header = () => {
     const [active, setActive] = useState("Home");
@@ -44,6 +44,7 @@ const Header = () => {
     console.log("subcategories", subcategories)
 
     useEffect(() => {
+        dispatch(fetchCart())
         dispatch(fetchCategories());
         dispatch(fetchSubcategories());
     }, [dispatch]);
