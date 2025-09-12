@@ -9,7 +9,8 @@ export async function POST(req) {
         const body = await req.json();
         const {
             name,
-            offer,
+            offers,
+            primaryOffer,
             category,
             subcategory,
             short,
@@ -32,7 +33,8 @@ export async function POST(req) {
         const product = await prisma.product.create({
             data: {
                 name,
-                offer,
+                offers,
+                primaryOffer,
                 category,
                 subcategory,
                 image: Array.isArray(image) ? image : [],
@@ -124,24 +126,25 @@ export async function POST(req) {
 
 export async function GET(req) {
     try {
-        // Get country code from frontend or fallback to "IN"
         const countryCode = req.headers.get("x-country") || "IN";
 
-        // Fetch all country pricing
         const countryPricingList = await prisma.countryPricing.findMany({
             where: { deleted: 0, active: true },
         });
 
-        // Fetch products with variations, category, subcategory
         const products = await prisma.product.findMany({
+            where: {
+                deleted: 0,
+            },
             include: {
                 variations: true,
                 category: true,
                 subcategory: true,
+                offers: true,
+                primaryOffer: true,
             },
         });
 
-        // Convert product prices based on country
         const updatedProducts = convertProducts(products, countryCode, countryPricingList);
 
         return new Response(JSON.stringify(updatedProducts), { status: 200 });

@@ -53,7 +53,7 @@ const ProductSlider = () => {
             return () => clearTimeout(timer);
         }
     }, [inView]);
-console.log("products", products)
+    console.log("products", products)
     const handleProductClick = (id) => {
         router.push(`/product/${id}`);
     };
@@ -95,49 +95,51 @@ console.log("products", products)
                         1280: { slidesPerView: 4 },
                     }}
                 >
-                    {products.map((product) => (
-                        <SwiperSlide key={product.id}>
-                            <div className="relative group overflow-hidden">
-                                <div className="relative w-full h-[400px] md:h-[400px] lg:h-[500px]">
-                                    {product.image ? (
-                                        <Image
-                                            src={Array.isArray(product.image) ? product.image[0] : product.image}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105 cursor-pointer rounded-lg"
-                                            onClick={() => handleProductClick(product.id)}
-                                        />
-                                    ) : (
-                                        // fallback agar image nahi hai
-                                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 rounded-lg">
-                                            No Image
-                                        </div>
-                                    )}
-                                </div>
+                    {products
+                        .filter(product => product.active)
+                        .map((product) => (
+                            <SwiperSlide key={product.id}>
+                                <div className="relative group overflow-hidden">
+                                    <div className="relative w-full h-[400px] md:h-[400px] lg:h-[500px]">
+                                        {product.image ? (
+                                            <Image
+                                                src={Array.isArray(product.image) ? product.image[0] : product.image}
+                                                alt={product.name}
+                                                fill
+                                                className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105 cursor-pointer rounded-lg"
+                                                onClick={() => handleProductClick(product.id)}
+                                            />
+                                        ) : (
+                                            // fallback agar image nahi hai
+                                            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 rounded-lg">
+                                                No Image
+                                            </div>
+                                        )}
+                                    </div>
 
-                                {/* Hover icons */}
-                                <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        className="bg-white p-2 rounded-full shadow hover:bg-red-100"
-                                        onClick={() => alert(`${product.name} added to wishlist`)}
-                                    >
-                                        <Heart size={20} color="red" />
-                                    </button>
-                                    <button
-                                        className="bg-white p-2 rounded-full shadow hover:bg-green-100"
-                                        onClick={() => alert(`${product.name} added to cart`)}
-                                    >
-                                        <ShoppingCart size={20} color="green" />
-                                    </button>
-                                </div>
+                                    {/* Hover icons */}
+                                    <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            className="bg-white p-2 rounded-full shadow hover:bg-red-100"
+                                            onClick={() => alert(`${product.name} added to wishlist`)}
+                                        >
+                                            <Heart size={20} color="red" />
+                                        </button>
+                                        <button
+                                            className="bg-white p-2 rounded-full shadow hover:bg-green-100"
+                                            onClick={() => alert(`${product.name} added to cart`)}
+                                        >
+                                            <ShoppingCart size={20} color="green" />
+                                        </button>
+                                    </div>
 
-                                <div className="p-4 bg-white rounded-b-lg text-center font-functionPro">
-                                    <h3 className="text-lg text-gray-900 truncate">{product.name}</h3>
-                                    <p className="mt-1 text-gray-500 text-sm">{product.currencySymbol}{product.price}</p>
+                                    <div className="p-4 bg-white rounded-b-lg text-center font-functionPro">
+                                        <h3 className="text-lg text-gray-900 truncate">{product.name}</h3>
+                                        <p className="mt-1 text-gray-500 text-sm">{product.currencySymbol}{product.price}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        </SwiperSlide>
-                    ))}
+                            </SwiperSlide>
+                        ))}
                 </Swiper>
             </div>
             <div className="w-full px-4 py-8">

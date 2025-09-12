@@ -18,8 +18,20 @@ export const GET = async () => {
 
     try {
         const session = jwt.verify(token, SECRET);
+        const userId = parseInt(session.id);
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { carts: true, addresses: true },
+        });
+
+        if (!user) {
+            return new Response(
+                JSON.stringify({ success: false, message: "User not found" }),
+                { status: 404 }
+            );
+        }
         return new Response(
-            JSON.stringify({ message: "Welcome", user: session }),
+            JSON.stringify({ message: "Welcome", user: user }),
             { status: 200 }
         );
     } catch (err) {

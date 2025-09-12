@@ -108,7 +108,7 @@ export default function ProductModal({ isOpen, closeModal, product }) {
                                                         <thead className="bg-gray-100">
                                                             <tr>
                                                                 <th className="px-4 py-2 border-b">Variation</th>
-                                                                <th className="px-4 py-2 border-b">Image</th> {/* New column */}
+                                                                <th className="px-4 py-2 border-b">Image</th>
                                                                 <th className="px-4 py-2 border-b">Price</th>
                                                                 <th className="px-4 py-2 border-b">SKU</th>
                                                             </tr>

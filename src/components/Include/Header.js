@@ -37,7 +37,7 @@ const Header = () => {
     const { subcategories } = useSelector((state) => state.subcategory);
     const { items } = useSelector((state) => state.cart);
 
-    const userCart = items?.filter((item) => item.userId === String(user?.id)) || [];
+    const userCart = items?.filter((item) => item.userId === (user?.id)) || [];
     console.log("userCart", userCart)
     const userCartCount = userCart.length;
 

@@ -21,6 +21,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { fetchOffers } from '@/app/redux/slices/offer/offerSlice'
 import Loader from "@/components/Include/Loader";
 import { uploadToCloudinary } from "@/utils/uploadToCloudinary";
+import MultiSelectDropdown from "@/components/Custom/MultiSelectDropdown";
 
 const productFields = [
     { key: "name", type: "text", placeholder: "Product Name" },
@@ -73,7 +74,11 @@ const AddProducts = () => {
     const { attributes } = useSelector((state) => state.attributes);
     const [expandedAttrs, setExpandedAttrs] = useState({});
     const { offers } = useSelector((state) => state.offers);
-    console.log("offers", offers)
+    const productOffers = offers.filter((offer) =>
+        Array.isArray(offer.type) && offer.type.includes("product")
+    );
+    console.log("productOffers", productOffers)
+
     useEffect(() => {
         dispatch(fetchAttributes())
         dispatch(fetchProducts());
@@ -317,9 +322,14 @@ const AddProducts = () => {
             return toast.error("Name and subcategory are required");
         }
         setLoading(true);
-        let imageUrl = null;
+        let imageUrls = [];
         if (newImage) {
-            imageUrl = await handleImageUpload(newImage);;
+            if (Array.isArray(newImage)) {
+                imageUrls = await Promise.all(newImage.map((img) => handleImageUpload(img)));
+            } else {
+                const url = await handleImageUpload(newImage);
+                imageUrls = [url];
+            }
         }
 
         const productSKU = `${generateSlug(name)}-MAIN-${Date.now()}`;
@@ -337,7 +347,7 @@ const AddProducts = () => {
             //subcategory: { connect: { id: Number(newProduct.subcategoryId) } },
             short: newProduct.short || null,
             description: newProduct.description || null,
-            image: imageUrl,
+            image: imageUrls,
             active: newProduct.active ?? true,
             slug: generateSlug(newProduct.name),
             metaTitle: generateMetaTitle(newProduct.name),
@@ -348,7 +358,16 @@ const AddProducts = () => {
             color: newProduct.colors || [],
             sku: productSKU,
             otherCountriesPrice: newProduct.otherCountriesPrice ?? null,
-            offer: newProduct.offer ? { connect: { id: parseInt(newProduct.offer) } } : undefined,
+            offers: newProduct.offer && newProduct.offer.length > 0
+                ? {
+                    connect: newProduct.offer.map((id) => ({ id: parseInt(id) }))
+                }
+                : undefined,
+
+            primaryOffer: newProduct.offer && newProduct.offer.length > 0
+                ? { connect: { id: parseInt(newProduct.offer[0]) } }
+                : undefined,
+
             category: categoryId ? { connect: { id: categoryId } } : undefined,
             subcategory: { connect: { id: subcategoryId } },
 
@@ -444,9 +463,9 @@ const AddProducts = () => {
     const filteredProducts = products.filter((p) =>
         p.name.toLowerCase().includes(search.toLowerCase())
     );
-
+    console.log("filteredProducts", filteredProducts)
     // Decide whether modal is Add or Edit
-    const handleSubmit = () => {
+    const handleSave = () => {
         if (editModalOpen) {
             handleEditProduct();
         } else {
@@ -513,6 +532,39 @@ const AddProducts = () => {
         }
     }, [modalOpen]);
 
+    // Edit button pe click
+    const handleEditClick = (product) => {
+        setEditModalOpen(true);
+        setModalOpen(true);
+
+        if (product.variations?.length > 0) {
+            const dbVariations = product.variations.map((v) => {
+                return { variationName: v.variationName };
+            });
+
+            const dbVariationDetails = {};
+            product.variations.forEach((v) => {
+                const key = JSON.stringify({ variationName: v.variationName });
+                dbVariationDetails[key] = {
+                    price: v.price,
+                    stock: v.stock,
+                    sku: v.sku,
+                    description: v.description,
+                    image: v.image?.[0] || "",
+                };
+            });
+
+            setCurrentVariations(dbVariations);
+            setVariationDetails(dbVariationDetails);
+        } else {
+            setCurrentVariations([]);
+            setVariationDetails({});
+        }
+
+        setEditProductData(product);
+    };
+
+
 
 
     return (
@@ -529,7 +581,11 @@ const AddProducts = () => {
                         className="border rounded-lg px-4 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                     <button
-                        onClick={() => setModalOpen(true)}
+                        onClick={() => {
+                            setEditModalOpen(false);
+                            setNewProduct({});
+                            setModalOpen(true);
+                        }}
                         className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow cursor-pointer"
                     >
                         <Plus className="w-5 h-5" /> Add Product
@@ -549,7 +605,6 @@ const AddProducts = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sub Category</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
@@ -586,14 +641,14 @@ const AddProducts = () => {
                                         </button>
                                         <button
                                             onClick={() => {
-                                                setEditProductData({ ...p });
-                                                setNewImage(null);
-                                                setEditModalOpen(true);
+                                                setEditProductData({ ...p, variations: p.variations || [] });
+                                                handleEditClick(p); // yaha CALL karna hai, reference mat chhodo
                                             }}
                                             className="text-blue-500 hover:text-blue-700 cursor-pointer"
                                         >
                                             <Edit className="w-5 h-5" />
                                         </button>
+
                                         <button
                                             onClick={() => { setDeleteProductId(p.id); setDeleteModalOpen(true); }}
                                             className="text-red-500 hover:text-red-700 cursor-pointer"
@@ -805,28 +860,8 @@ const AddProducts = () => {
                                             </div>
 
                                             {/* Offer */}
-                                            <div>
-                                                <label className="block mb-1 font-medium">Offer</label>
-                                                <select
-                                                    value={currentData.offer || ""}
-                                                    onChange={(e) =>
-                                                        setCurrentData({
-                                                            ...currentData,
-                                                            offer: Number(e.target.value),
-                                                        })
-                                                    }
-                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                                                >
-                                                    <option value="">Select Offer</option>
-                                                    {offers
-                                                        .filter((offer) => offer.type.includes("category"))
-                                                        .map((catOffer) => (
-                                                            <option key={catOffer.id} value={catOffer.id}>
-                                                                {catOffer.name}
-                                                            </option>
-                                                        ))}
-                                                </select>
-                                            </div>
+                                            <MultiSelectDropdown offers={productOffers} currentData={currentData} setCurrentData={setCurrentData} />
+
 
                                             {/* Description */}
                                             <div className="col-span-2">
@@ -1147,13 +1182,15 @@ const AddProducts = () => {
                                 >
                                     Cancel
                                 </button>
+
                                 <button
                                     type="button"
-                                    onClick={handleAddProduct}
+                                    onClick={handleSave}
                                     className="px-4 py-2 rounded-lg bg-gray-500 text-white hover:bg-black transition cursor-pointer"
                                 >
-                                    Save
+                                    {editModalOpen ? "Update" : "Save"}
                                 </button>
+
                             </div>
 
                         </div>

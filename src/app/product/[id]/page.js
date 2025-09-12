@@ -140,12 +140,15 @@ const ProductDetail = () => {
     const decrement = () => quantity > 1 && setQuantity(quantity - 1);
 
     const productWithOffer = products.map(product => {
-        const offer = offers.find(o => o.id === product.offerId); // id match karo
+        // get all offer names from the product's offers array
+        const offerDescriptions = product.offers?.map(o => o.name).filter(Boolean) || [];
+
         return {
             ...product,
-            offerDescription: offer?.description || null, // description nikal lo
+            offerDescriptions, // note plural
         };
     });
+
 
 
     if (!product)
@@ -187,13 +190,14 @@ const ProductDetail = () => {
             productId: product.id,
             variationId: selectedVariation?.id || null,
             attributes: flatAttributes,
-            userId: String(user.id),
+            userId: user.id,
             image: mainImage || "No Image",
         };
 
         try {
             const result = await dispatch(addToCartAsync(cartItem)).unwrap();
             toast.success(result.message || "Item added to cart!");
+            dispatch(fetchCart())
         } catch (err) {
             toast.error(err.message || "Failed to delete product");
         } finally {
@@ -316,17 +320,32 @@ const ProductDetail = () => {
                             </div>
                         ))}
 
-                        {[...new Set(productWithOffer.map(p => p.offerDescription))]
-                            .filter(Boolean)
-                            .map((desc, index) => (
+                        {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                            {[...new Map(product.offers.map(o => [o.id, o])).values()].map((offer, index) => (
                                 <div
                                     key={index}
-                                    className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-md shadow-sm"
+                                    className="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-md shadow-sm"
                                 >
-                                    <span className="font-semibold">🔥 Offer: </span>
-                                    <span>{desc}</span>
+                                    <span className="font-semibold">🔥 </span>
+                                    <span>{offer.description}</span>
                                 </div>
                             ))}
+                        </div> */}
+
+
+                        <div className="flex flex-col gap-3 mb-6">
+                            {[...new Map(product.offers.map(o => [o.id, o])).values()].map((offer, index) => (
+                                <div
+                                    key={index}
+                                    className="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-md shadow-sm break-words"
+                                >
+                                    <span className="font-semibold">🔥 </span>
+                                    <span>{offer.description}</span>
+                                </div>
+                            ))}
+                        </div>
+
+
 
                         {/* Quantity & Add to Cart */}
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
@@ -351,7 +370,7 @@ const ProductDetail = () => {
                             >
                                 Add to Cart
                             </button>
-                            
+
 
                         </div>
                     </div>

@@ -23,6 +23,8 @@ model User {
   gender    Gender?
   phone     String?
   address   String?
+  carts Cart[]
+  addresses Address[]
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
@@ -83,12 +85,13 @@ model Product {
   size            String[]    @default([])  // array, default empty
   color           String[]    @default([])  // array, default empty
   otherCountriesPrice String?
-  offerId         Int?
-  offer           Offer?      @relation("OfferToProduct", fields: [offerId], references: [id])
+  offerId         Int?        
+  primaryOffer  Offer? @relation("PrimaryOffer", fields: [offerId], references: [id]) 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
   variations      ProductVariation[]
+  offers          Offer[] @relation("ProductOffers")
 }
 
 model ProductVariation {
@@ -134,7 +137,8 @@ model Offer {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  products          Product[]           @relation("OfferToProduct")
+  products          Product[] @relation("ProductOffers") 
+  primaryProducts Product[] @relation("PrimaryOffer") 
   productVariations ProductVariation[]  @relation("OfferToVariation")
 }
 
@@ -161,11 +165,29 @@ model Cart {
   currencySymbol String
   totalPrice    Float
   attributes    Json       // store size, color, etc. dynamically
-  userId        String?    
+  userId        Int?
+  user          User?     @relation(fields: [userId], references: [id])    
   image         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+model Address {
+  id        String   @id @default(cuid())
+  name      String
+  mobile    String
+  pincode   String
+  address   String
+  city      String
+  state     String
+  landmark  String?
+  type      String   // Home | Office | Other
+  userId    Int?
+  user      User?     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 
 
 
