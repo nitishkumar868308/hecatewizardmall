@@ -17,16 +17,13 @@ export const POST = async (req) => {
             return new Response(JSON.stringify({ message: "Invalid credentials" }), { status: 400 });
         }
 
-        // Save session in cookies
-
-
         const response = NextResponse.json({
             message: "Login successful",
             user: { id: user.id, name: user.name, email: user.email, role: user.role },
         });
 
         // Attach cookie via setSession
-        await setSession(user, response);
+        setSession(user, response);
 
         return response;
     } catch (error) {
