@@ -5,7 +5,9 @@ export const fetchMe = createAsyncThunk(
     "me/fetchMe",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get("/api/auth/me");
+            const response = await axios.get("/api/auth/me", {
+                withCredentials: true, // ✅ send cookies
+            });
             return response.data;
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to fetch profile");
@@ -17,7 +19,9 @@ export const logoutUser = createAsyncThunk(
     "me/logoutUser",
     async (_, { rejectWithValue }) => {
         try {
-            await axios.post("/api/auth/logout"); // call logout API
+            await axios.post("/api/auth/logout", null, {
+                withCredentials: true, // ✅ send cookies
+            });
             return true; // success flag
         } catch (err) {
             return rejectWithValue(err.response?.data || "Logout failed");

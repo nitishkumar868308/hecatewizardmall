@@ -17,7 +17,7 @@ export const POST = async (req) => {
         }
 
         // Save session in cookies
-        setSession(user);
+        await setSession(user);
 
         return new Response(
             JSON.stringify({
