@@ -100,9 +100,10 @@ export function setSession(user, res) {
 }
 
 // Get session from request cookies
-export function getSession(cookieStore) {
+export function getSession() {
+  const cookieStore = cookies(); // ✅ This is the correct way
   const token = cookieStore.get("session")?.value;
-  console.log("token" , token)
+  console.log("token from cookies()", token);
   if (!token) return null;
   return verifyToken(token);
 }
