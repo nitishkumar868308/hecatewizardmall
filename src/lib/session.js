@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "supersecret";
+const SECRET = process.env.JWT_SECRET || "supersecretjwtkey";
 
 // Save session (set cookie)
 export function setSession(user) {
@@ -28,6 +28,9 @@ export function setSession(user) {
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
   });
+  console.log("TOKEN:", token.slice(0, 20) + "...");
+  console.log("SECRET env:", process.env.JWT_SECRET);
+  console.log("SECRET fallback:", SECRET);
 
 
   return token;
