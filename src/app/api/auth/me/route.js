@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || "supersecret";
+const SECRET = process.env.JWT_SECRET || "supersecretjwtkey";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,8 @@ export const GET = async () => {
             { status: 401 }
         );
     }
-
+    console.log("SECRET env route:", process.env.JWT_SECRET);
+    console.log("SECRET fallback route:", SECRET);
     try {
         const session = jwt.verify(token, SECRET);
         const userId = parseInt(session.id);
