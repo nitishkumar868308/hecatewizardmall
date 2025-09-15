@@ -61,7 +61,7 @@ const SECRET = process.env.JWT_SECRET;
 if (!SECRET) throw new Error("JWT_SECRET is not set");
 
 // Save session
-export async function setSession(user) {
+export async function setSession(user, res) {
   const token = jwt.sign(
     {
       id: user.id,
@@ -77,19 +77,26 @@ export async function setSession(user) {
     { expiresIn: "7d" }
   );
 
-  const cookieStore = await cookies();
-
-  console.log("cookieStore", cookieStore)
-  cookies().set("session", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // production me secure = true
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // local = lax, prod = none (with secure)
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-    path: "/",
-  });
-  console.log("TOKEN:", token.slice(0, 20) + "...");
-  console.log("ENV:", process.env.NODE_ENV);
-  console.log("SECRET:", SECRET);
+  // If a response object is provided, set cookie on it
+  if (res?.cookies) {
+    res.cookies.set("session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+  } else {
+    // fallback for server logs only
+    const cookieStore = await cookies();
+    cookieStore.set("session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+  }
 
   console.log("Session token set:", token.slice(0, 20) + "...");
   return token;
