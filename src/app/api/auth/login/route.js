@@ -1,47 +1,23 @@
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
-import { createToken } from "@/lib/session"; // just createToken, no setSession
-import { NextResponse } from "next/server";
+import { createToken } from "@/lib/session";
 
-export const POST = async (req) => {
-    try {
-        const { email, password } = await req.json();
+export default async function handler(req, res) {
+    if (req.method !== "POST") return res.status(405).end();
 
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) {
-            return new Response(JSON.stringify({ message: "Invalid credentials" }), { status: 400 });
-        }
+    const { email, password } = req.body;
 
-        const isPasswordMatch = await bcrypt.compare(password, user.password);
-        if (!isPasswordMatch) {
-            return new Response(JSON.stringify({ message: "Invalid credentials" }), { status: 400 });
-        }
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-        // Create JWT token
-        const token = createToken(user);
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    if (!isPasswordMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-        // Create NextResponse
-        const response = NextResponse.json({
-            message: "Login successful",
-            user: { id: user.id, name: user.name, email: user.email, role: user.role },
-            token, // optional, mainly for client-side if needed
-        });
+    const token = createToken(user);
 
-        // Set cookie directly
-        const isProd = process.env.NODE_ENV === "production";
-        response.cookies.set("session", token, {
-            httpOnly: true,
-            secure: isProd,              // true in production (HTTPS)
-            sameSite: isProd ? "none" : "lax",
-            maxAge: 60 * 60 * 24 * 7,
-            path: "/",
-        });
+    // Set cookie
+    const isProd = process.env.NODE_ENV === "production";
+    res.setHeader("Set-Cookie", `session=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; ${isProd ? "Secure; SameSite=None" : "SameSite=Lax"}`);
 
-
-        console.log("Session cookie set:", token);
-
-        return response;
-    } catch (error) {
-        return new Response(JSON.stringify({ message: error.message }), { status: 500 });
-    }
-};
+    return res.status(200).json({ message: "Login successful", user });
+}

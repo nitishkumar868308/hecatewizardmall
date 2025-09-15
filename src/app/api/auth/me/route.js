@@ -1,26 +1,22 @@
+// /pages/api/auth/me.js
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/session";
-import { cookies } from "next/headers";
 
-export const GET = async () => {
-    // ✅ Use cookies() from next/headers
-    const cookieStore = cookies();
-    const token = cookieStore.get("session")?.value;
+export default async function handler(req, res) {
+    const token = req.cookies?.session; // ✅ classic way
+    console.log("token from req.cookies:", token);
 
-    console.log("token from cookies:", token);
+    if (!token) return res.status(401).json({ message: "Not authenticated" });
 
-    const session = token ? verifyToken(token) : null;
-
-    if (!session) {
-        return new Response(JSON.stringify({ message: "Not authenticated" }), { status: 401 });
-    }
+    const session = verifyToken(token);
+    if (!session) return res.status(401).json({ message: "Invalid token" });
 
     const user = await prisma.user.findUnique({
         where: { id: parseInt(session.id) },
         include: { carts: true, addresses: true },
     });
 
-    if (!user) return new Response(JSON.stringify({ message: "User not found" }), { status: 404 });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    return new Response(JSON.stringify({ message: "Welcome", user }), { status: 200 });
-};
+    return res.status(200).json({ message: "Welcome", user });
+}
