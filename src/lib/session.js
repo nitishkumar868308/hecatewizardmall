@@ -11,13 +11,24 @@ export function setSession(user) {
     { expiresIn: "7d" }
   );
 
+
+  // local
+  // cookies().set("session", token, {
+  //   httpOnly: true,
+  //   secure: process.env.NODE_ENV === "production",
+  //   sameSite: "strict",
+  //   maxAge: 60 * 60 * 24 * 7,
+  //   path: "/",
+  // });
+
   cookies().set("session", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: false, // testing ke liye
+    sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
   });
+
 
   return token;
 }
