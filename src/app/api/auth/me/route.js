@@ -1,11 +1,13 @@
-// /api/auth/me/route.js
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/session";
+import { cookies } from "next/headers";
 
-export const GET = async (req) => {
-    console.log("req" , req)
-    const token = req.cookies.get("session")?.value;
-    console.log("token from req.cookies:", token);
+export const GET = async () => {
+    // ✅ Use cookies() from next/headers
+    const cookieStore = cookies();
+    const token = cookieStore.get("session")?.value;
+
+    console.log("token from cookies:", token);
 
     const session = token ? verifyToken(token) : null;
 
