@@ -80,14 +80,16 @@ export async function setSession(user) {
   const cookieStore = await cookies();
 
   console.log("cookieStore", cookieStore)
-  const result = cookieStore.set("session", token, {
+  cookies().set("session", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7,
+    secure: process.env.NODE_ENV === "production", // production me secure = true
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // local = lax, prod = none (with secure)
+    maxAge: 60 * 60 * 24 * 7, // 7 days
     path: "/",
   });
-  console.log("result", result)
+  console.log("TOKEN:", token.slice(0, 20) + "...");
+  console.log("ENV:", process.env.NODE_ENV);
+  console.log("SECRET:", SECRET);
 
   console.log("Session token set:", token.slice(0, 20) + "...");
   return token;
