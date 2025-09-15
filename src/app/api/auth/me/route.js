@@ -1,9 +1,12 @@
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { cookies } from "next/headers";
 
 export const GET = async () => {
-    const session = await getSession(); // ✅ await is required
-    console.log("session" , session)
+    const cookieStore = cookies(); // this is tied to the incoming request
+    const session = getSession(cookieStore);
+
+    console.log("session", session);
     if (!session) {
         return new Response(JSON.stringify({ message: "Not authenticated" }), { status: 401 });
     }

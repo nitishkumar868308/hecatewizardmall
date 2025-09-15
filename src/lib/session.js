@@ -102,18 +102,21 @@ export async function setSession(user, res) {
   return token;
 }
 
-// ✅ Async getSession
-export async function getSession() {
-  const cookieStore = await cookies(); // await is required
-  const token = cookieStore.get("session")?.value;
-  console.log("token", token)
-  if (!token) return null;
-
+export function verifyToken(token) {
   try {
     return jwt.verify(token, SECRET);
   } catch {
     return null;
   }
+}
+
+
+// ✅ Async getSession
+export function getSession(reqCookies) {
+  const token = reqCookies?.get("session")?.value || null;
+  if (!token) return null;
+  return verifyToken(token);
+
 }
 
 export async function clearSession() {
