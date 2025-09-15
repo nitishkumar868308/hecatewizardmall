@@ -11,11 +11,13 @@ const ProductForm = ({
     productOffers,
     newImage,
     setNewImage,
+    categories = [],     
+    subcategories = [],
 }) => {
     const isEdit = editModalOpen;
     const currentData = isEdit ? editProductData : newProduct;
     const setCurrentData = isEdit ? setEditProductData : setNewProduct;
-
+    console.log("categories", categories)
     return (
         <div>
             <h3 className="text-xl font-semibold mb-4">Product Details</h3>
@@ -65,7 +67,9 @@ const ProductForm = ({
                         className="w-full border border-gray-300 rounded-lg px-3 py-2"
                     >
                         <option value="">Select Category</option>
-                        {/* Map categories here */}
+                        {categories.map(cat => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
                     </select>
                 </div>
 
@@ -87,7 +91,14 @@ const ProductForm = ({
                                 ? "Select Subcategory"
                                 : "Select Category first"}
                         </option>
-                        {/* Map subcategories here */}
+                        {currentData.category &&
+                            subcategories
+                                .filter(sub => sub.categoryId.toString() === currentData.category.toString())
+                                .map(sub => (
+                                    <option key={sub.id} value={sub.id}>
+                                        {sub.name}
+                                    </option>
+                                ))}
                     </select>
                 </div>
 

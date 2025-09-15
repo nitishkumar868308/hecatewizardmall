@@ -57,6 +57,7 @@ const ProductTable = ({
                                     </button>
                                     <button
                                         onClick={() => {
+                                            console.log("p" , p)
                                             setEditProductData({ ...p, variations: p.variations || [] });
                                             handleEditClick(p);
                                         }}

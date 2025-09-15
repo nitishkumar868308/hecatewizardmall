@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React from "react";
 
 const AttributesSection = ({
@@ -8,14 +8,19 @@ const AttributesSection = ({
     setSearchTerm,
     expandedAttrs,
     setExpandedAttrs,
-    filteredAttributes = [],
+    filteredAttributes = [], // already passed as props
     toggleAttributeValue,
 }) => {
+    // Filter attributes using global searchTerm
+    const visibleAttributes = filteredAttributes.filter((attr) =>
+        attr.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
         <div>
             <h3 className="text-xl font-semibold mb-4">Attributes</h3>
 
-            {/* Search */}
+            {/* Global Search */}
             <input
                 type="text"
                 placeholder="Search attributes..."
@@ -25,10 +30,10 @@ const AttributesSection = ({
             />
 
             <div className="space-y-2 max-h-[500px] overflow-auto">
-                {filteredAttributes.length === 0 && (
+                {visibleAttributes.length === 0 && (
                     <div className="text-gray-500 text-center py-4">No attributes found</div>
                 )}
-                {filteredAttributes.map((attr) => (
+                {visibleAttributes.map((attr) => (
                     <div key={attr.id} className="border rounded-lg shadow-sm">
                         <button
                             className="w-full flex justify-between items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-t-lg cursor-pointer"
@@ -55,6 +60,7 @@ const AttributesSection = ({
                                             [attr.name]: {
                                                 ...prev[attr.name],
                                                 searchTerm: e.target.value,
+                                                values: prev[attr.name]?.values || [],
                                             },
                                         }))
                                     }
@@ -82,8 +88,7 @@ const AttributesSection = ({
                                         className="accent-gray-600"
                                     />
                                     <span className="text-sm font-medium">
-                                        {selectedAttributes[attr.name]?.values?.length ===
-                                            attr.values.length
+                                        {selectedAttributes[attr.name]?.values?.length === attr.values.length
                                             ? "Deselect All"
                                             : "Select All"}
                                     </span>
@@ -96,8 +101,7 @@ const AttributesSection = ({
                                             val
                                                 .toLowerCase()
                                                 .includes(
-                                                    selectedAttributes[attr.name]?.searchTerm?.toLowerCase() ||
-                                                    ""
+                                                    selectedAttributes[attr.name]?.searchTerm?.toLowerCase() || ""
                                                 )
                                         )
                                         .map((val, idx) => (

@@ -1,10 +1,11 @@
 import React from "react";
 import { Facebook, Instagram, Twitter, MapPin, Mail, Phone } from "lucide-react";
+import Link from "next/link"
 
 const Footer = () => {
     return (
         <footer className="bg-[#161619] text-white ">
-            <div className="max-w-screen-2xl mx-auto px-6 py-10  flex flex-col md:flex-row justify-between gap-8">
+            <div className="max-w-screen-2xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between gap-8">
 
                 {/* Logo + Description */}
                 <div className="flex flex-col gap-3">
@@ -16,8 +17,8 @@ const Footer = () => {
                         />
                     </div>
                     <p className="text-gray-400 text-sm md:text-base font-functionPro">
-                        Your ultimate destination for all things magical and mystical.<br/>
-                         Explore our collection and find everything you need to bring your spells and rituals to life.
+                        Your ultimate destination for all things magical and mystical.<br />
+                        Explore our collection and find everything you need to bring your spells and rituals to life.
                     </p>
                 </div>
 
@@ -25,14 +26,42 @@ const Footer = () => {
                 <div className="flex flex-col gap-3 font-functionPro">
                     <h3 className="text-lg mb-3">Quick Links</h3>
                     <ul className="flex flex-col gap-2">
-                        {["Home", "Shop", "Candles", "About", "Contact"].map((link) => (
-                            <li key={link}>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-400 transition cursor-pointer"
+                        {[
+                            { name: "Home", href: "/" },
+                            { name: "Shop", href: "/categories" },
+                            { name: "About", href: "/about" },
+                            { name: "Contact", href: "/contact" },
+                            { name: "FAQ", href: "/faq" },
+                        ].map((link) => (
+                            <li key={link.name}>
+                                <Link
+                                    href={link.href}
+                                    className="transition cursor-pointer px-2 py-1 rounded hover:bg-white hover:text-black"
                                 >
-                                    {link}
-                                </a>
+                                    {link.name}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* Policy Links */}
+                <div className="flex flex-col gap-3 font-functionPro">
+                    <h3 className="text-lg mb-3">Policy</h3>
+                    <ul className="flex flex-col gap-2">
+                        {[
+                            { name: "Privacy Policy", href: "/privacy-policy" },
+                            { name: "Terms and Conditions", href: "/terms-and-conditions" },
+                            { name: "Refund Policy", href: "/refund-policy" },
+                            { name: "Shipping and Return Policy", href: "/shipping-and-return-policy" },
+                        ].map((link) => (
+                            <li key={link.name}>
+                                <Link
+                                    href={link.href}
+                                    className="transition cursor-pointer px-2 py-1 rounded hover:bg-white hover:text-black"
+                                >
+                                    {link.name}
+                                </Link>
                             </li>
                         ))}
                     </ul>
@@ -42,7 +71,7 @@ const Footer = () => {
                 <div className="flex flex-col gap-4 font-functionPro">
                     {/* Get In Touch */}
                     <div className="flex flex-col gap-3">
-                        <h3 className="text-lg  mb-3">Get In Touch</h3>
+                        <h3 className="text-lg mb-3">Get In Touch</h3>
 
                         <div className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition cursor-pointer">
                             <MapPin className="h-5 w-5" />
@@ -62,7 +91,7 @@ const Footer = () => {
 
                     {/* Follow Us */}
                     <div>
-                        <h3 className="text-lg  mb-3">Follow Us</h3>
+                        <h3 className="text-lg mb-3">Follow Us</h3>
                         <div className="flex gap-4">
                             <a href="#" className="hover:text-blue-400 transition cursor-pointer">
                                 <Facebook className="h-6 w-6" />

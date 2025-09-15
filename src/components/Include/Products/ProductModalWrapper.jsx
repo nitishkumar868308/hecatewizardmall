@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useState, useEffect } from "react";
 import ProductForm from "./ProductForm";
 import AttributesSection from "./AttributesSection";
@@ -15,6 +15,8 @@ const ProductModalWrapper = ({
     editProductData,
     setEditProductData,
     productOffers,
+    categories,
+    subcategories
 }) => {
     const [activeSection, setActiveSection] = useState("product");
     const [currentVariations, setCurrentVariations] = useState([]);
@@ -25,8 +27,18 @@ const ProductModalWrapper = ({
     const [expandedAttrs, setExpandedAttrs] = useState({});
     const [newImage, setNewImage] = useState(null);
 
+    // ✅ Helper for consistent variation keys
+    const getVariationKey = (attrs = {}) => {
+        const sorted = Object.keys(attrs)
+            .sort()
+            .reduce((acc, key) => {
+                acc[key] = attrs[key];
+                return acc;
+            }, {});
+        return JSON.stringify(sorted);
+    };
+
     const handleSave = () => {
-        // Logic to save product (create or update)
         console.log("Saving product...");
         setModalOpen(false);
     };
@@ -40,7 +52,7 @@ const ProductModalWrapper = ({
 
     const removeVariation = (key) => {
         setCurrentVariations((prev) =>
-            prev.filter((v) => JSON.stringify(v) !== key)
+            prev.filter((v) => getVariationKey(v) !== key)
         );
         const copy = { ...variationDetails };
         delete copy[key];
@@ -72,40 +84,77 @@ const ProductModalWrapper = ({
         });
     };
 
+    // ✅ Generate SKU
+    const generateSlug = (name) => {
+        return name
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, "-")
+            .replace(/[^\w-]+/g, "");
+    };
+
+    const generateSKU = (productName, variation) => {
+        if (!productName || !variation) return null;
+        const variationName =
+            typeof variation === "string"
+                ? variation
+                : Array.isArray(variation)
+                    ? variation.join("-")
+                    : Object.values(variation).join("-");
+
+        const cleanVariation = variationName
+            .trim()
+            .replace(/\s+/g, "-")
+            .replace(/\//g, "-")
+            .toUpperCase();
+
+        const productSlug = generateSlug(productName);
+        return `${productSlug}-${cleanVariation}`;
+    };
+
+    // ✅ Handle variation generation from selected attributes
     useEffect(() => {
         const attrValues = Object.values(selectedAttributes)
-            .filter(a => a.values?.length)
-            .map(a => a.values);
+            .filter((a) => a.values?.length)
+            .map((a) => a.values);
 
         if (attrValues.length === 0) {
             setCurrentVariations([]);
             return;
         }
 
-        // Cartesian product
         const cartesian = (arr) =>
-            arr.reduce((a, b) => a.flatMap(d => b.map(e => [...d, e])), [[]]);
+            arr.reduce((a, b) => a.flatMap((d) => b.map((e) => [...d, e])), [[]]);
 
         const combinations = cartesian(attrValues);
         const attrNames = Object.keys(selectedAttributes);
 
         const newVariationDetails = {};
-        const variationsWithKeys = combinations.map(comb => {
+        const variationsWithKeys = combinations.map((comb) => {
             const variationObj = comb.reduce((acc, val, idx) => {
                 acc[attrNames[idx]] = val;
                 return acc;
             }, {});
 
-            const variationKey = JSON.stringify(variationObj);
+            const variationKey = getVariationKey(variationObj);
 
             newVariationDetails[variationKey] = {
                 ...(variationDetails[variationKey] || {}),
                 price: variationDetails[variationKey]?.price || newProduct.price,
                 stock: variationDetails[variationKey]?.stock || newProduct.stock,
-                image: variationDetails[variationKey]?.image || newProduct.image?.[0] || null,
+                image:
+                    variationDetails[variationKey]?.image ||
+                    newProduct.image?.[0] ||
+                    null,
                 name: variationDetails[variationKey]?.name || newProduct.name,
-                description: variationDetails[variationKey]?.description || newProduct.description,
-                sku: variationDetails[variationKey]?.sku || generateSKU(newProduct.name, Object.values(variationObj).filter(Boolean).join(" / ")),
+                description:
+                    variationDetails[variationKey]?.description || newProduct.description,
+                sku:
+                    variationDetails[variationKey]?.sku ||
+                    generateSKU(
+                        newProduct.name,
+                        Object.values(variationObj).filter(Boolean).join(" / ")
+                    ),
             };
 
             return variationObj;
@@ -115,47 +164,39 @@ const ProductModalWrapper = ({
         setCurrentVariations(variationsWithKeys);
     }, [selectedAttributes]);
 
-    // ----------------- SEO Helpers -----------------
-    const generateSlug = (name) => {
-        return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-    };
-
-    const generateMetaTitle = (name) => {
-        return `${name} | YourStore`;
-    };
-
-    const generateMetaDescription = (description) => {
-        if (description) return description.substring(0, 150);
-        return "Shop the best products online at YourStore.";
-    };
-    // -----------------------------------------------
-    const generateSKU = (productName, variation) => {
-        if (!productName || !variation) return null;
-        const variationName = typeof variation === "string"
-            ? variation
-            : Array.isArray(variation)
-                ? variation.join("-")
-                : Object.values(variation).join("-");
-
-        const cleanVariation = variationName
-            .trim()
-            .replace(/\s+/g, '-')
-            .replace(/\//g, '-')
-            .toUpperCase();
-
-        const productSlug = generateSlug(productName);
-        return `${productSlug}-${cleanVariation}`;
+    const parseAttributes = (variationName) => {
+        if (!variationName) return {};
+        // "Color: red1, Size: M" => { Color: "red1", Size: "M" }
+        const attrs = {};
+        variationName.split(",").forEach((part) => {
+            const [key, value] = part.split(":").map(s => s.trim());
+            if (key && value) attrs[key] = value;
+        });
+        return attrs;
     };
 
 
+    // ✅ Load variations from DB in edit mode
     useEffect(() => {
         if (!editProductData) return;
 
         if (editProductData.variations?.length > 0) {
-            const dbVariations = editProductData.variations.map(v => ({ ...v }));
+            const dbVariations = editProductData.variations.map((v) => {
+                const attrs = parseAttributes(v.variationName);
+                console.log("variation raw:", v);
+                console.log("variation parsed attrs:", attrs);
+
+
+                return {
+                    ...v,
+                    attributes: attrs,
+                };
+            });
+
             const dbVariationDetails = {};
-            editProductData.variations.forEach(v => {
-                const key = JSON.stringify({ variationName: v.variationName });
+            dbVariations.forEach((v) => {
+                const key = getVariationKey(v.attributes);
+
                 dbVariationDetails[key] = {
                     price: v.price,
                     stock: v.stock,
@@ -165,7 +206,7 @@ const ProductModalWrapper = ({
                 };
             });
 
-            setCurrentVariations(dbVariations);
+            setCurrentVariations(dbVariations.map(v => v.attributes));
             setVariationDetails(dbVariationDetails);
         } else {
             setCurrentVariations([]);
@@ -174,70 +215,60 @@ const ProductModalWrapper = ({
     }, [editProductData]);
 
 
-
+    // ✅ Rebuild variations when modal opens in edit mode
     useEffect(() => {
         if (!modalOpen) return;
 
         if (editModalOpen && editProductData) {
             const preSelectedAttrs = {};
+            const dbVariationDetails = {};
 
-            editProductData.variations?.forEach(v => {
-                Object.entries(v.attributes || {}).forEach(([attr, value]) => {
-                    if (!preSelectedAttrs[attr]) preSelectedAttrs[attr] = { values: [] };
-                    if (!preSelectedAttrs[attr].values.includes(value)) {
-                        preSelectedAttrs[attr].values.push(value);
+            editProductData.variations?.forEach((v) => {
+                const attrs = parseAttributes(v.variationName);
+                console.log("attrs", attrs)
+                Object.entries(attrs).forEach(([key, val]) => {
+                    if (!preSelectedAttrs[key]) preSelectedAttrs[key] = { values: [] };
+                    if (!preSelectedAttrs[key].values.includes(val)) {
+                        preSelectedAttrs[key].values.push(val);
                     }
                 });
+
+                const key = getVariationKey(attrs);
+                console.log("key", key)
+                dbVariationDetails[key] = {
+                    price: v.price,
+                    stock: v.stock,
+                    sku: v.sku,
+                    description: v.description,
+                    image: v.image?.[0] || "",
+                    name: v.name || editProductData.name,
+                };
             });
 
             setSelectedAttributes(preSelectedAttrs);
 
-            // Generate currentVariations based on selectedAttributes
             const attrValues = Object.values(preSelectedAttrs)
-                .filter(a => a.values?.length)
-                .map(a => a.values);
-
-            if (attrValues.length === 0) {
-                setCurrentVariations([]);
-                setVariationDetails({});
-                return;
-            }
+                .filter((a) => a.values?.length)
+                .map((a) => a.values);
 
             const attrNames = Object.keys(preSelectedAttrs);
-            const cartesian = arr =>
-                arr.reduce((a, b) => a.flatMap(d => b.map(e => [...d, e])), [[]]);
+            const cartesian = (arr) =>
+                arr.reduce((a, b) => a.flatMap((d) => b.map((e) => [...d, e])), [[]]);
             const combinations = cartesian(attrValues);
 
-            const newVariationDetails = {};
-            const variationsWithKeys = combinations.map(comb => {
-                const variationObj = comb.reduce((acc, val, idx) => {
+            const variationsWithKeys = combinations.map((comb) => {
+                const obj = comb.reduce((acc, val, idx) => {
                     acc[attrNames[idx]] = val;
                     return acc;
                 }, {});
-                const key = JSON.stringify(variationObj);
-
-                const existing = editProductData.variations.find(
-                    v => JSON.stringify(v.attributes) === key
-                );
-
-                newVariationDetails[key] = {
-                    price: existing?.price || editProductData.price,
-                    stock: existing?.stock || editProductData.stock,
-                    image: existing?.image?.[0] || editProductData.image?.[0] || null,
-                    name: existing?.name || editProductData.name,
-                    description: existing?.description || editProductData.description,
-                    sku:
-                        existing?.sku ||
-                        generateSKU(editProductData.name, Object.values(variationObj).join(" / "))
-                };
-
-                return variationObj;
+                return obj;
             });
 
             setCurrentVariations(variationsWithKeys);
-            setVariationDetails(newVariationDetails);
+            setVariationDetails(dbVariationDetails);
+
         } else {
-            // Reset for add modal
+            // New product
             setSelectedAttributes({});
             setCurrentVariations([]);
             setVariationDetails({});
@@ -246,11 +277,12 @@ const ProductModalWrapper = ({
 
 
 
+    console.log("currentVariations:", currentVariations);
+    console.log("variationDetails:", variationDetails);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-auto">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl p-6 md:flex md:gap-6 animate-fade-in">
-
                 {/* Side Menu */}
                 <div className="md:w-1/4 mb-4 md:mb-0">
                     <h2 className="text-lg font-semibold mb-4">Sections</h2>
@@ -293,6 +325,8 @@ const ProductModalWrapper = ({
                             productOffers={productOffers}
                             newImage={newImage}
                             setNewImage={setNewImage}
+                            categories={categories}
+                            subcategories={subcategories}
                         />
                     )}
 
@@ -328,8 +362,8 @@ const ProductModalWrapper = ({
                                 { key: "image", type: "file", placeholder: "Product Image" },
                             ]}
                             handleImageUpload={async (file) => {
-                                // ✅ Image upload logic (return uploaded URL)
-                                return URL.createObjectURL(file); // example, replace with Cloudinary/API
+                                // ✅ replace with Cloudinary/API
+                                return URL.createObjectURL(file);
                             }}
                         />
                     )}

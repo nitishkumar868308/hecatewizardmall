@@ -27,12 +27,13 @@ const ProductsPage = ({
     const [deleteProductId, setDeleteProductId] = useState(null);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [modalOpenProduct, setModalOpenProduct] = useState(false);
+    const [newImage, setNewImage] = useState([]);
 
     const filteredProducts = (products ?? []).filter(p =>
         p.name.toLowerCase().includes(search.toLowerCase())
     );
 
-
+console.log("categoriesProductPage" , categories)
     const openModal = (product) => {
         setSelectedProduct(product);
         setModalOpenProduct(true);
@@ -43,6 +44,7 @@ const ProductsPage = ({
     // ProductsPage.js
 
     const handleEditClick = (products) => {
+        console.log("products", products)
         setEditModalOpen(true);
         setModalOpen(true);
         setEditProductData(products);
@@ -102,6 +104,10 @@ const ProductsPage = ({
                     setEditProductData={setEditProductData}
                     productOffers={productOffers}
                     attributes={attributes}
+                    categories={categories}
+                    subcategories={subcategories} 
+                    newImage={newImage}
+                    setNewImage={setNewImage}
                 />
             )}
 
@@ -109,7 +115,7 @@ const ProductsPage = ({
             <ProductModal
                 isOpen={modalOpenProduct}
                 closeModal={closeModal}
-                product={selectedProduct}
+                product={selectedProduct || editProductData}
             />
 
             {/* Delete Confirmation */}
