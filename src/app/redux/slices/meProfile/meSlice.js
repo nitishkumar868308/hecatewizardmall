@@ -6,7 +6,7 @@ export const fetchMe = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axios.get("/api/auth/me", {
-                withCredentials: true, // ✅ send cookies
+                 withCredentials: true, // ✅ send cookies
             });
             return response.data;
         } catch (err) {
@@ -20,7 +20,7 @@ export const logoutUser = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             await axios.post("/api/auth/logout", null, {
-                withCredentials: true, // ✅ send cookies
+                 withCredentials: true, // ✅ send cookies
             });
             return true; // success flag
         } catch (err) {

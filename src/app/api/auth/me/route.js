@@ -3,7 +3,7 @@ import { getSession } from "@/lib/session";
 import { cookies } from "next/headers";
 
 export const GET = async () => {
-    const cookieStore = cookies(); // This is tied to the incoming request
+    const cookieStore = cookies(); 
     const session = getSession(cookieStore);
 
     console.log("session", session);

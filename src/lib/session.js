@@ -102,6 +102,7 @@ export function setSession(user, res) {
 // Get session from request cookies
 export function getSession(cookieStore) {
   const token = cookieStore.get("session")?.value;
+  console.log("token" , token)
   if (!token) return null;
   return verifyToken(token);
 }
