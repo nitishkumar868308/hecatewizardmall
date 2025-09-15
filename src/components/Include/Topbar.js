@@ -15,13 +15,13 @@ const Topbar = () => {
 
     useEffect(() => {
         if (countryPricing.length && !country) {
-            dispatch(setCountry(countryPricing[0].code)); // default to first country
+            dispatch(setCountry(countryPricing[0].code));
         }
     }, [countryPricing, country, dispatch]);
 
 
-    const countries = [...countryPricing] // create a shallow copy
-        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // sort ascending
+    const countries = [...countryPricing]
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         .map((c) => ({
             code: c.code,
             name: c.country,
