@@ -78,13 +78,16 @@ export async function setSession(user) {
   );
 
   const cookieStore = await cookies();
-  cookieStore.set("session", token, {
+
+  console.log("cookieStore", cookieStore)
+  const result = cookieStore.set("session", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
   });
+  console.log("result", result)
 
   console.log("Session token set:", token.slice(0, 20) + "...");
   return token;
@@ -94,6 +97,7 @@ export async function setSession(user) {
 export async function getSession() {
   const cookieStore = await cookies(); // await is required
   const token = cookieStore.get("session")?.value;
+  console.log("token", token)
   if (!token) return null;
 
   try {

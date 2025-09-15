@@ -3,7 +3,7 @@ import { getSession } from "@/lib/session";
 
 export const GET = async () => {
     const session = await getSession(); // ✅ await is required
-
+    console.log("session" , session)
     if (!session) {
         return new Response(JSON.stringify({ message: "Not authenticated" }), { status: 401 });
     }
