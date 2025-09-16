@@ -19,6 +19,7 @@ export async function POST(req) {
 
   const token = createToken(user);
   const isProd = process.env.NODE_ENV === "production";
+  console.log("isProd" , isProd)
 
   const response = NextResponse.json(
     { message: "Login successful", user },
