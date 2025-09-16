@@ -1,20 +1,26 @@
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/session";
 
-export async function GET(req, res) {
-
-    const token = req.cookies.session; // ← req.cookies me cookie aayegi
-    if (!token) return res.status(401).json({ message: "Not authenticated" });
+export async function GET(req) {
+    const token = req.cookies.get("session")?.value;
+    if (!token) {
+        return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+    }
 
     const session = verifyToken(token);
-    if (!session) return res.status(401).json({ message: "Not authenticated" });
+    if (!session) {
+        return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+    }
 
     const user = await prisma.user.findUnique({
         where: { id: parseInt(session.id) },
         include: { carts: true, addresses: true },
     });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+        return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
 
-    return res.status(200).json({ message: "Welcome", user });
+    return NextResponse.json({ message: "Welcome", user }, { status: 200 });
 }

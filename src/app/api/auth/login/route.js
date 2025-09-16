@@ -1,25 +1,37 @@
+import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { createToken } from "@/lib/session";
 
-export async function POST(req, res) {
-
-  const { email, password } = req.body;
+export async function POST(req) {
+  const { email, password } = await req.json();
+  console.log("email" , email)
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return res.status(400).json({ message: "Invalid credentials" });
+  if (!user) {
+    return NextResponse.json({ message: "Invalid credentials" }, { status: 400 });
+  }
 
   const isPasswordMatch = await bcrypt.compare(password, user.password);
-  if (!isPasswordMatch) return res.status(400).json({ message: "Invalid credentials" });
+  if (!isPasswordMatch) {
+    return NextResponse.json({ message: "Invalid credentials" }, { status: 400 });
+  }
 
   const token = createToken(user);
-
   const isProd = process.env.NODE_ENV === "production";
 
-  res.setHeader(
-    "Set-Cookie",
-    `session=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; ${isProd ? "Secure; SameSite=None" : "SameSite=Lax"}`
+  const response = NextResponse.json(
+    { message: "Login successful", user },
+    { status: 200 }
   );
 
-  return res.status(200).json({ message: "Login successful", user });
+  response.cookies.set("session", token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 60 * 60 * 24 * 7,
+    path: "/",
+  });
+
+  return response;
 }
