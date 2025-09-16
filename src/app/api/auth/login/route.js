@@ -28,7 +28,7 @@ export async function POST(req) {
 
   response.cookies.set("session", token, {
     httpOnly: true,
-    secure: isProd,
+    secure: false,
     sameSite: isProd ? "none" : "lax",
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
