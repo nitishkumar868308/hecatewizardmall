@@ -23,16 +23,17 @@ const firaCode = Fira_Code({
 export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
+  const isHome = pathname === "/";
 
   return (
     <html lang="en">
       <body className={`${firaSans.variable} ${firaCode.variable} antialiased`}>
         <Provider store={store}>
-          {!isAdmin && <DefaultPage />}
+          {!isAdmin && !isHome && <DefaultPage />}
           <main className="pt-[60px] md:pt-0">
             {children}
           </main>
-          {!isAdmin && <Footer />}
+          {!isAdmin && !isHome && <Footer />}
           <Toaster position="top-right" reverseOrder={false} />
         </Provider>
       </body>

@@ -9,6 +9,8 @@ const Topbar = () => {
     const dispatch = useDispatch();
     const { countryPricing } = useSelector((state) => state.countryPricing);
     const country = useSelector((state) => state.country);
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
     useEffect(() => {
         dispatch(fetchCountryPricing());
     }, [dispatch]);
@@ -27,7 +29,7 @@ const Topbar = () => {
             name: c.country,
         }));
 
-
+    if (!mounted) return null;
 
 
     const handleChange = (e) => {
