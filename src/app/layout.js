@@ -29,11 +29,11 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${firaSans.variable} ${firaCode.variable} antialiased`}>
         <Provider store={store}>
-          {!isAdmin && !isHome && <DefaultPage />}
+          {!isAdmin && <DefaultPage />}
           <main className="pt-[60px] md:pt-0">
             {children}
           </main>
-          {!isAdmin && !isHome && <Footer />}
+          {!isAdmin && <Footer />}
           <Toaster position="top-right" reverseOrder={false} />
         </Provider>
       </body>
