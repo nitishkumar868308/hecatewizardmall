@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <>
       <HomeSlider />
-      <StorySection />
+      {/* <StorySection /> */}
       <ProductSlider />
       <TestMonial />
     </>

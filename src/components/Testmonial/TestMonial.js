@@ -15,22 +15,23 @@ const TestMonial = () => {
     {
       name: "Rahul Sharma",
       role: "CEO, TechCorp",
-      text: "Ye platform mere business ke liye ek game-changer sabit hua. UI clean hai aur experience flawless.",
+      text: "The product quality is outstanding. Packaging was premium and delivery was right on time. Definitely ordering again.",
       image: "https://randomuser.me/api/portraits/men/32.jpg",
     },
     {
       name: "Sneha Patel",
       role: "Marketing Head, BrandX",
-      text: "Customer support aur functionality dono hi top-notch hain. Highly recommend karungi.",
+      text: "Both the design and durability are impressive. The product was exactly as described. Hats off to the team!",
       image: "https://randomuser.me/api/portraits/women/44.jpg",
     },
     {
       name: "Amit Verma",
       role: "Freelancer",
-      text: "Mujhe responsiveness aur design sabse zyada pasand aaya. Bahut hi professional look deta hai.",
+      text: "I loved the comfort and usability the most. For the price, it’s absolutely value for money.",
       image: "https://randomuser.me/api/portraits/men/55.jpg",
     },
   ];
+
 
   return (
     <section className="bg-gray-300 py-16 px-6 font-functionPro">

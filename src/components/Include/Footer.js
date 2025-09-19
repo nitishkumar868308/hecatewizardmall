@@ -75,17 +75,18 @@ const Footer = () => {
 
                         <div className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition cursor-pointer">
                             <MapPin className="h-5 w-5" />
-                            <span>123 Magic Street, Mystic City, CA 90210</span>
+                            <span>27 Deepali, Pitampura, New Delhi 90210</span>
+
                         </div>
 
                         <div className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition cursor-pointer">
                             <Mail className="h-5 w-5" />
-                            <span>support@hecatewizardmall.com</span>
+                            <span>healingherbsoilsshop@gmail.com</span>
                         </div>
 
                         <div className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition cursor-pointer">
                             <Phone className="h-5 w-5" />
-                            <span>+1 (555) 123-4567</span>
+                            <span>+91 9717033830</span>
                         </div>
                     </div>
 
