@@ -135,6 +135,7 @@ const ProductModalWrapper = ({
         if (newImage) {
             if (Array.isArray(newImage)) {
                 imageUrls = await Promise.all(newImage.map(img => handleImageUpload(img)));
+                console.log("imageUrls" , imageUrls)
             } else {
                 const url = await handleImageUpload(newImage);
                 imageUrls = Array.isArray(url) ? url : [url];
