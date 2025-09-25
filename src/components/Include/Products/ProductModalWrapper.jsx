@@ -213,7 +213,9 @@ const ProductModalWrapper = ({
             })
             .catch((err) => {
                 toast.error(err.message || "Failed to create product");
+                setLoading(false);
             });
+
     };
 
 

@@ -85,7 +85,7 @@ export async function POST(req) {
             const fileName = `${Date.now()}-${file.name}`;
             const filePath = path.join(uploadDir, fileName);
             fs.writeFileSync(filePath, buffer);
-            imageUrls.push(`/uploads/products/${fileName}`);
+            imageUrls.push(`/public/uploads/products/${fileName}`);
         }
 
         return new Response(JSON.stringify({ urls: imageUrls.length === 1 ? imageUrls[0] : imageUrls }), {
