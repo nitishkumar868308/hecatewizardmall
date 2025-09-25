@@ -67,12 +67,12 @@
 import fs from "fs";
 import path from "path";
 
-export const config = { api: { bodyParser: false } }; // not really needed for web formData
+export const config = { api: { bodyParser: false } };
 
 export async function POST(req) {
     try {
         const formData = await req.formData();
-        const files = formData.getAll("image"); // multiple files
+        const files = formData.getAll("image");
         const uploadDir = path.join(process.cwd(), "public", "uploads", "products");
         if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
@@ -85,7 +85,7 @@ export async function POST(req) {
             const fileName = `${Date.now()}-${file.name}`;
             const filePath = path.join(uploadDir, fileName);
             fs.writeFileSync(filePath, buffer);
-            imageUrls.push(`/public/uploads/products/${fileName}`);
+            imageUrls.push(`/uploads/products/${fileName}`);
         }
 
         return new Response(JSON.stringify({ urls: imageUrls.length === 1 ? imageUrls[0] : imageUrls }), {
