@@ -18,7 +18,7 @@ import {
 import {
     fetchSubcategories,
 } from "@/app/redux/slices/subcategory/subcategorySlice";
-import { fetchCart } from "@/app/redux/slices/addToCart/addToCartSlice";
+import { fetchCart, updateLocalCartItem, updateCart } from "@/app/redux/slices/addToCart/addToCartSlice";
 
 const Header = () => {
     const [active, setActive] = useState("Home");
@@ -42,6 +42,9 @@ const Header = () => {
     const userCartCount = userCart.length;
 
     console.log("subcategories", subcategories)
+
+
+
 
     useEffect(() => {
         dispatch(fetchCart())
@@ -173,6 +176,14 @@ const Header = () => {
         dispatch(logoutUser());
         setDropdownOpen(false);
     };
+
+    const updateQuantity = (index, delta) => {
+        const item = userCart[index];
+        const newQuantity = Math.max(1, item.quantity + delta);
+        dispatch(updateLocalCartItem({ id: item.id, newQuantity }));
+        dispatch(updateCart({ id: item.id, quantity: newQuantity }));
+    };
+
 
     return (
         <>
@@ -453,28 +464,32 @@ const Header = () => {
                             <div className="fixed inset-0 z-50 flex">
                                 {/* Overlay */}
                                 <div
-                                    className="font-functionPro fixed inset-0 bg-black/30 backdrop-blur-[2px] z-40 cursor-pointer"
+                                    className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 cursor-pointer"
                                     onClick={() => setIsOpen(false)}
                                 ></div>
 
                                 {/* Drawer */}
                                 <div
-                                    className="ml-auto w-80 h-full bg-white shadow-2xl p-6 flex flex-col transform transition-transform duration-300 ease-in-out z-50"
+                                    className="ml-auto w-100 h-full bg-white shadow-2xl p-6 flex flex-col transform transition-transform duration-300 ease-in-out z-50"
                                     onClick={(e) => e.stopPropagation()}
                                 >
+                                    {/* Close Button */}
                                     <button
-                                        className="self-end w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-red-500 hover:text-white shadow-md transition-colors duration-200"
+                                        className="self-end w-8 h-8 cursor-pointer flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-900 hover:text-white shadow-md transition-colors duration-200"
                                         onClick={() => setIsOpen(false)}
                                     >
                                         ✕
                                     </button>
-                                    <h2 className="text-xl font-bold text-center mt-4 mb-6">Your Cart</h2>
+
+                                    <h2 className="text-2xl font-bold text-center mt-4 mb-6">Your Cart</h2>
+
+                                    {/* Cart Items */}
                                     <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                                         {userCartCount > 0 ? (
-                                            userCart.map((item) => (
+                                            userCart.map((item, index) => (
                                                 <div
                                                     key={item.id}
-                                                    className="flex items-center gap-4 p-3 border rounded-lg shadow-sm hover:shadow-md transition"
+                                                    className="flex items-center gap-4 p-3 border rounded-lg shadow-sm hover:shadow-md transition bg-gray-50"
                                                 >
                                                     {/* Product Image */}
                                                     <img
@@ -484,7 +499,7 @@ const Header = () => {
                                                     />
 
                                                     {/* Product Details */}
-                                                    <div className="flex-1">
+                                                    <div className="flex-1 flex flex-col gap-1">
                                                         <h3 className="text-sm font-semibold text-gray-800 line-clamp-1">
                                                             {item.productName}
                                                         </h3>
@@ -493,16 +508,35 @@ const Header = () => {
                                                                 .map(([key, val]) => `${key}: ${val}`)
                                                                 .join(", ")}
                                                         </p>
+
+                                                        {/* Quantity Selector */}
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <button
+                                                                className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
+                                                                onClick={() => updateQuantity(index, -1)}
+                                                            >
+                                                                -
+                                                            </button>
+                                                            <span className="px-2 text-sm">{item.quantity}</span>
+                                                            <button
+                                                                className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
+                                                                onClick={() => updateQuantity(index, 1)}
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Price */}
                                                         <p className="text-sm font-medium text-gray-700 mt-1">
                                                             {item.currencySymbol}
-                                                            {item.pricePerItem} × {item.quantity}
+                                                            {(item.pricePerItem * item.quantity).toFixed(2)}
                                                         </p>
                                                     </div>
 
                                                     {/* Total Price */}
                                                     <div className="text-sm font-bold text-gray-900 whitespace-nowrap">
                                                         {item.currencySymbol}
-                                                        {item.totalPrice}
+                                                        {(item.pricePerItem * item.quantity).toFixed(2)}
                                                     </div>
                                                 </div>
                                             ))
@@ -510,6 +544,8 @@ const Header = () => {
                                             <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
                                         )}
                                     </div>
+
+                                    {/* Checkout Button */}
                                     {userCartCount > 0 && (
                                         <div className="mt-4">
                                             <button
@@ -517,16 +553,16 @@ const Header = () => {
                                                     setIsOpen(false);
                                                     router.push(`/checkout`);
                                                 }}
-                                                className="w-full bg-red-500 text-white py-3 rounded-lg text-lg font-semibold hover:bg-red-600 transition-colors cursor-pointer"
+                                                className="w-full bg-gray-800 text-white py-3 rounded-lg text-lg font-semibold hover:bg-gray-900 transition-colors cursor-pointer"
                                             >
                                                 Checkout
                                             </button>
                                         </div>
                                     )}
-
                                 </div>
                             </div>
                         )}
+
 
 
 

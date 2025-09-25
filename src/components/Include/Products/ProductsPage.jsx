@@ -33,16 +33,13 @@ const ProductsPage = ({
         p.name.toLowerCase().includes(search.toLowerCase())
     );
 
-console.log("categoriesProductPage" , categories)
+    console.log("categoriesProductPage", categories)
     const openModal = (product) => {
         setSelectedProduct(product);
         setModalOpenProduct(true);
     };
 
     const closeModal = () => setModalOpenProduct(false);
-
-    // ProductsPage.js
-
     const handleEditClick = (products) => {
         console.log("products", products)
         setEditModalOpen(true);
@@ -105,7 +102,7 @@ console.log("categoriesProductPage" , categories)
                     productOffers={productOffers}
                     attributes={attributes}
                     categories={categories}
-                    subcategories={subcategories} 
+                    subcategories={subcategories}
                     newImage={newImage}
                     setNewImage={setNewImage}
                 />
@@ -122,7 +119,10 @@ console.log("categoriesProductPage" , categories)
             <ConfirmModal
                 isOpen={deleteModalOpen}
                 onClose={() => setDeleteModalOpen(false)}
-                onConfirm={handleDelete}
+                onConfirm={() => {
+                    handleDelete(deleteProductId);
+                    setDeleteModalOpen(false);
+                }}
                 title="Delete Product"
                 message="Are you sure you want to delete this product? This action cannot be undone."
             />

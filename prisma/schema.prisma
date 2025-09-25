@@ -103,6 +103,7 @@ model ProductVariation {
   price       String?
   otherCountriesPrice String?
   stock       String?
+  short       String?
   image       String[]
   name       String?
   description String?

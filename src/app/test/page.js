@@ -954,10 +954,12 @@
 
 "use client";
 
-import React from 'react';
+import React,{useState} from 'react';
 import ProductsPage from '@/components/Include/Products/ProductsPage';
 import {
     fetchProducts,
+    deleteProduct,
+    updateProducttoggle
 } from "@/app/redux/slices/products/productSlice";
 import { fetchSubcategories } from "@/app/redux/slices/subcategory/subcategorySlice";
 import { fetchCategories } from "@/app/redux/slices/addCategory/addCategorySlice";
@@ -966,9 +968,12 @@ import { fetchOffers } from '@/app/redux/slices/offer/offerSlice'
 import {
     fetchAttributes,
 } from "@/app/redux/slices/attribute/attributeSlice";
+import toast from 'react-hot-toast';
+import Loader from "@/components/Include/Loader";
 
 const Page = () => {
     const dispatch = useDispatch();
+    const [loading, setLoading] = useState(false);
     const { products } = useSelector((state) => state.products);
     const { subcategories } = useSelector((state) => state.subcategory);
     const { categories } = useSelector((state) => state.category);
@@ -988,8 +993,22 @@ const Page = () => {
     }, [dispatch]);
 
     const toggleActive = (id, currentStatus) => {
-        dispatch(updateProduct({ id, active: !currentStatus }));
+        setLoading(true);
+
+        dispatch(updateProducttoggle({ id, active: !currentStatus }))
+            .unwrap()
+            .then((res) => {
+                toast.success(res.message || "Product updated successfully!!!");
+                dispatch(fetchProducts());
+            })
+            .catch((err) => {
+                toast.error(err.error || "Something went wrong");
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     };
+
 
     const handleDelete = (id) => {
         dispatch(deleteProduct(id));
@@ -997,16 +1016,18 @@ const Page = () => {
 
 
     return (
-        <ProductsPage
-            products={products}
-            categories={categories}
-            subcategories={subcategories}
-            productOffers={productOffers}
-            attributes={attributes}
-            toggleActive={toggleActive}
-            handleDelete={handleDelete}
-        />
-
+        <>
+            {loading && <Loader />}
+            <ProductsPage
+                products={products}
+                categories={categories}
+                subcategories={subcategories}
+                productOffers={productOffers}
+                attributes={attributes}
+                toggleActive={toggleActive}
+                handleDelete={handleDelete}
+            />
+        </>
     );
 };
 

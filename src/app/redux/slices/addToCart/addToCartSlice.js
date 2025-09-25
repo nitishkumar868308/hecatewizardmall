@@ -62,7 +62,16 @@ const cartSlice = createSlice({
         loading: false,
         error: null,
     },
-    reducers: {},
+    reducers: {
+        updateLocalCartItem: (state, action) => {
+            const { id, newQuantity } = action.payload;
+            state.items = state.items.map((item) =>
+                item.id === id
+                    ? { ...item, quantity: newQuantity, totalPrice: item.pricePerItem * newQuantity }
+                    : item
+            );
+        },
+    },
     extraReducers: (builder) => {
         // Fetch cart
         builder
@@ -128,4 +137,5 @@ const cartSlice = createSlice({
     },
 });
 
+export const { updateLocalCartItem } = cartSlice.actions;
 export default cartSlice.reducer;

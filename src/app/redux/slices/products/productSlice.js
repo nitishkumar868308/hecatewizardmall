@@ -16,19 +16,19 @@ import axios from "axios";
 
 // Fetch all products
 export const fetchProducts = createAsyncThunk(
-  "products/fetchProducts",
-  async (_, { getState, rejectWithValue }) => { // use getState
-    try {
-      const state = getState();
-      const countryCode = state.country || "IN"; // read from Redux
-      const response = await axios.get("/api/products", {
-        headers: { "x-country": countryCode },
-      });
-      return response.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data || "Failed to fetch products");
+    "products/fetchProducts",
+    async (_, { getState, rejectWithValue }) => { // use getState
+        try {
+            const state = getState();
+            const countryCode = state.country || "IN"; // read from Redux
+            const response = await axios.get("/api/products", {
+                headers: { "x-country": countryCode },
+            });
+            return response.data;
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to fetch products");
+        }
     }
-  }
 );
 
 
@@ -67,6 +67,19 @@ export const updateProduct = createAsyncThunk(
         try {
             const response = await axios.put("/api/products", payload);
             return response.data.data;
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to update product");
+        }
+    }
+);
+
+export const updateProducttoggle = createAsyncThunk(
+    "products/updateProducttoggle",
+    async (payload, { rejectWithValue }) => {
+        try {
+            const response = await axios.patch("/api/products", payload);
+            console.log("response" , response)
+            return response.data;
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to update product");
         }
@@ -145,9 +158,27 @@ const productsSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload || action.error.message;
             });
+        builder
+            .addCase(updateProducttoggle.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateProducttoggle.fulfilled, (state, action) => {
+                state.loading = false;
+                if (action.payload?.id) {
+                    state.products = state.products.map((prod) =>
+                        prod.id === action.payload.id ? action.payload : prod
+                    );
+                } else {
+                    console.warn("updateProducttoggle: payload undefined", action.payload);
+                }
+            })
+            .addCase(updateProducttoggle.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || action.error.message;
+            });
 
-
-    },
+},
 });
 
 export default productsSlice.reducer;

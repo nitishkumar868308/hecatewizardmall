@@ -1,5 +1,5 @@
-"use client"
-import React from "react";
+"use client";
+import React, { useEffect } from "react";
 import MultiSelectDropdown from "@/components/Custom/MultiSelectDropdown";
 
 const ProductForm = ({
@@ -11,22 +11,25 @@ const ProductForm = ({
     productOffers,
     newImage,
     setNewImage,
-    categories = [],     
+    categories = [],
     subcategories = [],
 }) => {
     const isEdit = editModalOpen;
     const currentData = isEdit ? editProductData : newProduct;
     const setCurrentData = isEdit ? setEditProductData : setNewProduct;
-    console.log("categories", categories)
-    return (
-        <div>
-            <h3 className="text-xl font-semibold mb-4">Product Details</h3>
+    console.log("productOffers", productOffers)
+    console.log("currentData", currentData)
 
-            <form className="grid grid-cols-2 gap-4">
+    return (
+        <div className="p-6 bg-white rounded-3xl shadow-lg max-w-7xl mx-auto max-h-[80vh] overflow-y-auto">
+
+            <h3 className="text-2xl font-semibold mb-6 text-gray-800">Product Details</h3>
+
+            <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* Product Name */}
-                <div>
-                    <label className="block mb-1 font-medium">Product Name</label>
+                <div className="flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">Product Name</label>
                     <input
                         type="text"
                         placeholder="Product Name"
@@ -34,13 +37,13 @@ const ProductForm = ({
                         onChange={(e) =>
                             setCurrentData({ ...currentData, name: e.target.value })
                         }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
                     />
                 </div>
 
                 {/* Short Description */}
-                <div>
-                    <label className="block mb-1 font-medium">Short Description</label>
+                <div className="flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">Short Description</label>
                     <input
                         type="text"
                         placeholder="Short Description"
@@ -48,23 +51,23 @@ const ProductForm = ({
                         onChange={(e) =>
                             setCurrentData({ ...currentData, short: e.target.value })
                         }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
                     />
                 </div>
 
-                {/* Category & Subcategory */}
-                <div>
-                    <label className="block mb-1 font-medium">Category</label>
+                {/* Category */}
+                <div className="flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">Category</label>
                     <select
-                        value={currentData.category || ""}
+                        value={currentData.categoryId || ""}
                         onChange={(e) =>
                             setCurrentData({
                                 ...currentData,
-                                category: Number(e.target.value),
-                                subcategory: "",
+                                categoryId: Number(e.target.value),
+                                subcategoryId: "",
                             })
                         }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
                     >
                         <option value="">Select Category</option>
                         {categories.map(cat => (
@@ -73,8 +76,9 @@ const ProductForm = ({
                     </select>
                 </div>
 
-                <div>
-                    <label className="block mb-1 font-medium">Subcategory</label>
+                {/* Subcategory */}
+                <div className="flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">Subcategory</label>
                     <select
                         value={currentData.subcategoryId || ""}
                         onChange={(e) =>
@@ -83,28 +87,24 @@ const ProductForm = ({
                                 subcategoryId: e.target.value ? Number(e.target.value) : "",
                             })
                         }
-                        disabled={!currentData.category}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        disabled={!currentData.categoryId}
+                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
                     >
                         <option value="">
-                            {currentData.category
-                                ? "Select Subcategory"
-                                : "Select Category first"}
+                            {currentData.categoryId ? "Select Subcategory" : "Select Category first"}
                         </option>
-                        {currentData.category &&
+                        {currentData.categoryId &&
                             subcategories
-                                .filter(sub => sub.categoryId.toString() === currentData.category.toString())
+                                .filter(sub => sub.categoryId.toString() === currentData.categoryId.toString())
                                 .map(sub => (
-                                    <option key={sub.id} value={sub.id}>
-                                        {sub.name}
-                                    </option>
+                                    <option key={sub.id} value={sub.id}>{sub.name}</option>
                                 ))}
                     </select>
                 </div>
 
-                {/* Price & Stock */}
-                <div>
-                    <label className="block mb-1 font-medium">Price (INR)</label>
+                {/* Price */}
+                <div className="flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">Price (INR)</label>
                     <input
                         type="number"
                         placeholder="Price (INR)"
@@ -112,28 +112,28 @@ const ProductForm = ({
                         onChange={(e) =>
                             setCurrentData({ ...currentData, price: e.target.value })
                         }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
                     />
                 </div>
 
-                <div>
-                    <label className="block mb-1 font-medium">Other Countries Price</label>
+                {/* SKU */}
+                <div className="flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">SKU</label>
                     <input
-                        type="number"
-                        placeholder="Price in INR for other countries"
-                        value={currentData.otherCountriesPrice || ""}
+                        type="text"
+                        placeholder="Enter SKU Detail"
+                        value={currentData.sku || ""}
                         onChange={(e) =>
-                            setCurrentData({
-                                ...currentData,
-                                otherCountriesPrice: Number(e.target.value),
-                            })
+                            setCurrentData({ ...currentData, sku: e.target.value })
                         }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
                     />
                 </div>
 
-                <div>
-                    <label className="block mb-1 font-medium">Stock</label>
+
+                {/* Stock */}
+                <div className="flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">Stock</label>
                     <input
                         type="number"
                         placeholder="Stock"
@@ -141,47 +141,60 @@ const ProductForm = ({
                         onChange={(e) =>
                             setCurrentData({ ...currentData, stock: e.target.value })
                         }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
                     />
                 </div>
 
                 {/* Offers */}
-                <MultiSelectDropdown
-                    offers={productOffers}
-                    currentData={currentData}
-                    setCurrentData={setCurrentData}
-                />
-
-                {/* Description */}
-                <div className="col-span-2">
-                    <label className="block mb-1 font-medium">Description</label>
-                    <textarea
-                        placeholder="Description"
-                        value={currentData.description || ""}
-                        onChange={(e) =>
-                            setCurrentData({ ...currentData, description: e.target.value })
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                <div className="flex flex-col">
+                    <MultiSelectDropdown
+                        offers={productOffers}
+                        currentData={currentData}
+                        setCurrentData={setCurrentData}
                     />
                 </div>
 
+                {/* Description */}
+                <div className="col-span-1 md:col-span-2 flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">Description</label>
+                    <textarea
+                        list="descOptions"
+                        placeholder="Description"
+                        value={currentData.description || ""}
+                        onChange={(e) => {
+                            const sanitizedValue = e.target.value.replace(/'/g, "\\'");
+                            setCurrentData({ ...currentData, description: sanitizedValue });
+                        }}
+                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                        rows={4}
+                    />
+
+                    <datalist id="descOptions">
+                        <option value="Gold" />
+                        <option value="Italia" />
+                        <option value="Other" />
+                    </datalist>
+
+                </div>
+
                 {/* Images */}
-                <div className="col-span-2">
-                    <label className="block mb-1 font-medium">Product Images</label>
+                <div className="col-span-1 md:col-span-2 flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">Product Images</label>
                     <input
                         type="file"
                         accept="image/*"
                         multiple
                         onChange={(e) => setNewImage(Array.from(e.target.files))}
+                        className="mb-4 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer transition"
                     />
-                    <div className="flex gap-2 mt-2 flex-wrap">
-                        {newImage && newImage.length > 0
+                    <div className="flex gap-3 flex-wrap">
+                        {/* {newImage && newImage.length > 0
                             ? newImage.map((img, idx) => (
                                 <img
                                     key={idx}
                                     src={URL.createObjectURL(img)}
                                     alt={`Preview ${idx}`}
-                                    className="w-32 h-32 object-cover rounded-lg"
+                                    className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
                                 />
                             ))
                             : currentData.images &&
@@ -191,9 +204,29 @@ const ProductForm = ({
                                     key={idx}
                                     src={img}
                                     alt={`Product ${idx}`}
-                                    className="w-32 h-32 object-cover rounded-lg"
+                                    className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
                                 />
-                            ))}
+                            ))} */}
+                        {newImage?.length > 0 ? (
+                            newImage.map((img, idx) => (
+                                <img
+                                    key={idx}
+                                    src={URL.createObjectURL(img)}
+                                    alt={`Preview ${idx}`}
+                                    className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
+                                />
+                            ))
+                        ) : (
+                            /* warna DB se aayi images show karo */
+                            currentData.image?.map((img, idx) => (
+                                <img
+                                    key={idx}
+                                    src={img}
+                                    alt={`Product ${idx}`}
+                                    className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
+                                />
+                            ))
+                        )}
                     </div>
                 </div>
             </form>

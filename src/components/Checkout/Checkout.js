@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
-import { fetchCart, deleteCartItem } from "@/app/redux/slices/addToCart/addToCartSlice";
+import { fetchCart, deleteCartItem, updateCart } from "@/app/redux/slices/addToCart/addToCartSlice";
 import toast from 'react-hot-toast';
 
 const Checkout = () => {
@@ -12,6 +12,7 @@ const Checkout = () => {
 
   const [quantities, setQuantities] = useState({});
   const [selectedItems, setSelectedItems] = useState([]);
+  const [shippingModalOpen, setShippingModalOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [itemToRemove, setItemToRemove] = useState(null);
   const [selectAll, setSelectAll] = useState(false);
@@ -61,6 +62,13 @@ const Checkout = () => {
   }, [items, user?.id]);
 
   useEffect(() => {
+    if (userCart.length > 0 && selectedItems.length === 0) {
+      setSelectedItems(userCart.map(item => item.id));
+      setSelectAll(true);
+    }
+  }, [userCart]);
+
+  useEffect(() => {
     if (userCart.length > 0 && Object.keys(quantities).length === 0) {
       const initialQuantities = userCart.reduce((acc, item) => {
         acc[item.id] = item.quantity || 1;
@@ -77,9 +85,19 @@ const Checkout = () => {
   const shipping = selectedItems.length > 0 ? 10 : 0;
   const total = subtotal + shipping;
 
-  const handleQuantityChange = (id, value) => {
-    if (value >= 1) {
-      setQuantities({ ...quantities, [id]: value });
+  const handleQuantityChange = async (id, value) => {
+    if (value < 1) return;
+
+    // Update local quantity for instant UI
+    setQuantities(prev => ({ ...prev, [id]: value }));
+
+    // Persist change to backend
+    try {
+      await dispatch(updateCart({ id, quantity: value })).unwrap();
+      toast.success("Cart updated");
+      dispatch(fetchCart()); // optional: refresh cart from server
+    } catch (err) {
+      toast.error("Failed to update cart");
     }
   };
 
@@ -114,6 +132,7 @@ const Checkout = () => {
       const res = await dispatch(deleteCartItem(itemToRemove.id)).unwrap();
       toast.success(res?.message || `${itemToRemove.productName} removed from cart`);
       dispatch(fetchCart());
+      setModalOpen(false);
     } catch (err) {
       toast.error(err?.message || "Failed to remove item");
     }
@@ -131,7 +150,7 @@ const Checkout = () => {
             Shopping Cart
             {userCart.length > 0 && (
               <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
-                <input type="checkbox" checked={selectAll} onChange={handleSelectAll} />
+                <input type="checkbox" className="accent-gray-700 w-5 h-5" checked={selectAll} onChange={handleSelectAll} />
                 Select All
               </label>
             )}
@@ -149,7 +168,7 @@ const Checkout = () => {
                   type="checkbox"
                   checked={selectedItems.includes(product.id)}
                   onChange={() => toggleSelectItem(product.id)}
-                  className="mr-4 w-5 h-5"
+                  className="accent-gray-700 w-5 h-5"
                 />
                 <div className="flex items-center gap-4 w-full sm:w-auto">
                   <img
@@ -223,10 +242,10 @@ const Checkout = () => {
               <div className="flex justify-between items-center mb-2">
                 <h4 className="text-md font-semibold text-gray-700">Shipping Address</h4>
                 <button
-                  className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                  className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-900 text-sm cursor-pointer"
                   onClick={() => {
                     setTempShipping(selectedShipping);
-                    setModalOpen(true);
+                    setShippingModalOpen(true);
                   }}
                 >
                   Change
@@ -308,7 +327,7 @@ const Checkout = () => {
       </div>
 
       {/* Remove / Change Address Modal */}
-      {modalOpen && (
+      {shippingModalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white w-full max-w-md p-6 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Shipping Address</h3>
@@ -317,7 +336,7 @@ const Checkout = () => {
                 <label
                   key={addr.id}
                   className={`block p-3 border rounded-lg cursor-pointer transition ${tempShipping === addr.id
-                    ? "border-blue-500 bg-blue-50"
+                    ? "border-gray-500 bg-blue-50"
                     : "border-gray-200 hover:border-gray-300"
                     }`}
                 >
@@ -338,7 +357,7 @@ const Checkout = () => {
             </div>
             <div className="flex justify-end gap-3 mt-4">
               <button
-                onClick={() => setModalOpen(false)}
+                onClick={() => setShippingModalOpen(false)}
                 className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
               >
                 Cancel
@@ -346,9 +365,9 @@ const Checkout = () => {
               <button
                 onClick={() => {
                   setSelectedShipping(tempShipping);
-                  setModalOpen(false);
+                  setShippingModalOpen(false);
                 }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 cursor-pointer"
               >
                 Confirm
               </button>
@@ -358,16 +377,22 @@ const Checkout = () => {
       )}
 
       {/* Remove Item Modal */}
-      {itemToRemove && (
+      {modalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-gray-800 p-6 rounded-xl w-96">
             <h3 className="text-lg font-semibold text-white mb-4 text-center">Confirm Remove</h3>
-            <p className="text-gray-100 mb-6">
-              Are you sure you want to remove <strong>{itemToRemove?.productName}</strong> from your cart?
+            <p className="mb-6 text-center text-gray-200 text-base sm:text-lg leading-relaxed break-words">
+              Are you sure you want to remove{" "}
+              <span className="font-semibold text-white bg-red-400 px-2 py-1 rounded whitespace-normal inline-block">
+                {itemToRemove?.productName}
+              </span>{" "}
+              from your cart?
             </p>
+
+
             <div className="flex justify-end gap-4">
               <button
-                onClick={() => setItemToRemove(null)}
+                onClick={() => setModalOpen(false)}
                 className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 cursor-pointer"
               >
                 Cancel

@@ -56,6 +56,7 @@ export async function POST(req) {
                             variationName: v.variation_name,
                             sku: v.sku,
                             price: v.price?.toString() ?? price?.toString() ?? null,
+                            short: v.short?.toString() ?? short?.toString() ?? null,
                             stock: v.stock?.toString() ?? stock?.toString() ?? null,
                             image: Array.isArray(v.image) ? v.image : (v.image ? [v.image] : []),
                             description: v.description ?? description ?? null,
@@ -103,26 +104,6 @@ export async function POST(req) {
     }
 }
 
-// GET all products
-// export async function GET(req) {
-//     try {
-//         const products = await prisma.product.findMany({
-//             where: { deleted: 0 },
-//             orderBy: { createdAt: "desc" },
-//             include: { subcategory: true, variations: true }
-//         });
-
-//         return new Response(
-//             JSON.stringify({ message: "Products fetched successfully", data: products }),
-//             { status: 200 }
-//         );
-//     } catch (error) {
-//         return new Response(
-//             JSON.stringify({ message: "Failed to fetch products", error: error.message }),
-//             { status: 500 }
-//         );
-//     }
-// }
 
 export async function GET(req) {
     try {
@@ -200,12 +181,25 @@ export async function DELETE(req) {
 export async function PUT(req) {
     try {
         const body = await req.json();
+        const { id, data } = body;
+
+        if (!id) {
+            return new Response(JSON.stringify({ message: "Product ID is required" }), { status: 400 });
+        }
+
+        const existing = await prisma.product.findUnique({
+            where: { id },
+            include: { variations: true },
+        });
+
+        if (!existing) {
+            return new Response(JSON.stringify({ message: "Product not found" }), { status: 404 });
+        }
+
         const {
-            id,
             name,
-            subcategoryId,
-            image,
             description,
+            short,
             active,
             deleted,
             sku,
@@ -213,62 +207,118 @@ export async function PUT(req) {
             metaTitle,
             metaDescription,
             keywords,
-            variations = [], // frontend se array aayega
-        } = body;
+            price,
+            stock,
+            size = [],
+            color = [],
+            otherCountriesPrice,
+            image = [],
+            offers = [],
+            primaryOffer = null,
+            categoryId = null,
+            subcategoryId = null,
+            variations = [],
+        } = data;
 
-        if (!id) {
-            return new Response(
-                JSON.stringify({ message: "Product ID is required" }),
-                { status: 400 }
-            );
-        }
-
-        const existing = await prisma.product.findUnique({
-            where: { id },
-            include: { variations: true }, // product ke variations bhi lao
+        // Update existing variations safely
+        const variationsUpdate = variations.filter(v => v.id).map(v => {
+            const existingVar = existing.variations.find(ev => ev.id === v.id);
+            return {
+                where: { id: v.id },
+                data: {
+                    variationName: v.variationName || v.name || existingVar.variationName,
+                    short: v.short || v.short || existingVar.short,
+                    name: v.name || v.name || existingVar.name,
+                    price: v.price != null ? v.price.toString() : existingVar.price,
+                    stock: v.stock != null ? v.stock.toString() : existingVar.stock,
+                    sku: existingVar.sku, // keep existing SKU safe
+                    image: Array.isArray(v.image) ? v.image.flat() : v.image ? [v.image] : existingVar.image,
+                    description: v.description ?? existingVar.description,
+                },
+            };
         });
-        if (!existing) {
-            return new Response(
-                JSON.stringify({ message: "Product not found" }),
-                { status: 404 }
-            );
+
+
+        // Create new variations with unique SKU (frontend responsibility)
+        const variationsCreate = variations.filter(v => !v.id).map(v => ({
+            variationName: v.variationName,
+            price: v.price != null ? v.price.toString() : null,
+            stock: v.stock != null ? v.stock.toString() : null,
+            sku: v.sku, // must be unique
+            image: Array.isArray(v.image) ? v.image.flat() : v.image ? [v.image] : [],
+            description: v.description,
+            short: v.short,
+            name: v.name,
+        }));
+
+
+        const variationSkus = variations.map(v => v.sku);
+        if (new Set(variationSkus).size !== variationSkus.length) {
+            return new Response(JSON.stringify({ message: "Duplicate SKU in variations" }), { status: 400 });
         }
 
-        // 🔹 Update product
+        // Ensure no variation SKU matches main product SKU
+        if (variationSkus.includes(existing.sku)) {
+            return new Response(JSON.stringify({ message: "Variation SKU cannot match main product SKU" }), { status: 400 });
+        }
+
+
+        // Check if variation SKUs already exist in DB (excluding current product)
+        const existingSkusInDB = await prisma.product.findMany({
+            where: {
+                sku: { in: variations.map(v => v.sku).filter(Boolean) },
+                NOT: { id }, // exclude current product
+            },
+            select: { sku: true }
+        });
+
+
+
+        if (existingSkusInDB.length > 0) {
+            return new Response(JSON.stringify({ message: `SKUs already exist: ${existingSkusInDB.map(e => e.sku).join(", ")}` }), { status: 400 });
+        }
+
         const updatedProduct = await prisma.product.update({
             where: { id },
             data: {
                 name: name ?? existing.name,
-                subcategoryId: subcategoryId ?? existing.subcategoryId,
-                image: image ?? existing.image,
+                short: short ?? existing.short,
                 description: description ?? existing.description,
                 active: active ?? existing.active,
                 deleted: deleted ?? existing.deleted,
-                sku: sku ?? existing.sku,
+                sku: sku ?? existing.sku, // main product SKU remains same
                 slug: slug ?? (name ? generateSlug(name) : existing.slug),
                 metaTitle: metaTitle ?? (name ?? existing.name),
-                metaDescription:
-                    metaDescription ?? (description ?? existing.description ?? ""),
+                metaDescription: metaDescription ?? (description ?? existing.description ?? ""),
                 keywords: keywords ?? existing.keywords,
+                stock: stock != null ? stock.toString() : existing.stock,
+                price: price != null ? price.toString() : existing.price,
+                size,
+                color,
+                otherCountriesPrice: otherCountriesPrice != null ? otherCountriesPrice.toString() : existing.otherCountriesPrice,
+                image: image.length ? image : existing.image,
+                category: categoryId ? { connect: { id: categoryId } } : undefined,
+                subcategory: subcategoryId ? { connect: { id: subcategoryId } } : undefined,
+                offers: Array.isArray(offers) && offers.length
+                    ? { set: [], connect: offers.map(id => ({ id })) }
+                    : undefined,
+
+                primaryOffer: primaryOffer
+                    ? { connect: { id: primaryOffer } }
+                    : undefined,
+                variations: {
+                    update: variationsUpdate,
+                    create: variationsCreate,
+                },
+            },
+            include: {
+                variations: true,
+                offers: true,
+                primaryOffer: true,
+                category: true,
+                subcategory: true,
             },
         });
-
-        // 🔹 Sirf existing variations update karo
-        for (const v of variations) {
-            if (v.id) {
-                await prisma.productVariation.update({
-                    where: { id: v.id },
-                    data: {
-                        variationName: v.variationName,
-                        price: v.price,
-                        stock: v.stock,
-                        sku: v.sku,
-                        image: v.image,
-                        description: v.description,
-                    },
-                });
-            }
-        }
 
         return new Response(
             JSON.stringify({
@@ -287,4 +337,41 @@ export async function PUT(req) {
         );
     }
 }
+
+export async function PATCH(req) {
+    try {
+        const body = await req.json();
+        const { id, active = true } = body;
+
+        if (!id) {
+            return new Response(
+                JSON.stringify({ error: "ID is required" }),
+                { status: 400 }
+            );
+        }
+
+        const updatedProduct = await prisma.product.update({
+            where: { id },
+            data: { active },
+        });
+
+        const statusText = active ? "Activated" : "Deactivated";
+
+        return new Response(
+            JSON.stringify({
+                message: `Product ${statusText} successfully`,
+                data: updatedProduct,
+            }),
+            { status: 200 }
+        );
+    } catch (error) {
+        console.error("PATCH Error:", error);
+        return new Response(
+            JSON.stringify({ error: "Something went wrong" }),
+            { status: 500 }
+        );
+    }
+}
+
+
 

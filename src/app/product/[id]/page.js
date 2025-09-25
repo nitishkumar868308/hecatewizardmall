@@ -12,9 +12,12 @@ import { addToCartAsync, fetchCart } from "@/app/redux/slices/addToCart/addToCar
 import Loader from "@/components/Include/Loader";
 import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from "framer-motion";
 
 const ProductDetail = () => {
     const dispatch = useDispatch();
+    const [imageLoaded, setImageLoaded] = useState(false);
+
     const [loading, setLoading] = useState(false);
     const { products } = useSelector((state) => state.products);
     const [userCart, setUserCart] = useState([]);
@@ -24,20 +27,31 @@ const ProductDetail = () => {
     const product = products.find((p) => p.id === id);
     const [quantity, setQuantity] = useState(1);
     const [variationAttributes, setVariationAttributes] = useState({});
-    const [currentImages, setCurrentImages] = useState([]);
-    const [mainImage, setMainImage] = useState(null);
+    const [activeTab, setActiveTab] = useState("description");
     const [selectedVariation, setSelectedVariation] = useState(null);
+    const [currentImages, setCurrentImages] = useState(
+        selectedVariation?.image || product?.image || []
+    );
+    const [mainImage, setMainImage] = useState(
+        selectedVariation?.image?.[0] || product?.image?.[0] || "/image/logo PNG.png"
+    );
+    const [reviewForm, setReviewForm] = useState({
+        name: "",
+        rating: 0,
+        comment: "",
+    });
+
     const [selectedAttributes, setSelectedAttributes] = useState({});
     const { user } = useSelector((state) => state.me);
     const { items } = useSelector((state) => state.cart);
-    console.log("items", items)
+
     useEffect(() => {
         dispatch(fetchCart())
         dispatch(fetchMe())
         if (!products.length) dispatch(fetchProducts());
         dispatch(fetchOffers());
     }, [dispatch, products.length]);
-
+    console.log("productsId", products)
     useEffect(() => {
         if (items && Array.isArray(items) && user?.id) {
             const filtered = items.filter((item) => item.userId == String(user.id));
@@ -101,12 +115,42 @@ const ProductDetail = () => {
         }
     }, [product?.id, product?.variations?.length, Object.keys(variationAttributes).length]);
 
+    // const handleAttributeSelect = (attrName, val) => {
+    //     const newSelected = { ...selectedAttributes, [attrName]: val };
+    //     setSelectedAttributes(newSelected);
+
+    //     // Filter variations that match the selected attributes
+    //     const matchingVariations = product.variations.filter(v => {
+    //         const parts = v.variationName.split(" / ").reduce((acc, part) => {
+    //             const [k, v] = part.split(":").map(p => p.trim());
+    //             acc[k] = v;
+    //             return acc;
+    //         }, {});
+    //         return Object.entries(newSelected).every(([k, v]) => parts[k] === v);
+    //     });
+
+    //     // Pick the first variation that has an image
+    //     const matchedVariation = matchingVariations.find(v => v.image?.length) || matchingVariations[0] || null;
+
+    //     setSelectedVariation(matchedVariation);
+
+    //     // Update mainImage & currentImages
+    //     if (matchedVariation?.image?.length) {
+    //         setCurrentImages(matchedVariation.image);
+    //         setMainImage(matchedVariation.image[0]);
+    //     } else if (!matchedVariation && product.image?.length) {
+    //         setCurrentImages(product.image);
+    //         setMainImage(product.image[0]);
+    //     } else {
+    //         setCurrentImages([]);
+    //         setMainImage(null);
+    //     }
+    // };
     const handleAttributeSelect = (attrName, val) => {
         const newSelected = { ...selectedAttributes, [attrName]: val };
         setSelectedAttributes(newSelected);
 
-        // Filter variations that match the selected attributes
-        const matchingVariations = product.variations.filter(v => {
+        const matchedVariation = product.variations.find(v => {
             const parts = v.variationName.split(" / ").reduce((acc, part) => {
                 const [k, v] = part.split(":").map(p => p.trim());
                 acc[k] = v;
@@ -115,23 +159,32 @@ const ProductDetail = () => {
             return Object.entries(newSelected).every(([k, v]) => parts[k] === v);
         });
 
-        // Pick the first variation that has an image
-        const matchedVariation = matchingVariations.find(v => v.image?.length) || matchingVariations[0] || null;
+        setSelectedVariation(matchedVariation || null);
 
-        setSelectedVariation(matchedVariation);
-
-        // Update mainImage & currentImages
+        //Update mainImage & currentImages
+        // if (matchedVariation?.image?.length) {
+        //     setCurrentImages(matchedVariation.image);
+        //     setMainImage(matchedVariation.image[0]);
+        // } else if (!matchedVariation && product.image?.length) {
+        //     setCurrentImages(product.image);
+        //     setMainImage(product.image[0]);
+        // } else {
+        //     setCurrentImages([]);
+        //     setMainImage(null);
+        // }
         if (matchedVariation?.image?.length) {
             setCurrentImages(matchedVariation.image);
-            setMainImage(matchedVariation.image[0]);
+            setMainImage(matchedVariation.image[0]?.trim() || "/image/logo PNG.png");
         } else if (!matchedVariation && product.image?.length) {
             setCurrentImages(product.image);
-            setMainImage(product.image[0]);
+            setMainImage(product.image[0]?.trim() || "/image/logo PNG.png");
         } else {
             setCurrentImages([]);
             setMainImage(null);
         }
+
     };
+
 
     // Thumbnails: only show if more than 1 image
     const thumbnailImages = currentImages.length > 1 ? currentImages.filter(img => img !== mainImage) : [];
@@ -245,7 +298,12 @@ const ProductDetail = () => {
     //     }
     // };
 
-
+    const handleSubmitReview = () => {
+        console.log("Submitted review:", reviewForm);
+        // You can call your API here to save the review
+        // After submission, reset the form
+        setReviewForm({ name: "", rating: 0, comment: "" });
+    };
     return (
         <>
             <div className="max-w-7xl mx-auto p-8 flex flex-col md:flex-row gap-12">
@@ -253,16 +311,24 @@ const ProductDetail = () => {
                 {/* Product Images */}
                 <div className="md:w-1/2">
                     <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px]">
-                        {mainImage ? (
-                            <Zoom>
-                                <Image
-                                    src={mainImage}
-                                    alt={product.name}
-                                    fill
-                                    className="object-cover w-full h-full cursor-zoom-in"
-                                />
-                            </Zoom>
-
+                        {mainImage && mainImage.trim() ? (
+                            <>
+                                {!imageLoaded && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                                        <span className="loader border-4 border-gray-300 border-t-blue-600 rounded-full w-10 h-10 animate-spin"></span>
+                                    </div>
+                                )}
+                                <Zoom>
+                                    <Image
+                                        src={mainImage?.trim() || "/image/logo PNG.png"}   // ✅ empty string handle
+                                        alt={product.name || "Product Image"}
+                                        fill
+                                        className={`object-cover w-full h-full cursor-zoom-in transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"
+                                            }`}
+                                        onLoadingComplete={() => setImageLoaded(true)}
+                                    />
+                                </Zoom>
+                            </>
                         ) : (
                             <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500">
                                 No Image
@@ -270,8 +336,10 @@ const ProductDetail = () => {
                         )}
                     </div>
 
+
+
                     <div className="flex gap-3 mt-4 flex-wrap">
-                        {mainImage && thumbnailImages.length > 0 && thumbnailImages.map((img, index) => (
+                        {/* {mainImage && thumbnailImages.length > 0 && thumbnailImages.map((img, index) => (
                             <img
                                 key={img || index}
                                 src={img}
@@ -280,17 +348,33 @@ const ProductDetail = () => {
                                 className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 transition ${mainImage === img ? "border-blue-600 scale-105" : "border-gray-300 hover:scale-105"
                                     }`}
                             />
-                        ))}
+                        ))} */}
+                        {mainImage && thumbnailImages.length > 0 && thumbnailImages
+                            .filter(img => img?.trim()) // ignore empty or whitespace-only strings
+                            .map((img, index) => (
+                                <img
+                                    key={img || index}
+                                    src={img || undefined} // <-- Empty string ko undefined ya null karo
+                                    alt={`${product.name}-${index}`}
+                                    onClick={() => setMainImage(img)}
+                                    className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 transition ${mainImage === img ? "border-blue-600 scale-105" : "border-gray-300 hover:scale-105"}`}
+                                />
+                            ))
+                        }
+
+
+
                     </div>
                 </div>
 
                 {/* Product Info */}
                 <div className="md:w-1/2 flex flex-col justify-between font-functionPro">
                     <div>
-                        <h1 className="text-5xl mb-6 text-gray-900">{product.name}</h1>
+                        <h1 className="text-5xl mb-6 text-gray-900">  {selectedVariation?.name || product.name}</h1>
                         <p className="text-3xl text-gray-700 mb-6 font-semibold">
                             {selectedVariation?.currencySymbol || product.currencySymbol}{" "}
                             {selectedVariation?.price || product.price}
+                            {/* {selectedVariation?.price ?? product.price} */}
                         </p>
                         <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                             {selectedVariation?.short || product.short}
@@ -374,11 +458,181 @@ const ProductDetail = () => {
 
                         </div>
                     </div>
-                    <p className="text-md md:text-lg text-gray-600 leading-relaxed mt-4">
-                        {selectedVariation?.description || product.description}
-                    </p>
                 </div>
 
+
+
+            </div>
+            <div className="max-w-7xl mx-auto p-4 md:p-6">
+                <div className="flex flex-col md:flex-row flex-none  overflow-hidden shadow-md rounded-xl">
+                    {/* Tabs */}
+                    <div className="flex md:flex-col w-full md:w-1/4 flex-none bg-gray-100">
+                        {["description", "reviews"].map((tab) => {
+                            const isActive = activeTab === tab;
+                            return (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`
+              w-full px-5 py-3 text-left font-medium cursor-pointer transition-all duration-300
+              ${isActive
+                                            ? "bg-gray-700 border-l-4 border-gray-900 text-white"
+                                            : "text-gray-500 hover:bg-gray-200"}
+            `}
+                                >
+                                    {tab === "description"
+                                        ? "Description"
+                                        : `Reviews (${product.reviews?.length || 0})`}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Tab Content */}
+                    <div className="w-full md:w-3/4 bg-white px-6 pb-6 flex-grow">
+                        <AnimatePresence mode="wait">
+                            {activeTab === "description" && (
+                                <motion.div
+                                    key="description"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="text-gray-700 space-y-4"
+                                >
+                                    <div className="space-y-6">
+                                        {/* {product.description
+                                            .replace(/\\'/g, "'")
+                                            .split("\n\n")
+                                            .map((para, idx) => (
+                                                <p
+                                                    key={idx}
+                                                    className="text-black text-base leading-loose font-medium tracking-normal"
+                                                >
+                                                    {para}
+                                                </p>
+                                            ))} */}
+
+                                        {selectedVariation?.description &&
+                                            selectedVariation.description
+                                                .replace(/\\'/g, "'")
+                                                .split("\n\n")
+                                                .map((para, idx) => (
+                                                    <p
+                                                        key={idx}
+                                                        className="text-gray-700 text-base leading-loose font-medium tracking-normal italic"
+                                                    >
+                                                        {para}
+                                                    </p>
+                                                ))}
+                                    </div>
+
+
+
+                                </motion.div>
+                            )}
+
+                            {activeTab === "reviews" && (
+                                <motion.div
+                                    key="reviews"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="flex flex-col space-y-4 h-[650px]"
+                                >
+                                    {/* Fixed form at top */}
+                                    <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
+                                        <h4 className="font-semibold text-gray-800 mb-4 text-center">Add Your Review</h4>
+                                        <form
+                                            onSubmit={(e) => {
+                                                e.preventDefault();
+                                                handleSubmitReview();
+                                            }}
+                                            className="space-y-4"
+                                        >
+                                            {/* Name */}
+                                            <input
+                                                type="text"
+                                                placeholder="Your Name"
+                                                value={reviewForm.name}
+                                                onChange={(e) =>
+                                                    setReviewForm({ ...reviewForm, name: e.target.value })
+                                                }
+                                                className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                                required
+                                            />
+
+                                            {/* Message */}
+                                            <textarea
+                                                placeholder="Write your review..."
+                                                value={reviewForm.comment}
+                                                onChange={(e) =>
+                                                    setReviewForm({ ...reviewForm, comment: e.target.value })
+                                                }
+                                                className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                                rows={4}
+                                                required
+                                            ></textarea>
+
+                                            {/* Rating */}
+                                            <div className="flex items-center gap-3 mt-2">
+                                                <span className="font-semibold text-gray-800">Rating:</span>
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <button
+                                                        type="button"
+                                                        key={star}
+                                                        onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                                                        className={`text-3xl md:text-4xl cursor-pointer transition-all duration-200 ${reviewForm.rating >= star ? "text-yellow-400 scale-110" : "text-gray-300 hover:text-yellow-300"
+                                                            }`}
+                                                    >
+                                                        ★
+                                                    </button>
+                                                ))}
+                                            </div>
+
+
+                                            {/* Submit Button */}
+                                            <div className="flex justify-center ">
+                                                <button
+                                                    type="submit"
+                                                    className="bg-gray-600 cursor-pointer text-white px-5 py-2 rounded-md hover:bg-gray-700 transition"
+                                                >
+                                                    Submit Review
+                                                </button>
+                                            </div>
+
+                                        </form>
+                                    </div>
+
+                                    {/* Reviews list - scrollable */}
+                                    <div className="overflow-y-auto flex-1 space-y-4 pr-2 mt-2">
+                                        {(product.reviews && product.reviews.length > 0
+                                            ? product.reviews
+                                            : Array.from({ length: 10 }, (_, i) => ({
+                                                user: `User ${i + 1}`,
+                                                rating: Math.floor(Math.random() * 5) + 1,
+                                                comment: "This is a dummy review for testing purposes.",
+                                            }))
+                                        ).map((review, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="border rounded-lg p-4 bg-gray-50 shadow-sm"
+                                            >
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <h4 className="font-semibold text-gray-800">{review.user}</h4>
+                                                    <span className="text-yellow-500">{'⭐'.repeat(review.rating)}</span>
+                                                </div>
+                                                <p className="text-gray-600">{review.comment}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+
+                        </AnimatePresence>
+                    </div>
+                </div>
             </div>
 
             <div className="mt-16 w-full">

@@ -5,7 +5,7 @@ import { Dialog, Transition } from "@headlessui/react";
 
 export default function ProductModal({ isOpen, closeModal, product }) {
     const [mainIndex, setMainIndex] = useState(0);
-    console.log("product", product)
+    console.log("productModal", product)
     if (!product) return null;
 
     if (!product?.image || product.image.length === 0) {
