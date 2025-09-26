@@ -56,6 +56,7 @@ const ProductModalWrapper = ({
 
     // ✅ Generate SKU
     const generateSlug = (name) => {
+        if (!name) return "";
         return name
             .toLowerCase()
             .trim()
@@ -63,24 +64,24 @@ const ProductModalWrapper = ({
             .replace(/[^\w-]+/g, "");
     };
 
-    const generateSKU = (productName, variation) => {
-        if (!productName || !variation) return null;
-        const variationName =
-            typeof variation === "string"
-                ? variation
-                : Array.isArray(variation)
-                    ? variation.join("-")
-                    : Object.values(variation).join("-");
+    // const generateSKU = (productName, variation) => {
+    //     if (!productName || !variation) return null;
+    //     const variationName =
+    //         typeof variation === "string"
+    //             ? variation
+    //             : Array.isArray(variation)
+    //                 ? variation.join("-")
+    //                 : Object.values(variation).join("-");
 
-        const cleanVariation = variationName
-            .trim()
-            .replace(/\s+/g, "-")
-            .replace(/\//g, "-")
-            .toUpperCase();
+    //     const cleanVariation = variationName
+    //         .trim()
+    //         .replace(/\s+/g, "-")
+    //         .replace(/\//g, "-")
+    //         .toUpperCase();
 
-        const productSlug = generateSlug(productName);
-        return `${productSlug}-${cleanVariation}`;
-    };
+    //     const productSlug = generateSlug(productName);
+    //     return `${productSlug}-${cleanVariation}`;
+    // };
 
     const variationsData = currentVariations.map(variationObj => {
         const variationKey = JSON.stringify(variationObj); // stringify here too
@@ -110,7 +111,8 @@ const ProductModalWrapper = ({
             //         .map(([k, v]) => `${k}-${v}`)
             //         .join("-")
             // ),
-            sku: details.sku ?? newProduct.sku ?? null
+            sku: details.sku ?? newProduct.sku ?? null,
+            tags: details.tags ?? newProduct.tags ?? null,
         };
     });
     console.log("variationsData", variationsData)
@@ -127,96 +129,93 @@ const ProductModalWrapper = ({
     const handleCreateProduct = async () => {
         console.log("offer:", newProduct.offer);
 
-        if (!newProduct.name.trim() || !newProduct.subcategoryId) {
-            return toast.error("Name and subcategory are required");
-        }
         setLoading(true);
-        let imageUrls = [];
-        if (newImage) {
-            if (Array.isArray(newImage)) {
-                imageUrls = await Promise.all(newImage.map(img => handleImageUpload(img)));
-                console.log("imageUrls" , imageUrls)
-            } else {
-                const url = await handleImageUpload(newImage);
-                imageUrls = Array.isArray(url) ? url : [url];
-            }
-        }
-
-
-        // const productSKU = `${generateSlug(name)}-MAIN-${Date.now()}`;
-
-        const subcategoryId = parseInt(newProduct.subcategoryId);
-        if (!subcategoryId) return toast.error("Subcategory is required");
-
-        const categoryId = newProduct.categoryId ? parseInt(newProduct.categoryId) : null;
-
-        // Prepare product data including variations
-        const productData = {
-            name: newProduct.name.trim(),
-            //categoryId: newProduct.category,
-            //subcategoryId: parseInt(newProduct.subcategoryId),
-            //subcategory: { connect: { id: Number(newProduct.subcategoryId) } },
-            short: newProduct.short || null,
-            description: newProduct.description || null,
-            image: imageUrls,
-            active: newProduct.active ?? true,
-            slug: generateSlug(newProduct.name),
-            metaTitle: generateMetaTitle(newProduct.name),
-            metaDescription: generateMetaDescription(newProduct.description),
-            price: newProduct.price ?? null,
-            stock: newProduct.stock ?? null,
-            size: newProduct.sizes || [],
-            color: newProduct.colors || [],
-            sku: newProduct.sku ?? null,
-            otherCountriesPrice: newProduct.otherCountriesPrice ?? null,
-            offers: newProduct.offers && newProduct.offers.length > 0
-                ? {
-                    connect: newProduct.offers.map((id) => ({ id: parseInt(id) }))
+        try {
+            let imageUrls = [];
+            if (newImage) {
+                if (Array.isArray(newImage)) {
+                    imageUrls = await Promise.all(newImage.map(img => handleImageUpload(img)));
+                    console.log("imageUrls", imageUrls)
+                } else {
+                    const url = await handleImageUpload(newImage);
+                    imageUrls = Array.isArray(url) ? url : [url];
                 }
-                : undefined,
+            }
 
-            primaryOffer: newProduct.offers && newProduct.offers.length > 0
-                ? { connect: { id: parseInt(newProduct.offers[0]) } }
-                : undefined,
 
-            category: categoryId ? { connect: { id: categoryId } } : undefined,
-            subcategory: { connect: { id: subcategoryId } },
+            // const productSKU = `${generateSlug(name)}-MAIN-${Date.now()}`;
 
-            variations: variationsData
-        };
+            const subcategoryId = parseInt(newProduct.subcategoryId);
+            // if (!subcategoryId) return toast.error("Subcategory is required");
 
-        console.log("createProduct", productData)
+            const categoryId = newProduct.categoryId ? parseInt(newProduct.categoryId) : null;
 
-        dispatch(createProduct(productData))
-            .unwrap()
-            .then((res) => {
-                toast.success("Product created successfully!");
-                setNewProduct({
-                    name: "",
-                    category: "",
-                    subcategoryId: "",
-                    short: "",
-                    description: "",
-                    price: "",
-                    stock: "",
-                    sizes: null,
-                    colors: null,
-                    active: true,
-                    image: null,
-                });
-                setSelectedAttributes({})
-                setActiveSection("product")
-                setCurrentVariations([]);
-                setVariationDetails({});
-                setNewImage(null);
-                setModalOpen(false)
-                setLoading(false);
-            })
-            .catch((err) => {
-                toast.error(err.message || "Failed to create product");
-                setLoading(false);
+            // Prepare product data including variations
+            const productData = {
+                name: newProduct.name?.trim() || "",
+                //categoryId: newProduct.category,
+                //subcategoryId: parseInt(newProduct.subcategoryId),
+                //subcategory: { connect: { id: Number(newProduct.subcategoryId) } },
+                short: newProduct.short || null,
+                description: newProduct.description || null,
+                image: imageUrls,
+                active: newProduct.active ?? true,
+                slug: generateSlug(newProduct.name),
+                metaTitle: generateMetaTitle(newProduct.name),
+                metaDescription: generateMetaDescription(newProduct.description),
+                price: newProduct.price ?? null,
+                stock: newProduct.stock ?? null,
+                size: newProduct.sizes || [],
+                color: newProduct.colors || [],
+                sku: newProduct.sku ?? null,
+                otherCountriesPrice: newProduct.otherCountriesPrice ?? null,
+                offers: newProduct.offers && newProduct.offers.length > 0
+                    ? {
+                        connect: newProduct.offers.map((id) => ({ id: parseInt(id) }))
+                    }
+                    : undefined,
+
+                primaryOffer: newProduct.offers && newProduct.offers.length > 0
+                    ? { connect: { id: parseInt(newProduct.offers[0]) } }
+                    : undefined,
+                tags: newProduct.tags && newProduct.tags.length > 0
+                    ? { connect: newProduct.tags.map(tag => ({ id: tag.id })) }
+                    : undefined,
+
+                category: categoryId ? { connect: { id: categoryId } } : undefined,
+                subcategory: { connect: { id: subcategoryId } },
+
+                variations: variationsData
+            };
+
+            console.log("createProduct", productData)
+            const res = await dispatch(createProduct(productData)).unwrap();
+            toast.success(res.message);
+            setNewProduct({
+                name: "",
+                category: "",
+                subcategoryId: "",
+                short: "",
+                description: "",
+                price: "",
+                stock: "",
+                sizes: null,
+                colors: null,
+                active: true,
+                image: null,
             });
+            setSelectedAttributes({});
+            setActiveSection("product");
+            setCurrentVariations([]);
+            setVariationDetails({});
+            setNewImage(null);
+            setModalOpen(false)
 
+        } catch (err) {
+            toast.error(err?.message || "Failed to create product");
+        } finally {
+            setLoading(false);
+        }
     };
 
 
@@ -323,6 +322,30 @@ const ProductModalWrapper = ({
         });
     };
 
+    const generateSKU = (baseSKU, variation) => {
+        if (!baseSKU || !variation) return null;
+
+        // Convert variation object/array/string into a string
+        const variationName =
+            typeof variation === "string"
+                ? variation
+                : Array.isArray(variation)
+                    ? variation.join("-")
+                    : Object.values(variation).join("-");
+
+        // Clean variation string
+        const cleanVariation = variationName
+            .trim()
+            .replace(/\s+/g, "-")
+            .replace(/\//g, "-")
+            .toUpperCase();
+
+        // Keep the slug logic on baseSKU
+        const productSlug = generateSlug(baseSKU);
+
+        return `${productSlug}-${cleanVariation}`;
+    };
+
 
 
     // ✅ Handle variation generation from selected attributes
@@ -351,6 +374,17 @@ const ProductModalWrapper = ({
 
             const variationKey = getVariationKey(variationObj);
 
+            const tagsArray = (variationDetails[variationKey]?.tags || newProduct.tags)?.map(tag =>
+                typeof tag === 'string' ? { name: tag } : tag
+            );
+
+            const baseSKU = newProduct.sku || "";
+            const newSKU = variationDetails[variationKey]?.sku ?? generateSKU(baseSKU, variationObj);
+
+            // **Console log to check**
+            console.log("Variation Key:", variationKey);
+            console.log("Tags Array:", tagsArray);
+
             newVariationDetails[variationKey] = {
                 ...(variationDetails[variationKey] || {}),
                 price: variationDetails[variationKey]?.price || newProduct.price,
@@ -363,12 +397,12 @@ const ProductModalWrapper = ({
                 name: variationDetails[variationKey]?.name || newProduct.name,
                 description:
                     variationDetails[variationKey]?.description || newProduct.description,
-                sku:
-                    variationDetails[variationKey]?.sku ||
-                    generateSKU(
-                        newProduct.name,
-                        Object.values(variationObj).filter(Boolean).join(" / ")
-                    ),
+                sku: newSKU,
+                tags: (variationDetails[variationKey]?.tags || newProduct.tags)?.map(tag =>
+                    typeof tag === 'string' ? { name: tag } : tag
+                )
+
+
             };
 
             return variationObj;
@@ -420,6 +454,7 @@ const ProductModalWrapper = ({
                     description: v.description,
                     images: v.image ? [v.image] : [],
                     name: v.name || editProductData.name,
+                    tags: v.tags
                 };
             });
 
@@ -451,7 +486,7 @@ const ProductModalWrapper = ({
                 });
 
                 const key = getVariationKey(attrs);
-                console.log("key", key)
+                console.log("keyeditMode", key)
                 dbVariationDetails[key] = {
                     id: v.id,
                     short: v.short,
@@ -461,6 +496,7 @@ const ProductModalWrapper = ({
                     description: v.description,
                     images: v.image ? [v.image] : [],
                     name: v.name || editProductData.name,
+                    tags: v.tags
                 };
             });
 
@@ -531,7 +567,7 @@ const ProductModalWrapper = ({
         <>
             {loading && <Loader />}
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-auto">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl p-6 md:flex md:gap-6 animate-fade-in">
+                <div className="bg-white rounded-2xl shadow-2xl w-full h-full  p-6 md:flex md:gap-6 animate-fade-in">
                     {/* Side Menu */}
                     <div className="md:w-1/4 mb-4 md:mb-0">
                         <h2 className="text-lg font-semibold mb-4">Sections</h2>
@@ -604,10 +640,11 @@ const ProductModalWrapper = ({
                                 productFields={[
                                     { key: "name", type: "text", placeholder: "Product Name" },
                                     { key: "short", type: "text", placeholder: "Short Description" },
-                                    { key: "description", type: "textarea", placeholder: "Description" },
+                                    { key: "tags", type: "text", placeholder: "Tags" },
                                     { key: "price", type: "number", placeholder: "Price" },
                                     { key: "stock", type: "number", placeholder: "Stock" },
-                                    { key: "SKU", type: "text", placeholder: "Enter SKU Detail" },
+                                    { key: "sku", type: "text", placeholder: "Enter SKU Detail" },
+                                    { key: "description", type: "textarea", placeholder: "Description" },
                                     { key: "image", type: "file", placeholder: "Product Image" },
                                 ]}
                                 handleImageUpload={handleImageUpload}

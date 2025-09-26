@@ -29,9 +29,13 @@ const ProductsPage = ({
     const [modalOpenProduct, setModalOpenProduct] = useState(false);
     const [newImage, setNewImage] = useState([]);
 
+    // const filteredProducts = (products ?? []).filter(p =>
+    //     p.name.toLowerCase().includes(search.toLowerCase())
+    // );
     const filteredProducts = (products ?? []).filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase())
-    );
+    (p.name ?? "").toLowerCase().includes((search ?? "").toLowerCase())
+);
+
 
     console.log("categoriesProductPage", categories)
     const openModal = (product) => {

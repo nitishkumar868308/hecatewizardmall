@@ -40,12 +40,19 @@ export const createProduct = createAsyncThunk(
     async (payload, { rejectWithValue }) => {
         try {
             const response = await axios.post("/api/products", payload);
-            return response.data.data;
+            // ✅ Return both message and data
+            return {
+                message: response.data.message || "Product created successfully",
+                data: response.data.data,
+            };
         } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to create product");
+            // ✅ Return backend message if available
+            const errorMsg = err.response?.data?.message || "Failed to create product";
+            return rejectWithValue({ message: errorMsg });
         }
     }
 );
+
 
 // Delete product (soft delete)
 export const deleteProduct = createAsyncThunk(
@@ -78,7 +85,7 @@ export const updateProducttoggle = createAsyncThunk(
     async (payload, { rejectWithValue }) => {
         try {
             const response = await axios.patch("/api/products", payload);
-            console.log("response" , response)
+            console.log("response", response)
             return response.data;
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to update product");
@@ -118,7 +125,7 @@ const productsSlice = createSlice({
             })
             .addCase(createProduct.fulfilled, (state, action) => {
                 state.loading = false;
-                state.products.unshift(action.payload); // add newly created product to the list
+                 state.products.unshift(action.payload.data);  // add newly created product to the list
             })
             .addCase(createProduct.rejected, (state, action) => {
                 state.loading = false;
@@ -178,7 +185,7 @@ const productsSlice = createSlice({
                 state.error = action.payload || action.error.message;
             });
 
-},
+    },
 });
 
 export default productsSlice.reducer;

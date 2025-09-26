@@ -269,7 +269,7 @@ const Header = () => {
 
                                         {/* Dropdown only for Categories */}
                                         {item === "Categories" && openItem === "Categories" && (
-                                            <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 w-[1500px] bg-[#161619] text-white shadow-lg py-8 px-10 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 z-50">
+                                            <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-1 w-[1500px] bg-[#161619] text-white shadow-lg py-8 px-10 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 z-50">
                                                 {mappedCategories.map((cat) => (
                                                     <div
                                                         key={cat.name}
@@ -282,7 +282,7 @@ const Header = () => {
                                                                 {cat.sub.map((sub) => (
                                                                     <li key={sub}>
                                                                         <Link
-                                                                            href={`/categories/${sub.toLowerCase()}`}
+                                                                            href={`/categories?category=${encodeURIComponent(cat.name)}&&subcategory=${encodeURIComponent(sub)}`}
                                                                             className="text-gray-300 hover:text-white transition font-functionPro"
                                                                         >
                                                                             {sub}

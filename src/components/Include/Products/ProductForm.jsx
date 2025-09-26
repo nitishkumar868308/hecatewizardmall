@@ -1,6 +1,14 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import MultiSelectDropdown from "@/components/Custom/MultiSelectDropdown";
+import RichTextEditor from "@/components/Custom/RichTextEditor";
+import { FiX } from "react-icons/fi";
+import {
+    fetchTags,
+    createTag,
+} from "@/app/redux/slices/tag/tagSlice";
+import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
 
 const ProductForm = ({
     editModalOpen,
@@ -14,11 +22,72 @@ const ProductForm = ({
     categories = [],
     subcategories = [],
 }) => {
+    const { tags } = useSelector((state) => state.tags);
+    const dispatch = useDispatch();
     const isEdit = editModalOpen;
     const currentData = isEdit ? editProductData : newProduct;
     const setCurrentData = isEdit ? setEditProductData : setNewProduct;
     console.log("productOffers", productOffers)
     console.log("currentData", currentData)
+    const [search, setSearch] = useState("");
+    const [filteredTags, setFilteredTags] = useState([]);
+
+    useEffect(() => {
+        dispatch(fetchTags());
+    }, [dispatch]);
+
+    // Add tag to product
+    const addTag = (tagName) => {
+        if (!tagName?.trim()) {
+            toast.error("Tag Name is required...");
+            return;
+        }
+
+        // Check if already selected
+        if (currentData.tags?.some((t) => t.name === tagName)) {
+            toast.error("Tag already added!");
+            return;
+        }
+
+        // Check if tag exists in DB (filteredTags from Redux)
+        const existingTag = filteredTags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
+
+        if (existingTag) {
+            // Just add existing tag to selected tags
+            setCurrentData((prev) => ({
+                ...prev,
+                tags: [...(prev.tags || []), existingTag],
+            }));
+        } else {
+            // Create new tag in DB
+            dispatch(createTag({ name: tagName }))
+                .unwrap()
+                .then((newTag) => {
+                    // Add new tag to Redux (already handled by slice)
+                    // Add new tag to selected tags
+                    setCurrentData((prev) => ({
+                        ...prev,
+                        tags: [...(prev.tags || []), newTag],
+                    }));
+                })
+                .catch((err) => {
+                    console.error("Failed to add tag:", err);
+                    toast.error(err?.message || "Failed to add tag");
+                });
+        }
+
+        setSearch("");
+        setFilteredTags([]);
+    };
+
+
+    // Remove tag from product
+    const removeTag = (tag) => {
+        setCurrentData({
+            ...currentData,
+            tags: (currentData.tags || []).filter((t) => t !== tag),
+        });
+    };
 
     return (
         <div className="p-6 bg-white rounded-3xl shadow-lg max-w-7xl mx-auto max-h-[80vh] overflow-y-auto">
@@ -154,8 +223,94 @@ const ProductForm = ({
                     />
                 </div>
 
+                {/* Tags */}
+                <div className="flex flex-col w-full relative">
+                    <label className="mb-2 font-medium text-gray-700">Tags</label>
+
+                    {/* Input + Add Button */}
+                    <div className="flex gap-2 relative">
+                        <input
+                            type="text"
+                            placeholder="Search tags"
+                            value={search}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setSearch(val);
+
+                                if (!val.trim()) {
+                                    setFilteredTags([]);
+                                    return;
+                                }
+
+                                // Filter tags from Redux that are not already selected
+                                const filtered = tags.filter(
+                                    (tag) =>
+                                        tag.name.toLowerCase().includes(val.toLowerCase()) &&
+                                        !(currentData.tags || []).some((t) => t.id === tag.id)
+                                );
+                                setFilteredTags(filtered);
+                            }}
+                            className="w-full border border-gray-300 rounded-2xl px-4 py-3 cursor-pointer focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => addTag(search)}
+                            className="px-4 py-2 bg-gray-600 text-white cursor-pointer rounded-2xl hover:bg-gray-700 transition"
+                        >
+                            Add
+                        </button>
+
+                        {/* Dropdown */}
+                        {filteredTags.length > 0 && (
+                            <div className="absolute top-full left-0 z-50 w-full bg-white border border-gray-300 rounded-xl cursor-pointer shadow-lg max-h-60 overflow-y-auto mt-1">
+                                {filteredTags.map((tag) => (
+                                    <div
+                                        key={tag.id}
+                                        className="px-4 py-2 cursor-pointer hover:bg-blue-50"
+                                        onClick={() => addTag(tag.name)}
+                                    >
+                                        {tag.name}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Selected tags */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                        {(currentData.tags || []).map((tag) => (
+                            <div
+                                key={tag.id}
+                                className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full"
+                            >
+                                <span>{tag.name}</span>
+                                <button type="button" onClick={() => removeTag(tag)}>
+                                    <FiX className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+
+                {/* External Market */}
+                <div className="flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">External Url</label>
+                    <input
+                        type="number"
+                        placeholder="externalUrl"
+                        value={currentData.externalUrl || ""}
+                        onChange={(e) =>
+                            setCurrentData({ ...currentData, externalUrl: e.target.value })
+                        }
+                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                    />
+                </div>
+
+
+
                 {/* Description */}
-                <div className="col-span-1 md:col-span-2 flex flex-col">
+                {/* <div className="col-span-1 md:col-span-2 flex flex-col">
                     <label className="mb-2 font-medium text-gray-700">Description</label>
                     <textarea
                         list="descOptions"
@@ -175,6 +330,15 @@ const ProductForm = ({
                         <option value="Other" />
                     </datalist>
 
+                </div> */}
+                <div className="col-span-1 md:col-span-2 flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">Description</label>
+                    <RichTextEditor
+                        value={currentData.description || ""}
+                        onChange={(val) =>
+                            setCurrentData({ ...currentData, description: val })
+                        }
+                    />
                 </div>
 
                 {/* Images */}

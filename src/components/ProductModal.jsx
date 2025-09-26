@@ -78,7 +78,7 @@ export default function ProductModal({ isOpen, closeModal, product }) {
                                         <Dialog.Title className="text-3xl font-bold text-gray-800">
                                             {product.name}
                                         </Dialog.Title>
-                                        <p className="text-gray-600">{product.description || "No description"}</p>
+                                        {/* <p className="text-gray-600">{product.description || "No description"}</p> */}
 
                                         <div className="grid grid-cols-2 gap-4 mt-2">
                                             <div>

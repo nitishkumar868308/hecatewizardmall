@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 
 const Header = ({ toggleSidebar }) => {
     const { user } = useSelector((state) => state.me);
+    console.log("userHeader", user)
 
     const getInitials = (name) => {
         if (!name) return "";
@@ -35,11 +36,6 @@ const Header = ({ toggleSidebar }) => {
                         <span className="text-gray-200 hidden sm:block cursor-pointer">
                             Welcome, {getInitials(user.name)} 👋
                         </span>
-                        <img
-                            src={user.avatar || "https://i.pravatar.cc/40"}
-                            alt="User"
-                            className="w-10 h-10 rounded-full border-2 border-white cursor-pointer"
-                        />
                     </>
                 )}
             </div>

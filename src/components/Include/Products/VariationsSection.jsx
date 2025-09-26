@@ -233,8 +233,16 @@
 // export default VariationsSection;
 
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import RichTextEditor from "@/components/Custom/RichTextEditor";
+import { FiX } from "react-icons/fi";
+import {
+    fetchTags,
+    createTag,
+} from "@/app/redux/slices/tag/tagSlice";
+import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
 
 const VariationsSection = ({
     currentVariations,
@@ -246,37 +254,82 @@ const VariationsSection = ({
     productFields = [],
     handleImageUpload,
 }) => {
+    const { tags } = useSelector((state) => state.tags);
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        dispatch(fetchTags());
+    }, [dispatch]);
     const [uploading, setUploading] = useState(false);
-
+    const [search, setSearch] = useState("");
+    const [filteredTags, setFilteredTags] = useState([]);
     // ---- Helper: normalize images to array of strings ----
-   const normalizeImages = (images) => {
-    if (!images) return [];
+    const normalizeImages = (images) => {
+        if (!images) return [];
 
-    // Agar nested array hai [[...]]
-    if (Array.isArray(images) && images.length === 1 && Array.isArray(images[0])) {
-        return images[0];
-    }
+        // Agar nested array hai [[...]]
+        if (Array.isArray(images) && images.length === 1 && Array.isArray(images[0])) {
+            return images[0];
+        }
 
-    // Agar normal array hai
-    if (Array.isArray(images)) return images;
+        // Agar normal array hai
+        if (Array.isArray(images)) return images;
 
-    // Agar string aa rahi hai {..,..}
-    let cleaned = images;
-    if (cleaned.startsWith("{") && cleaned.endsWith("}")) {
-        cleaned = cleaned.slice(1, -1);
-    }
+        // Agar string aa rahi hai {..,..}
+        let cleaned = images;
+        if (cleaned.startsWith("{") && cleaned.endsWith("}")) {
+            cleaned = cleaned.slice(1, -1);
+        }
 
-    return cleaned.split(",").map(url => url.trim()).filter(url => url !== "");
-};
+        return cleaned.split(",").map(url => url.trim()).filter(url => url !== "");
+    };
 
+    // Add tag
+    const addTag = (tagName, variationKey) => {
+        if (!tagName?.trim()) {
+            toast.error("Tag Name is required...");
+            return;
+        }
 
+        const currentTags = variationDetails[variationKey]?.tags || [];
 
-    const test = "{/uploads/products/1758699041089-image24.jpg,/uploads/products/1758699041375-image23.jpg}";
-    console.log("normalizeImages:", normalizeImages(test));
+        if (currentTags.some((t) => t.name.toLowerCase() === tagName.toLowerCase())) {
+            toast.error("Tag already added!");
+            return;
+        }
 
+        const existingTag = tags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
+
+        if (existingTag) {
+            handleVariationChange(variationKey, "tags", [...currentTags, existingTag]);
+        } else {
+            dispatch(createTag({ name: tagName }))
+                .unwrap()
+                .then((newTag) => {
+                    handleVariationChange(variationKey, "tags", [...currentTags, newTag]);
+                })
+                .catch((err) => {
+                    console.error("Failed to add tag:", err);
+                    toast.error(err?.message || "Failed to add tag");
+                });
+        }
+
+        setSearch("");
+        setFilteredTags([]);
+    };
+
+    // Remove tag
+    const removeTag = (tag, variationKey) => {
+        const currentTags = variationDetails[variationKey]?.tags || [];
+        handleVariationChange(
+            variationKey,
+            "tags",
+            currentTags.filter((t) => t.name !== tag.name)
+        );
+    };
 
     return (
-        <div className="max-h-[600px] overflow-y-auto space-y-5 p-2 sm:p-4">
+        <div className="max-h-[800px] overflow-y-auto space-y-5 p-2 sm:p-4">
             {currentVariations.map((variation) => {
                 const variationKey = JSON.stringify(variation);
 
@@ -330,18 +383,27 @@ const VariationsSection = ({
 
                                         if (field.type === "textarea") {
                                             return (
+                                                // <div key={field.key} className="flex flex-col space-y-2">
+                                                //     <label className="text-sm font-medium text-gray-700">
+                                                //         {field.placeholder}
+                                                //     </label>
+                                                //     <textarea
+                                                //         placeholder={field.placeholder}
+                                                //         value={value || ""}
+                                                //         onChange={(e) =>
+                                                //             handleVariationChange(variationKey, field.key, e.target.value)
+                                                //         }
+                                                //         className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                                                //         rows={3}
+                                                //     />
+                                                // </div>
                                                 <div key={field.key} className="flex flex-col space-y-2">
                                                     <label className="text-sm font-medium text-gray-700">
                                                         {field.placeholder}
                                                     </label>
-                                                    <textarea
-                                                        placeholder={field.placeholder}
+                                                    <RichTextEditor
                                                         value={value || ""}
-                                                        onChange={(e) =>
-                                                            handleVariationChange(variationKey, field.key, e.target.value)
-                                                        }
-                                                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-                                                        rows={3}
+                                                        onChange={(html) => handleVariationChange(variationKey, field.key, html)}
                                                     />
                                                 </div>
                                             );
@@ -421,7 +483,85 @@ const VariationsSection = ({
 
                                                 </div>
                                             );
-                                        } else {
+                                        } else if (field.key === "tags") {
+                                            const currentTags = variationDetails[variationKey]?.tags || [];
+
+                                            return (
+                                                <div key={field.key} className="flex flex-col w-full relative">
+                                                    <label className="mb-2 font-medium text-gray-700">{field.placeholder}</label>
+
+                                                    {/* Input + Add Button */}
+                                                    <div className="flex gap-2 relative">
+                                                        <div className="relative w-full">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Search tags"
+                                                                value={search}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    setSearch(val);
+
+                                                                    if (!val.trim()) return setFilteredTags([]);
+
+                                                                    // Filter tags from Redux that are not already selected
+                                                                    const filtered = tags.filter(
+                                                                        (tag) =>
+                                                                            tag.name.toLowerCase().includes(val.toLowerCase()) &&
+                                                                            !currentTags.some((t) => t.name === tag.name)
+                                                                    );
+
+                                                                    setFilteredTags(filtered);
+                                                                }}
+                                                                disabled
+                                                                className="w-full border border-gray-300 rounded-2xl px-4 py-3 cursor-pointer focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                                                            />
+                                                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                                                                ×
+                                                            </span>
+                                                        </div>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => addTag(search, variationKey)}
+                                                            className="px-4 py-2 bg-gray-600 text-white cursor-pointer rounded-2xl hover:bg-gray-700 transition"
+                                                        >
+                                                            Add
+                                                        </button>
+
+                                                        {/* Dropdown */}
+                                                        {filteredTags.length > 0 && (
+                                                            <div className="absolute top-full left-0 z-50 w-full bg-white border border-gray-300 rounded-xl cursor-pointer shadow-lg max-h-60 overflow-y-auto mt-1">
+                                                                {filteredTags.map((tag) => (
+                                                                    <div
+                                                                        key={tag.id}
+                                                                        className="px-4 py-2 cursor-pointer hover:bg-blue-50"
+                                                                        onClick={() => addTag(tag.name, variationKey)}
+                                                                    >
+                                                                        {tag.name}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Selected tags */}
+                                                    <div className="flex flex-wrap gap-2 mt-3">
+                                                        {currentTags.map((tag, idx) => (
+                                                            <div key={tag.id || idx} className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+                                                                <span>{tag.name}</span>
+                                                                <button type="button" onClick={() => removeTag(tag, variationKey)}>
+                                                                    <FiX className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+
+
+                                        else {
                                             return (
                                                 <div key={field.key} className="flex flex-col space-y-2">
                                                     <label className="text-sm font-medium text-gray-700">

@@ -31,7 +31,7 @@ const ProductTable = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {products.map((p, idx) => (
-                            <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                            <tr key={`${p.id}-${idx}`} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4">{idx + 1}</td>
                                 <td className="px-6 py-4">{p.name}</td>
                                 <td className="px-6 py-4">{categories.find(s => s.id === p.categoryId)?.name || "-"}</td>

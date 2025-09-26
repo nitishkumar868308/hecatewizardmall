@@ -13,6 +13,8 @@ import Loader from "@/components/Include/Loader";
 import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from "framer-motion";
+import DOMPurify from "dompurify";
+
 
 const ProductDetail = () => {
     const dispatch = useDispatch();
@@ -380,7 +382,7 @@ const ProductDetail = () => {
                             {selectedVariation?.short || product.short}
                         </p>
 
-                        {/* Dynamic Variation Attributes */}
+
                         {Object.entries(variationAttributes).map(([attrKey, values]) => (
                             <div key={attrKey} className="mb-6">
                                 <h3 className="mb-3 text-lg font-semibold text-gray-700">
@@ -455,8 +457,14 @@ const ProductDetail = () => {
                                 Add to Cart
                             </button>
 
-
                         </div>
+                        <p className="text-lg text-gray-600 mt-8 leading-relaxed">
+                            Tag: {Array.isArray(selectedVariation?.tags)
+                                ? selectedVariation.tags.map(tag => tag.name).join(", ")
+                                : Array.isArray(product.tags)
+                                    ? product.tags.map(tag => tag.name).join(", ")
+                                    : "No tags"}
+                        </p>
                     </div>
                 </div>
 
@@ -513,18 +521,15 @@ const ProductDetail = () => {
                                                 </p>
                                             ))} */}
 
-                                        {selectedVariation?.description &&
-                                            selectedVariation.description
-                                                .replace(/\\'/g, "'")
-                                                .split("\n\n")
-                                                .map((para, idx) => (
-                                                    <p
-                                                        key={idx}
-                                                        className="text-gray-700 text-base leading-loose font-medium tracking-normal italic"
-                                                    >
-                                                        {para}
-                                                    </p>
-                                                ))}
+                                        {selectedVariation?.description && (
+                                            <div
+                                                className="text-gray-700 text-base leading-loose font-medium tracking-normal italic"
+                                                dangerouslySetInnerHTML={{
+                                                    __html: DOMPurify.sanitize(product.description)
+                                                }}
+                                            />
+
+                                        )}
                                     </div>
 
 

@@ -12,6 +12,8 @@ import countryPricingReducer from './slices/countryPricing/countryPricingSlice';
 import countryReducer from "./slices/countrySlice";
 import cartReducer from './slices/addToCart/addToCartSlice'
 import addressReducer from "./slices/address/addressSlice";
+import tagsReducer from './slices/tag/tagSlice';
+import marketLinksReducer from './slices/externalMarket/externalMarketSlice';
 // import updateUserReducer from './slices/userSlice';
 
 const store = configureStore({
@@ -29,6 +31,8 @@ const store = configureStore({
         country: countryReducer,
         cart: cartReducer,
         address: addressReducer,
+        tags: tagsReducer,
+        marketLinks: marketLinksReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

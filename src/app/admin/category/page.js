@@ -68,16 +68,33 @@ const AddCategory = () => {
     //     }
     // };
 
-    const handleImageUpload = async (file) => {
-        if (!file) throw new Error('No file provided');
+    // const handleImageUpload = async (file) => {
+    //     if (!file) throw new Error('No file provided');
 
+    //     try {
+    //         const url = await uploadToCloudinary(file, 'products');
+    //         return url;
+    //     } catch (err) {
+    //         console.error('Upload failed:', err);
+    //         throw err;
+    //     }
+    // };
+    const handleImageUpload = async (file) => {
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+
+        let data;
         try {
-            const url = await uploadToCloudinary(file, 'products');
-            return url;
+            data = await res.json();
         } catch (err) {
-            console.error('Upload failed:', err);
-            throw err;
+            throw new Error("Server did not return valid JSON");
         }
+
+        if (!res.ok) throw new Error(data.message || "Upload failed");
+
+        return data.urls; // single URL or array of URLs
     };
 
 

@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Home, Users, Settings, LogOut, X, Plus, ChevronDown, ChevronUp, LayoutGrid, ShoppingBag } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [menuOpen, setMenuOpen] = useState(false);
@@ -30,12 +31,29 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 </div>
 
                 {/* Logo Desktop */}
-                <h2 className="text-2xl font-bold text-gray-100 mb-8 hidden md:block text-center">
-                    Admin
-                </h2>
+                <div className="flex items-center justify-between w-full px-4 md:px-8">
+                    <a href="/" target="_blank" rel="noopener noreferrer">
+                        <Image
+                            src="/image/logo.jpg"
+                            alt="Logo"
+                            width={60}
+                            height={60}
+                            className="object-contain"
+                        />
+                    </a>
+
+
+
+                    <h2 className="text-2xl font-bold text-gray-100 hidden md:block">
+                        Admin
+                    </h2>
+                </div>
+
+
+
 
                 {/* Sidebar Navigation */}
-                <nav className="flex flex-col gap-2 text-gray-700">
+                <nav className="flex flex-col gap-2 mt-8 text-gray-700">
                     <Link
                         href="/admin/dashboard"
                         className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition"
@@ -133,6 +151,18 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                     className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
                                 >
                                     Pricing
+                                </Link>
+                                <Link
+                                    href="/admin/tags"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Tags
+                                </Link>
+                                 <Link
+                                    href="/admin/externalMarket"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    External Market
                                 </Link>
                             </div>
                         )}
