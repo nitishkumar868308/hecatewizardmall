@@ -54,6 +54,7 @@ const ProductSlider = () => {
         }
     }, [inView]);
     console.log("products", products)
+
     const handleProductClick = (id) => {
         router.push(`/product/${id}`);
     };
