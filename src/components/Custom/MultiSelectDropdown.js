@@ -73,6 +73,7 @@ const MultiSelectDropdown = ({ offers, currentData, setCurrentData }) => {
     const [open, setOpen] = useState(false);
     const dropdownRef = useRef(null);
 
+    // Close dropdown on outside click
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -83,17 +84,19 @@ const MultiSelectDropdown = ({ offers, currentData, setCurrentData }) => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Convert objects to IDs on mount
     useEffect(() => {
-        if (!currentData.offers) {
-            setCurrentData({ ...currentData, offers: [] });
-        } else if (currentData.offers.length > 0 && typeof currentData.offers[0] === "object") {
-            setCurrentData({
-                ...currentData,
-                offers: currentData.offers.map(o => o.id),
-            });
+        if (currentData.offers && currentData.offers.length > 0) {
+            if (typeof currentData.offers[0] === "object") {
+                setCurrentData(prev => ({
+                    ...prev,
+                    offers: currentData.offers.map(o => o.id),
+                }));
+            }
+        } else if (!currentData.offers) {
+            setCurrentData(prev => ({ ...prev, offers: [] }));
         }
-    }, []); // run once on mount
-
+    }, []);
 
     const toggleOffer = (id) => {
         const selected = currentData.offers || [];
@@ -104,8 +107,12 @@ const MultiSelectDropdown = ({ offers, currentData, setCurrentData }) => {
         }
     };
 
+    // ✅ Handle both objects and IDs
     const selectedNames = (currentData.offers || [])
-        .map(id => offers.find(o => o.id === id)?.name)
+        .map(o => {
+            if (typeof o === "object") return o.name;
+            return offers.find(x => x.id === o)?.name;
+        })
         .filter(Boolean)
         .join(", ");
 
@@ -127,7 +134,7 @@ const MultiSelectDropdown = ({ offers, currentData, setCurrentData }) => {
                             <label key={o.id} className="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    checked={(currentData.offers || []).includes(o.id)}
+                                    checked={(currentData.offers || []).some(x => (typeof x === "object" ? x.id === o.id : x === o.id))}
                                     onChange={() => toggleOffer(o.id)}
                                     className="mr-2"
                                 />

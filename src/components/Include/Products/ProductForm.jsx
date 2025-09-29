@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import MultiSelectDropdown from "@/components/Custom/MultiSelectDropdown";
 import RichTextEditor from "@/components/Custom/RichTextEditor";
 import { FiX } from "react-icons/fi";
@@ -36,6 +36,25 @@ const ProductForm = ({
         dispatch(fetchTags());
     }, [dispatch]);
 
+
+    useEffect(() => {
+        if (isEdit && editProductData) {
+            setCurrentData((prev) => ({
+                ...prev,
+                ...editProductData,
+                tags: (editProductData.tags || []).map((t) =>
+                    typeof t === "string"
+                        ? { id: t, name: t }
+                        : { id: t.id, name: t.name }
+                ),
+            }));
+        }
+    }, [isEdit, editModalOpen]);
+
+
+
+
+
     // Add tag to product
     const addTag = (tagName) => {
         if (!tagName?.trim()) {
@@ -63,8 +82,6 @@ const ProductForm = ({
             dispatch(createTag({ name: tagName }))
                 .unwrap()
                 .then((newTag) => {
-                    // Add new tag to Redux (already handled by slice)
-                    // Add new tag to selected tags
                     setCurrentData((prev) => ({
                         ...prev,
                         tags: [...(prev.tags || []), newTag],
@@ -85,12 +102,13 @@ const ProductForm = ({
     const removeTag = (tag) => {
         setCurrentData({
             ...currentData,
-            tags: (currentData.tags || []).filter((t) => t !== tag),
+            tags: (currentData.tags || []).filter((t) => t.id !== tag.id),
         });
     };
 
+
     return (
-        <div className="p-6 bg-white rounded-3xl shadow-lg max-w-7xl mx-auto max-h-[80vh] overflow-y-auto">
+        <div className="p-6 bg-white rounded-3xl shadow-lg h-full mx-auto max-h-[90vh] md:max-h-[75vh] overflow-y-auto">
 
             <h3 className="text-2xl font-semibold mb-6 text-gray-800">Product Details</h3>
 
@@ -291,23 +309,6 @@ const ProductForm = ({
                         ))}
                     </div>
                 </div>
-
-
-                {/* External Market */}
-                <div className="flex flex-col">
-                    <label className="mb-2 font-medium text-gray-700">External Url</label>
-                    <input
-                        type="number"
-                        placeholder="externalUrl"
-                        value={currentData.externalUrl || ""}
-                        onChange={(e) =>
-                            setCurrentData({ ...currentData, externalUrl: e.target.value })
-                        }
-                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-                    />
-                </div>
-
-
 
                 {/* Description */}
                 {/* <div className="col-span-1 md:col-span-2 flex flex-col">

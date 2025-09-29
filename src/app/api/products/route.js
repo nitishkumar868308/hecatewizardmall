@@ -169,10 +169,12 @@ export async function POST(req) {
             size,
             color,
             variations,
-            tags
+            tags,
+            marketLinks
         } = body;
-        console.log("tags", tags)
-         console.log("variations", variations)
+        console.log("marketLinks", marketLinks)
+        console.log("variations", variations)
+        console.log("variation tags:", variations.map(v => v.tags.map(t => Number(t.id))));
         if (!name?.trim() || !subcategory || !sku?.trim()) {
             return new Response(
                 JSON.stringify({ message: "Name, Subcategory, and SKU are required" }),
@@ -261,6 +263,9 @@ export async function POST(req) {
                 size: size ?? null,
                 color: color ?? null,
                 tags,
+                marketLinks: marketLinks?.connect?.length > 0
+                    ? { connect: marketLinks.connect.map(link => ({ id: link.id })) }
+                    : undefined,
                 variations: variations && Array.isArray(variations) && variations.length > 0
                     ? {
                         create: variations.map(v => ({
@@ -274,10 +279,7 @@ export async function POST(req) {
                             name: v.name ?? name,
                             tags: v.tags && v.tags.length > 0
                                 ? {
-                                    connectOrCreate: v.tags.map(tag => ({
-                                        where: tag.id ? { id: tag.id } : { name: tag.name },
-                                        create: { name: tag.name },
-                                    }))
+                                    connect: v.tags.map(tag => ({ id: Number(tag.id) })) // ✅ convert to number
                                 }
                                 : undefined,
                             otherCountriesPrice: v.otherCountriesPrice?.toString() ?? otherCountriesPrice?.toString() ?? null
@@ -288,9 +290,15 @@ export async function POST(req) {
             include: {
                 variations: true,
                 category: true,
-                subcategory: true
+                subcategory: true,
+                tags: true,
+                marketLinks: true,
+                offers: true,
+                primaryOffer: true
             }
         });
+
+        console.log("product", product)
 
         return new Response(
             JSON.stringify({ message: "Product created successfully with variations", data: product }),
@@ -330,12 +338,17 @@ export async function GET(req) {
                 deleted: 0,
             },
             include: {
-                variations: true,
+                variations: {
+                    include: {
+                        tags: true,
+                    }
+                },
                 category: true,
                 subcategory: true,
                 offers: true,
                 primaryOffer: true,
                 tags: true,
+                marketLinks: true,
             },
         });
 
@@ -431,7 +444,28 @@ export async function PUT(req) {
             categoryId = null,
             subcategoryId = null,
             variations = [],
+            tags = [],
+            marketLinks
         } = data;
+
+        console.log("===== Backend received product data =====");
+        console.log({
+            name,
+            sku,
+            price,
+            stock,
+            tags,
+            offers,
+            primaryOffer,
+            categoryId,
+            subcategoryId,
+        });
+
+        console.log("===== Backend received variations =====");
+        variations.forEach((v, i) => {
+            console.log(`Variation #${i + 1}:`, v);
+        });
+
 
         // Update existing variations safely
         const variationsUpdate = variations.filter(v => v.id).map(v => {
@@ -447,9 +481,15 @@ export async function PUT(req) {
                     sku: existingVar.sku, // keep existing SKU safe
                     image: Array.isArray(v.image) ? v.image.flat() : v.image ? [v.image] : existingVar.image,
                     description: v.description ?? existingVar.description,
+                    tags: v.tags && v.tags.length
+                        ? { set: [], connect: v.tags.map(tag => ({ id: Number(tag.id) })) }
+                        : undefined,
                 },
             };
         });
+        console.log("variationsUpdate JSON:", JSON.stringify(variationsUpdate, null, 2));
+
+        console.log("variationsUpdate", variationsUpdate)
 
 
         // Create new variations with unique SKU (frontend responsibility)
@@ -462,6 +502,9 @@ export async function PUT(req) {
             description: v.description,
             short: v.short,
             name: v.name,
+            tags: v.tags && v.tags.length
+                ? { set: [], connect: v.tags.map(tag => ({ id: Number(tag.id) })) }
+                : undefined,
         }));
 
 
@@ -513,12 +556,15 @@ export async function PUT(req) {
                 category: categoryId ? { connect: { id: categoryId } } : undefined,
                 subcategory: subcategoryId ? { connect: { id: subcategoryId } } : undefined,
                 offers: Array.isArray(offers) && offers.length
-                    ? { set: [], connect: offers.map(id => ({ id })) }
+                    ? { set: [], connect: offers.map(o => ({ id: Number(o.id) })) }
                     : undefined,
-
-                primaryOffer: primaryOffer
-                    ? { connect: { id: primaryOffer } }
+                primaryOffer: primaryOffer && primaryOffer.id != null
+                    ? { connect: { id: Number(primaryOffer.id) } }
                     : undefined,
+                tags: tags?.length ? { set: [], connect: tags.map(tag => ({ id: Number(tag.id) })) } : undefined,
+                marketLinks: marketLinks?.connect
+                    ? { set: marketLinks.connect.map(link => ({ id: link.id })) }
+                    : { set: [] }, // clear if empty
                 variations: {
                     update: variationsUpdate,
                     create: variationsCreate,
@@ -530,8 +576,12 @@ export async function PUT(req) {
                 primaryOffer: true,
                 category: true,
                 subcategory: true,
+                tags: true,
+                marketLinks: true
             },
         });
+
+        console.log("updatedProduct", updatedProduct)
 
         return new Response(
             JSON.stringify({

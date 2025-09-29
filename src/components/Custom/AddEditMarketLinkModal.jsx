@@ -10,17 +10,30 @@ const countries = [
     { name: "India", code: "IN" },
     { name: "United Kingdom", code: "UK" },
     { name: "Canada", code: "CA" },
-    // Add aur countries yaha
+    // Add more countries here
 ];
 
-const AddEditMarketLinkModal = ({ isOpen, onClose, editData }) => {
+const AddEditMarketLinkModal = ({ isOpen, onClose, editData, onSelect, productName }) => {
     const dispatch = useDispatch();
     const [form, setForm] = useState({ countryName: "", countryCode: "", productName: "", url: "" });
 
     useEffect(() => {
-        if (editData) setForm(editData);
-        else setForm({ countryName: "", countryCode: "", productName: "", url: "" });
-    }, [editData]);
+        if (editData) {
+            setForm({
+                countryName: editData.countryName || "",
+                countryCode: editData.countryCode || "",
+                productName: editData.productName || editData.name || "",
+                url: editData.url || "",
+            });
+        } else {
+            setForm({
+                countryName: "",
+                countryCode: "",
+                productName: productName || "", // Auto-fill productName when adding
+                url: "",
+            });
+        }
+    }, [editData, productName]);
 
     const handleSubmit = async () => {
         if (!form.countryName || !form.countryCode || !form.productName || !form.url) {
@@ -28,16 +41,20 @@ const AddEditMarketLinkModal = ({ isOpen, onClose, editData }) => {
         }
 
         try {
+            let link;
             if (editData) {
-                await dispatch(updateMarketLink(form)).unwrap();
+                link = await dispatch(updateMarketLink(form)).unwrap();
                 toast.success("Updated successfully");
             } else {
-                await dispatch(createMarketLink(form)).unwrap();
+                link = await dispatch(createMarketLink(form)).unwrap();
                 toast.success("Added successfully");
             }
+
+            if (onSelect && link) onSelect(link);
             onClose();
-        } catch {
-            toast.error("Operation failed");
+        } catch (err) {
+            console.error(err);
+            toast.error(err?.message || "Operation failed");
         }
     };
 
@@ -55,7 +72,7 @@ const AddEditMarketLinkModal = ({ isOpen, onClose, editData }) => {
                 <h2 className="text-xl font-bold mb-4 text-center">{editData ? "Edit Link" : "Add Link"}</h2>
 
                 <select
-                    value={form.countryName}
+                    value={form.countryName || ""}
                     onChange={(e) => {
                         const selected = countries.find(c => c.name === e.target.value);
                         setForm({ ...form, countryName: selected.name, countryCode: selected.code });
@@ -71,7 +88,7 @@ const AddEditMarketLinkModal = ({ isOpen, onClose, editData }) => {
                 <input
                     type="text"
                     placeholder="Product Name"
-                    value={form.productName}
+                    value={form.productName || ""}
                     onChange={(e) => setForm({ ...form, productName: e.target.value })}
                     className="border rounded-lg px-4 py-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
@@ -79,7 +96,7 @@ const AddEditMarketLinkModal = ({ isOpen, onClose, editData }) => {
                 <input
                     type="text"
                     placeholder="URL"
-                    value={form.url}
+                    value={form.url || ""}
                     onChange={(e) => setForm({ ...form, url: e.target.value })}
                     className="border rounded-lg px-4 py-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
@@ -92,8 +109,9 @@ const AddEditMarketLinkModal = ({ isOpen, onClose, editData }) => {
                         Cancel
                     </button>
                     <button
+                        type="button"
                         onClick={handleSubmit}
-                        className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+                        className="px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-800 cursor-pointer"
                     >
                         {editData ? "Update" : "Add"}
                     </button>

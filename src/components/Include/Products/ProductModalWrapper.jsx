@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import ProductForm from "./ProductForm";
 import AttributesSection from "./AttributesSection";
 import VariationsSection from "./VariationsSection";
+import ExternalLinks from "./ExternalLinks";
 import { useDispatch, useSelector } from "react-redux";
 import {
     createProduct,
@@ -112,7 +113,9 @@ const ProductModalWrapper = ({
             //         .join("-")
             // ),
             sku: details.sku ?? newProduct.sku ?? null,
-            tags: details.tags ?? newProduct.tags ?? null,
+            tags: details.tags && details.tags.length > 0
+                ? details.tags.map(tag => ({ id: tag.id }))   // ✅ only id pass
+                : [],
         };
     });
     console.log("variationsData", variationsData)
@@ -144,7 +147,7 @@ const ProductModalWrapper = ({
 
 
             // const productSKU = `${generateSlug(name)}-MAIN-${Date.now()}`;
-
+            console.log("newProduct", newProduct)
             const subcategoryId = parseInt(newProduct.subcategoryId);
             // if (!subcategoryId) return toast.error("Subcategory is required");
 
@@ -169,6 +172,10 @@ const ProductModalWrapper = ({
                 color: newProduct.colors || [],
                 sku: newProduct.sku ?? null,
                 otherCountriesPrice: newProduct.otherCountriesPrice ?? null,
+                marketLinks: (newProduct.marketLinks || []).length > 0
+                    ? { connect: newProduct.marketLinks.map(link => ({ id: link.id })) }
+                    : undefined,
+
                 offers: newProduct.offers && newProduct.offers.length > 0
                     ? {
                         connect: newProduct.offers.map((id) => ({ id: parseInt(id) }))
@@ -231,11 +238,13 @@ const ProductModalWrapper = ({
             short: v.short,
             stock: v.stock,
             sku: v.sku,
-            image: v.image,
+            image: Array.isArray(v.image) ? v.image.flat() : v.image ? [v.image] : [],
             description: v.description,
+            tags: v.tags?.map(tag => ({ id: Number(tag.id) })) || [],
         }));
 
-
+        const productTags = editProductData.tags?.map(tag => ({ id: Number(tag.id) })) || [];
+        console.log("editProductData", editProductData)
 
         const productData = {
             name: editProductData.name,
@@ -247,8 +256,12 @@ const ProductModalWrapper = ({
             // offers: editProductData.offers?.length
             //     ? { set: [], connect: editProductData.offers.map(o => ({ id: o.id })) }
             //     : undefined,
-            offers: editProductData.offers || [],
-            primaryOffer: editProductData.offers?.[0] || null,
+            offers: editProductData.offers?.length
+                ? { set: [], connect: editProductData.offers.map(o => ({ id: Number(o.id) })) }
+                : undefined,
+            primaryOffer: editProductData.offers?.[0]?.id
+                ? { connect: { id: Number(editProductData.offers[0].id) } }
+                : undefined,
             // primaryOffer: editProductData.offers?.length
             //     ? { connect: { id: editProductData.offers[0].id } }
             //     : undefined,
@@ -262,6 +275,10 @@ const ProductModalWrapper = ({
             size: editProductData.sizes,
             color: editProductData.colors,
             sku: editProductData.sku,
+            tags: productTags || [],
+            marketLinks: (editProductData.marketLinks || []).length > 0
+                ? { connect: editProductData.marketLinks.map(link => ({ id: link.id })) }
+                : undefined,
             variations: formattedVariations,
         };
 
@@ -454,7 +471,14 @@ const ProductModalWrapper = ({
                     description: v.description,
                     images: v.image ? [v.image] : [],
                     name: v.name || editProductData.name,
-                    tags: v.tags
+                    tags: (v.tags || []).map((t) =>
+                        typeof t === "string" ? { id: t, name: t } : { id: t.id, name: t.name }
+                    ),
+                    marketLinks: Array.isArray(v.marketLinks)
+                        ? v.marketLinks
+                        : v.marketLinks?.connect
+                            ? v.marketLinks.connect.map(link => ({ id: link.id }))
+                            : []
                 };
             });
 
@@ -496,7 +520,14 @@ const ProductModalWrapper = ({
                     description: v.description,
                     images: v.image ? [v.image] : [],
                     name: v.name || editProductData.name,
-                    tags: v.tags
+                    tags: (v.tags || []).map((t) =>
+                        typeof t === "string" ? { id: t, name: t } : { id: t.id, name: t.name }
+                    ),
+                    marketLinks: Array.isArray(v.marketLinks)
+                        ? v.marketLinks
+                        : v.marketLinks?.connect
+                            ? v.marketLinks.connect.map(link => ({ id: link.id }))
+                            : []
                 };
             });
 
@@ -572,7 +603,7 @@ const ProductModalWrapper = ({
                     <div className="md:w-1/4 mb-4 md:mb-0">
                         <h2 className="text-lg font-semibold mb-4">Sections</h2>
                         <ul className="space-y-2">
-                            {["product", "attributes", "variations"].map((section) => (
+                            {["product", "attributes", "variations", "external Links"].map((section) => (
                                 <li
                                     key={section}
                                     onClick={() => setActiveSection(section)}
@@ -650,6 +681,17 @@ const ProductModalWrapper = ({
                                 handleImageUpload={handleImageUpload}
                             />
                         )}
+
+                        {activeSection === "external Links" && (
+                            <ExternalLinks
+                                editModalOpen={editModalOpen}
+                                newProduct={newProduct}
+                                setNewProduct={setNewProduct}
+                                editProductData={editProductData}
+                                setEditProductData={setEditProductData}
+                            />
+                        )}
+
 
                         {/* Buttons */}
                         <div className="mt-6 flex justify-end gap-4">

@@ -31,23 +31,18 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 </div>
 
                 {/* Logo Desktop */}
-                <div className="flex items-center justify-between w-full px-4 md:px-8">
+                <div className="flex items-center justify-center w-full px-4 md:px-8">
                     <a href="/" target="_blank" rel="noopener noreferrer">
                         <Image
-                            src="/image/logo.jpg"
+                            src="/image/logo PNG.png"
                             alt="Logo"
-                            width={60}
-                            height={60}
+                            width={80}
+                            height={80}
                             className="object-contain"
                         />
                     </a>
-
-
-
-                    <h2 className="text-2xl font-bold text-gray-100 hidden md:block">
-                        Admin
-                    </h2>
                 </div>
+
 
 
 
@@ -85,7 +80,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                     href="/admin/header"
                                     className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
                                 >
-                                    Add Header
+                                    Add Menu
                                 </Link>
                                 <Link
                                     href="/admin/category"
@@ -132,7 +127,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                     href="/admin/products"
                                     className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
                                 >
-                                    Add Products
+                                    All Products
                                 </Link>
                                 <Link
                                     href="/admin/attribute"
@@ -150,7 +145,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                     href="/admin/countryPricing"
                                     className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
                                 >
-                                    Pricing
+                                    Country Pricing
                                 </Link>
                                 <Link
                                     href="/admin/tags"
@@ -158,7 +153,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                 >
                                     Tags
                                 </Link>
-                                 <Link
+                                <Link
                                     href="/admin/externalMarket"
                                     className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
                                 >

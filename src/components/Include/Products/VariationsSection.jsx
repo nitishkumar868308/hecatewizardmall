@@ -256,7 +256,6 @@ const VariationsSection = ({
 }) => {
     const { tags } = useSelector((state) => state.tags);
     const dispatch = useDispatch();
-
     useEffect(() => {
         dispatch(fetchTags());
     }, [dispatch]);
@@ -329,7 +328,8 @@ const VariationsSection = ({
     };
 
     return (
-        <div className="max-h-[800px] overflow-y-auto space-y-5 p-2 sm:p-4">
+        <div className="h-full mx-auto max-h-[90vh] md:max-h-[75vh] overflow-y-auto space-y-5 p-2 sm:p-4">
+
             {currentVariations.map((variation) => {
                 const variationKey = JSON.stringify(variation);
 
@@ -512,7 +512,6 @@ const VariationsSection = ({
 
                                                                     setFilteredTags(filtered);
                                                                 }}
-                                                                disabled
                                                                 className="w-full border border-gray-300 rounded-2xl px-4 py-3 cursor-pointer focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
                                                             />
                                                             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
@@ -558,8 +557,6 @@ const VariationsSection = ({
                                                 </div>
                                             );
                                         }
-
-
 
                                         else {
                                             return (

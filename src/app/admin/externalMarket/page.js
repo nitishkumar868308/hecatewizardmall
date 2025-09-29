@@ -74,7 +74,12 @@ const ExternalMarket = () => {
                                 <td className="px-4 py-2">{l.countryName}</td>
                                 <td className="px-4 py-2">{l.countryCode}</td>
 
-                                <td className="px-4 py-2"><a href={l.url} target="_blank">{l.url}</a></td>
+                                <td className="px-4 py-2">
+                                    <a href={l.url} target="_blank" className="text-blue-600 hover:underline">
+                                        {l.url.length > 50 ? l.url.slice(0, 30) + "..." + l.url.slice(-15) : l.url}
+                                    </a>
+                                </td>
+
                                 <td className="px-4 py-2 flex gap-2">
                                     <button onClick={() => { setEditData(l); setModalOpen(true); }} className="text-blue-500"><Edit /></button>
                                     <button onClick={() => { setDeleteId(l.id); setDeleteModalOpen(true); }} className="text-red-500"><Trash2 /></button>

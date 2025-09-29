@@ -26,7 +26,7 @@ const Header = ({ toggleSidebar }) => {
                 >
                     <Menu className="w-6 h-6 text-white" />
                 </button>
-                <h1 className="text-xl font-semibold">Dashboard</h1>
+                <h1 className="text-xl font-semibold">Admin Dashboard</h1>
             </div>
 
             <div className="flex items-center gap-4">
