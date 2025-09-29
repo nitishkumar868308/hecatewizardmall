@@ -29,7 +29,7 @@ const AddEditMarketLinkModal = ({ isOpen, onClose, editData, onSelect, productNa
             setForm({
                 countryName: "",
                 countryCode: "",
-                productName: productName || "", // Auto-fill productName when adding
+                productName: productName || "",
                 url: "",
             });
         }
@@ -43,7 +43,8 @@ const AddEditMarketLinkModal = ({ isOpen, onClose, editData, onSelect, productNa
         try {
             let link;
             if (editData) {
-                link = await dispatch(updateMarketLink(form)).unwrap();
+                const payload = { ...form, id: editData.id };
+                link = await dispatch(updateMarketLink(payload)).unwrap();
                 toast.success("Updated successfully");
             } else {
                 link = await dispatch(createMarketLink(form)).unwrap();
@@ -90,8 +91,10 @@ const AddEditMarketLinkModal = ({ isOpen, onClose, editData, onSelect, productNa
                     placeholder="Product Name"
                     value={form.productName || ""}
                     onChange={(e) => setForm({ ...form, productName: e.target.value })}
+                    readOnly={!!form.productName}
                     className="border rounded-lg px-4 py-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
+
 
                 <input
                     type="text"

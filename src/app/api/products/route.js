@@ -279,7 +279,7 @@ export async function POST(req) {
                             name: v.name ?? name,
                             tags: v.tags && v.tags.length > 0
                                 ? {
-                                    connect: v.tags.map(tag => ({ id: Number(tag.id) })) // ✅ convert to number
+                                    connect: v.tags.map(tag => ({ id: Number(tag.id) }))
                                 }
                                 : undefined,
                             otherCountriesPrice: v.otherCountriesPrice?.toString() ?? otherCountriesPrice?.toString() ?? null
@@ -288,7 +288,11 @@ export async function POST(req) {
                     : undefined
             },
             include: {
-                variations: true,
+                variations: {
+                    include: {
+                        tags: true,
+                    }
+                },
                 category: true,
                 subcategory: true,
                 tags: true,
@@ -468,46 +472,66 @@ export async function PUT(req) {
 
 
         // Update existing variations safely
-        const variationsUpdate = variations.filter(v => v.id).map(v => {
-            const existingVar = existing.variations.find(ev => ev.id === v.id);
-            return {
-                where: { id: v.id },
-                data: {
-                    variationName: v.variationName || v.name || existingVar.variationName,
-                    short: v.short || v.short || existingVar.short,
-                    name: v.name || v.name || existingVar.name,
-                    price: v.price != null ? v.price.toString() : existingVar.price,
-                    stock: v.stock != null ? v.stock.toString() : existingVar.stock,
-                    sku: existingVar.sku, // keep existing SKU safe
-                    image: Array.isArray(v.image) ? v.image.flat() : v.image ? [v.image] : existingVar.image,
-                    description: v.description ?? existingVar.description,
-                    tags: v.tags && v.tags.length
-                        ? { set: [], connect: v.tags.map(tag => ({ id: Number(tag.id) })) }
-                        : undefined,
-                },
-            };
-        });
+        const variationsUpdate = variations
+            .filter(v => v.id)
+            .map(v => {
+                const existingVar = existing.variations.find(ev => ev.id === v.id);
+                return {
+                    where: { id: v.id },
+                    data: {
+                        variationName: v.variationName ?? existingVar.variationName,
+                        short: v.short ?? existingVar.short,
+                        name: v.name ?? existingVar.name,
+                        price: v.price != null ? v.price.toString() : existingVar.price,
+                        stock: v.stock != null ? v.stock.toString() : existingVar.stock,
+                        sku: existingVar.sku,
+                        image: Array.isArray(v.image) ? v.image.flat() : v.image ? [v.image] : existingVar.image,
+                        description: v.description ?? existingVar.description,
+                        tags: v.tags?.length
+                            ? { set: v.tags.map(tag => ({ id: Number(tag.id) })) }
+                            : undefined
+                    }
+                };
+            });
+
         console.log("variationsUpdate JSON:", JSON.stringify(variationsUpdate, null, 2));
 
         console.log("variationsUpdate", variationsUpdate)
 
 
         // Create new variations with unique SKU (frontend responsibility)
-        const variationsCreate = variations.filter(v => !v.id).map(v => ({
-            variationName: v.variationName,
-            price: v.price != null ? v.price.toString() : null,
-            stock: v.stock != null ? v.stock.toString() : null,
-            sku: v.sku, // must be unique
-            image: Array.isArray(v.image) ? v.image.flat() : v.image ? [v.image] : [],
-            description: v.description,
-            short: v.short,
-            name: v.name,
-            tags: v.tags && v.tags.length
-                ? { set: [], connect: v.tags.map(tag => ({ id: Number(tag.id) })) }
-                : undefined,
-        }));
+        const variationsCreate = variations
+            .filter(v => !v.id)
+            .map(v => ({
+                variationName: v.variationName,
+                price: v.price != null ? v.price.toString() : null,
+                stock: v.stock != null ? v.stock.toString() : null,
+                sku: v.sku,
+                image: Array.isArray(v.image) ? v.image.flat() : v.image ? [v.image] : [],
+                description: v.description,
+                short: v.short,
+                name: v.name,
+                tags: v.tags?.length
+                    ? { connect: v.tags.map(tag => ({ id: Number(tag.id) })) }
+                    : undefined
+            }));
 
+        // PUT handler ke andar, variationsUpdate aur variationsCreate ke baad:
 
+        // IDs jo frontend se aaye
+        const incomingVariationIds = variations.filter(v => v.id).map(v => v.id);
+
+        // Jo existing DB mein the
+        const existingVariationIds = existing.variations.map(v => v.id);
+
+        // Delete hone wale = jo DB mein hain but frontend se missing hain
+        const variationsToDelete = existingVariationIds.filter(id => !incomingVariationIds.includes(id));
+
+        console.log("variationsToDelete", variationsToDelete);
+
+        console.log("variationsCreate JSON:", JSON.stringify(variationsCreate, null, 2));
+
+        console.log("variationsCreate", variationsCreate)
         const variationSkus = variations.map(v => v.sku);
         if (new Set(variationSkus).size !== variationSkus.length) {
             return new Response(JSON.stringify({ message: "Duplicate SKU in variations" }), { status: 400 });
@@ -568,10 +592,15 @@ export async function PUT(req) {
                 variations: {
                     update: variationsUpdate,
                     create: variationsCreate,
+                    delete: variationsToDelete.map(id => ({ id })),
                 },
             },
             include: {
-                variations: true,
+                variations: {
+                    include: {
+                        tags: true,
+                    }
+                },
                 offers: true,
                 primaryOffer: true,
                 category: true,

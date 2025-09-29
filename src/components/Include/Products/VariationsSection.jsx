@@ -253,6 +253,8 @@ const VariationsSection = ({
     handleVariationChange,
     productFields = [],
     handleImageUpload,
+    currentData,
+    setCurrentData
 }) => {
     const { tags } = useSelector((state) => state.tags);
     const dispatch = useDispatch();
@@ -262,8 +264,11 @@ const VariationsSection = ({
     const [uploading, setUploading] = useState(false);
     const [search, setSearch] = useState("");
     const [filteredTags, setFilteredTags] = useState([]);
+    const [defaultVariationId, setDefaultVariationId] = useState("");
+    console.log("currentData", currentData)
     // ---- Helper: normalize images to array of strings ----
     const normalizeImages = (images) => {
+        console.log("images", images)
         if (!images) return [];
 
         // Agar nested array hai [[...]]
@@ -327,8 +332,45 @@ const VariationsSection = ({
         );
     };
 
+    const handleDefaultChange = (selectedValue) => {
+        // Update select box
+        setDefaultVariationId(selectedValue);
+
+        // Directly set currentData.isDefault to full string
+        setCurrentData((prev) => ({
+            ...prev,
+            isDefault: selectedValue, // store the string as-is
+        }));
+
+        console.log("Current Data after selection:", selectedValue);
+    };
+
+
+
+
     return (
         <div className="h-full mx-auto max-h-[90vh] md:max-h-[75vh] overflow-y-auto space-y-5 p-2 sm:p-4">
+            <select
+                value={defaultVariationId} // store variationKey
+                onChange={(e) => handleDefaultChange(e.target.value)}
+                className="border border-gray-300 rounded-2xl px-4 py-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+            >
+                <option value="">Select default variation</option>
+                {currentVariations.map((v) => {
+                    const variationKey = JSON.stringify(v); // <-- key
+                    const variationString = Object.entries(v)
+                        .map(([k, val]) => `${k}: ${val}`)
+                        .join(" / ");
+
+                    return (
+                        <option key={variationKey} value={variationKey}>
+                            {variationString}
+                        </option>
+                    );
+                })}
+            </select>
+
+
 
             {currentVariations.map((variation) => {
                 const variationKey = JSON.stringify(variation);
@@ -361,7 +403,6 @@ const VariationsSection = ({
                                 </button>
                             </div>
                         </div>
-
                         {/* Expanded Section */}
                         <AnimatePresence initial={false}>
                             {expandedVariations[variationKey] && (
@@ -567,13 +608,21 @@ const VariationsSection = ({
                                                     <input
                                                         type={field.type}
                                                         placeholder={field.placeholder}
-                                                        value={value || ""}
-                                                        onChange={(e) =>
-                                                            handleVariationChange(variationKey, field.key, e.target.value)
+                                                        value={
+                                                            field.key === "name"
+                                                                ? variationDetails[variationKey]?.[field.key] ?? currentData.name
+                                                                : variationDetails[variationKey]?.[field.key] ?? ""
+                                                        }
+                                                        readOnly={field.key === "name"}
+                                                        onChange={
+                                                            field.key === "name"
+                                                                ? undefined
+                                                                : (e) => handleVariationChange(variationKey, field.key, e.target.value)
                                                         }
                                                         className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
                                                     />
                                                 </div>
+
                                             );
                                         }
                                     })}

@@ -434,28 +434,49 @@ const ProductDetail = () => {
 
 
                         {/* Quantity & Add to Cart */}
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                            <div className="flex items-center border rounded-lg overflow-hidden">
+
+
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mt-4">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                                <div className="flex items-center border rounded-lg overflow-hidden">
+                                    <button
+                                        onClick={decrement}
+                                        className="px-6 py-3 bg-gray-200 hover:bg-gray-300 transition cursor-pointer text-2xl"
+                                    >
+                                        -
+                                    </button>
+                                    <span className="px-8 py-3 text-2xl font-medium">{quantity}</span>
+                                    <button
+                                        onClick={increment}
+                                        className="px-6 py-3 bg-gray-200 hover:bg-gray-300 transition cursor-pointer text-2xl"
+                                    >
+                                        +
+                                    </button>
+                                </div>
                                 <button
-                                    onClick={decrement}
-                                    className="px-6 py-3 bg-gray-200 hover:bg-gray-300 transition cursor-pointer text-2xl"
+                                    onClick={addToCart}
+                                    className="px-10 py-4 bg-gray-700 text-white rounded-lg hover:bg-black transition cursor-pointer shadow-lg text-xl"
                                 >
-                                    -
+                                    Add to Cart
                                 </button>
-                                <span className="px-8 py-3 text-2xl font-medium">{quantity}</span>
-                                <button
-                                    onClick={increment}
-                                    className="px-6 py-3 bg-gray-200 hover:bg-gray-300 transition cursor-pointer text-2xl"
-                                >
-                                    +
-                                </button>
+
+                                {product.matchedMarketLink && (
+                                    <a
+                                        href={product.matchedMarketLink.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-block"
+                                    >
+                                        <img
+                                            src="/image/amozon-image.png"
+                                            alt={`Buy in ${product.matchedMarketLink.countryName}`}
+                                            className="w-40 h-auto hover:scale-105 transition-transform cursor-pointer"
+                                        />
+                                    </a>
+                                )}
                             </div>
-                            <button
-                                onClick={addToCart}
-                                className="px-10 py-4 bg-gray-700 text-white rounded-lg hover:bg-black transition cursor-pointer shadow-lg text-xl"
-                            >
-                                Add to Cart
-                            </button>
+
+
 
                         </div>
                         <p className="text-lg text-gray-600 mt-8 leading-relaxed">
@@ -465,6 +486,22 @@ const ProductDetail = () => {
                                     ? product.tags.map(tag => tag.name).join(", ")
                                     : "No tags"}
                         </p>
+                        {/* Buy Button / Market Link */}
+                        {/* {product.matchedMarketLink ? (
+                            <a
+                                href={product.matchedMarketLink.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-10 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer shadow-lg text-xl mt-6 inline-block text-center"
+                            >
+                                Buy in {product.matchedMarketLink.countryName}
+                            </a>
+                        ) : (
+                            <p className="text-gray-500 mt-6">Not available in your country</p>
+                        )} */}
+
+
+
                     </div>
                 </div>
 

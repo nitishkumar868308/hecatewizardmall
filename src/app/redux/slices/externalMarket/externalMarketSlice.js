@@ -7,7 +7,7 @@ export const fetchMarketLinks = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axios.get("/api/marketlinks");
-            console.log("response" , response)
+            console.log("response", response)
             return response.data.data; // API returns { message, data }
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to fetch market links");
@@ -86,7 +86,7 @@ const marketLinksSlice = createSlice({
             })
             .addCase(createMarketLink.fulfilled, (state, action) => {
                 state.loading = false;
-                state.links .unshift(action.payload);
+                state.links.unshift(action.payload);
             })
             .addCase(createMarketLink.rejected, (state, action) => {
                 state.loading = false;
@@ -101,7 +101,7 @@ const marketLinksSlice = createSlice({
             })
             .addCase(updateMarketLink.fulfilled, (state, action) => {
                 state.loading = false;
-                state.links  = state.marketLinks.map((link) =>
+                state.links = state.links.map((link) =>
                     link.id === action.payload.id ? action.payload : link
                 );
             })
@@ -118,14 +118,13 @@ const marketLinksSlice = createSlice({
             })
             .addCase(deleteMarketLink.fulfilled, (state, action) => {
                 state.loading = false;
-                state.links  = state.marketLinks.filter(
-                    (link) => link.id !== action.payload.id
-                );
+                state.links = state.links.filter((link) => link.id !== action.payload.id);
             })
             .addCase(deleteMarketLink.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload || action.error.message;
             });
+
     },
 });
 

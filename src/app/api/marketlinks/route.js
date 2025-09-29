@@ -50,7 +50,7 @@ export async function PUT(req) {
             data: {
                 countryName: countryName ?? existing.countryName,
                 countryCode: countryCode ?? existing.countryCode,
-                productName: productName ?? existing.productName,
+                name: productName ?? existing.name,
                 url: url ?? existing.url,
                 deleted: deleted ?? existing.deleted,
             },

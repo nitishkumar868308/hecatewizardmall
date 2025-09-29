@@ -45,6 +45,9 @@ const ProductModalWrapper = ({
             }, {});
         return JSON.stringify(sorted);
     };
+    const currentData = editModalOpen ? editProductData : newProduct;
+    const setCurrentData = editModalOpen ? setEditProductData : setNewProduct;
+
 
     const generateMetaDescription = (description) => {
         if (description) return description.substring(0, 150);
@@ -116,6 +119,7 @@ const ProductModalWrapper = ({
             tags: details.tags && details.tags.length > 0
                 ? details.tags.map(tag => ({ id: tag.id }))   // ✅ only id pass
                 : [],
+
         };
     });
     console.log("variationsData", variationsData)
@@ -242,6 +246,7 @@ const ProductModalWrapper = ({
             description: v.description,
             tags: v.tags?.map(tag => ({ id: Number(tag.id) })) || [],
         }));
+        console.log("formattedVariations", formattedVariations)
 
         const productTags = editProductData.tags?.map(tag => ({ id: Number(tag.id) })) || [];
         console.log("editProductData", editProductData)
@@ -288,8 +293,8 @@ const ProductModalWrapper = ({
         try {
             const res = await dispatch(updateProduct({ id: editProductData.id, data: productData })).unwrap();
             toast.success("Product updated successfully!");
-            setEditProductData(null);
-            setModalOpen(false);
+            setEditProductData(res);
+            // setModalOpen(false);
         } catch (err) {
             toast.error(err.message || "Failed to update product");
         } finally {
@@ -366,24 +371,93 @@ const ProductModalWrapper = ({
 
 
     // ✅ Handle variation generation from selected attributes
+    // useEffect(() => {
+    //     const attrValues = Object.values(selectedAttributes)
+    //         .filter((a) => a.values?.length)
+    //         .map((a) => a.values);
+
+    //     if (attrValues.length === 0) {
+    //         setCurrentVariations([]);
+    //         return;
+    //     }
+
+    //     const cartesian = (arr) =>
+    //         arr.reduce((a, b) => a.flatMap((d) => b.map((e) => [...d, e])), [[]]);
+
+    //     const combinations = cartesian(attrValues);
+    //     const attrNames = Object.keys(selectedAttributes);
+
+    //     const newVariationDetails = {};
+    //     const variationsWithKeys = combinations.map((comb) => {
+    //         const variationObj = comb.reduce((acc, val, idx) => {
+    //             acc[attrNames[idx]] = val;
+    //             return acc;
+    //         }, {});
+
+    //         const variationKey = getVariationKey(variationObj);
+
+    //         const baseSKU = newProduct.sku || "";
+    //         const newSKU = variationDetails[variationKey]?.sku ?? generateSKU(baseSKU, variationObj);
+
+    //         newVariationDetails[variationKey] = {
+    //             ...(variationDetails[variationKey] || {}),
+    //             price: variationDetails[variationKey]?.price || newProduct.price,
+    //             short: variationDetails[variationKey]?.short || newProduct.short,
+    //             stock: variationDetails[variationKey]?.stock || newProduct.stock,
+    //             image:
+    //                 variationDetails[variationKey]?.image ||
+    //                 newProduct.image?.[0] ||
+    //                 null,
+    //             name: variationDetails[variationKey]?.name || newProduct.name,
+    //             description:
+    //                 variationDetails[variationKey]?.description || newProduct.description,
+    //             sku: newSKU,
+    //             tags: (variationDetails[variationKey]?.tags || newProduct.tags)?.map(tag =>
+    //                 typeof tag === 'string' ? { name: tag } : tag
+    //             )
+
+
+    //         };
+
+    //         return variationObj;
+    //     });
+
+    //     setVariationDetails(newVariationDetails);
+    //     setCurrentVariations(variationsWithKeys);
+    // }, [selectedAttributes]);
+    // ✅ Handle variation generation from selected attributes
     useEffect(() => {
+        if (!currentData) return;
+
+        // Step 1: Map DB variations by variationKey
+        const variationMap = {};
+        currentData.variations?.forEach((v) => {
+            const attrs = v.attributes || parseAttributes(v.variationName);
+            const key = getVariationKey(attrs);
+            variationMap[key] = v;
+        });
+        console.log("variationMap", variationMap)
+
+        // Step 2: Get selected attribute values for cartesian product
         const attrValues = Object.values(selectedAttributes)
-            .filter((a) => a.values?.length)
-            .map((a) => a.values);
+            .filter(a => a.values?.length)
+            .map(a => a.values);
 
         if (attrValues.length === 0) {
             setCurrentVariations([]);
+            setVariationDetails({});
             return;
         }
 
-        const cartesian = (arr) =>
-            arr.reduce((a, b) => a.flatMap((d) => b.map((e) => [...d, e])), [[]]);
+        const cartesian = arr =>
+            arr.reduce((a, b) => a.flatMap(d => b.map(e => [...d, e])), [[]]);
 
         const combinations = cartesian(attrValues);
         const attrNames = Object.keys(selectedAttributes);
 
+        // Step 3: Build variations and variationDetails
         const newVariationDetails = {};
-        const variationsWithKeys = combinations.map((comb) => {
+        const variationsWithKeys = combinations.map(comb => {
             const variationObj = comb.reduce((acc, val, idx) => {
                 acc[attrNames[idx]] = val;
                 return acc;
@@ -391,35 +465,24 @@ const ProductModalWrapper = ({
 
             const variationKey = getVariationKey(variationObj);
 
-            const tagsArray = (variationDetails[variationKey]?.tags || newProduct.tags)?.map(tag =>
-                typeof tag === 'string' ? { name: tag } : tag
-            );
-
-            const baseSKU = newProduct.sku || "";
-            const newSKU = variationDetails[variationKey]?.sku ?? generateSKU(baseSKU, variationObj);
-
-            // **Console log to check**
-            console.log("Variation Key:", variationKey);
-            console.log("Tags Array:", tagsArray);
+            // ✅ Use DB variation if exists, otherwise fallback to base product
+            const existingVar = variationMap[variationKey];
+            console.log("existingVar", existingVar)
 
             newVariationDetails[variationKey] = {
-                ...(variationDetails[variationKey] || {}),
-                price: variationDetails[variationKey]?.price || newProduct.price,
-                short: variationDetails[variationKey]?.short || newProduct.short,
-                stock: variationDetails[variationKey]?.stock || newProduct.stock,
-                image:
-                    variationDetails[variationKey]?.image ||
-                    newProduct.image?.[0] ||
-                    null,
-                name: variationDetails[variationKey]?.name || newProduct.name,
-                description:
-                    variationDetails[variationKey]?.description || newProduct.description,
-                sku: newSKU,
-                tags: (variationDetails[variationKey]?.tags || newProduct.tags)?.map(tag =>
-                    typeof tag === 'string' ? { name: tag } : tag
-                )
-
-
+                id: existingVar?.id,
+                price: existingVar?.price ?? currentData.price,
+                short: existingVar?.short ?? currentData.short,
+                stock: existingVar?.stock ?? currentData.stock,
+                name: currentData.name,
+                description: existingVar?.description ?? currentData.description,
+                images: existingVar?.image ?? (currentData.image ? [...currentData.image] : []),
+                // tags: (existingVar[variationKey]?.tags || currentData.tags)?.map(tag =>
+                //     typeof tag === 'string' ? { name: tag } : tag
+                // ),
+                tags: existingVar?.tags ?? currentData.tags ?? [],
+                marketLinks: existingVar?.marketLinks ?? currentData.marketLinks ?? [],
+                sku: existingVar?.sku ?? generateSKU(currentData.sku || "", variationObj),
             };
 
             return variationObj;
@@ -427,7 +490,10 @@ const ProductModalWrapper = ({
 
         setVariationDetails(newVariationDetails);
         setCurrentVariations(variationsWithKeys);
-    }, [selectedAttributes]);
+
+    }, [selectedAttributes, currentData]);
+
+
 
     const parseAttributes = (variationName) => {
         if (!variationName) return {};
@@ -470,7 +536,7 @@ const ProductModalWrapper = ({
                     sku: v.sku,
                     description: v.description,
                     images: v.image ? [v.image] : [],
-                    name: v.name || editProductData.name,
+                    name: editProductData.name,
                     tags: (v.tags || []).map((t) =>
                         typeof t === "string" ? { id: t, name: t } : { id: t.id, name: t.name }
                     ),
@@ -519,7 +585,7 @@ const ProductModalWrapper = ({
                     sku: v.sku,
                     description: v.description,
                     images: v.image ? [v.image] : [],
-                    name: v.name || editProductData.name,
+                    name: editProductData.name,
                     tags: (v.tags || []).map((t) =>
                         typeof t === "string" ? { id: t, name: t } : { id: t.id, name: t.name }
                     ),
@@ -561,18 +627,6 @@ const ProductModalWrapper = ({
         }
     }, [modalOpen, editModalOpen, editProductData]);
 
-    // const handleImageUpload = async (file) => {
-    //     if (!file) throw new Error('No file provided');
-
-    //     try {
-    //         const url = await uploadToCloudinary(file, 'products');
-    //         return url;
-    //     } catch (err) {
-    //         console.error('Upload failed:', err);
-    //         throw err;
-    //     }
-    // };
-
     const handleImageUpload = async (file) => {
         const formData = new FormData();
         formData.append("image", file);
@@ -593,7 +647,6 @@ const ProductModalWrapper = ({
 
     console.log("currentVariations:", currentVariations);
     console.log("variationDetails:", variationDetails);
-
     return (
         <>
             {loading && <Loader />}
@@ -601,7 +654,12 @@ const ProductModalWrapper = ({
                 <div className="bg-white rounded-2xl shadow-2xl w-full h-full  p-6 md:flex md:gap-6 animate-fade-in">
                     {/* Side Menu */}
                     <div className="md:w-1/4 mb-4 md:mb-0">
-                        <h2 className="text-lg font-semibold mb-4">Sections</h2>
+                        <h2 className="text-lg font-semibold mb-4">
+                            Sections ({" "}
+                            <span className="text-black font-bold text-lg">{currentData.name}</span>
+                            {" "})
+                        </h2>
+
                         <ul className="space-y-2">
                             {["product", "attributes", "variations", "external Links"].map((section) => (
                                 <li
@@ -676,8 +734,10 @@ const ProductModalWrapper = ({
                                     { key: "stock", type: "number", placeholder: "Stock" },
                                     { key: "sku", type: "text", placeholder: "Enter SKU Detail" },
                                     { key: "description", type: "textarea", placeholder: "Description" },
-                                    { key: "image", type: "file", placeholder: "Product Image" },
+                                    { key: "images", type: "file", placeholder: "Product Image" },
                                 ]}
+                                setCurrentData={setCurrentData}
+                                currentData={currentData}
                                 handleImageUpload={handleImageUpload}
                             />
                         )}
@@ -700,7 +760,7 @@ const ProductModalWrapper = ({
                                 onClick={() => setModalOpen(false)}
                                 className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition cursor-pointer"
                             >
-                                Cancel
+                                Close
                             </button>
                             <button
                                 type="button"

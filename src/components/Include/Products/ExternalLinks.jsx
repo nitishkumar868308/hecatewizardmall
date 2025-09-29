@@ -30,7 +30,7 @@ const ExternalLinks = ({
     useEffect(() => {
         dispatch(fetchMarketLinks());
     }, [dispatch]);
-
+    console.log("currentData" , currentData)
     // Filter links based on input
     useEffect(() => {
         const query = externalUrl.trim().toLowerCase();
@@ -113,7 +113,7 @@ const ExternalLinks = ({
                     <div className="flex items-center gap-2">
                         <input
                             type="text"
-                            placeholder="Search or add external URL"
+                            placeholder="Search Country Name or add external URL"
                             value={externalUrl}
                             onChange={(e) => setExternalUrl(e.target.value)}
                             className="flex-1 border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
@@ -123,7 +123,7 @@ const ExternalLinks = ({
                             onClick={() =>
                                 setActiveModal({ type: "add", productName: currentData.name })
                             }
-                            className="bg-gray-600 hover:bg-gray-800 text-white font-medium px-4 py-3 rounded-2xl transition"
+                            className="bg-gray-600 hover:bg-gray-800 cursor-pointer text-white font-medium px-4 py-3 rounded-2xl transition"
                         >
                             Add
                         </button>
@@ -174,7 +174,7 @@ const ExternalLinks = ({
                                             onClick={() =>
                                                 setActiveModal({ type: "edit", link })
                                             }
-                                            className="px-3 py-1 bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 transition"
+                                            className="px-3 py-1 cursor-pointer bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 transition"
                                         >
                                             Edit
                                         </button>
@@ -183,7 +183,7 @@ const ExternalLinks = ({
                                         <button
                                             type="button"
                                             onClick={() => handleRemoveLink(link.id)}
-                                            className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                                            className="px-3 py-1 bg-red-500 cursor-pointer text-white rounded-lg hover:bg-red-600 transition"
                                         >
                                             Remove
                                         </button>
