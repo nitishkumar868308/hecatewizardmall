@@ -22,11 +22,17 @@
   }
 } */
 
-body {
+html,
+body,
+#__next {
+  margin: 0;
+  padding: 0;
+  height: 100%;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
 
 
 
@@ -38,4 +44,3 @@ body {
 .font-libreBaskerville {
   font-family: 'Libre Baskerville', serif;
 }
-

@@ -4,12 +4,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 import { fetchCart, deleteCartItem, updateCart } from "@/app/redux/slices/addToCart/addToCartSlice";
 import toast from 'react-hot-toast';
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { CreditCard, CreditCardFront, Wallet, DollarSign } from "lucide-react";
 
 const Checkout = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.me);
   const { items } = useSelector((state) => state.cart);
-
+  const router = useRouter();
   const [quantities, setQuantities] = useState({});
   const [selectedItems, setSelectedItems] = useState([]);
   const [shippingModalOpen, setShippingModalOpen] = useState(false);
@@ -23,25 +26,19 @@ const Checkout = () => {
 
   const methods = [
     {
-      name: "Credit / Debit Card", icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 6h18M3 14h18M3 18h18" />
-        </svg>
-      ), content: "Pay securely using your credit or debit card."
+      name: "Credit / Debit Card",
+      icon: <CreditCard className="w-8 h-8 text-gray-600 mb-2" />,
+      content: "Pay securely using your credit or debit card."
     },
     {
-      name: "UPI / Wallet", icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3" />
-        </svg>
-      ), content: "Pay using Google Pay, PhonePe, Paytm, etc."
+      name: "UPI / Wallet",
+      icon: <Wallet className="w-8 h-8 text-gray-600 mb-2" />,
+      content: "Pay using Google Pay, PhonePe, Paytm, etc."
     },
     {
-      name: "Cash on Delivery", icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c1.657 0 3 1.343 3 3s-1.343 3-3 3-3-1.343-3-3 1.343-3 3-3z" />
-        </svg>
-      ), content: "Pay with cash when your order arrives."
+      name: "Cash on Delivery",
+      icon: <DollarSign className="w-8 h-8 text-gray-600 mb-2" />,
+      content: "Pay with cash when your order arrives."
     },
   ];
 
@@ -52,10 +49,21 @@ const Checkout = () => {
 
   // Set default shipping address
   useEffect(() => {
-    if (user?.addresses?.length && !selectedShipping) {
-      setSelectedShipping(user.addresses[0].id);
+    if (user?.address?.length && !selectedShipping) {
+      setSelectedShipping(user?.address);
     }
-  }, [user?.addresses]);
+  }, [user?.address]);
+
+  useEffect(() => {
+    if (!selectedShipping) {
+      if (user?.address) {
+        setSelectedShipping("default_address"); // user.address ko ID assign
+      } else if (user?.addresses?.length) {
+        setSelectedShipping(user.addresses[0].id); // fallback: first address
+      }
+    }
+  }, [user, selectedShipping]);
+
 
   const userCart = useMemo(() => {
     return items?.filter(item => String(item.userId) === String(user?.id)) || [];
@@ -138,10 +146,80 @@ const Checkout = () => {
     }
   };
 
-  const selectedAddress = user?.addresses?.find(addr => addr.id === selectedShipping);
+  const selectedAddress = useMemo(() => {
+    if (!selectedShipping) return null;
+
+    // First check in saved addresses
+    let addr = user?.addresses?.find(a => a.id === selectedShipping);
+
+    // If not found and selectedShipping is default, map user.address
+    if (!addr && selectedShipping === "default_address" && user?.address) {
+      addr = {
+        id: "default_address",
+        name: user.name,
+        mobile: user.phone,
+        address: user.address,
+        city: user.city,
+        state: user.state,
+        pincode: user.pincode,
+      };
+    }
+
+    return addr;
+  }, [user, selectedShipping]);
+
+
+  const shippingOptions = [
+    ...(user?.addresses || []),
+    ...(user?.address ? [{
+      id: "default_address",
+      name: user.name,
+      mobile: user.phone,
+      address: user.address,
+      city: user.city,
+      state: user.state,
+      pincode: user.pincode,
+    }] : []),
+  ];
+
+  const handleClick = () => {
+    const orderData = {
+      user: {
+        id: user?.id,
+        name: user?.name,
+        phone: user?.phone,
+        email: user?.email,
+      },
+      shippingAddress: selectedAddress,
+      billingAddress: {
+        name: user?.name,
+        phone: user?.phone,
+        address: user?.address,
+        city: user?.city,
+        state: user?.state,
+        pincode: user?.pincode,
+      },
+      items: userCart
+        .filter(item => selectedItems.includes(item.id))
+        .map(item => ({
+          id: item.id,
+          productName: item.productName,
+          price: item.pricePerItem || item.price,
+          quantity: quantities[item.id] || 1,
+          total: (Number(item.pricePerItem || item.price) * (quantities[item.id] || 1)).toFixed(2),
+          image: item.image,
+        })),
+      subtotal: subtotal.toFixed(2),
+      shipping: shipping,
+      total: total.toFixed(2),
+      paymentMethod: selected,
+    };
+
+    console.log("Order Data:", orderData);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className=" bg-gray-50 py-8 px-4">
       <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* Left - Cart Items */}
@@ -237,31 +315,35 @@ const Checkout = () => {
           </div>
 
           {/* Shipping Address */}
-          {selectedAddress && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="text-md font-semibold text-gray-700">Shipping Address</h4>
-                <button
-                  className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-900 text-sm cursor-pointer"
-                  onClick={() => {
-                    setTempShipping(selectedShipping);
-                    setShippingModalOpen(true);
-                  }}
-                >
-                  Change
-                </button>
-              </div>
-              <div className="text-gray-600">
-                <div className="flex justify-between items-center font-semibold text-gray-800">
-                  <span>{selectedAddress.name}</span>
-                  <span>{selectedAddress.mobile}</span>
-                </div>
-                <div className="mt-1 text-gray-700 text-sm">
-                  {[selectedAddress.address, selectedAddress.city, selectedAddress.state, selectedAddress.pincode].join(", ")}
-                </div>
-              </div>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-md font-semibold text-gray-700">Shipping Address</h4>
+              <button
+                className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-900 text-sm cursor-pointer"
+                onClick={() => {
+                  setTempShipping(selectedShipping);
+                  setShippingModalOpen(true);
+                }}
+              >
+                Change
+              </button>
             </div>
-          )}
+            <div className="text-gray-600">
+              <div className="flex justify-between items-center font-semibold text-gray-800">
+                <span>{user?.addresses?.length ? selectedAddress?.name : user?.name}</span>
+                <span>{user?.addresses?.length ? selectedAddress?.mobile : user?.phone}</span>
+              </div>
+              <div className="mt-1 text-gray-700 text-sm">
+                {selectedShipping === "default_address"
+                  ? user.address // direct string
+                  : [selectedAddress?.address, selectedAddress?.city, selectedAddress?.state, selectedAddress?.pincode]
+                    .filter(Boolean) // remove empty values
+                    .join(", ")
+                }
+              </div>
+
+            </div>
+          </div>
 
           {/* Billing Address (optional collapse for compactness) */}
           <div className="bg-gray-50 p-4 rounded-lg">
@@ -276,52 +358,50 @@ const Checkout = () => {
           {/* Payment Method */}
           {/* <div className="bg-gray-50 p-4 rounded-lg">
             <h4 className="text-md font-semibold text-gray-700 mb-4">Payment Method</h4>
-            <div className="flex gap-4 flex-wrap">
+            <div className="flex gap-4 overflow-x-auto pb-2">
               {methods.map((method) => {
                 const isSelected = selected === method.name;
-                const isExpanded = expanded === method.name;
+
                 return (
                   <div
                     key={method.name}
-                    className={`flex-1 min-w-[150px] border rounded-lg cursor-pointer transition p-4 relative
-                ${isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-400"}
-              `}
-                    onClick={() => {
-                      setSelected(method.name);
-                      setExpanded(isExpanded ? null : method.name);
-                    }}
+                    className={`flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full cursor-pointer transition-all duration-300
+            ${isSelected ? "bg-blue-100 border-2 border-blue-500 shadow-lg" : "bg-gray-100 hover:bg-gray-200"}
+          `}
+                    onClick={() => setSelected(method.name)}
                   >
-                    <div className="flex flex-col items-center">
+                    <div className="text-gray-600 mb-1">
                       {method.icon}
-                      <span className="text-gray-800 font-medium text-center">{method.name}</span>
                     </div>
-
-                    <div className="absolute top-2 right-2 text-gray-600 font-bold">
-                      {isExpanded ? "−" : "+"}
-                    </div>
-
-                    {isExpanded && (
-                      <div className="mt-4 text-gray-700 text-sm text-center">
-                        {method.content}
-                      </div>
-                    )}
+                    <span className="text-xs sm:text-sm text-center text-gray-800 font-medium">
+                      {method.name}
+                    </span>
                   </div>
                 );
               })}
             </div>
           </div> */}
-
-
           {/* Pay Button */}
-          <button
+          {/* <button
             disabled={selectedItems.length === 0}
+            onClick={() => {
+              // Redirect to /paynow with selected payment method
+              router.push(`/paynow?method=${encodeURIComponent(selected)}`);
+            }}
             className={`w-full py-3 rounded-xl font-semibold transition ${selectedItems.length === 0
-              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-              : "bg-gray-600 text-white hover:bg-gray-900 cursor-pointer"
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-gray-600 text-white hover:bg-gray-900 cursor-pointer"
               }`}
           >
             Pay Now
-          </button>
+          </button> */}
+          <div className="flex justify-center items-center">
+            <button onClick={handleClick} className="cursor-pointer bg-gradient-to-r from-gray-800 to-gray-600 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:scale-105 hover:shadow-2xl transition-transform duration-300">
+              Place order
+            </button>
+          </div>
+
+
         </div>
 
       </div>
@@ -332,82 +412,97 @@ const Checkout = () => {
           <div className="bg-white w-full max-w-md p-6 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Shipping Address</h3>
             <div className="space-y-3 max-h-72 overflow-y-auto">
-              {user?.addresses?.map((addr) => (
-                <label
-                  key={addr.id}
-                  className={`block p-3 border rounded-lg cursor-pointer transition ${tempShipping === addr.id
-                    ? "border-gray-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
-                    }`}
-                >
-                  <input
-                    type="radio"
-                    name="shippingAddress"
-                    value={addr.id}
-                    checked={tempShipping === addr.id}
-                    onChange={() => setTempShipping(addr.id)}
-                    className="mr-2"
-                  />
-                  <div className="text-gray-800 font-semibold">{addr.name}</div>
-                  <div className="text-gray-600 text-sm">{addr.mobile}</div>
-                  <div className="text-gray-600 text-sm whitespace-pre-line">{addr.address}</div>
-                  <div className="text-gray-600 text-sm">{addr.pincode}</div>
-                </label>
-              ))}
-            </div>
-            <div className="flex justify-end gap-3 mt-4">
-              <button
-                onClick={() => setShippingModalOpen(false)}
-                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedShipping(tempShipping);
-                  setShippingModalOpen(false);
-                }}
-                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 cursor-pointer"
-              >
-                Confirm
-              </button>
+              {shippingOptions?.length > 0 ? (
+                <div>
+                  {shippingOptions.map((addr) => (
+                    <label
+                      key={addr.id}
+                      className={`block p-3 border rounded-lg cursor-pointer transition ${tempShipping === addr.id ? "border-gray-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="shippingAddress"
+                        value={addr.id}
+                        checked={tempShipping === addr.id}
+                        onChange={() => setTempShipping(addr.id)}
+                        className="mr-2"
+                      />
+                      <div className="text-gray-800 font-semibold">{addr.name}</div>
+                      <div className="text-gray-600 text-sm">{addr.mobile}</div>
+                      <div className="text-gray-600 text-sm whitespace-pre-line">{addr.address}</div>
+                      <div className="text-gray-600 text-sm">{addr.pincode}</div>
+                    </label>
+                  ))}
+
+                  {/* Confirm / Cancel buttons */}
+                  <div className="flex justify-end gap-3 mt-4">
+                    <button
+                      onClick={() => setShippingModalOpen(false)}
+                      className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedShipping(tempShipping);
+                        setShippingModalOpen(false);
+                      }}
+                      className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 cursor-pointer"
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center p-5">
+                  <p className="text-gray-600 mb-3">No shipping address found.</p>
+                  <Link href="/dashboard?addresses">
+                    <button className="px-4 py-2 bg-gray-600 text-white rounded-lg cursor-pointer hover:bg-gray-900">
+                      Add Address
+                    </button>
+                  </Link>
+
+
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
-
       {/* Remove Item Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-xl w-96">
-            <h3 className="text-lg font-semibold text-white mb-4 text-center">Confirm Remove</h3>
-            <p className="mb-6 text-center text-gray-200 text-base sm:text-lg leading-relaxed break-words">
-              Are you sure you want to remove{" "}
-              <span className="font-semibold text-white bg-red-400 px-2 py-1 rounded whitespace-normal inline-block">
-                {itemToRemove?.productName}
-              </span>{" "}
-              from your cart?
-            </p>
+      {
+        modalOpen && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-gray-800 p-6 rounded-xl w-96">
+              <h3 className="text-lg font-semibold text-white mb-4 text-center">Confirm Remove</h3>
+              <p className="mb-6 text-center text-gray-200 text-base sm:text-lg leading-relaxed break-words">
+                Are you sure you want to remove{" "}
+                <span className="font-semibold text-white bg-red-400 px-2 py-1 rounded whitespace-normal inline-block">
+                  {itemToRemove?.productName}
+                </span>{" "}
+                from your cart?
+              </p>
 
 
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setModalOpen(false)}
-                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmRemove}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer"
-              >
-                Remove
-              </button>
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmRemove}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 

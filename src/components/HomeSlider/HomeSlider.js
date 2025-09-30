@@ -29,21 +29,18 @@ const HomeSlider = () => {
                 slidesPerView={1}
                 loop={true}
                 autoplay={{ delay: 3000, disableOnInteraction: false }}
-                //pagination={{ clickable: true }}
-                //navigation={true}
             >
                 {slides.map((slide) => (
                     <SwiperSlide key={slide.id}>
-                        <div className="relative w-full h-[300px] md:h-[500px] lg:h-[800px]">
+                        <div className="relative w-full h-[300px] md:h-[500px] lg:h-[800px]  md:mt-0">
                             <Image
                                 src={slide.image}
                                 alt={`Slide ${slide.id}`}
                                 fill
                                 className="object-cover"
                             />
-                            {/* Text overlay */}
-                            <div className="font-functionPro absolute inset-0 flex items-center justify-center">
-                                <h2 className="text-white text-2xl md:text-4xl lg:text-6xl  drop-shadow-lg text-center">
+                            <div className="absolute inset-0 flex items-center justify-center px-4 md:px-8">
+                                <h2 className="text-white text-2xl md:text-4xl lg:text-6xl drop-shadow-lg text-center">
                                     {slide.text}
                                 </h2>
                             </div>
@@ -52,6 +49,7 @@ const HomeSlider = () => {
                 ))}
             </Swiper>
         </div>
+
     );
 };
 

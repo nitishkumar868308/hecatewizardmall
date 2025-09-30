@@ -89,7 +89,7 @@ model Product {
   primaryOffer  Offer? @relation("PrimaryOffer", fields: [offerId], references: [id]) 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
-
+  isDefault       Json?
   variations      ProductVariation[]
   offers          Offer[] @relation("ProductOffers")
   tags            Tag[]       @relation("ProductTags") 

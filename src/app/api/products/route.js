@@ -170,11 +170,10 @@ export async function POST(req) {
             color,
             variations,
             tags,
-            marketLinks
+            marketLinks,
+            isDefault
         } = body;
-        console.log("marketLinks", marketLinks)
-        console.log("variations", variations)
-        console.log("variation tags:", variations.map(v => v.tags.map(t => Number(t.id))));
+        console.log("isDefault", isDefault)
         if (!name?.trim() || !subcategory || !sku?.trim()) {
             return new Response(
                 JSON.stringify({ message: "Name, Subcategory, and SKU are required" }),
@@ -263,6 +262,7 @@ export async function POST(req) {
                 size: size ?? null,
                 color: color ?? null,
                 tags,
+                isDefault,
                 marketLinks: marketLinks?.connect?.length > 0
                     ? { connect: marketLinks.connect.map(link => ({ id: link.id })) }
                     : undefined,
@@ -449,7 +449,8 @@ export async function PUT(req) {
             subcategoryId = null,
             variations = [],
             tags = [],
-            marketLinks
+            marketLinks,
+            isDefault
         } = data;
 
         console.log("===== Backend received product data =====");
@@ -463,6 +464,7 @@ export async function PUT(req) {
             primaryOffer,
             categoryId,
             subcategoryId,
+            isDefault
         });
 
         console.log("===== Backend received variations =====");
@@ -575,6 +577,7 @@ export async function PUT(req) {
                 price: price != null ? price.toString() : existing.price,
                 size,
                 color,
+                isDefault,
                 otherCountriesPrice: otherCountriesPrice != null ? otherCountriesPrice.toString() : existing.otherCountriesPrice,
                 image: image.length ? image : existing.image,
                 category: categoryId ? { connect: { id: categoryId } } : undefined,

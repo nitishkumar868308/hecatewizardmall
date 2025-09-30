@@ -179,6 +179,9 @@ const ProductModalWrapper = ({
                 marketLinks: (newProduct.marketLinks || []).length > 0
                     ? { connect: newProduct.marketLinks.map(link => ({ id: link.id })) }
                     : undefined,
+                isDefault: typeof newProduct.isDefault === "string"
+                    ? JSON.parse(newProduct.isDefault)
+                    : newProduct.isDefault ?? null,
 
                 offers: newProduct.offers && newProduct.offers.length > 0
                     ? {
@@ -221,7 +224,6 @@ const ProductModalWrapper = ({
             setVariationDetails({});
             setNewImage(null);
             setModalOpen(false)
-
         } catch (err) {
             toast.error(err?.message || "Failed to create product");
         } finally {
@@ -270,6 +272,9 @@ const ProductModalWrapper = ({
             // primaryOffer: editProductData.offers?.length
             //     ? { connect: { id: editProductData.offers[0].id } }
             //     : undefined,
+            isDefault: typeof editProductData.isDefault === "string"
+                ? JSON.parse(editProductData.isDefault)
+                : editProductData.isDefault ?? null,
             categoryId: editProductData.categoryId,
             subcategoryId: editProductData.subcategoryId,
             active: editProductData.active,
@@ -310,14 +315,33 @@ const ProductModalWrapper = ({
         }));
     };
 
+
     const removeVariation = (key) => {
         setCurrentVariations((prev) =>
-            prev.filter((v) => getVariationKey(v) !== key)
+            prev.filter((v) => JSON.stringify(v) !== key) // key is stringified
         );
+
         const copy = { ...variationDetails };
         delete copy[key];
         setVariationDetails(copy);
+
+        const defaultKeyStr = JSON.stringify(currentData?.isDefault);
+        if (defaultKeyStr === key) {
+            setCurrentData(prev => ({ ...prev, isDefault: null }));
+            setDefaultVariationId("");
+        }
     };
+
+
+
+    // const removeVariation = (key) => {
+    //     setCurrentVariations((prev) =>
+    //         prev.filter((v) => getVariationKey(v) !== key)
+    //     );
+    //     const copy = { ...variationDetails };
+    //     delete copy[key];
+    //     setVariationDetails(copy);
+    // };
 
     const handleVariationChange = (variationKey, field, value) => {
         setVariationDetails((prev) => ({
@@ -459,7 +483,7 @@ const ProductModalWrapper = ({
         const newVariationDetails = {};
         const variationsWithKeys = combinations.map(comb => {
             const variationObj = comb.reduce((acc, val, idx) => {
-                acc[attrNames[idx]] = val;
+                acc[attrNames[idx]] = val ?? "N/A";
                 return acc;
             }, {});
 
@@ -496,10 +520,11 @@ const ProductModalWrapper = ({
 
 
     const parseAttributes = (variationName) => {
+        console.log("variationName", variationName)
         if (!variationName) return {};
         // "Color: red1, Size: M" => { Color: "red1", Size: "M" }
         const attrs = {};
-        variationName.split(",").forEach((part) => {
+        variationName.split("/").forEach((part) => {
             const [key, value] = part.split(":").map(s => s.trim());
             if (key && value) attrs[key] = value;
         });
@@ -533,6 +558,7 @@ const ProductModalWrapper = ({
                     short: v.short,
                     price: v.price,
                     stock: v.stock,
+                    isDefault: v.isDefault,
                     sku: v.sku,
                     description: v.description,
                     images: v.image ? [v.image] : [],
@@ -582,6 +608,7 @@ const ProductModalWrapper = ({
                     short: v.short,
                     price: v.price,
                     stock: v.stock,
+                    isDefault: v.isDefault,
                     sku: v.sku,
                     description: v.description,
                     images: v.image ? [v.image] : [],
@@ -661,7 +688,7 @@ const ProductModalWrapper = ({
                         </h2>
 
                         <ul className="space-y-2">
-                            {["product", "attributes", "variations", "external Links"].map((section) => (
+                            {["product", "external Links", "attributes", "variations"].map((section) => (
                                 <li
                                     key={section}
                                     onClick={() => setActiveSection(section)}
@@ -704,6 +731,17 @@ const ProductModalWrapper = ({
                             />
                         )}
 
+                        {activeSection === "external Links" && (
+                            <ExternalLinks
+                                editModalOpen={editModalOpen}
+                                newProduct={newProduct}
+                                setNewProduct={setNewProduct}
+                                editProductData={editProductData}
+                                setEditProductData={setEditProductData}
+                            />
+                        )}
+
+
                         {activeSection === "attributes" && (
                             <AttributesSection
                                 selectedAttributes={selectedAttributes}
@@ -726,6 +764,7 @@ const ProductModalWrapper = ({
                                 variationDetails={variationDetails}
                                 setVariationDetails={setVariationDetails}
                                 handleVariationChange={handleVariationChange}
+                                setCurrentVariations={setCurrentVariations}
                                 productFields={[
                                     { key: "name", type: "text", placeholder: "Product Name" },
                                     { key: "short", type: "text", placeholder: "Short Description" },
@@ -742,15 +781,6 @@ const ProductModalWrapper = ({
                             />
                         )}
 
-                        {activeSection === "external Links" && (
-                            <ExternalLinks
-                                editModalOpen={editModalOpen}
-                                newProduct={newProduct}
-                                setNewProduct={setNewProduct}
-                                editProductData={editProductData}
-                                setEditProductData={setEditProductData}
-                            />
-                        )}
 
 
                         {/* Buttons */}

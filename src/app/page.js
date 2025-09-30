@@ -9,7 +9,7 @@ export default function Home() {
     <>
       <HomeSlider />
       {/* <StorySection /> */}
-      <ProductSlider />
+      <ProductSlider showSection={['featured', 'new']} />
       <TestMonial />
     </>
   );

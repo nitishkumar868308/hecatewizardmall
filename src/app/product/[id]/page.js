@@ -83,17 +83,65 @@ const ProductDetail = () => {
         setVariationAttributes(finalAttrs);
     }, [product?.variations]);
 
+    // useEffect(() => {
+    //     if (!product?.variations?.length || !variationAttributes || !Object.keys(variationAttributes).length) return;
+
+    //     // Auto-select first value of each attribute
+    //     const initialSelected = {};
+    //     Object.entries(variationAttributes).forEach(([attr, values]) => {
+    //         if (values.length) initialSelected[attr] = values[0];
+    //     });
+    //     setSelectedAttributes(initialSelected);
+
+    //     // Match the first variation
+    //     const matchingVariations = product.variations.filter(v => {
+    //         const parts = v.variationName.split(" / ").reduce((acc, part) => {
+    //             const [k, val] = part.split(":").map(p => p.trim());
+    //             acc[k] = val;
+    //             return acc;
+    //         }, {});
+    //         return Object.entries(initialSelected).every(([k, val]) => parts[k] === val);
+    //     });
+
+    //     const matchedVariation = matchingVariations.find(v => v.image?.length) || matchingVariations[0] || null;
+
+    //     setSelectedVariation(matchedVariation);
+
+    //     // Set main image & thumbnails
+    //     if (matchedVariation?.image?.length) {
+    //         setCurrentImages(matchedVariation.image);
+    //         setMainImage(matchedVariation.image[0]);
+    //     } else {
+    //         setCurrentImages([]);
+    //         setMainImage(null);
+    //     }
+    // }, [product?.id, product?.variations?.length, Object.keys(variationAttributes).length]);
+
     useEffect(() => {
         if (!product?.variations?.length || !variationAttributes || !Object.keys(variationAttributes).length) return;
 
-        // Auto-select first value of each attribute
-        const initialSelected = {};
-        Object.entries(variationAttributes).forEach(([attr, values]) => {
-            if (values.length) initialSelected[attr] = values[0];
-        });
+        let initialSelected = {};
+
+        if (product?.isDefault && Object.keys(product.isDefault).length > 0) {
+            // ✅ Use isDefault attributes first
+            initialSelected = { ...product.isDefault };
+
+            // अगर किसी attribute का default value variationAttributes में मौजूद नहीं है
+            Object.entries(variationAttributes).forEach(([attr, values]) => {
+                if (!initialSelected[attr] && values.length) {
+                    initialSelected[attr] = values[0]; // fallback
+                }
+            });
+        } else {
+            // ✅ Fallback: select first value of each attribute
+            Object.entries(variationAttributes).forEach(([attr, values]) => {
+                if (values.length) initialSelected[attr] = values[0];
+            });
+        }
+
         setSelectedAttributes(initialSelected);
 
-        // Match the first variation
+        // Match the variation with initialSelected
         const matchingVariations = product.variations.filter(v => {
             const parts = v.variationName.split(" / ").reduce((acc, part) => {
                 const [k, val] = part.split(":").map(p => p.trim());
@@ -111,11 +159,15 @@ const ProductDetail = () => {
         if (matchedVariation?.image?.length) {
             setCurrentImages(matchedVariation.image);
             setMainImage(matchedVariation.image[0]);
+        } else if (product.image?.length) {
+            setCurrentImages(product.image);
+            setMainImage(product.image[0]);
         } else {
             setCurrentImages([]);
             setMainImage(null);
         }
     }, [product?.id, product?.variations?.length, Object.keys(variationAttributes).length]);
+
 
     // const handleAttributeSelect = (attrName, val) => {
     //     const newSelected = { ...selectedAttributes, [attrName]: val };
@@ -148,32 +200,27 @@ const ProductDetail = () => {
     //         setMainImage(null);
     //     }
     // };
+    const parseVariationName = (variationName = "") => {
+        return variationName.split(" / ").reduce((acc, part) => {
+            const [k, v] = part.split(":").map(p => p.trim().toLowerCase());
+            acc[k] = v;
+            return acc;
+        }, {});
+    };
+
     const handleAttributeSelect = (attrName, val) => {
         const newSelected = { ...selectedAttributes, [attrName]: val };
         setSelectedAttributes(newSelected);
 
         const matchedVariation = product.variations.find(v => {
-            const parts = v.variationName.split(" / ").reduce((acc, part) => {
-                const [k, v] = part.split(":").map(p => p.trim());
-                acc[k] = v;
-                return acc;
-            }, {});
-            return Object.entries(newSelected).every(([k, v]) => parts[k] === v);
+            const parts = parseVariationName(v.variationName);
+            return Object.entries(newSelected).every(
+                ([k, v]) => parts[k.toLowerCase()] === v.toLowerCase()
+            );
         });
 
         setSelectedVariation(matchedVariation || null);
 
-        //Update mainImage & currentImages
-        // if (matchedVariation?.image?.length) {
-        //     setCurrentImages(matchedVariation.image);
-        //     setMainImage(matchedVariation.image[0]);
-        // } else if (!matchedVariation && product.image?.length) {
-        //     setCurrentImages(product.image);
-        //     setMainImage(product.image[0]);
-        // } else {
-        //     setCurrentImages([]);
-        //     setMainImage(null);
-        // }
         if (matchedVariation?.image?.length) {
             setCurrentImages(matchedVariation.image);
             setMainImage(matchedVariation.image[0]?.trim() || "/image/logo PNG.png");
@@ -184,8 +231,35 @@ const ProductDetail = () => {
             setCurrentImages([]);
             setMainImage(null);
         }
-
     };
+
+
+    // const handleAttributeSelect = (attrName, val) => {
+    //     const newSelected = { ...selectedAttributes, [attrName]: val };
+    //     setSelectedAttributes(newSelected);
+
+    //     const matchedVariation = product.variations.find(v => {
+    //         const parts = v.variationName.split(" / ").reduce((acc, part) => {
+    //             const [k, v] = part.split(":").map(p => p.trim());
+    //             acc[k] = v;
+    //             return acc;
+    //         }, {});
+    //         return Object.entries(newSelected).every(([k, v]) => parts[k] === v);
+    //     });
+
+    //     setSelectedVariation(matchedVariation || null);
+    //     if (matchedVariation?.image?.length) {
+    //         setCurrentImages(matchedVariation.image);
+    //         setMainImage(matchedVariation.image[0]?.trim() || "/image/logo PNG.png");
+    //     } else if (!matchedVariation && product.image?.length) {
+    //         setCurrentImages(product.image);
+    //         setMainImage(product.image[0]?.trim() || "/image/logo PNG.png");
+    //     } else {
+    //         setCurrentImages([]);
+    //         setMainImage(null);
+    //     }
+
+    // };
 
 
     // Thumbnails: only show if more than 1 image
@@ -383,28 +457,35 @@ const ProductDetail = () => {
                         </p>
 
 
-                        {Object.entries(variationAttributes).map(([attrKey, values]) => (
-                            <div key={attrKey} className="mb-6">
-                                <h3 className="mb-3 text-lg font-semibold text-gray-700">
-                                    {attrKey}
-                                </h3>
-                                <div className="flex gap-3 flex-wrap">
-                                    {values.map(val => (
-                                        <button
-                                            key={`${attrKey}-${val}`}
-                                            onClick={() => handleAttributeSelect(attrKey, val)}
-                                            className={`px-4 py-2 cursor-pointer rounded-lg text-sm font-semibold transition-all duration-300 transform 
+                        {Object.entries(variationAttributes).map(([attrKey, values]) => {
+                            let sortedValues = [...values];
+                            const defaultVal = product?.isDefault?.[attrKey];
+                            if (defaultVal && sortedValues.includes(defaultVal)) {
+                                sortedValues = [defaultVal, ...sortedValues.filter(v => v !== defaultVal)];
+                            }
+                            return (
+                                <div key={attrKey} className="mb-6">
+                                    <h3 className="mb-3 text-lg font-semibold text-gray-700">
+                                        {attrKey}
+                                    </h3>
+                                    <div className="flex gap-3 flex-wrap">
+                                        {sortedValues.map(val => (
+                                            <button
+                                                key={`${attrKey}-${val}`}
+                                                onClick={() => handleAttributeSelect(attrKey, val)}
+                                                className={`px-4 py-2 cursor-pointer rounded-lg text-sm font-semibold transition-all duration-300 transform 
                         ${selectedAttributes[attrKey] === val
-                                                    ? "bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 text-white shadow-lg scale-105"
-                                                    : "bg-gray-100 text-gray-800 hover:bg-gray-200 hover:scale-105"
-                                                }`}
-                                        >
-                                            {val}
-                                        </button>
-                                    ))}
+                                                        ? "bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 text-white shadow-lg scale-105"
+                                                        : "bg-gray-100 text-gray-800 hover:bg-gray-200 hover:scale-105"
+                                                    }`}
+                                            >
+                                                {val}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
 
                         {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                             {[...new Map(product.offers.map(o => [o.id, o])).values()].map((offer, index) => (
@@ -468,7 +549,7 @@ const ProductDetail = () => {
                                         className="inline-block"
                                     >
                                         <img
-                                            src="/image/amozon-image.png"
+                                            src="/image/amazon-button.png"
                                             alt={`Buy in ${product.matchedMarketLink.countryName}`}
                                             className="w-40 h-auto hover:scale-105 transition-transform cursor-pointer"
                                         />
@@ -678,7 +759,7 @@ const ProductDetail = () => {
             </div>
 
             <div className="mt-16 w-full">
-                <ProductSlider />
+                <ProductSlider showSection="related" />
             </div>
         </>
     );

@@ -254,7 +254,11 @@ const VariationsSection = ({
     productFields = [],
     handleImageUpload,
     currentData,
-    setCurrentData
+    setCurrentData,
+    setVariationDetails,
+    setCurrentVariations,
+    selectedAttributes,
+    setSelectedAttributes
 }) => {
     const { tags } = useSelector((state) => state.tags);
     const dispatch = useDispatch();
@@ -333,44 +337,104 @@ const VariationsSection = ({
     };
 
     const handleDefaultChange = (selectedValue) => {
-        // Update select box
         setDefaultVariationId(selectedValue);
 
-        // Directly set currentData.isDefault to full string
+        // Merge karo, overwrite mat karo
+        const newDefault = typeof selectedValue === "string"
+            ? JSON.parse(selectedValue)
+            : selectedValue;
+
         setCurrentData((prev) => ({
             ...prev,
-            isDefault: selectedValue, // store the string as-is
+            isDefault: newDefault,
+            // preserve existing variationDetails
         }));
-
-        console.log("Current Data after selection:", selectedValue);
     };
+
+
+    useEffect(() => {
+        if (currentData?.isDefault) {
+            const defaultKeyStr = JSON.stringify(currentData.isDefault, Object.keys(currentData.isDefault).sort());
+
+            // Only update if changed
+            if (defaultVariationId !== defaultKeyStr) {
+                setDefaultVariationId(defaultKeyStr);
+            }
+        }
+    }, [currentData, defaultVariationId]);
+
+
+
+    const removeVariationInternal = (variationKey) => {
+        // Remove from variations
+        setCurrentVariations((prev) =>
+            prev.filter((v) => JSON.stringify(v) !== variationKey)
+        );
+
+        // Remove variation details
+        setVariationDetails((prev) => {
+            const copy = { ...prev };
+            delete copy[variationKey];
+            return copy;
+        });
+
+        // Reset default if it was the removed variation
+        setCurrentData((prev) => {
+            const defaultKeyStr = JSON.stringify(prev?.isDefault);
+            if (defaultKeyStr === variationKey) {
+                setDefaultVariationId("");
+                return { ...prev, isDefault: null };
+            }
+            return prev;
+        });
+
+        // --- Remove ONLY this variation's attributes ---
+        // setSelectedAttributes((prev) => {
+        //     const copy = { ...prev };
+        //     const variationObj = JSON.parse(variationKey); // e.g., { Color: "red1", size: "m" }
+        //     console.log("variationObj" , variationObj)
+        //     Object.keys(variationObj).forEach((attrKey) => {
+        //         if (copy[attrKey]) {
+        //             // remove only the value that matches this variation
+        //             copy[attrKey] = {
+        //                 ...copy[attrKey],
+        //                 values: copy[attrKey].values.filter(v => v !== variationObj[attrKey])
+        //             };
+        //         }
+        //     });
+
+        //     return copy;
+        // });
+
+    };
+
 
 
 
 
     return (
         <div className="h-full mx-auto max-h-[90vh] md:max-h-[75vh] overflow-y-auto space-y-5 p-2 sm:p-4">
-            <select
-                value={defaultVariationId} // store variationKey
-                onChange={(e) => handleDefaultChange(e.target.value)}
-                className="border border-gray-300 rounded-2xl px-4 py-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-            >
-                <option value="">Select default variation</option>
-                {currentVariations.map((v) => {
-                    const variationKey = JSON.stringify(v); // <-- key
-                    const variationString = Object.entries(v)
-                        .map(([k, val]) => `${k}: ${val}`)
-                        .join(" / ");
-
-                    return (
-                        <option key={variationKey} value={variationKey}>
-                            {variationString}
-                        </option>
-                    );
-                })}
-            </select>
-
-
+            <div className="mb-4">
+                {/* Single Dropdown at the Top */}
+                <label className="block text-gray-700 font-medium mb-2">
+                    Select Default Variation
+                </label>
+                <select
+                    value={defaultVariationId}
+                    onChange={(e) => handleDefaultChange(e.target.value)}
+                    className="border border-gray-300 rounded-2xl px-4 py-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 w-full"
+                >
+                    <option value="">Select default variation</option>
+                    {currentVariations.map((variation) => {
+                        const variationKey = JSON.stringify(variation);
+                        return (
+                            <option key={variationKey} value={variationKey}>
+                                {Object.values(variation).join(" / ")}
+                            </option>
+                        );
+                    })}
+                </select>
+            </div>
 
             {currentVariations.map((variation) => {
                 const variationKey = JSON.stringify(variation);
@@ -386,8 +450,11 @@ const VariationsSection = ({
                             onClick={() => toggleExpand(variationKey)}
                         >
                             <span className="font-semibold text-gray-800 text-base sm:text-lg">
-                                {Object.values(variation).join(" / ")}
+                                {Object.entries(variation)
+                                    .map(([key, value]) => `${key}: ${value}`)
+                                    .join(" / ")}
                             </span>
+
                             <div className="flex items-center gap-4">
                                 <span className="text-xl font-bold text-gray-700">
                                     {expandedVariations[variationKey] ? "−" : "+"}
@@ -395,9 +462,9 @@ const VariationsSection = ({
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        removeVariation(variationKey);
+                                        removeVariationInternal(variationKey);
                                     }}
-                                    className="text-gray-600 hover:text-red-800 font-semibold text-sm px-3 py-1 rounded-lg bg-red-50 hover:bg-red-100 transition"
+                                    className="text-gray-600 cursor-pointer hover:text-red-800 font-semibold text-sm px-3 py-1 rounded-lg bg-red-50 hover:bg-red-100 transition"
                                 >
                                     Remove
                                 </button>

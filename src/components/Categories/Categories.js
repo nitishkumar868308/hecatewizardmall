@@ -198,17 +198,17 @@ const Categories = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const dispatch = useDispatch();
-
     const { products } = useSelector((state) => state.products);
     const { subcategories } = useSelector((state) => state.subcategory);
     const { categories } = useSelector((state) => state.category);
-
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [selectedSubcategory, setSelectedSubcategory] = useState("All");
-    const [priceRange, setPriceRange] = useState(200);
+    const [priceRange, setPriceRange] = useState(10000);
     const [sortBy, setSortBy] = useState(sortOptions[0]);
     const [showFilters, setShowFilters] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const productsPerPage = 6;
 
     // Fetch data
     useEffect(() => {
@@ -241,20 +241,6 @@ const Categories = () => {
         setSelectedSubcategory(sub ? sub.id : "All");
     }, [searchParams, categories, subcategories]);
 
-    // Handle category click
-    const handleCategoryClick = (cat) => {
-        setSelectedCategory(cat.id);
-        setSelectedSubcategory("All");
-        router.push(`/categories?category=${encodeURIComponent(cat.name)}&subcategory=All`);
-    };
-
-    // Handle subcategory click
-    const handleSubcategoryClick = (cat, sub) => {
-        setSelectedCategory(cat.id);
-        setSelectedSubcategory(sub.id);
-        router.push(`/categories?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`);
-    };
-
     // Filter and sort products
     const filteredProducts = products
         .filter(
@@ -264,6 +250,49 @@ const Categories = () => {
         )
         .filter((p) => p.price <= priceRange)
         .sort((a, b) => (sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price));
+
+    const indexOfLast = currentPage * productsPerPage;
+    const indexOfFirst = indexOfLast - productsPerPage;
+    const currentProducts = filteredProducts.slice(indexOfFirst, indexOfLast);
+    const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+
+    // Handle category click
+    // const handleCategoryClick = (cat) => {
+    //     setSelectedCategory(cat.id);
+    //     setSelectedSubcategory("All");
+    //     router.push(`/categories?category=${encodeURIComponent(cat.name)}&subcategory=All`);
+    // };
+    const handleCategoryClick = (cat) => {
+        if (selectedCategory !== cat.id) {
+            // Doosri category select ho rahi hai
+            setSelectedCategory(cat.id);
+            setSelectedSubcategory("All");
+            setCurrentPage(1);
+        } else {
+            // Same category dobara click hua
+            // state change mat karo, bas route refresh karao
+            router.push(`/categories?category=${encodeURIComponent(cat.name)}&subcategory=All`);
+            return;
+        }
+
+        router.push(`/categories?category=${encodeURIComponent(cat.name)}&subcategory=All`);
+    };
+
+    // Handle subcategory click
+    const handleSubcategoryClick = (cat, sub) => {
+        setSelectedCategory(cat.id);
+        setSelectedSubcategory(sub.id);
+        setCurrentPage(1);
+        router.push(`/categories?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`);
+    };
+
+
 
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro">
@@ -303,10 +332,14 @@ const Categories = () => {
                                     <li key={cat.id} className="mb-2">
                                         <div
                                             onClick={() => handleCategoryClick(cat)}
-                                            className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedCategory === cat.id ? "bg-blue-200 font-semibold" : ""
+                                            className={`cursor-pointer flex items-center justify-between p-2 rounded hover:bg-blue-100 ${selectedCategory === cat.id ? "bg-blue-200 font-semibold" : ""
                                                 }`}
                                         >
-                                            {cat.name}
+                                            <span>{cat.name}</span>
+                                            {/* Icon */}
+                                            <span className="text-lg font-bold">
+                                                {selectedCategory === cat.id ? "−" : "+"}
+                                            </span>
                                         </div>
 
                                         {/* Subcategories */}
@@ -364,9 +397,9 @@ const Categories = () => {
 
                 {/* Products Grid */}
                 <div className="w-full md:w-3/4">
-                    {filteredProducts.length > 0 ? (
+                    {currentProducts.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 cursor-pointer">
-                            {filteredProducts.map((product) => (
+                            {currentProducts.map((product) => (
                                 <div
                                     key={product.id}
                                     className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition transform hover:scale-105"
@@ -394,13 +427,33 @@ const Categories = () => {
                                         )}
                                     </div>
 
-                                    <h3 className="text-lg font-semibold">{product.name}</h3>
-                                    <p className="text-gray-600">
-                                        {product.currencySymbol}
-                                        {product.price}
-                                    </p>
+                                    {/* <div className="space-y-2">
+                                        <h3 className="text-xl font-bold text-gray-900 tracking-tight">
+                                            {product.name}
+                                        </h3>
+                                        <p className="text-lg font-semibold text-gray-600">
+                                            {product.currencySymbol}{product.price}
+                                        </p>
+                                    </div> */}
+                                    {/* <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-semibold text-gray-800">{product.name}</h3>
+                                        <span className="bg-blue-100 text-gray-700 font-bold px-3 py-1 rounded-full text-sm">
+                                            {product.currencySymbol}{product.price}
+                                        </span>
+                                    </div> */}
+                                    <div className="flex flex-col">
+                                        <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
+                                        <p className="text-sm text-gray-500">
+                                            Price: <span className="text-xl font-bold text-gray-600">
+                                                {product.currencySymbol}{product.price}
+                                            </span>
+                                        </p>
+                                    </div>
+
                                 </div>
                             ))}
+
+
                         </div>
                     ) : (
                         <div className="w-full h-64 flex flex-col items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
@@ -410,8 +463,47 @@ const Categories = () => {
                             </p>
                         </div>
                     )}
+
+                    {/* Pagination */}
+                    <div className="flex justify-center items-center gap-2 mt-6 flex-wrap">
+                        <button
+                            disabled={currentPage === 1}
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            className={`px-4 py-2 rounded transition ${currentPage === 1
+                                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                    : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+                                }`}
+                        >
+                            Prev
+                        </button>
+
+                        {Array.from({ length: totalPages }, (_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => handlePageChange(i + 1)}
+                                className={`px-3 py-1 rounded transition ${currentPage === i + 1
+                                        ? "bg-blue-500 text-white font-semibold cursor-default"
+                                        : "bg-gray-100 hover:bg-gray-200 cursor-pointer"
+                                    }`}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+
+                        <button
+                            disabled={currentPage === totalPages || totalPages === 0}
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            className={`px-4 py-2 rounded transition ${currentPage === totalPages || totalPages === 0
+                                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                    : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+                                }`}
+                        >
+                            Next
+                        </button>
+                    </div>
+
                 </div>
-        </div>
+            </div>
         </div >
     );
 };
