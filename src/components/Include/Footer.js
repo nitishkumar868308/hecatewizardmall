@@ -73,18 +73,18 @@ const Footer = () => {
                     <div className="flex flex-col gap-3">
                         <h3 className="text-lg mb-3">Get In Touch</h3>
 
-                        <div className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition cursor-pointer">
+                        <div className="flex items-center gap-2 text-gray-300 hover:text-gray-100 transition cursor-pointer">
                             <MapPin className="h-5 w-5" />
                             <span>27 Deepali, Pitampura, New Delhi 90210</span>
 
                         </div>
 
-                        <div className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition cursor-pointer">
+                        <div className="flex items-center gap-2 text-gray-300 hover:text-gray-100 transition cursor-pointer">
                             <Mail className="h-5 w-5" />
                             <span>healingherbsoilsshop@gmail.com</span>
                         </div>
 
-                        <div className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition cursor-pointer">
+                        <div className="flex items-center gap-2 text-gray-300 hover:text-gray-100 transition cursor-pointer">
                             <Phone className="h-5 w-5" />
                             <span>+91 9717033830</span>
                         </div>

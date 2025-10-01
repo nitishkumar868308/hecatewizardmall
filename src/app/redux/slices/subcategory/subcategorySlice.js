@@ -7,6 +7,7 @@ export const fetchSubcategories = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axios.get("/api/subcategory");
+            console.log("response" , response)
             return response.data.data; // API returns { message, data }
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to fetch subcategories");

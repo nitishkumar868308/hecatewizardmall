@@ -39,18 +39,28 @@ const AddSubcategory = () => {
 
     const handleImageUpload = async (file) => {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("image", file);
+
         const res = await fetch("/api/upload", { method: "POST", body: formData });
         const data = await res.json();
-        return data.url;
+        console.log("data", data)
+
+        if (!res.ok) throw new Error(data.message || "Upload failed");
+
+        return data.urls;
     };
+
 
     const handleAddSubcategory = async () => {
         if (!newSubcategory.name.trim() || !newSubcategory.categoryId)
             return toast.error("Name and category are required");
 
         let imageUrl = null;
-        if (newImage) imageUrl = await handleImageUpload(newImage);
+        if (newImage) {
+            imageUrl = await handleImageUpload(newImage);
+        }
+
+        console.log("imageUrl", imageUrl)
 
         try {
             await dispatch(
@@ -119,6 +129,7 @@ const AddSubcategory = () => {
         s.name.toLowerCase().includes(search.toLowerCase())
     );
 
+
     console.log("filteredSubcategories", filteredSubcategories)
 
     return (
@@ -149,6 +160,7 @@ const AddSubcategory = () => {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -159,7 +171,22 @@ const AddSubcategory = () => {
                             {filteredSubcategories.map((s, idx) => (
                                 <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">{idx + 1}</td>
-                                    <td className="px-6 py-4">{s.name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {s.image ? (
+                                            <div className="relative w-15 h-15">
+                                                <Image
+                                                    src={s.image}
+                                                    alt={s.name}
+                                                    fill
+                                                    className="object-cover rounded-md"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-400 italic">No Image</span>
+                                        )}
+                                    </td>
+
+
                                     <td className="px-6 py-4">{categories.find(c => c.id === s.categoryId)?.name || "-"}</td>
                                     <td className="px-6 py-4">
                                         <label className="inline-flex items-center cursor-pointer">

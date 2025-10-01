@@ -19,6 +19,7 @@ import {
     fetchSubcategories,
 } from "@/app/redux/slices/subcategory/subcategorySlice";
 import { fetchCart, updateLocalCartItem, updateCart } from "@/app/redux/slices/addToCart/addToCartSlice";
+import SearchPage from "./SearchPage";
 
 const Header = () => {
     const [active, setActive] = useState("Home");
@@ -269,14 +270,14 @@ const Header = () => {
 
                                         {/* Dropdown only for Categories */}
                                         {item === "Categories" && openItem === "Categories" && (
-                                            <div className="absolute absolute left-1/2 transform -translate-x-[48%]
- top-full mt-1 w-[1300px] bg-[#161619] text-white shadow-lg py-8 px-10 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 z-50">
+                                            <div className="absolute left-1/2 transform -translate-x-[48%]
+ top-full mt-1 w-[1400px] bg-[#161619] text-white shadow-lg py-8 px-10 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 z-50">
                                                 {mappedCategories.map((cat) => (
                                                     <div
                                                         key={cat.name}
                                                         className="flex items-start gap-6 border-b border-gray-700 pb-6 last:border-0"
                                                     >
-                                                        {/* Text */}
+                                                      
                                                         <div className="flex-1">
                                                             <h3 className=" text-lg mb-3 font-functionPro">{cat.name}</h3>
                                                             <ul className="space-y-2">
@@ -293,7 +294,7 @@ const Header = () => {
                                                             </ul>
                                                         </div>
 
-                                                        {/* Image */}
+                                              
                                                         <div className="w-40 h-40 relative rounded-lg overflow-hidden flex-shrink-0 cursor-pointer">
                                                             <Image
                                                                 src={cat.img}
@@ -380,76 +381,7 @@ const Header = () => {
 
                     {/* Icons */}
                     <div className="font-functionPro flex items-center gap-4 md:gap-6">
-                        <button
-                            className="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition text-white font-functionPro"
-                            onClick={() => setOpen(true)}
-                        >
-                            <Search className="h-6 w-6" />
-                            <span className="hidden md:inline font-medium">Search</span>
-                        </button>
-
-                        {/* Top Search Bar */}
-                        {open && (
-                            <div className="fixed inset-0 z-50 flex items-start justify-center backdrop-blur-sm bg-gray-200/40 pt-24 transition-all">
-                                <div className="w-11/12 md:w-1/2 lg:w-2/5 bg-white rounded-xl shadow-lg p-6 relative">
-                                    {/* Close Button */}
-                                    <button
-                                        className="absolute top-0 right-2 text-gray-600 hover:text-red-500 text-3xl font-bold cursor-pointer"
-                                        onClick={() => { setOpen(false); setQuery(""); }}
-                                    >
-                                        &times;
-                                    </button>
-
-                                    {/* Search Input */}
-                                    <div className="flex items-center gap-2">
-                                        <Search className="h-6 w-6 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Search for products..."
-                                            className="w-full text-lg border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                            autoFocus
-                                            value={query}
-                                            onChange={(e) => setQuery(e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Search Results */}
-                                    {query && (
-                                        <div className="mt-4 bg-gray-50 rounded-xl shadow-inner max-h-80 overflow-y-auto">
-                                            {filtered.length > 0 ? (
-                                                filtered.map((item) => (
-                                                    <div
-                                                        key={item.id}
-                                                        onClick={() => {
-                                                            router.push(`/categories?id=${item.id}`);
-                                                            setQuery("");
-                                                            setOpen(false)
-                                                        }}
-                                                        //onClick={() => router.push(`/test?id=${item.id}`)}
-                                                        className="flex items-center gap-4 px-4 py-3 hover:bg-gray-100 cursor-pointer rounded-lg transition"
-                                                    >
-                                                        <div className="w-12 h-12 relative flex-shrink-0">
-                                                            <Image
-                                                                src={item.image}
-                                                                alt={item.name}
-                                                                fill
-                                                                className="object-cover rounded-lg"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-medium">{item.name}</div>
-                                                            <div className="text-gray-500 text-sm">${item.price}</div>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="px-4 py-3 text-gray-500">No results found</div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+                        <SearchPage />
 
                         <button onClick={() => setIsOpen(true)} className="relative cursor-pointer">
                             <ShoppingCart className="h-6 w-6 text-white" />
@@ -601,7 +533,7 @@ const Header = () => {
                                             className="absolute z-50 bg-white shadow-lg rounded-md font-functionPro cursor-pointer"
                                             style={{
                                                 top: "calc(100% - 6px)",
-                                                right: 0, 
+                                                right: 0,
                                                 maxWidth: "90vw",
                                             }}
                                         >
