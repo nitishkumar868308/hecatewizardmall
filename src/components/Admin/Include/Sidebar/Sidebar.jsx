@@ -7,6 +7,7 @@ import Image from "next/image";
 const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuOpenProduct, setMenuOpenProduct] = useState(false);
+     const [menuOpenTax, setMenuOpenTax] = useState(false);
 
     return (
         <>
@@ -94,6 +95,40 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                 >
                                     Add Subcategory
                                 </Link>
+                            </div>
+                        )}
+                    </div>
+
+                    <div>
+                        <button
+                            onClick={() => setMenuOpenTax(!menuOpenTax)}
+                            className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                        >
+                            <span className="flex items-center gap-3">
+                                <LayoutGrid className="w-5 h-5" /> Tax
+                            </span>
+                            {menuOpenTax ? (
+                                <ChevronUp className="w-4 h-4" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4" />
+                            )}
+                        </button>
+
+                        {/* Dropdown items */}
+                        {menuOpenTax && (
+                            <div className="ml-8 mt-2 flex flex-col gap-2">
+                                <Link
+                                    href="/admin/countryTaxes"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Country Taxes
+                                </Link>
+                                {/* <Link
+                                    href="/admin/category"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Add Category
+                                </Link> */}
                             </div>
                         )}
                     </div>
