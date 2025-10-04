@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import jwt from "jsonwebtoken";
+import { sendMail } from "@/lib/mailer";
 
 export async function POST(req) {
     try {
@@ -22,6 +23,13 @@ export async function POST(req) {
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
         );
+
+        await sendMail({
+            to: user.email,
+            subject: "Welcome to Our App!",
+            text: `Hi ${user.name}, welcome to our platform!`,
+            html: `<p>Hi <strong>${user.name}</strong>, welcome to our platform!</p>`,
+        });
 
         return Response.json(
             { message: "User registered", user: { id: user.id, name: user.name, email: user.email }, token },

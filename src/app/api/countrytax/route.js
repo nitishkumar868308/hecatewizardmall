@@ -27,7 +27,7 @@ export async function POST(req) {
     try {
         const body = await req.json();
         console.log("body", body);
-        const { country, categoryId, type, generalTax, gstTax, active } = body;
+        const { country, countryCode, categoryId, type, generalTax, gstTax, active } = body;
 
         if (!country || !categoryId || !type) {
             return new Response(
@@ -40,6 +40,7 @@ export async function POST(req) {
             data: {
                 country,
                 categoryId,
+                countryCode,
                 type,
                 generalTax: generalTax != null ? parseFloat(generalTax) : null,
                 gstTax: gstTax != null ? parseFloat(gstTax) : null,

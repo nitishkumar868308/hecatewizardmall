@@ -17,7 +17,7 @@ const AddSubcategory = () => {
     const dispatch = useDispatch();
     const { subcategories, loading } = useSelector((state) => state.subcategory);
     const { categories } = useSelector((state) => state.category);
-
+    console.log("subcategories", subcategories)
     const [search, setSearch] = useState("");
     const [modalOpen, setModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
@@ -186,7 +186,7 @@ const AddSubcategory = () => {
                                         )}
                                     </td>
 
-
+                                    <td className="px-6 py-4">{s.name}</td>
                                     <td className="px-6 py-4">{categories.find(c => c.id === s.categoryId)?.name || "-"}</td>
                                     <td className="px-6 py-4">
                                         <label className="inline-flex items-center cursor-pointer">

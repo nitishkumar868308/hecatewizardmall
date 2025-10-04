@@ -26,7 +26,8 @@ const ProductDetail = () => {
     const { offers } = useSelector((state) => state.offers);
     const params = useParams();
     const { id } = params;
-    const product = products.find((p) => p.id === id);
+    const [currentProduct, setCurrentProduct] = useState(null);
+    const product = currentProduct;
     const [quantity, setQuantity] = useState(1);
     const [variationAttributes, setVariationAttributes] = useState({});
     const [activeTab, setActiveTab] = useState("description");
@@ -46,14 +47,85 @@ const ProductDetail = () => {
     const [selectedAttributes, setSelectedAttributes] = useState({});
     const { user } = useSelector((state) => state.me);
     const { items } = useSelector((state) => state.cart);
+    const country = useSelector((state) => state.country);
+
 
     useEffect(() => {
-        dispatch(fetchCart())
-        dispatch(fetchMe())
-        if (!products.length) dispatch(fetchProducts());
+        const prod = products.find((p) => p.id === id);
+        setCurrentProduct(prod || null);
+    }, [products, id]);
+    // const product = products.find((p) => p.id === id);
+
+
+    useEffect(() => {
+        dispatch(fetchCart());
+        dispatch(fetchMe());
+        dispatch(fetchProducts()); // always fetch for current country
         dispatch(fetchOffers());
-    }, [dispatch, products.length]);
+    }, [dispatch, country]); // <-- refetch whenever country changes
+
+    useEffect(() => {
+        if (!currentProduct) return;
+
+        // Reset selected attributes based on new product
+        const attrs = {};
+        currentProduct.variations?.forEach((v) => {
+            const parts = v.variationName.split(" / ");
+            parts.forEach((part) => {
+                const [key, val] = part.split(":").map((p) => p.trim());
+                if (!attrs[key]) attrs[key] = new Set();
+                attrs[key].add(val);
+            });
+        });
+
+        const finalAttrs = {};
+        Object.entries(attrs).forEach(([k, v]) => (finalAttrs[k] = Array.from(v)));
+        setVariationAttributes(finalAttrs);
+
+        // Reset selected attributes
+        const initialSelected = {};
+        if (currentProduct?.isDefault) {
+            Object.entries(finalAttrs).forEach(([attr, values]) => {
+                initialSelected[attr] = currentProduct.isDefault[attr] || values[0];
+            });
+        } else {
+            Object.entries(finalAttrs).forEach(([attr, values]) => {
+                initialSelected[attr] = values[0];
+            });
+        }
+        setSelectedAttributes(initialSelected);
+
+        // Match variation
+        const matchedVariation = currentProduct.variations?.find((v) => {
+            const parts = parseVariationName(v.variationName);
+            return Object.entries(initialSelected).every(
+                ([k, val]) => parts[k.toLowerCase()] === val.toLowerCase()
+            );
+        }) || null;
+
+        setSelectedVariation(matchedVariation);
+
+        // Set main image
+        if (matchedVariation?.image?.length) {
+            setCurrentImages(matchedVariation.image);
+            setMainImage(matchedVariation.image[0]);
+        } else if (currentProduct.image?.length) {
+            setCurrentImages(currentProduct.image);
+            setMainImage(currentProduct.image[0]);
+        } else {
+            setCurrentImages([]);
+            setMainImage(null);
+        }
+    }, [currentProduct]);
+
+
     console.log("productsId", products)
+    // useEffect(() => {
+    //     dispatch(fetchCart())
+    //     dispatch(fetchMe())
+    //     if (!products.length) dispatch(fetchProducts());
+    //     dispatch(fetchOffers());
+    // }, [dispatch, products.length]);
     useEffect(() => {
         if (items && Array.isArray(items) && user?.id) {
             const filtered = items.filter((item) => item.userId == String(user.id));
@@ -380,6 +452,8 @@ const ProductDetail = () => {
         // After submission, reset the form
         setReviewForm({ name: "", rating: 0, comment: "" });
     };
+
+
     return (
         <>
             <div className="max-w-7xl mx-auto p-8 flex flex-col md:flex-row gap-12">

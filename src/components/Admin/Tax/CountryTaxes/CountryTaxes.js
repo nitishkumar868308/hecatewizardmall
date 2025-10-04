@@ -25,6 +25,7 @@ const CountryTaxes = () => {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const { countries } = useCountries();
+    console.log("countries", countries)
     console.log("countryTax", countryTax)
     const [newTax, setNewTax] = useState({
         country: "",
@@ -85,6 +86,10 @@ const CountryTaxes = () => {
             return;
         }
 
+        const selectedCountryObj = countries.find(c => c.name === newTax.country);
+        const countryCode = selectedCountryObj ? selectedCountryObj.code : null;
+        console.log("countryCode", countryCode)
+
         setLoading(true);
         try {
             if (newTax.type === "Both") {
@@ -93,6 +98,7 @@ const CountryTaxes = () => {
                         categoryId: selectedCategory.id,
                         country: newTax.country,
                         type: "General",
+                        countryCode,
                         generalTax: parseFloat(newTax.percentageGeneral),
                         gstTax: null,
                     })).unwrap(),
@@ -100,6 +106,7 @@ const CountryTaxes = () => {
                         categoryId: selectedCategory.id,
                         country: newTax.country,
                         type: "GST",
+                        countryCode,
                         generalTax: null,
                         gstTax: parseFloat(newTax.percentageGST),
                     })).unwrap()
@@ -109,6 +116,7 @@ const CountryTaxes = () => {
                     categoryId: selectedCategory.id,
                     country: newTax.country,
                     type: newTax.type,
+                    countryCode,
                     generalTax: newTax.type === "General" ? parseFloat(newTax.percentageGeneral) : null,
                     gstTax: newTax.type === "GST" ? parseFloat(newTax.percentageGST) : null,
                 })).unwrap();

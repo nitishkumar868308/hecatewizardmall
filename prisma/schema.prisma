@@ -224,6 +224,7 @@ model MarketLink {
 model CountryTax {
   id         Int       @id @default(autoincrement())
   country    String
+  countryCode String?
   categoryId Int
   category   Category  @relation(fields: [categoryId], references: [id])
   generalTax Float?

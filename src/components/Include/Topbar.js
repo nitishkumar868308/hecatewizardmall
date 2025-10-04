@@ -16,11 +16,14 @@ const Topbar = () => {
     }, [dispatch]);
 
     useEffect(() => {
-        if (countryPricing.length && !country) {
+        // On mount, check localStorage first
+        const savedCountry = localStorage.getItem("selectedCountry");
+        if (savedCountry) {
+            dispatch(setCountry(savedCountry));
+        } else if (countryPricing.length && !country) {
             dispatch(setCountry(countryPricing[0].code));
         }
     }, [countryPricing, country, dispatch]);
-
 
     const countries = [...countryPricing]
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
@@ -35,7 +38,8 @@ const Topbar = () => {
     const handleChange = (e) => {
         const selectedCountry = e.target.value;
         dispatch(setCountry(selectedCountry));
-        dispatch(fetchProducts(selectedCountry))
+        localStorage.setItem("selectedCountry", selectedCountry); // persist
+        dispatch(fetchProducts(selectedCountry));
     };
 
 

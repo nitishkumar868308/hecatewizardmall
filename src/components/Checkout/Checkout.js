@@ -7,6 +7,11 @@ import toast from 'react-hot-toast';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CreditCard, CreditCardFront, Wallet, DollarSign } from "lucide-react";
+import { fetchProducts } from "@/app/redux/slices/products/productSlice";
+import { fetchOffers } from '@/app/redux/slices/offer/offerSlice'
+import {
+  fetchCountryTaxes,
+} from "@/app/redux/slices/countryTaxes/countryTaxesSlice";
 
 const Checkout = () => {
   const dispatch = useDispatch();
@@ -23,6 +28,13 @@ const Checkout = () => {
   const [expanded, setExpanded] = useState("UPI / Wallet");
   const [selectedShipping, setSelectedShipping] = useState(null);
   const [tempShipping, setTempShipping] = useState(null);
+  const { products } = useSelector((state) => state.products);
+  const { offers } = useSelector((state) => state.offers);
+  const { countryTax } = useSelector((state) => state.countryTax);
+  const [shippingOption, setShippingOption] = useState([]);
+  const [selectedShippingOption, setSelectedShippingOption] = useState(null);
+  const [selectedCountry, setSelectedCountry] = useState(null);
+  console.log("countryTax", countryTax)
 
   const methods = [
     {
@@ -42,9 +54,37 @@ const Checkout = () => {
     },
   ];
 
+
+  useEffect(() => {
+    const storedCountry = localStorage.getItem("selectedCountry");
+    if (storedCountry) {
+      setSelectedCountry(storedCountry);
+
+      if (storedCountry === "IND") {
+        const options = [
+          { name: "By Road", price: 50 },
+          { name: "By Air", price: null }
+        ];
+        setShippingOption(options);
+        setSelectedShippingOption(options[0]); // default By Road
+      } else {
+        const options = [
+          { name: "By Air", price: null }
+        ];
+        setShippingOption(options);
+        setSelectedShippingOption(options[0]);
+      }
+    }
+  }, []);
+
+
+
   useEffect(() => {
     dispatch(fetchCart());
     dispatch(fetchMe());
+    dispatch(fetchProducts());
+    dispatch(fetchOffers());
+    dispatch(fetchCountryTaxes())
   }, [dispatch]);
 
   // Set default shipping address
@@ -68,6 +108,7 @@ const Checkout = () => {
   const userCart = useMemo(() => {
     return items?.filter(item => String(item.userId) === String(user?.id)) || [];
   }, [items, user?.id]);
+  console.log("userCart", userCart)
 
   useEffect(() => {
     if (userCart.length > 0 && selectedItems.length === 0) {
@@ -86,12 +127,36 @@ const Checkout = () => {
     }
   }, [userCart, quantities]);
 
+
+  // Subtotal including tax
   const subtotal = userCart
     .filter(item => selectedItems.includes(item.id))
-    .reduce((sum, item) => sum + (Number(item.pricePerItem || item.price) * (quantities[item.id] || 1)), 0);
+    .reduce((sum, item) => {
+      const qty = quantities[item.id] || 1;
+      const price = Number(item.pricePerItem || item.price);
+      const product = products.find(p => p.id === item.productId);
+      let taxAmount = 0;
 
-  const shipping = selectedItems.length > 0 ? 10 : 0;
-  const total = subtotal + shipping;
+      if (product) {
+        const matchedTax = countryTax.find(
+          (ct) =>
+            ct.countryCode === selectedCountry &&
+            ct.categoryId === product.categoryId &&
+            ct.type === "General"
+        );
+        if (matchedTax) {
+          taxAmount = (price * qty * (matchedTax.generalTax || 0)) / 100;
+        }
+      }
+
+      return sum + price * qty + taxAmount;
+    }, 0);
+
+  const shipping = selectedShippingOption?.price || 0;
+  const grandTotal = subtotal + shipping;
+
+
+
 
   const handleQuantityChange = async (id, value) => {
     if (value < 1) return;
@@ -201,29 +266,80 @@ const Checkout = () => {
       },
       items: userCart
         .filter(item => selectedItems.includes(item.id))
-        .map(item => ({
-          id: item.id,
-          productName: item.productName,
-          price: item.pricePerItem || item.price,
-          quantity: quantities[item.id] || 1,
-          total: (Number(item.pricePerItem || item.price) * (quantities[item.id] || 1)).toFixed(2),
-          image: item.image,
-        })),
-      subtotal: subtotal.toFixed(2),
-      shipping: shipping,
-      total: total.toFixed(2),
+        .map(item => {
+          const { buyXGetYOffer } = getCartItemOffer(item);
+          const qty = quantities[item.id] || 1;
+
+          let effectiveQty = qty;
+          let paidQty = qty;
+
+          if (buyXGetYOffer) {
+            if (qty === buyXGetYOffer.buy) {
+              effectiveQty = qty + buyXGetYOffer.free;
+            } else {
+              effectiveQty = qty;
+            }
+            paidQty = qty;
+          }
+
+          const unitPrice = Number(item.pricePerItem || item.price);
+
+          return {
+            id: item.id,
+            productName: item.productName,
+            price: unitPrice,
+            quantity: effectiveQty,
+            paidQty,
+            total: `${item.currencySymbol}${(unitPrice * paidQty).toFixed(2)}`,
+            image: item.image,
+            currencySymbol: item.currencySymbol,
+          };
+        }),
+
+
+      subtotal: `${userCart[0]?.currencySymbol || '₹'}${subtotal.toFixed(2)}`,
+      shipping: `${userCart[0]?.currencySymbol || '₹'}${shipping}`,
+      total: `${userCart[0]?.currencySymbol || '₹'}${grandTotal.toFixed(2)}`,
       paymentMethod: selected,
+
     };
+
 
     console.log("Order Data:", orderData);
   };
+
+
+  const getCartItemOffer = (cartItem) => {
+    const product = products.find(p => p.id === cartItem.productId);
+    if (!product) return {};
+
+    // get all offers linked to this product
+    const productOffers = offers.filter(o => product.offerId && o.id === product.offerId);
+
+    const buyXGetYOfferRaw = productOffers.find(o => o.discountType === "buyXGetY");
+    const discountOfferRaw = productOffers.find(o => o.discountType === "discount");
+
+    // map to consistent format for cart display
+    const buyXGetYOffer = buyXGetYOfferRaw
+      ? { buy: buyXGetYOfferRaw.discountValue.buy, free: buyXGetYOfferRaw.discountValue.free }
+      : null;
+
+    const discountOffer = discountOfferRaw
+      ? { discountPercentage: discountOfferRaw.discountValue || 0 }
+      : null;
+
+    return { buyXGetYOffer, discountOffer };
+  };
+  const currencySymbol = selectedItems.length > 0
+    ? userCart.find(item => selectedItems.includes(item.id))?.currencySymbol || "$"
+    : "$";
 
   return (
     <div className=" bg-gray-50 py-8 px-4">
       <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* Left - Cart Items */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* <div className="lg:col-span-2 space-y-6">
           <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-between">
             Shopping Cart
             {userCart.length > 0 && (
@@ -237,82 +353,305 @@ const Checkout = () => {
           {userCart.length === 0 ? (
             <p className="text-gray-600">Your cart is empty.</p>
           ) : (
-            userCart.map((product) => (
-              <div
-                key={product.id}
-                className="flex flex-col sm:flex-row items-center sm:items-start justify-between bg-white shadow-md rounded-xl p-4"
-              >
+
+            userCart.map((cartItem) => {
+              const { buyXGetYOffer, discountOffer } = getCartItemOffer(cartItem);
+              console.log("cartItem", cartItem)
+              const product = products.find(p => p.id === cartItem.productId);
+              console.log("product", product)
+              // default no tax
+              let taxAmount = 0;
+
+              if (product) {
+                const matchedTax = countryTax.find(
+                  (ct) =>
+                    ct.countryCode === selectedCountry &&
+                    ct.categoryId === product.categoryId &&
+                    ct.type == "General"
+                );
+
+                if (matchedTax) {
+                  const price = Number(cartItem.pricePerItem || cartItem.price);
+                  const qty = quantities[cartItem.id] || 1;
+                  taxAmount = ((price * qty) * matchedTax.generalTax) / 100;
+                }
+              }
+              console.log("selectedCountry", selectedCountry);
+              console.log("countryTax", countryTax);
+              console.log("taxAmount" , taxAmount)
+
+              return (
+                <div
+                  key={cartItem.id}
+                  className="flex flex-col sm:flex-row items-center sm:items-start justify-between bg-white shadow-md rounded-xl p-4"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.includes(cartItem.id)}
+                    onChange={() => toggleSelectItem(cartItem.id)}
+                    className="accent-gray-700 w-5 h-5"
+                  />
+                  <div className="flex items-center gap-4 w-full sm:w-auto">
+                    <img
+                      src={cartItem.image}
+                      alt={cartItem.productName}
+                      className="w-24 h-24 object-cover rounded-lg border"
+                    />
+                    <div>
+                      <h3 className="font-semibold text-lg text-gray-800">{cartItem.productName}</h3>
+                      <p className="text-gray-500">{cartItem.currencySymbol}{cartItem.pricePerItem || cartItem.price}</p>
+                    </div>
+                  </div>
+
+                  {selectedCountry && taxAmount > 0 && (
+                    <p className="text-md text-gray-600">
+                      + Tax ({taxAmount.toFixed(2)})
+                    </p>
+                  )}
+
+
+                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto mt-4 sm:mt-0 gap-4">
+                  
+                    <div className="flex flex-col items-center">
+                      <div className="flex items-center border rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => handleQuantityChange(cartItem.id, (quantities[cartItem.id] || 1) - 1)}
+                          className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
+                        >
+                          -
+                        </button>
+                        <span className="px-4 font-medium">{quantities[cartItem.id] || 1}</span>
+                        <button
+                          onClick={() => handleQuantityChange(cartItem.id, (quantities[cartItem.id] || 1) + 1)}
+                          className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      {buyXGetYOffer && (() => {
+                        const qty = quantities[cartItem.id] || 1;
+
+                        if (qty === buyXGetYOffer.buy) {
+                          return (
+                            <p className="text-green-600 text-md mt-1 font-semibold">
+                              Offer applied! (Total {qty + buyXGetYOffer.free} items)
+                            </p>
+                          );
+                        }
+
+                        if (qty < buyXGetYOffer.buy) {
+                          return (
+                            <p className="text-green-500 text-md mt-1">
+                              Buy {buyXGetYOffer.buy - qty} more, Get {buyXGetYOffer.free} free
+                            </p>
+                          );
+                        }
+
+                        return null;
+                      })()}
+                    </div>
+
+                    <p className="font-semibold text-gray-800">
+                      {cartItem.currencySymbol || "₹"}{" "}
+                      {(Number(cartItem.pricePerItem || cartItem.price) * (quantities[cartItem.id] || 1)).toFixed(2)}
+                    </p>
+
+                    <button
+                      onClick={() => openRemoveModal(cartItem)}
+                      className="text-red-600 hover:text-red-800 font-semibold cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                </div>
+              );
+            })
+          )}
+        </div> */}
+
+        <div className="lg:col-span-2 space-y-6">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-between">
+            Shopping Cart
+            {userCart.length > 0 && (
+              <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={selectedItems.includes(product.id)}
-                  onChange={() => toggleSelectItem(product.id)}
                   className="accent-gray-700 w-5 h-5"
+                  checked={selectAll}
+                  onChange={handleSelectAll}
                 />
-                <div className="flex items-center gap-4 w-full sm:w-auto">
-                  <img
-                    src={product.image}
-                    alt={product.productName}
-                    className="w-24 h-24 object-cover rounded-lg border"
+                Select All
+              </label>
+            )}
+          </h2>
+
+          {userCart.length === 0 ? (
+            <p className="text-gray-600">Your cart is empty.</p>
+          ) : (
+            userCart.map((cartItem) => {
+              const { buyXGetYOffer } = getCartItemOffer(cartItem);
+              const product = products.find(p => p.id === cartItem.productId);
+
+              let taxAmount = 0;
+              let taxPercent = 0;
+
+              if (product) {
+                const matchedTax = countryTax.find(
+                  (ct) =>
+                    ct.countryCode === selectedCountry &&
+                    ct.categoryId === product.categoryId &&
+                    ct.type === "General"
+                );
+
+                if (matchedTax) {
+                  taxPercent = matchedTax.generalTax || 0;
+                  const price = Number(cartItem.pricePerItem || cartItem.price);
+                  const qty = quantities[cartItem.id] || 1;
+                  taxAmount = ((price * qty) * taxPercent) / 100;
+                }
+              }
+
+              const qty = quantities[cartItem.id] || 1;
+              const originalTotal = Number(cartItem.pricePerItem || cartItem.price) * qty;
+              const totalWithTax = originalTotal + taxAmount;
+
+              return (
+                <div
+                  key={cartItem.id}
+                  className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-lg rounded-xl p-4 gap-4 hover:shadow-xl transition-shadow"
+                >
+                  {/* Checkbox */}
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.includes(cartItem.id)}
+                    onChange={() => toggleSelectItem(cartItem.id)}
+                    className="accent-gray-700 w-5 h-5 mt-1 md:mt-0"
                   />
-                  <div>
-                    <h3 className="font-semibold text-lg text-gray-800">{product.productName}</h3>
-                    <p className="text-gray-500">{product.currencySymbol}{product.pricePerItem || product.price}</p>
+
+                  {/* Image + Product info */}
+                  <div className="flex items-start md:items-center gap-4 flex-1">
+                    <img
+                      src={cartItem.image}
+                      alt={cartItem.productName}
+                      className="w-24 h-24 object-cover rounded-lg border"
+                    />
+                    <div className="flex flex-col justify-between flex-1">
+                      <h3 className="font-semibold text-lg text-gray-800">{cartItem.productName}</h3>
+                      <p className="text-gray-500 text-sm">Variation: {cartItem.attributes.color}</p>
+
+                      {/* Pricing */}
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="text-gray-400">{cartItem.currencySymbol}{originalTotal.toFixed(2)}</span>
+                        {taxAmount > 0 && (
+                          <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">
+                            + {taxPercent}% Tax
+                          </span>
+                        )}
+                        {buyXGetYOffer && (() => {
+                          const qty = quantities[cartItem.id] || 1;
+
+                          if (qty === buyXGetYOffer.buy) {
+                            return (
+                              <p className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded">
+                                Offer applied! (Total {qty + buyXGetYOffer.free} items)
+                              </p>
+                            );
+                          }
+
+                          if (qty < buyXGetYOffer.buy) {
+                            return (
+                              <p className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded">
+                                Buy {buyXGetYOffer.buy - qty} more, Get {buyXGetYOffer.free} free
+                              </p>
+                            );
+                          }
+
+                          return null;
+                        })()}
+                      </div>
+
+                      {/* Total */}
+                      <p className="text-gray-900 font-bold mt-2 text-lg">
+                        Total: {cartItem.currencySymbol}{totalWithTax.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Quantity + Remove */}
+                  <div className="flex flex-col items-start md:items-end gap-2 mt-2 md:mt-0">
+                    <div className="flex items-center border rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => handleQuantityChange(cartItem.id, qty - 1)}
+                        className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
+                      >-</button>
+                      <span className="px-4 font-medium">{qty}</span>
+                      <button
+                        onClick={() => handleQuantityChange(cartItem.id, qty + 1)}
+                        className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
+                      >+</button>
+                    </div>
+                    <button
+                      onClick={() => openRemoveModal(cartItem)}
+                      className="text-red-600 cursor-pointer hover:text-red-800 font-semibold mt-2"
+                    >
+                      Remove
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto mt-4 sm:mt-0 gap-4">
-                  <div className="flex items-center border rounded-lg overflow-hidden">
-                    <button
-                      onClick={() =>
-                        handleQuantityChange(product.id, (quantities[product.id] || 1) - 1)
-                      }
-                      className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
-                    >
-                      -
-                    </button>
-                    <span className="px-4 font-medium">{quantities[product.id] || 1}</span>
-                    <button
-                      onClick={() =>
-                        handleQuantityChange(product.id, (quantities[product.id] || 1) + 1)
-                      }
-                      className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
-                    >
-                      +
-                    </button>
-                  </div>
-                  <p className="font-semibold text-gray-800">
-                    {product.currencySymbol || "₹"}{' '}
-                    {(Number(product.pricePerItem || product.price) * (quantities[product.id] || 1)).toFixed(2)}
-                  </p>
-                  <button
-                    onClick={() => openRemoveModal(product)}
-                    className="text-red-600 hover:text-red-800 font-semibold cursor-pointer"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
+
+
 
         {/* Right - Order Summary */}
         <div className="bg-white shadow-lg rounded-xl p-6 sticky top-6 max-h-[90vh] overflow-y-auto space-y-6">
           {/* Order Summary */}
-          <div className="space-y-3">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Order Summary</h3>
-            <div className="flex justify-between text-gray-600">
-              <span>Subtotal</span>
-              <span>{subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Shipping</span>
-              <span>{shipping}</span>
-            </div>
-            <div className="flex justify-between font-bold text-lg border-t pt-3">
-              <span>Total</span>
-              <span>{total.toFixed(2)}</span>
+          <div className="flex justify-between text-gray-600">
+            <span>Subtotal</span>
+            <span>{currencySymbol}{subtotal.toFixed(2)}</span>
+          </div>
+          <div className="space-y-2">
+            <span className="text-gray-600 font-semibold">Shipping</span>
+            <div className="flex gap-3">
+              {shippingOption.map((option) => {
+                const isSelected = selectedShippingOption?.name === option.name;
+                return (
+                  <button
+                    key={option.name}
+                    onClick={() => setSelectedShippingOption(option)}
+                    className={`flex-1 flex flex-col justify-center items-center px-4 py-3 rounded-lg font-medium border transition-all duration-200
+            ${isSelected
+                        ? "bg-gray-500 text-white border-gray-800 shadow-lg"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                      }`}
+                  >
+                    <span className="text-sm font-semibold">{option.name}</span>
+                    {option.price ? (
+                      <span className="mt-1 font-semibold">{currencySymbol}{option.price.toFixed(2)}</span>
+                    ) : (
+                      <span className="mt-1 text-sm text-gray-200">
+                        Shipping charge will be calculated based on weight. We will contact you once your parcel is ready.
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
+
+
+
+
+          <div className="flex justify-between font-bold text-lg border-t pt-3">
+            <span>Total</span>
+            <span>{currencySymbol}{grandTotal.toFixed(2)}</span>
+          </div>
+
+
 
           {/* Shipping Address */}
           <div className="bg-gray-50 p-4 rounded-lg">
