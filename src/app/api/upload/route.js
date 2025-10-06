@@ -63,7 +63,41 @@
 // }
 
 
-// app/api/upload/route.js
+// // app/api/upload/route.js
+// import fs from "fs";
+// import path from "path";
+
+// export const config = { api: { bodyParser: false } };
+
+// export async function POST(req) {
+//     try {
+//         const formData = await req.formData();
+//         const files = formData.getAll("image");
+//         const uploadDir = path.join(process.cwd(), "public", "uploads", "products");
+//         if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+//         const imageUrls = [];
+
+//         for (const file of files) {
+//             // file is of type File (Web API)
+//             const arrayBuffer = await file.arrayBuffer();
+//             const buffer = Buffer.from(arrayBuffer);
+//             const fileName = `${Date.now()}-${file.name}`;
+//             const filePath = path.join(uploadDir, fileName);
+//             fs.writeFileSync(filePath, buffer);
+//             imageUrls.push(`/uploads/products/${fileName}`);
+//         }
+
+//         return new Response(JSON.stringify({ urls: imageUrls.length === 1 ? imageUrls[0] : imageUrls }), {
+//             status: 200,
+//             headers: { "Content-Type": "application/json" },
+//         });
+//     } catch (err) {
+//         console.error("Upload error:", err);
+//         return new Response(JSON.stringify({ message: err.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+//     }
+// }
+
 import fs from "fs";
 import path from "path";
 
@@ -72,31 +106,41 @@ export const config = { api: { bodyParser: false } };
 export async function POST(req) {
     try {
         const formData = await req.formData();
-        const files = formData.getAll("image");
+
+        // Accept both 'image' and 'video' keys
+        const files = formData.getAll("image").length
+            ? formData.getAll("image")
+            : formData.getAll("video");
+
+        if (!files.length) throw new Error("No file uploaded");
+
         const uploadDir = path.join(process.cwd(), "public", "uploads", "products");
         if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
-        const imageUrls = [];
+        const urls = [];
 
         for (const file of files) {
-            // file is of type File (Web API)
             const arrayBuffer = await file.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             const fileName = `${Date.now()}-${file.name}`;
             const filePath = path.join(uploadDir, fileName);
             fs.writeFileSync(filePath, buffer);
-            imageUrls.push(`/uploads/products/${fileName}`);
+            urls.push(`/uploads/products/${fileName}`);
         }
 
-        return new Response(JSON.stringify({ urls: imageUrls.length === 1 ? imageUrls[0] : imageUrls }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+            JSON.stringify({ urls: urls.length === 1 ? urls[0] : urls }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+        );
     } catch (err) {
         console.error("Upload error:", err);
-        return new Response(JSON.stringify({ message: err.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+        return new Response(
+            JSON.stringify({ message: err.message }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+        );
     }
 }
+
 
 
 

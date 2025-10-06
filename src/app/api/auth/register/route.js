@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 import { sendMail } from "@/lib/mailer";
+import { welcomeEmailTemplate } from "@/lib/templates/welcomeEmail";
 
 export async function POST(req) {
     try {
@@ -24,11 +25,12 @@ export async function POST(req) {
             { expiresIn: "7d" }
         );
 
+        // Send email using the template
         await sendMail({
             to: user.email,
-            subject: "Welcome to Our App!",
-            text: `Hi ${user.name}, welcome to our platform!`,
-            html: `<p>Hi <strong>${user.name}</strong>, welcome to our platform!</p>`,
+            subject: "Welcome to Hecate Wizard Mall!",
+            text: `Hi ${user.name}, welcome to our platform! Your email: ${email}, Password: ${password}`,
+            html: welcomeEmailTemplate({ name: user.name, email, password }),
         });
 
         return Response.json(

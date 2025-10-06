@@ -1,13 +1,13 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, Plus, ChevronDown, ChevronUp, LayoutGrid, ShoppingBag } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, Plus, ChevronDown, ChevronUp, LayoutGrid, ShoppingBag, Clapperboard  } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuOpenProduct, setMenuOpenProduct] = useState(false);
-     const [menuOpenTax, setMenuOpenTax] = useState(false);
+    const [menuOpenTax, setMenuOpenTax] = useState(false);
 
     return (
         <>
@@ -197,6 +197,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             </div>
                         )}
                     </div>
+
+                    <Link
+                        href="/admin/videoStory"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                    >
+                        <Clapperboard className="w-5 h-5" /> Video Story
+                    </Link>
 
                     <Link
                         href="/admin/settings"

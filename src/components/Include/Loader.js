@@ -7,7 +7,7 @@ const Loader = () => {
             <div className="flex flex-col items-center">
                 <div className="w-24 h-24 relative animate-spin-slow">
                     <Image
-                        src="/image/logo JPEG.jpg"
+                        src="/image/logo.jpg"
                         alt="Logo"
                         fill
                         className="object-contain"

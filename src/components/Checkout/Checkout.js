@@ -128,35 +128,6 @@ const Checkout = () => {
   }, [userCart, quantities]);
 
 
-  // Subtotal including tax
-  const subtotal = userCart
-    .filter(item => selectedItems.includes(item.id))
-    .reduce((sum, item) => {
-      const qty = quantities[item.id] || 1;
-      const price = Number(item.pricePerItem || item.price);
-      const product = products.find(p => p.id === item.productId);
-      let taxAmount = 0;
-
-      if (product) {
-        const matchedTax = countryTax.find(
-          (ct) =>
-            ct.countryCode === selectedCountry &&
-            ct.categoryId === product.categoryId &&
-            ct.type === "General"
-        );
-        if (matchedTax) {
-          taxAmount = (price * qty * (matchedTax.generalTax || 0)) / 100;
-        }
-      }
-
-      return sum + price * qty + taxAmount;
-    }, 0);
-
-  const shipping = selectedShippingOption?.price || 0;
-  const grandTotal = subtotal + shipping;
-
-
-
 
   const handleQuantityChange = async (id, value) => {
     if (value < 1) return;
@@ -333,6 +304,45 @@ const Checkout = () => {
 
     return { buyXGetYOffer, discountOffer };
   };
+
+  // Subtotal including tax
+  const subtotal = userCart
+    .filter(item => selectedItems.includes(item.id))
+    .reduce((sum, item) => {
+      const qty = quantities[item.id] || 1;
+      const price = Number(item.pricePerItem || item.price);
+      const product = products.find(p => p.id === item.productId);
+
+      // --- Apply Discount ---
+      let discountedTotal = price * qty;
+      const { discountOffer } = getCartItemOffer(item);
+      let discountPercent = 0;
+      if (discountOffer?.discountPercentage?.percent) {
+        discountPercent = Number(discountOffer.discountPercentage.percent);
+        discountedTotal -= (discountedTotal * discountPercent) / 100;
+      }
+
+      // --- Apply Tax on discounted amount ---
+      let taxAmount = 0;
+      if (product) {
+        const matchedTax = countryTax.find(
+          (ct) =>
+            ct.countryCode === selectedCountry &&
+            ct.categoryId === product.categoryId &&
+            ct.type === "General"
+        );
+        if (matchedTax) {
+          taxAmount = (discountedTotal * (matchedTax.generalTax || 0)) / 100;
+        }
+      }
+
+      return sum + discountedTotal + taxAmount;
+    }, 0);
+
+
+  const shipping = selectedShippingOption?.price || 0;
+  const grandTotal = subtotal + shipping;
+
   const currencySymbol = selectedItems.length > 0
     ? userCart.find(item => selectedItems.includes(item.id))?.currencySymbol || "$"
     : "$";
@@ -834,14 +844,23 @@ const Checkout = () => {
               ) : (
                 <div className="text-center p-5">
                   <p className="text-gray-600 mb-3">No shipping address found.</p>
-                  <Link href="/dashboard?addresses">
-                    <button className="px-4 py-2 bg-gray-600 text-white rounded-lg cursor-pointer hover:bg-gray-900">
-                      Add Address
+
+                  <div className="flex justify-center gap-3"> {/* 👈 Added this wrapper */}
+                    <button
+                      onClick={() => setShippingModalOpen(false)}
+                      className="px-4 py-2 cursor-pointer bg-gray-200 rounded-lg hover:bg-gray-300"
+                    >
+                      Cancel
                     </button>
-                  </Link>
 
-
+                    <Link href="/dashboard?addresses">
+                      <button className="px-4 py-2 bg-gray-600 text-white rounded-lg cursor-pointer hover:bg-gray-900">
+                        Add Address
+                      </button>
+                    </Link>
+                  </div>
                 </div>
+
               )}
             </div>
           </div>

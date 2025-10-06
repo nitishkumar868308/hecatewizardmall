@@ -15,6 +15,9 @@ import addressReducer from "./slices/address/addressSlice";
 import tagsReducer from './slices/tag/tagSlice';
 import marketLinksReducer from './slices/externalMarket/externalMarketSlice';
 import countryTaxReducer from "./slices/countryTaxes/countryTaxesSlice";
+import videoStoryReducer from "./slices/videoStory/videoStorySlice"
+import contactMessageReducer from './slices/contact/contactMessageSlice';
+
 // import updateUserReducer from './slices/userSlice';
 
 const store = configureStore({
@@ -35,6 +38,8 @@ const store = configureStore({
         tags: tagsReducer,
         marketLinks: marketLinksReducer,
         countryTax: countryTaxReducer,
+        videoStory: videoStoryReducer,
+        contactMessage: contactMessageReducer
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

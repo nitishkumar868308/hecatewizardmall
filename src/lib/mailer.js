@@ -2,17 +2,17 @@ import nodemailer from "nodemailer";
 
 export async function sendMail({ to, subject, text, html }) {
     const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 465,         // SSL
+        host: "smtp.hostinger.com",
+        port: 465,
         secure: true,
         auth: {
-            user: process.env.GMAIL_USER,
-            pass: process.env.GMAIL_APP_PASSWORD,
+            user: process.env.HOSTINGER_EMAIL,
+            pass: process.env.HOSTINGER_PASSWORD,
         },
     });
 
     const info = await transporter.sendMail({
-        from: `"Your App Name" <${process.env.GMAIL_USER}>`,
+        from: `"Hecate Wizard Mall" <${process.env.HOSTINGER_EMAIL}>`,
         to,
         subject,
         text,
