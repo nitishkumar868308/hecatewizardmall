@@ -97,9 +97,9 @@ const Checkout = () => {
   useEffect(() => {
     if (!selectedShipping) {
       if (user?.address) {
-        setSelectedShipping("default_address"); // user.address ko ID assign
+        setSelectedShipping("default_address");
       } else if (user?.addresses?.length) {
-        setSelectedShipping(user.addresses[0].id); // fallback: first address
+        setSelectedShipping(user.addresses[0].id);
       }
     }
   }, [user, selectedShipping]);
@@ -317,16 +317,19 @@ const Checkout = () => {
     const productOffers = offers.filter(o => product.offerId && o.id === product.offerId);
 
     const buyXGetYOfferRaw = productOffers.find(o => o.discountType === "buyXGetY");
-    const discountOfferRaw = productOffers.find(o => o.discountType === "discount");
+    console.log("buyXGetYOfferRaw ", buyXGetYOfferRaw)
+    const discountOfferRaw = productOffers.find(o => o.discountType === "percentage");
+    console.log("discountOfferRaw ", discountOfferRaw)
 
     // map to consistent format for cart display
     const buyXGetYOffer = buyXGetYOfferRaw
       ? { buy: buyXGetYOfferRaw.discountValue.buy, free: buyXGetYOfferRaw.discountValue.free }
       : null;
-
+    console.log("buyXGetYOffer ", buyXGetYOffer)
     const discountOffer = discountOfferRaw
       ? { discountPercentage: discountOfferRaw.discountValue || 0 }
       : null;
+    console.log("discountOffer", discountOffer)
 
     return { buyXGetYOffer, discountOffer };
   };
@@ -491,9 +494,24 @@ const Checkout = () => {
             <p className="text-gray-600">Your cart is empty.</p>
           ) : (
             userCart.map((cartItem) => {
-              const { buyXGetYOffer } = getCartItemOffer(cartItem);
-              const product = products.find(p => p.id === cartItem.productId);
+              const { buyXGetYOffer, discountOffer } = getCartItemOffer(cartItem);
+              const product = products.find((p) => p.id === cartItem.productId);
 
+              const qty = quantities[cartItem.id] || 1;
+              const pricePerItem = Number(cartItem.pricePerItem || cartItem.price);
+              let originalTotal = pricePerItem * qty;
+
+              // --- STEP 1: Apply Discount (Before Tax) ---
+              let discountedTotal = originalTotal;
+              let discountPercent = 0;
+
+              if (discountOffer && discountOffer.discountPercentage?.percent) {
+                discountPercent = Number(discountOffer.discountPercentage.percent) || 0;
+                const discountAmount = (originalTotal * discountPercent) / 100;
+                discountedTotal = originalTotal - discountAmount;
+              }
+
+              // --- STEP 2: Apply Tax on Discounted Amount ---
               let taxAmount = 0;
               let taxPercent = 0;
 
@@ -507,15 +525,12 @@ const Checkout = () => {
 
                 if (matchedTax) {
                   taxPercent = matchedTax.generalTax || 0;
-                  const price = Number(cartItem.pricePerItem || cartItem.price);
-                  const qty = quantities[cartItem.id] || 1;
-                  taxAmount = ((price * qty) * taxPercent) / 100;
+                  taxAmount = (discountedTotal * taxPercent) / 100;
                 }
               }
 
-              const qty = quantities[cartItem.id] || 1;
-              const originalTotal = Number(cartItem.pricePerItem || cartItem.price) * qty;
-              const totalWithTax = originalTotal + taxAmount;
+              // --- STEP 3: Final Total after Discount + Tax ---
+              const totalWithTax = discountedTotal + taxAmount;
 
               return (
                 <div
@@ -543,15 +558,33 @@ const Checkout = () => {
 
                       {/* Pricing */}
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="text-gray-400">{cartItem.currencySymbol}{originalTotal.toFixed(2)}</span>
+                        {/* Original Price */}
+                        {discountPercent > 0 ? (
+                          <>
+                            <span className="text-gray-400 line-through">
+                              {cartItem.currencySymbol}
+                              {originalTotal.toFixed(2)}
+                            </span>
+                            <span className="text-green-700 font-semibold">
+                              {discountPercent}% OFF
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-gray-400">
+                            {cartItem.currencySymbol}
+                            {originalTotal.toFixed(2)}
+                          </span>
+                        )}
+
+                        {/* Tax Info */}
                         {taxAmount > 0 && (
                           <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">
                             + {taxPercent}% Tax
                           </span>
                         )}
-                        {buyXGetYOffer && (() => {
-                          const qty = quantities[cartItem.id] || 1;
 
+                        {/* Buy X Get Y Offer */}
+                        {buyXGetYOffer && (() => {
                           if (qty === buyXGetYOffer.buy) {
                             return (
                               <p className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded">
@@ -572,9 +605,10 @@ const Checkout = () => {
                         })()}
                       </div>
 
-                      {/* Total */}
+                      {/* Total After Discount + Tax */}
                       <p className="text-gray-900 font-bold mt-2 text-lg">
-                        Total: {cartItem.currencySymbol}{totalWithTax.toFixed(2)}
+                        Total: {cartItem.currencySymbol}
+                        {totalWithTax.toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -585,12 +619,16 @@ const Checkout = () => {
                       <button
                         onClick={() => handleQuantityChange(cartItem.id, qty - 1)}
                         className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
-                      >-</button>
+                      >
+                        -
+                      </button>
                       <span className="px-4 font-medium">{qty}</span>
                       <button
                         onClick={() => handleQuantityChange(cartItem.id, qty + 1)}
                         className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
-                      >+</button>
+                      >
+                        +
+                      </button>
                     </div>
                     <button
                       onClick={() => openRemoveModal(cartItem)}
@@ -604,6 +642,7 @@ const Checkout = () => {
             })
           )}
         </div>
+
 
 
 
