@@ -26,7 +26,7 @@ const AddCategory = () => {
     const [newCategoryImage, setNewCategoryImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [loading, setLoading] = useState(false);
-
+    console.log("categories", categories)
     useEffect(() => {
         dispatch(fetchCategories());
     }, [dispatch]);
@@ -183,7 +183,7 @@ const AddCategory = () => {
     const filteredCategories = categories.filter((c) =>
         c.name.toLowerCase().includes(search.toLowerCase())
     );
-
+    console.log("filteredCategories", filteredCategories)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
     // console.log("Image Preview URL =>", newCategoryImage
@@ -253,7 +253,7 @@ const AddCategory = () => {
                                         {c.image ? (
                                             <div className="relative w-15 h-15">
                                                 <Image
-                                                    src={c.image}
+                                                    src={encodeURI(c.image.startsWith("http") ? c.image : `${baseUrl}${c.image}`)}
                                                     alt={c.name}
                                                     fill
                                                     className="object-cover rounded-md"
@@ -263,6 +263,7 @@ const AddCategory = () => {
                                             <span className="text-gray-400 italic">No Image</span>
                                         )}
                                     </td>
+
 
                                     <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-medium">
                                         {c.name}
