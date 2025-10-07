@@ -6,7 +6,6 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { updateUser } from "@/app/redux/slices/updateUser/updateUserSlice";
 import toast from 'react-hot-toast';
-import { uploadToCloudinary } from "@/utils/uploadToCloudinary";
 
 // Validation schema
 const ProfileSchema = Yup.object().shape({
@@ -21,7 +20,7 @@ const Profile = () => {
     const dispatch = useDispatch();
     const { user, loading } = useSelector((state) => state.me);
     const [preview, setPreview] = useState(null);
-    console.log("user" , user)
+    console.log("user", user)
     const getInitials = (name) => {
         if (!name) return "";
         return name
@@ -37,6 +36,31 @@ const Profile = () => {
             dispatch(fetchMe());
         }
     }, [dispatch, user]);
+
+    const handleImageUpload = async (file) => {
+        const formData = new FormData();
+        formData.append("image", file); // ✅ change "video" → "image"
+
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+
+        let data;
+        try {
+            data = await res.json();
+            console.log("data", data);
+        } catch (err) {
+            throw new Error("Server did not return valid JSON");
+        }
+
+        if (!res.ok) throw new Error(data.message || "Upload failed");
+
+        // Handle array or string
+        const url = Array.isArray(data.urls) ? data.urls[0] : data.urls;
+        if (!url) throw new Error("No URL returned from server");
+
+        return url;
+    };
+
+
 
     if (loading) return <p className="text-center">Loading...</p>;
 
@@ -61,8 +85,8 @@ const Profile = () => {
                     try {
                         let uploadedImageUrl = null;
                         if (values.profileImage) {
-                            uploadedImageUrl = await uploadToCloudinary(values.profileImage);
-                            console.log("uploadedImageUrl" , uploadedImageUrl)
+                            uploadedImageUrl = await handleImageUpload(values.profileImage);
+                            console.log("uploadedImageUrl", uploadedImageUrl)
                             values.profileImage = uploadedImageUrl;
                         }
                         const response = await dispatch(updateUser(values)).unwrap();

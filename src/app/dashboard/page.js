@@ -175,11 +175,14 @@ export default function Dashboard() {
                                     <div className="relative group inline-block">
                                         {/* Always visible badge */}
                                         <span
-                                            className={`absolute top-0 right-0 -mt-1 -mr-1 inline-block text-xs font-bold px-2 py-0.5 rounded-full ${isProfileIncomplete ? "bg-red-500 text-white" : "bg-green-500 text-white"
+                                            className={`absolute top-0 right-0 mt-2 mr-2 inline-block text-xs font-bold px-2 py-0.5 rounded-full ${isProfileIncomplete
+                                                    ? "bg-red-500 text-white"
+                                                    : "bg-green-500 text-white"
                                                 }`}
                                         >
                                             {isProfileIncomplete ? "Incomplete" : "Complete"}
                                         </span>
+
 
                                         {/* Tooltip on hover */}
                                         {isProfileIncomplete && (
