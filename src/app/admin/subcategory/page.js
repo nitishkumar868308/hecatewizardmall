@@ -131,7 +131,7 @@ const AddSubcategory = () => {
 
 
     console.log("filteredSubcategories", filteredSubcategories)
-
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     return (
         <DefaultPageAdmin>
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
@@ -171,7 +171,7 @@ const AddSubcategory = () => {
                             {filteredSubcategories.map((s, idx) => (
                                 <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">{idx + 1}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    {/* <td className="px-6 py-4 whitespace-nowrap">
                                         {s.image ? (
                                             <div className="relative w-15 h-15">
                                                 <Image
@@ -184,7 +184,28 @@ const AddSubcategory = () => {
                                         ) : (
                                             <span className="text-gray-400 italic">No Image</span>
                                         )}
+                                    </td> */}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {s.image && s.image !== "/" ? (
+                                            <div className="relative w-15 h-15">
+                                                <Image
+                                                    src={
+                                                        s.image.startsWith("http")
+                                                            ? s.image
+                                                            : `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}${s.image.startsWith("/") ? "" : "/"
+                                                            }${s.image}`
+                                                    }
+                                                    alt={s.name || "Subcategory"}
+                                                    fill
+                                                    className="object-cover rounded-md"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-400 italic">No Image</span>
+                                        )}
+
                                     </td>
+
 
                                     <td className="px-6 py-4">{s.name}</td>
                                     <td className="px-6 py-4">{categories.find(c => c.id === s.categoryId)?.name || "-"}</td>
