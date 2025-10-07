@@ -11,7 +11,6 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import toast from 'react-hot-toast';
 import Image from "next/image";
-import { uploadToCloudinary } from "@/utils/uploadToCloudinary";
 import Loader from "@/components/Include/Loader";
 
 const AddCategory = () => {
@@ -187,13 +186,16 @@ const AddCategory = () => {
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-    console.log("Image Preview URL =>", newCategoryImage
-        ? URL.createObjectURL(newCategoryImage)
-        : editCategory.image?.startsWith("http")
-            ? editCategory.image
-            : `${baseUrl}/uploads/${editCategory.image}`);
+    // console.log("Image Preview URL =>", newCategoryImage
+    //     ? URL.createObjectURL(newCategoryImage)
+    //     : editCategory.image?.startsWith("http")
+    //         ? editCategory.image
+    //         : `${baseUrl}/uploads/${editCategory.image}`);
+    const imageSrc = newCategoryImage
+        ? URL.createObjectURL(newCategoryImage) // preview before upload
+        : editCategory.image;                    // already like /uploads/filename.jpg
 
-    console.log("editCategory =>", editCategory);
+    console.log("Image URL =>", imageSrc);
 
     return (
         <DefaultPageAdmin>
