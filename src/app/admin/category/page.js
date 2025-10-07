@@ -185,6 +185,7 @@ const AddCategory = () => {
     );
     console.log("filteredCategories", filteredCategories)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    console.log("baseUrl" , baseUrl)
 
     // console.log("Image Preview URL =>", newCategoryImage
     //     ? URL.createObjectURL(newCategoryImage)
