@@ -4,12 +4,14 @@ import { fetchCountryPricing } from "@/app/redux/slices/countryPricing/countryPr
 import { useDispatch, useSelector } from "react-redux";
 import { setCountry } from "@/app/redux/slices/countrySlice";
 import { fetchProducts } from "@/app/redux/slices/products/productSlice";
+import { usePathname } from "next/navigation";
 
 const Topbar = () => {
     const dispatch = useDispatch();
     const { countryPricing } = useSelector((state) => state.countryPricing);
     const country = useSelector((state) => state.country);
     const [mounted, setMounted] = useState(false);
+    const pathname = usePathname();
     useEffect(() => setMounted(true), []);
     useEffect(() => {
         dispatch(fetchCountryPricing());
@@ -52,7 +54,7 @@ const Topbar = () => {
                         hecate wizard mall
                     </h1>
                     <div className="w-1/3 flex justify-end">
-                        <select
+                        {/* <select
                             value={country}
                             onChange={handleChange}
                             className="bg-black border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base"
@@ -62,7 +64,20 @@ const Topbar = () => {
                                     {c.name}
                                 </option>
                             ))}
-                        </select>
+                        </select> */}
+                        {pathname !== "/checkout" && (
+                            <select
+                                value={country}
+                                onChange={handleChange}
+                                className="bg-black border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base"
+                            >
+                                {countries.map((c) => (
+                                    <option key={c.code} value={c.code}>
+                                        {c.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                     </div>
                 </div>
             </div>

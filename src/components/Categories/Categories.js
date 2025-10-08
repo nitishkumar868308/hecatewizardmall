@@ -1324,14 +1324,19 @@ const Categories = () => {
 
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [selectedSubcategory, setSelectedSubcategory] = useState("All");
-    const [priceRange, setPriceRange] = useState(10000);
+    const highestPrice = products.length
+        ? Math.max(...products.map((p) => p.price || 0))
+        : 10000;
+    const [priceRange, setPriceRange] = useState(highestPrice);
     const [sortBy, setSortBy] = useState(sortOptions[0]);
     const [showFilters, setShowFilters] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const productsPerPage = 6;
     const [selectedAlphabet, setSelectedAlphabet] = useState(null); // null = no alphabet filter
-
+    useEffect(() => {
+        setPriceRange(highestPrice);
+    }, [highestPrice]);
     // Fetch data
     useEffect(() => {
         dispatch(fetchProducts());
@@ -1518,14 +1523,16 @@ const Categories = () => {
 
                         {/* Price */}
                         <div>
-                            <h3 className="font-semibold mb-2">Price: Up to ${priceRange}</h3>
+                            <h3 className="font-semibold mb-2">
+                                Price: {products[0]?.currencySymbol || "₹"} {priceRange}
+                            </h3>
                             <input
                                 type="range"
                                 min={0}
-                                max={200}
+                                max={highestPrice}
                                 value={priceRange}
-                                onChange={(e) => setPriceRange(e.target.value)}
-                                className="w-full"
+                                onChange={(e) => setPriceRange(Number(e.target.value))}
+                                className="w-full accent-blue-500"
                             />
                         </div>
 
@@ -1680,7 +1687,7 @@ const Categories = () => {
                 </div>
 
                 {/* Dynamic Alphabet Sidebar */}
-                {isDesktop && (
+                {/* {isDesktop && (
                     <div className="hidden md:flex  flex-col gap-4 ml-4 sticky top-20">
                         {availableAlphabets.map((letter) => (
                             <button key={letter} onClick={() => setSelectedAlphabet(letter)} className={`w-8 h-8 cursor-pointer flex items-center justify-center text-sm font-semibold rounded-full transition-all duration-300
@@ -1689,7 +1696,27 @@ const Categories = () => {
                             </button>
                         ))}
                     </div>
+                )} */}
+                {isDesktop && (
+                    <div className="hidden md:flex flex-col gap-4 ml-4 sticky top-20">
+                        {availableAlphabets.map((letter) => (
+                            <button
+                                key={letter}
+                                onClick={() =>
+                                    setSelectedAlphabet((prev) => (prev === letter ? null : letter))
+                                }
+                                className={`w-8 h-8 cursor-pointer flex items-center justify-center text-sm font-semibold rounded-full transition-all duration-300
+          ${selectedAlphabet === letter
+                                        ? "bg-gray-500 text-white shadow-lg scale-110"
+                                        : "bg-gray-100 hover:bg-gray-200 hover:scale-105"
+                                    }`}
+                            >
+                                {letter}
+                            </button>
+                        ))}
+                    </div>
                 )}
+
                 {/* Mobile Alphabet Sidebar */}
                 {!isDesktop && (
                     <div className="fixed right-0 z-30 cursor-pointer  flex flex-col gap-5 p-1 overflow-y-auto">

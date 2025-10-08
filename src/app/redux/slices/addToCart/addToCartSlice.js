@@ -55,6 +55,21 @@ export const deleteCartItem = createAsyncThunk(
     }
 );
 
+// Delete All data
+export const clearCartAsync = createAsyncThunk(
+    "cart/clearCart",
+    async (userId, { rejectWithValue }) => {
+        try {
+            const response = await axios.delete("/api/addToCart", {
+                data: { clearAll: true, userId },
+            });
+            return response.data.message;
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to clear cart");
+        }
+    }
+);
+
 const cartSlice = createSlice({
     name: "cart",
     initialState: {
@@ -134,6 +149,21 @@ const cartSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload || action.error.message;
             });
+
+        builder
+            .addCase(clearCartAsync.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(clearCartAsync.fulfilled, (state) => {
+                state.loading = false;
+                state.items = [];
+            })
+            .addCase(clearCartAsync.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || action.error.message;
+            });
+
     },
 });
 

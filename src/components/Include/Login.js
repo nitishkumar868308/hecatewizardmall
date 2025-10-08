@@ -35,6 +35,7 @@ const AuthPage = ({ onClose }) => {
                 const resultAction = await dispatch(loginUser({ email: values.email, password: values.password }));
                 if (loginUser.fulfilled.match(resultAction)) {
                     await dispatch(fetchMe());
+                    localStorage.setItem("selectedCountry", "IND");
                     toast.success(resultAction.payload.message || 'Login successful');
                     onClose?.()
                 } else {

@@ -8,18 +8,20 @@ import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 import { fetchOffers } from '@/app/redux/slices/offer/offerSlice'
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
-import { addToCartAsync, fetchCart } from "@/app/redux/slices/addToCart/addToCartSlice";
+import { addToCartAsync, fetchCart, clearCartAsync } from "@/app/redux/slices/addToCart/addToCartSlice";
 import Loader from "@/components/Include/Loader";
 import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from "framer-motion";
 import DOMPurify from "dompurify";
-
+import { useCountries } from "@/lib/CustomHook/useCountries";
+import { AlertTriangle } from "lucide-react";
 
 const ProductDetail = () => {
     const dispatch = useDispatch();
     const [imageLoaded, setImageLoaded] = useState(false);
-
+    const { countries } = useCountries();
+    console.log("countries", countries)
     const [loading, setLoading] = useState(false);
     const { products } = useSelector((state) => state.products);
     const [userCart, setUserCart] = useState([]);
@@ -43,11 +45,13 @@ const ProductDetail = () => {
         rating: 0,
         comment: "",
     });
-
+    const [showCountryModal, setShowCountryModal] = useState(false);
+    const [newCountry, setNewCountry] = useState("");
     const [selectedAttributes, setSelectedAttributes] = useState({});
     const { user } = useSelector((state) => state.me);
     const { items } = useSelector((state) => state.cart);
     const country = useSelector((state) => state.country);
+    console.log("country", country)
 
 
     useEffect(() => {
@@ -355,24 +359,110 @@ const ProductDetail = () => {
     if (!product)
         return <p className="text-center mt-20 text-gray-500 text-xl">Product not found</p>;
 
+    // const addToCart = async () => {
+    //     if (!user || !user.id) {
+    //         toast.error("Please login to add items to your cart.");
+    //         return;
+    //     }
+
+    //     const isAlreadyInCart = userCart?.some(
+    //         (item) =>
+    //             item.productId === product.id &&
+    //             item.variationId === (selectedVariation?.id || null)
+    //     );
+
+    //     if (isAlreadyInCart) {
+    //         toast.error("This product is already in your cart!");
+    //         return;
+    //     }
+
+    //     setLoading(true);
+    //     const price = selectedVariation?.price || product.price;
+    //     const currencySymbol = selectedVariation?.currencySymbol || product.currencySymbol || "₹";
+    //     const totalPrice = price * quantity;
+
+    //     const flatAttributes = {};
+    //     Object.entries(selectedAttributes).forEach(([key, val]) => {
+    //         if (val && val !== "N/A") flatAttributes[key.toLowerCase()] = val;
+    //     });
+
+    //     const cartItem = {
+    //         productName: product.name,
+    //         quantity,
+    //         pricePerItem: price,
+    //         currencySymbol,
+    //         totalPrice,
+    //         productId: product.id,
+    //         variationId: selectedVariation?.id || null,
+    //         attributes: flatAttributes,
+    //         userId: user.id,
+    //         image: mainImage || "No Image",
+    //     };
+
+    //     try {
+    //         const result = await dispatch(addToCartAsync(cartItem)).unwrap();
+    //         toast.success(result.message || "Item added to cart!");
+    //         dispatch(fetchCart())
+    //     } catch (err) {
+    //         toast.error(err.message || "Failed to delete product");
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
+    // Assume `countries` array is already available (250 countries)
     const addToCart = async () => {
         if (!user || !user.id) {
             toast.error("Please login to add items to your cart.");
             return;
         }
 
+        let selectedCountryCode = localStorage.getItem("selectedCountry");
+        if (!selectedCountryCode) {
+            toast.error("Something went wrong! Country not found.");
+            return;
+        }
+
+        selectedCountryCode = selectedCountryCode.toUpperCase();
+
+        // 🔹 Find full country name dynamically from `countries` array
+        let selectedCountryObj = countries.find(
+            (c) => c.code.toUpperCase() === selectedCountryCode
+        );
+
+        // 🔹 If not found by 3-letter code, try first 2 letters (alpha-2 fallback)
+        if (!selectedCountryObj && selectedCountryCode.length === 3) {
+            selectedCountryObj = countries.find(
+                (c) => c.code.toUpperCase().startsWith(selectedCountryCode.slice(0, 2))
+            );
+        }
+
+        const selectedCountry = selectedCountryObj?.name || selectedCountryCode;
+
+        // ✅ Cart country check
+        if (userCart && userCart.length > 0) {
+            const cartCountry = userCart[0]?.selectedCountry;
+            if (cartCountry && cartCountry !== selectedCountry) {
+                setNewCountry(selectedCountry); // jo country add karni hai
+                setShowCountryModal(true);      // modal show karo
+                return; // wait for user action in modal
+            }
+        }
+
+
+        // ✅ Duplicate check
         const isAlreadyInCart = userCart?.some(
             (item) =>
                 item.productId === product.id &&
                 item.variationId === (selectedVariation?.id || null)
         );
-
         if (isAlreadyInCart) {
             toast.error("This product is already in your cart!");
             return;
         }
 
         setLoading(true);
+
         const price = selectedVariation?.price || product.price;
         const currencySymbol = selectedVariation?.currencySymbol || product.currencySymbol || "₹";
         const totalPrice = price * quantity;
@@ -393,18 +483,37 @@ const ProductDetail = () => {
             attributes: flatAttributes,
             userId: user.id,
             image: mainImage || "No Image",
+            selectedCountry, // ✅ full country name dynamically
         };
 
         try {
             const result = await dispatch(addToCartAsync(cartItem)).unwrap();
             toast.success(result.message || "Item added to cart!");
-            dispatch(fetchCart())
+            dispatch(fetchCart());
         } catch (err) {
-            toast.error(err.message || "Failed to delete product");
+            toast.error(err.message || "Failed to add product");
         } finally {
             setLoading(false);
         }
     };
+
+    const clearCart = async () => {
+        if (!user || !user.id) {
+            toast.error("Please login to clear cart.");
+            return;
+        }
+
+        try {
+            await dispatch(clearCartAsync(user.id)).unwrap();
+            toast.success("Cart cleared! You can now add items from the new country.");
+            setShowCountryModal(false);
+        } catch (err) {
+            toast.error(err.message || "Failed to clear cart.");
+        }
+    };
+
+
+
 
     // const buyNow = async () => {
     //     if (!user || !user.id) {
@@ -833,6 +942,52 @@ const ProductDetail = () => {
                     </div>
                 </div>
             </div>
+
+            {showCountryModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+                        <h2 className="text-lg font-bold mb-4">Cart Conflict</h2>
+                        <p className="mb-6 text-gray-700">
+                            Your current cart has items from{" "}
+                            <span className="font-bold text-red-600">{userCart[0]?.selectedCountry}</span>.{" "}
+                            To add products from{" "}
+                            <span className="font-bold text-green-600">{newCountry}</span>, you must clear your cart.
+                        </p>
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 cursor-pointer"
+                                onClick={() => {
+                                    setShowCountryModal(false);
+                                    const currentCartCountry = userCart[0]?.selectedCountry || "your current country";
+                                    toast.custom((t) => (
+                                        <div
+                                            className={`${t.visible ? 'animate-enter' : 'animate-leave'
+                                                } max-w-xs w-full bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 px-4 py-3 shadow-md rounded-md flex items-center gap-2`}
+                                        >
+                                            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                                            <span>
+                                                Cart not cleared. You can continue with items from {currentCartCountry}.
+                                            </span>
+                                        </div>
+                                    ), { duration: 2000 });
+                                }}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 cursor-pointer"
+                                onClick={clearCart}
+                            >
+                                Clear Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
 
             <div className="mt-16 w-full">
                 <ProductSlider showSection="related" />

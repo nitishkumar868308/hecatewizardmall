@@ -35,7 +35,8 @@ export async function POST(req) {
             totalPrice,
             attributes,
             userId,
-            image
+            image,
+            selectedCountry
         } = body;
 
         if (!productId || !productName) {
@@ -56,7 +57,8 @@ export async function POST(req) {
                 totalPrice,
                 attributes: attributes || {},
                 userId: userId || null,
-                image
+                image,
+                selectedCountry: selectedCountry || null,
             },
         });
 
@@ -113,12 +115,26 @@ export async function PUT(req) {
     }
 }
 
-// 🟢 Delete cart item
 export async function DELETE(req) {
     try {
         const body = await req.json();
-        const { id } = body;
+        const { id, clearAll, userId } = body;
+        console.log("id" , id)
+        console.log("clearAll" , clearAll)
+        console.log("userId" , userId)
+        // Case 1: Clear all items for a user
+        if (clearAll && userId) {
+            await prisma.cart.deleteMany({
+                where: { userId: parseInt(userId) },
+            });
 
+            return new Response(
+                JSON.stringify({ message: "All cart items cleared successfully" }),
+                { status: 200 }
+            );
+        }
+
+        // Case 2: Delete a single item
         if (!id) {
             return new Response(
                 JSON.stringify({ message: "Cart ID is required" }),
@@ -140,9 +156,10 @@ export async function DELETE(req) {
             JSON.stringify({ message: "Cart item deleted successfully" }),
             { status: 200 }
         );
+
     } catch (error) {
         return new Response(
-            JSON.stringify({ message: "Failed to delete cart item", error: error.message }),
+            JSON.stringify({ message: "Failed to delete cart item(s)", error: error.message }),
             { status: 500 }
         );
     }

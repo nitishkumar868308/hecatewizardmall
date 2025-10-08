@@ -37,7 +37,7 @@ const Header = () => {
     const { categories, loading, error } = useSelector((state) => state.category);
     const { subcategories } = useSelector((state) => state.subcategory);
     const { items } = useSelector((state) => state.cart);
-
+    console.log("user", user)
     const userCart = items?.filter((item) => item.userId === (user?.id)) || [];
     console.log("userCart", userCart)
     const userCartCount = userCart.length;
@@ -517,10 +517,33 @@ const Header = () => {
                                     onMouseEnter={() => setDropdownOpen(true)}
                                     onMouseLeave={() => setDropdownOpen(false)}
                                 >
-                                    <div className="flex items-center gap-2 cursor-pointer hover:text-blue-200 transition text-white font-functionPro">
+                                    {/* <div className="flex items-center gap-2 cursor-pointer hover:text-blue-200 transition text-white font-functionPro">
                                         <span className="font-medium">Welcome,</span>
-                                        <div className="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center text-black font-bold">
+                                        <div className="h-12 w-12 rounded-full bg-gray-500 flex items-center justify-center text-black font-bold">
                                             {getInitials(user.name)}
+                                        </div>
+                                    </div> */}
+                                    <div className="flex items-center gap-3 cursor-pointer group">
+                                    
+                                        <div className="text-white text-sm sm:text-base md:text-lg font-medium">
+                                            Welcome,
+                                        </div>
+
+                            
+                                        <div className="relative h-14 w-14 rounded-full overflow-hidden border-2 border-white bg-gray-500 flex items-center justify-center">
+                                            {user.profileImage ? (
+                                                <Image
+                                                    src={user.profileImage}
+                                                    alt={user.name}
+                                                    fill
+                                                    className="object-cover"
+                                                    unoptimized
+                                                />
+                                            ) : (
+                                                <span className="text-black font-bold text-lg">
+                                                    {getInitials(user.name)}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
