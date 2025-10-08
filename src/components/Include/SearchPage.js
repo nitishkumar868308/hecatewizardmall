@@ -72,7 +72,8 @@ const SearchPage = () => {
                 item.name.toLowerCase().includes(normalizedQuery)
             );
 
-
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    console.log("baseUrl", baseUrl)
 
     console.log("filtered", filtered)
 
@@ -158,6 +159,7 @@ const SearchPage = () => {
                                                         alt={item.name}
                                                         fill
                                                         className="object-cover rounded-xl"
+                                                        unoptimized
                                                     />
                                                 </div>
                                             )}
