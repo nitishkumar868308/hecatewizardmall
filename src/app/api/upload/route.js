@@ -101,7 +101,8 @@
 import fs from "fs";
 import path from "path";
 
-export const config = { api: { bodyParser: false } };
+export const config = { api: { bodyParser: { sizeLimit: "200mb" } } };
+
 
 export async function POST(req) {
     try {
