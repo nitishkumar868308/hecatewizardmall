@@ -260,15 +260,16 @@ const Header = () => {
                                         {item === "Categories" && openItem === "Categories" && (
                                             <div className="absolute left-1/2 transform -translate-x-[48%]
  top-full mt-1 w-[1400px] bg-[#161619] text-white shadow-lg py-8 px-10 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 z-50">
-                                                {mappedCategories.map((cat) => {
-                                                    const imgSrc = cat.image
-                                                        ? encodeURI(cat.image.startsWith("http") ? cat.image : `${baseUrl}${cat.image}`)
+                                                {mappedCategories.map((cat, index) => {
+                                                    console.log("cat?.img" , cat?.img)
+                                                    const imgSrc = cat?.img
+                                                        ? encodeURI(cat.img.startsWith("http") ? cat.img : cat.img)
                                                         : "/default-image.jpg";
                                                     console.log("imgSrc", imgSrc);
 
                                                     return (
                                                         <div
-                                                            key={cat.name}
+                                                            key={cat.id || `${cat.name}-${index}`}
                                                             className="flex items-start gap-6 border-b border-gray-700 pb-6 last:border-0"
                                                         >
 
@@ -295,6 +296,7 @@ const Header = () => {
                                                                     alt={cat.name}
                                                                     fill
                                                                     className="object-cover hover:scale-105 transition-transform duration-300"
+                                                                    unoptimized
                                                                 />
                                                             </div>
                                                         </div>
