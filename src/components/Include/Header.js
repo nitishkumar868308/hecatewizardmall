@@ -41,7 +41,7 @@ const Header = () => {
     const userCart = items?.filter((item) => item.userId === (user?.id)) || [];
     console.log("userCart", userCart)
     const userCartCount = userCart.length;
-    console.log("categories" , categories)
+    console.log("categories", categories)
     console.log("subcategories", subcategories)
 
 
@@ -260,39 +260,47 @@ const Header = () => {
                                         {item === "Categories" && openItem === "Categories" && (
                                             <div className="absolute left-1/2 transform -translate-x-[48%]
  top-full mt-1 w-[1400px] bg-[#161619] text-white shadow-lg py-8 px-10 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 z-50">
-                                                {mappedCategories.map((cat) => (
-                                                    <div
-                                                        key={cat.name}
-                                                        className="flex items-start gap-6 border-b border-gray-700 pb-6 last:border-0"
-                                                    >
+                                                {mappedCategories.map((cat) => {
+                                                    const imgSrc = cat.img
+                                                        ? cat.img.startsWith('http') || cat.img.startsWith('/')
+                                                            ? cat.img
+                                                            : `${process.env.NEXT_PUBLIC_API_URL}${cat.img}`
+                                                        : "/default-image.jpg";
+                                                    console.log("imgSrc", imgSrc)
+                                                    return (
+                                                        <div
+                                                            key={cat.name}
+                                                            className="flex items-start gap-6 border-b border-gray-700 pb-6 last:border-0"
+                                                        >
 
-                                                        <div className="flex-1">
-                                                            <h3 className=" text-lg mb-3 font-functionPro">{cat.name}</h3>
-                                                            <ul className="space-y-2">
-                                                                {cat.sub.map((sub) => (
-                                                                    <li key={sub}>
-                                                                        <Link
-                                                                            href={`/categories?category=${encodeURIComponent(cat.name)}&&subcategory=${encodeURIComponent(sub)}`}
-                                                                            className="text-gray-300 hover:text-white transition font-functionPro"
-                                                                        >
-                                                                            {sub}
-                                                                        </Link>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
+                                                            <div className="flex-1">
+                                                                <h3 className=" text-lg mb-3 font-functionPro">{cat.name}</h3>
+                                                                <ul className="space-y-2">
+                                                                    {cat.sub.map((sub) => (
+                                                                        <li key={sub}>
+                                                                            <Link
+                                                                                href={`/categories?category=${encodeURIComponent(cat.name)}&&subcategory=${encodeURIComponent(sub)}`}
+                                                                                className="text-gray-300 hover:text-white transition font-functionPro"
+                                                                            >
+                                                                                {sub}
+                                                                            </Link>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+
+
+                                                            <div className="w-40 h-40 relative rounded-lg overflow-hidden flex-shrink-0 cursor-pointer">
+                                                                <Image
+                                                                    src={imgSrc}
+                                                                    alt={cat.name}
+                                                                    fill
+                                                                    className="object-cover hover:scale-105 transition-transform duration-300"
+                                                                />
+                                                            </div>
                                                         </div>
-
-
-                                                        <div className="w-40 h-40 relative rounded-lg overflow-hidden flex-shrink-0 cursor-pointer">
-                                                            <Image
-                                                                src={cat.img}
-                                                                alt={cat.name}
-                                                                fill
-                                                                className="object-cover hover:scale-105 transition-transform duration-300"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    )
+                                                })}
                                             </div>
                                         )}
                                     </li>
