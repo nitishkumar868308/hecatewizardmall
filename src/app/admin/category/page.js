@@ -258,6 +258,7 @@ const AddCategory = () => {
                                                     alt={c.name}
                                                     fill
                                                     className="object-cover rounded-md"
+                                                    unoptimized
                                                 />
                                             </div>
                                         ) : (
