@@ -476,6 +476,7 @@ const ProductDetail = () => {
                                         className={`object-cover w-full h-full cursor-zoom-in transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"
                                             }`}
                                         onLoadingComplete={() => setImageLoaded(true)}
+                                        unoptimized
                                     />
                                 </Zoom>
                             </>
@@ -507,6 +508,7 @@ const ProductDetail = () => {
                                     src={img || undefined} // <-- Empty string ko undefined ya null karo
                                     alt={`${product.name}-${index}`}
                                     onClick={() => setMainImage(img)}
+                                    unoptimized
                                     className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 transition ${mainImage === img ? "border-blue-600 scale-105" : "border-gray-300 hover:scale-105"}`}
                                 />
                             ))

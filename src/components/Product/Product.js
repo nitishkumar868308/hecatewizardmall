@@ -337,6 +337,7 @@ const ProductSlider = ({ showSection = "both" }) => {
                                     fill
                                     className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105 rounded-xl"
                                     onClick={() => handleProductClick(product.id)}
+                                    unoptimized
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-lg font-semibold rounded-xl">
