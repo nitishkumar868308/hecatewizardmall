@@ -41,7 +41,7 @@ const Header = () => {
     const userCart = items?.filter((item) => item.userId === (user?.id)) || [];
     console.log("userCart", userCart)
     const userCartCount = userCart.length;
-
+    console.log("categories" , categories)
     console.log("subcategories", subcategories)
 
 
@@ -72,19 +72,6 @@ const Header = () => {
             .toUpperCase();
     };
 
-    const sampleData = [
-        { id: 1, name: "Red T-shirt", price: 25, category: "Clothing", color: "Red", image: "/products/product1.webp" },
-        { id: 2, name: "Blue Jeans", price: 40, category: "Clothing", color: "Blue", image: "/products/product1.webp" },
-        { id: 3, name: "Black Cap", price: 15, category: "Accessories", color: "Black", image: "/products/product1.webp" },
-        { id: 4, name: "Sneakers", price: 60, category: "Footwear", color: "White", image: "/products/product1.webp" },
-        { id: 5, name: "Jacket", price: 80, category: "Clothing", color: "Black", image: "/products/product1.webp" },
-    ];
-
-    const filtered = sampleData.filter((item) =>
-        item.name.toLowerCase().includes(query.toLowerCase())
-    );
-
-
     //const menuItems = ["Home", "Candles", "About", "Contact", "Oil"];
     // const menuItems = ["Home", "Categories", "About", "Contact"];
     const menuItems = headers
@@ -104,7 +91,7 @@ const Header = () => {
                 img: cat.image || "/default-image.jpg",
             };
         });
-
+    console.log("categoriesMap", categoriesMap)
     // Step 2: Fill subcategories
     subcategories
         .filter(sub => sub.active)
@@ -117,6 +104,7 @@ const Header = () => {
 
     // Step 3: Convert to array
     const mappedCategories = Object.values(categoriesMap);
+    console.log("mappedCategories", mappedCategories)
 
 
 
@@ -277,7 +265,7 @@ const Header = () => {
                                                         key={cat.name}
                                                         className="flex items-start gap-6 border-b border-gray-700 pb-6 last:border-0"
                                                     >
-                                                      
+
                                                         <div className="flex-1">
                                                             <h3 className=" text-lg mb-3 font-functionPro">{cat.name}</h3>
                                                             <ul className="space-y-2">
@@ -294,7 +282,7 @@ const Header = () => {
                                                             </ul>
                                                         </div>
 
-                                              
+
                                                         <div className="w-40 h-40 relative rounded-lg overflow-hidden flex-shrink-0 cursor-pointer">
                                                             <Image
                                                                 src={cat.img}
