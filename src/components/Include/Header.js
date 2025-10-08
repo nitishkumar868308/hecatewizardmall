@@ -172,8 +172,8 @@ const Header = () => {
         dispatch(updateLocalCartItem({ id: item.id, newQuantity }));
         dispatch(updateCart({ id: item.id, quantity: newQuantity }));
     };
-
-
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    console.log("baseUrl", baseUrl)
     return (
         <>
             <header className="w-full bg-[#161619] shadow-md md:relative fixed md:static top-0 z-50">
@@ -266,7 +266,11 @@ const Header = () => {
                                                     //         ? cat.img
                                                     //         : `${process.env.NEXT_PUBLIC_API_URL}${cat.img}`
                                                     //     : "/default-image.jpg";
-                                                    // console.log("imgSrc", imgSrc)
+                                                    console.log(
+                                                        "imgSrc",
+                                                        encodeURI(cat.image.startsWith("http") ? cat.image : `${baseUrl}${cat.image}`)
+                                                    );
+
                                                     return (
                                                         <div
                                                             key={cat.name}
@@ -292,7 +296,7 @@ const Header = () => {
 
                                                             <div className="w-40 h-40 relative rounded-lg overflow-hidden flex-shrink-0 cursor-pointer">
                                                                 <Image
-                                                                    src={cat.img}
+                                                                    src={encodeURI(cat.image.startsWith("http") ? cat.image : `${baseUrl}${cat.image}`)}
                                                                     alt={cat.name}
                                                                     fill
                                                                     className="object-cover hover:scale-105 transition-transform duration-300"

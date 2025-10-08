@@ -252,7 +252,7 @@ const AddCategory = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         {c.image ? (
-                                            <div className="relative w-15 h-15">
+                                            <div className="relative w-16 h-16">
                                                 <Image
                                                     src={encodeURI(c.image.startsWith("http") ? c.image : `${baseUrl}${c.image}`)}
                                                     alt={c.name}
