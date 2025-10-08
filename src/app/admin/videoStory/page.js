@@ -37,9 +37,10 @@ const VideoStory = () => {
     const handleVideoUpload = async (file) => {
         const formData = new FormData();
         formData.append("video", file);
+        console.log("formData" , formData)
 
         const res = await fetch("/api/upload", { method: "POST", body: formData });
-
+        console.log("res" , res)
         let data;
         try {
             data = await res.json();

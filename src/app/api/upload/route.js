@@ -107,7 +107,7 @@ export const config = { api: { bodyParser: { sizeLimit: "200mb" } } };
 export async function POST(req) {
     try {
         const formData = await req.formData();
-
+        console.log("formData" , formData)
         // Accept both 'image' and 'video' keys
         const files = formData.getAll("image").length
             ? formData.getAll("image")
