@@ -130,17 +130,18 @@ const SearchPage = () => {
                                                 let url = "";
 
                                                 if (item.type === "Category") {
-                                                    // Category clicked → subcategory=All
-                                                    url = `/categories?category=${encodeURIComponent(item.category.name)}&&subcategory=All`;
+                                                    url = `/categories?category=${encodeURIComponent(item.name)}&&subcategory=All`;
                                                 } else if (item.type === "Subcategory") {
-                                                    // Subcategory clicked → get parent category
-                                                    url = `/categories?category=${encodeURIComponent(item.category.name)}&&subcategory=${encodeURIComponent(item.name)}`;
+                                                    url = `/categories?category=${encodeURIComponent(item.category?.name || "")}&&subcategory=${encodeURIComponent(item.name)}`;
+                                                } else if (item.type === "Product") {
+                                                    url = `/product/${item.id}`;
                                                 }
 
                                                 router.push(url);
                                                 setQuery("");
                                                 setOpen(false);
                                             }}
+
 
 
                                             className="flex items-center justify-between gap-4 px-4 py-4 hover:bg-gray-100 cursor-pointer rounded-xl transition"
