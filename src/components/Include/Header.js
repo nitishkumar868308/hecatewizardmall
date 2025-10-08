@@ -261,12 +261,12 @@ const Header = () => {
                                             <div className="absolute left-1/2 transform -translate-x-[48%]
  top-full mt-1 w-[1400px] bg-[#161619] text-white shadow-lg py-8 px-10 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 z-50">
                                                 {mappedCategories.map((cat) => {
-                                                    const imgSrc = cat.img
-                                                        ? cat.img.startsWith('http') || cat.img.startsWith('/')
-                                                            ? cat.img
-                                                            : `${process.env.NEXT_PUBLIC_API_URL}${cat.img}`
-                                                        : "/default-image.jpg";
-                                                    console.log("imgSrc", imgSrc)
+                                                    // const imgSrc = cat.img
+                                                    //     ? cat.img.startsWith('http') || cat.img.startsWith('/')
+                                                    //         ? cat.img
+                                                    //         : `${process.env.NEXT_PUBLIC_API_URL}${cat.img}`
+                                                    //     : "/default-image.jpg";
+                                                    // console.log("imgSrc", imgSrc)
                                                     return (
                                                         <div
                                                             key={cat.name}
@@ -292,7 +292,7 @@ const Header = () => {
 
                                                             <div className="w-40 h-40 relative rounded-lg overflow-hidden flex-shrink-0 cursor-pointer">
                                                                 <Image
-                                                                    src={imgSrc}
+                                                                    src={cat.img}
                                                                     alt={cat.name}
                                                                     fill
                                                                     className="object-cover hover:scale-105 transition-transform duration-300"
