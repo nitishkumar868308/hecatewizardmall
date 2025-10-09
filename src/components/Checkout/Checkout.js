@@ -62,7 +62,7 @@ const Checkout = () => {
 
       if (storedCountry === "IND") {
         const options = [
-          { name: "By Road", price: 50 },
+          { name: "By Road", price: 100 },
           { name: "By Air", price: null }
         ];
         setShippingOption(options);
@@ -350,140 +350,6 @@ const Checkout = () => {
   return (
     <div className=" bg-gray-50 py-8 px-4">
       <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-        {/* Left - Cart Items */}
-        {/* <div className="lg:col-span-2 space-y-6">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-between">
-            Shopping Cart
-            {userCart.length > 0 && (
-              <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
-                <input type="checkbox" className="accent-gray-700 w-5 h-5" checked={selectAll} onChange={handleSelectAll} />
-                Select All
-              </label>
-            )}
-          </h2>
-
-          {userCart.length === 0 ? (
-            <p className="text-gray-600">Your cart is empty.</p>
-          ) : (
-
-            userCart.map((cartItem) => {
-              const { buyXGetYOffer, discountOffer } = getCartItemOffer(cartItem);
-              console.log("cartItem", cartItem)
-              const product = products.find(p => p.id === cartItem.productId);
-              console.log("product", product)
-              // default no tax
-              let taxAmount = 0;
-
-              if (product) {
-                const matchedTax = countryTax.find(
-                  (ct) =>
-                    ct.countryCode === selectedCountry &&
-                    ct.categoryId === product.categoryId &&
-                    ct.type == "General"
-                );
-
-                if (matchedTax) {
-                  const price = Number(cartItem.pricePerItem || cartItem.price);
-                  const qty = quantities[cartItem.id] || 1;
-                  taxAmount = ((price * qty) * matchedTax.generalTax) / 100;
-                }
-              }
-              console.log("selectedCountry", selectedCountry);
-              console.log("countryTax", countryTax);
-              console.log("taxAmount" , taxAmount)
-
-              return (
-                <div
-                  key={cartItem.id}
-                  className="flex flex-col sm:flex-row items-center sm:items-start justify-between bg-white shadow-md rounded-xl p-4"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.includes(cartItem.id)}
-                    onChange={() => toggleSelectItem(cartItem.id)}
-                    className="accent-gray-700 w-5 h-5"
-                  />
-                  <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <img
-                      src={cartItem.image}
-                      alt={cartItem.productName}
-                      className="w-24 h-24 object-cover rounded-lg border"
-                    />
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-800">{cartItem.productName}</h3>
-                      <p className="text-gray-500">{cartItem.currencySymbol}{cartItem.pricePerItem || cartItem.price}</p>
-                    </div>
-                  </div>
-
-                  {selectedCountry && taxAmount > 0 && (
-                    <p className="text-md text-gray-600">
-                      + Tax ({taxAmount.toFixed(2)})
-                    </p>
-                  )}
-
-
-                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto mt-4 sm:mt-0 gap-4">
-                  
-                    <div className="flex flex-col items-center">
-                      <div className="flex items-center border rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => handleQuantityChange(cartItem.id, (quantities[cartItem.id] || 1) - 1)}
-                          className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
-                        >
-                          -
-                        </button>
-                        <span className="px-4 font-medium">{quantities[cartItem.id] || 1}</span>
-                        <button
-                          onClick={() => handleQuantityChange(cartItem.id, (quantities[cartItem.id] || 1) + 1)}
-                          className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
-                        >
-                          +
-                        </button>
-                      </div>
-
-                      {buyXGetYOffer && (() => {
-                        const qty = quantities[cartItem.id] || 1;
-
-                        if (qty === buyXGetYOffer.buy) {
-                          return (
-                            <p className="text-green-600 text-md mt-1 font-semibold">
-                              Offer applied! (Total {qty + buyXGetYOffer.free} items)
-                            </p>
-                          );
-                        }
-
-                        if (qty < buyXGetYOffer.buy) {
-                          return (
-                            <p className="text-green-500 text-md mt-1">
-                              Buy {buyXGetYOffer.buy - qty} more, Get {buyXGetYOffer.free} free
-                            </p>
-                          );
-                        }
-
-                        return null;
-                      })()}
-                    </div>
-
-                    <p className="font-semibold text-gray-800">
-                      {cartItem.currencySymbol || "₹"}{" "}
-                      {(Number(cartItem.pricePerItem || cartItem.price) * (quantities[cartItem.id] || 1)).toFixed(2)}
-                    </p>
-
-                    <button
-                      onClick={() => openRemoveModal(cartItem)}
-                      className="text-red-600 hover:text-red-800 font-semibold cursor-pointer"
-                    >
-                      Remove
-                    </button>
-                  </div>
-
-                </div>
-              );
-            })
-          )}
-        </div> */}
-
         <div className="lg:col-span-2 space-y-6">
           <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-between">
             Shopping Cart
@@ -652,10 +518,6 @@ const Checkout = () => {
             })
           )}
         </div>
-
-
-
-
         {/* Right - Order Summary */}
         <div className="bg-white shadow-lg rounded-xl p-6 sticky top-6 max-h-[90vh] overflow-y-auto space-y-6">
           {/* Order Summary */}
@@ -663,45 +525,49 @@ const Checkout = () => {
             <span>Subtotal</span>
             <span>{currencySymbol}{subtotal.toFixed(2)}</span>
           </div>
-          <div className="space-y-2">
-            <span className="text-gray-600 font-semibold">Shipping</span>
-            <div className="flex gap-3">
+          <div className="space-y-4">
+            <span className="text-gray-700 font-semibold text-lg">Shipping</span>
+            <div className="flex flex-col gap-3">
               {shippingOption.map((option) => {
                 const isSelected = selectedShippingOption?.name === option.name;
                 return (
                   <button
                     key={option.name}
                     onClick={() => setSelectedShippingOption(option)}
-                    className={`flex-1 flex flex-col justify-center items-center px-4 py-3 rounded-lg font-medium border transition-all duration-200
+                    className={`flex items-start gap-3 p-4 rounded-lg border transition-all duration-200 text-left
             ${isSelected
-                        ? "bg-gray-500 text-white border-gray-800 shadow-lg"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                        ? "bg-gray-600 text-white border-gray-800 shadow-md"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                       }`}
                   >
-                    <span className="text-sm font-semibold">{option.name}</span>
-                    {option.price ? (
-                      <span className="mt-1 font-semibold">{currencySymbol}{option.price.toFixed(2)}</span>
-                    ) : (
-                      <span className="mt-1 text-sm text-gray-200">
-                        Shipping charge will be calculated based on weight. We will contact you once your parcel is ready.
-                      </span>
-                    )}
+                    {/* Radio-style Indicator */}
+                    <span className={`w-4 h-4 mt-1 rounded-full border-2 flex-shrink-0
+            ${isSelected ? "bg-white border-white" : "border-gray-400"}`} />
+
+                    {/* Text Content */}
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">{option.name}</span>
+                        {option.price && (
+                          <span className="font-medium">{currencySymbol}{option.price.toFixed(2)}</span>
+                        )}
+                      </div>
+                      {!option.price && (
+                        <p className="mt-1 text-xs text-gray-100">
+                          Rs.200/- per kg will be charged. Actual Shipping Charges will be informed once your order is packed and actual Weight and Volume is measured. Shipping will be done once Shipping charges are paid.
+                        </p>
+                      )}
+                    </div>
                   </button>
                 );
               })}
             </div>
           </div>
 
-
-
-
           <div className="flex justify-between font-bold text-lg border-t pt-3">
             <span>Total</span>
             <span>{currencySymbol}{grandTotal.toFixed(2)}</span>
           </div>
-
-
-
           {/* Shipping Address */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex justify-between items-center mb-2">
@@ -795,77 +661,79 @@ const Checkout = () => {
       </div>
 
       {/* Remove / Change Address Modal */}
-      {shippingModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-md p-6 rounded-xl">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Shipping Address</h3>
-            <div className="space-y-3 max-h-72 overflow-y-auto">
-              {shippingOptions?.length > 0 ? (
-                <div>
-                  {shippingOptions.map((addr) => (
-                    <label
-                      key={addr.id}
-                      className={`block p-3 border rounded-lg cursor-pointer transition ${tempShipping === addr.id ? "border-gray-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}
-                    >
-                      <input
-                        type="radio"
-                        name="shippingAddress"
-                        value={addr.id}
-                        checked={tempShipping === addr.id}
-                        onChange={() => setTempShipping(addr.id)}
-                        className="mr-2"
-                      />
-                      <div className="text-gray-800 font-semibold">{addr.name}</div>
-                      <div className="text-gray-600 text-sm">{addr.mobile}</div>
-                      <div className="text-gray-600 text-sm whitespace-pre-line">{addr.address}</div>
-                      <div className="text-gray-600 text-sm">{addr.pincode}</div>
-                    </label>
-                  ))}
+      {
+        shippingModalOpen && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white w-full max-w-md p-6 rounded-xl">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Shipping Address</h3>
+              <div className="space-y-3 max-h-72 overflow-y-auto">
+                {shippingOptions?.length > 0 ? (
+                  <div>
+                    {shippingOptions.map((addr) => (
+                      <label
+                        key={addr.id}
+                        className={`block p-3 border rounded-lg cursor-pointer transition ${tempShipping === addr.id ? "border-gray-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}
+                      >
+                        <input
+                          type="radio"
+                          name="shippingAddress"
+                          value={addr.id}
+                          checked={tempShipping === addr.id}
+                          onChange={() => setTempShipping(addr.id)}
+                          className="mr-2"
+                        />
+                        <div className="text-gray-800 font-semibold">{addr.name}</div>
+                        <div className="text-gray-600 text-sm">{addr.mobile}</div>
+                        <div className="text-gray-600 text-sm whitespace-pre-line">{addr.address}</div>
+                        <div className="text-gray-600 text-sm">{addr.pincode}</div>
+                      </label>
+                    ))}
 
-                  {/* Confirm / Cancel buttons */}
-                  <div className="flex justify-end gap-3 mt-4">
-                    <button
-                      onClick={() => setShippingModalOpen(false)}
-                      className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedShipping(tempShipping);
-                        setShippingModalOpen(false);
-                      }}
-                      className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 cursor-pointer"
-                    >
-                      Confirm
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center p-5">
-                  <p className="text-gray-600 mb-3">No shipping address found.</p>
-
-                  <div className="flex justify-center gap-3"> {/* 👈 Added this wrapper */}
-                    <button
-                      onClick={() => setShippingModalOpen(false)}
-                      className="px-4 py-2 cursor-pointer bg-gray-200 rounded-lg hover:bg-gray-300"
-                    >
-                      Cancel
-                    </button>
-
-                    <Link href="/dashboard?addresses">
-                      <button className="px-4 py-2 bg-gray-600 text-white rounded-lg cursor-pointer hover:bg-gray-900">
-                        Add Address
+                    {/* Confirm / Cancel buttons */}
+                    <div className="flex justify-end gap-3 mt-4">
+                      <button
+                        onClick={() => setShippingModalOpen(false)}
+                        className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                      >
+                        Cancel
                       </button>
-                    </Link>
+                      <button
+                        onClick={() => {
+                          setSelectedShipping(tempShipping);
+                          setShippingModalOpen(false);
+                        }}
+                        className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 cursor-pointer"
+                      >
+                        Confirm
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="text-center p-5">
+                    <p className="text-gray-600 mb-3">No shipping address found.</p>
 
-              )}
+                    <div className="flex justify-center gap-3"> {/* 👈 Added this wrapper */}
+                      <button
+                        onClick={() => setShippingModalOpen(false)}
+                        className="px-4 py-2 cursor-pointer bg-gray-200 rounded-lg hover:bg-gray-300"
+                      >
+                        Cancel
+                      </button>
+
+                      <Link href="/dashboard?addresses">
+                        <button className="px-4 py-2 bg-gray-600 text-white rounded-lg cursor-pointer hover:bg-gray-900">
+                          Add Address
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
       {/* Remove Item Modal */}
       {
         modalOpen && (

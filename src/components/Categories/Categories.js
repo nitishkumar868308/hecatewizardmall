@@ -1333,18 +1333,16 @@ const Categories = () => {
     const [isDesktop, setIsDesktop] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const productsPerPage = 6;
-    const [selectedAlphabet, setSelectedAlphabet] = useState(null); // null = no alphabet filter
+    const [selectedAlphabet, setSelectedAlphabet] = useState(null);
     useEffect(() => {
         setPriceRange(highestPrice);
     }, [highestPrice]);
-    // Fetch data
     useEffect(() => {
         dispatch(fetchProducts());
         dispatch(fetchSubcategories());
         dispatch(fetchCategories());
     }, [dispatch]);
 
-    // Responsive check
     useEffect(() => {
         const handleResize = () => setIsDesktop(window.innerWidth >= 768);
         handleResize();
@@ -1352,7 +1350,6 @@ const Categories = () => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    // Set selected category/subcategory from URL
     useEffect(() => {
         const categoryQuery = searchParams.get("category") || "All";
         const subcategoryQuery = searchParams.get("subcategory") || "All";
@@ -1374,6 +1371,7 @@ const Categories = () => {
     const baseFiltered = products
         .filter(
             (p) =>
+                p.active &&
                 (selectedCategory === "All" || p.categoryId === selectedCategory) &&
                 (selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory)
         )
@@ -1425,7 +1423,7 @@ const Categories = () => {
 
     // Category Click
     const handleCategoryClick = (cat) => {
-        setSelectedAlphabet(null); // reset alphabet on category change
+        setSelectedAlphabet(null);
         setSelectedCategory(cat.id);
         setSelectedSubcategory("All");
         setCurrentPage(1);
@@ -1446,6 +1444,10 @@ const Categories = () => {
             )}&subcategory=${encodeURIComponent(sub.name)}`
         );
     };
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedCategory, selectedSubcategory, priceRange, sortBy, selectedAlphabet, showSubcategoryCards]);
 
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro relative">
@@ -1524,7 +1526,7 @@ const Categories = () => {
                         {/* Price */}
                         <div>
                             <h3 className="font-semibold mb-2">
-                                Price: {products[0]?.currencySymbol || "₹"} {priceRange}
+                                Price: {products[0]?.currency} {products[0]?.currencySymbol || "₹"}{priceRange}
                             </h3>
                             <input
                                 type="range"
@@ -1532,7 +1534,7 @@ const Categories = () => {
                                 max={highestPrice}
                                 value={priceRange}
                                 onChange={(e) => setPriceRange(Number(e.target.value))}
-                                className="w-full accent-blue-500"
+                                className="w-full cursor-pointer accent-gray-500"
                             />
                         </div>
 
@@ -1542,7 +1544,7 @@ const Categories = () => {
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
-                                className="w-full p-2 border rounded"
+                                className="w-full cursor-pointer p-2 border rounded"
                             >
                                 {sortOptions.map((opt) => (
                                     <option key={opt} value={opt}>
@@ -1628,8 +1630,7 @@ const Categories = () => {
                                         <p className="text-sm text-gray-500">
                                             Price:{" "}
                                             <span className="text-xl font-bold text-gray-600">
-                                                {product.currencySymbol}
-                                                {product.price}
+                                                {product.currency} {product.currencySymbol}{product.price}
                                             </span>
                                         </p>
                                     </div>
@@ -1653,7 +1654,7 @@ const Categories = () => {
                                 onClick={() => handlePageChange(currentPage - 1)}
                                 className={`px-4 py-2 rounded transition ${currentPage === 1
                                     ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                    : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+                                    : "bg-gray-600 text-white hover:bg-gray-800 cursor-pointer"
                                     }`}
                             >
                                 Prev
@@ -1664,8 +1665,8 @@ const Categories = () => {
                                     key={i}
                                     onClick={() => handlePageChange(i + 1)}
                                     className={`px-3 py-1 rounded transition ${currentPage === i + 1
-                                        ? "bg-blue-500 text-white font-semibold cursor-default"
-                                        : "bg-gray-100 hover:bg-gray-200 cursor-pointer"
+                                        ? "bg-gray-600 text-white font-semibold cursor-default"
+                                        : "bg-gray-100 hover:bg-gray-400 cursor-pointer"
                                         }`}
                                 >
                                     {i + 1}
@@ -1677,7 +1678,7 @@ const Categories = () => {
                                 onClick={() => handlePageChange(currentPage + 1)}
                                 className={`px-4 py-2 rounded transition ${currentPage === totalPages || totalPages === 0
                                     ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                    : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+                                    : "bg-gray-600 text-white hover:bg-gray-800 cursor-pointer"
                                     }`}
                             >
                                 Next
@@ -1699,26 +1700,37 @@ const Categories = () => {
                 )} */}
                 {isDesktop && (
                     <div className="hidden md:flex flex-col gap-4 ml-4 sticky top-20">
-                        {availableAlphabets.map((letter) => (
-                            <button
-                                key={letter}
-                                onClick={() =>
-                                    setSelectedAlphabet((prev) => (prev === letter ? null : letter))
-                                }
-                                className={`w-8 h-8 cursor-pointer flex items-center justify-center text-sm font-semibold rounded-full transition-all duration-300
-          ${selectedAlphabet === letter
-                                        ? "bg-gray-500 text-white shadow-lg scale-110"
-                                        : "bg-gray-100 hover:bg-gray-200 hover:scale-105"
-                                    }`}
-                            >
-                                {letter}
-                            </button>
-                        ))}
+                        {availableAlphabets.map((letter) => {
+                            const isSelected = selectedAlphabet === letter;
+                            return (
+                                <div key={letter} className="relative flex items-center justify-center">
+                                    {/* Alphabet Button */}
+                                    <button
+                                        onClick={() =>
+                                            setSelectedAlphabet((prev) => (prev === letter ? null : letter))
+                                        }
+                                        className={`group w-8 h-8 cursor-pointer flex items-center justify-center text-sm font-semibold rounded-full transition-all duration-300
+              ${isSelected
+                                                ? "bg-gray-500 text-white shadow-lg scale-110"
+                                                : "bg-gray-100 hover:bg-gray-200 hover:scale-105"
+                                            }`}
+                                    >
+                                        {letter}
+
+                                        {/* Tooltip (only on button hover now) */}
+                                        <div className="absolute left-10 opacity-0 group-hover:opacity-100 bg-gray-700 text-white text-xs px-2 py-1 rounded-md transition-opacity duration-300 whitespace-nowrap">
+                                            {isSelected ? "Click again to deselect" : "Click to select"}
+                                        </div>
+                                    </button>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 
+
                 {/* Mobile Alphabet Sidebar */}
-                {!isDesktop && (
+                {/* {!isDesktop && (
                     <div className="fixed right-0 z-30 cursor-pointer  flex flex-col gap-5 p-1 overflow-y-auto">
                         {availableAlphabets.map((letter) => (
                             <button
@@ -1736,7 +1748,27 @@ const Categories = () => {
                             </button>
                         ))}
                     </div>
+                )} */}
+                {!isDesktop && (
+                    <div className="fixed right-0 z-30 cursor-pointer flex flex-col gap-5 p-1 overflow-y-auto">
+                        {availableAlphabets.map((letter) => (
+                            <button
+                                key={letter}
+                                onClick={() =>
+                                    setSelectedAlphabet((prev) => (prev === letter ? null : letter))
+                                }
+                                className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold transition-all duration-300
+          ${selectedAlphabet === letter
+                                        ? "bg-gray-500 text-white shadow-lg scale-110"
+                                        : "bg-gray-400 text-white hover:bg-gray-500 hover:scale-105"
+                                    }`}
+                            >
+                                {letter}
+                            </button>
+                        ))}
+                    </div>
                 )}
+
             </div>
         </div>
     );

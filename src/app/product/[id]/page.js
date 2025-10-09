@@ -633,7 +633,8 @@ const ProductDetail = () => {
                     <div>
                         <h1 className="text-5xl mb-6 text-gray-900">  {selectedVariation?.name || product.name}</h1>
                         <p className="text-3xl text-gray-700 mb-6 font-semibold">
-                            {selectedVariation?.currencySymbol || product.currencySymbol}{" "}
+                            {selectedVariation?.currency || product.currency}{" "}
+                            {selectedVariation?.currencySymbol || product.currencySymbol}
                             {selectedVariation?.price || product.price}
                             {/* {selectedVariation?.price ?? product.price} */}
                         </p>

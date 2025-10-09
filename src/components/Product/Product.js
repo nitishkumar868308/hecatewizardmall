@@ -252,7 +252,7 @@ const ProductSlider = ({ showSection = "both" }) => {
     const { ref, inView } = useInView(0.2);
     const { products } = useSelector((state) => state.products);
     const dispatch = useDispatch();
-
+    console.log("products" , products)
     useEffect(() => {
         dispatch(fetchProducts());
     }, [dispatch]);
@@ -351,7 +351,7 @@ const ProductSlider = ({ showSection = "both" }) => {
                                     {product.name}
                                 </h3>
                                 <p className="mt-1 text-sm sm:text-base md:text-lg text-gray-200 font-medium drop-shadow-lg">
-                                    {product.currencySymbol}{product.price}
+                                    {product.currency} {product.currencySymbol}{product.price}
                                 </p>
 
 

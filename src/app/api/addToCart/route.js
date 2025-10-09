@@ -75,53 +75,85 @@ export async function POST(req) {
 }
 
 // 🟢 Update cart item (e.g., quantity)
+// export async function PUT(req) {
+//     try {
+//         const body = await req.json();
+//         const { id, quantity } = body;
+//         console.log("id" , id)
+//         if (!id) {
+//             return new Response(
+//                 JSON.stringify({ message: "Cart ID is required" }),
+//                 { status: 400 }
+//             );
+//         }
+
+//         const existing = await prisma.cart.findUnique({ where: { id } });
+//         if (!existing) {
+//             return new Response(
+//                 JSON.stringify({ message: "Cart item not found" }),
+//                 { status: 404 }
+//             );
+//         }
+
+//         const updatedItem = await prisma.cart.update({
+//             where: { id },
+//             data: {
+//                 quantity: quantity ?? existing.quantity,
+//                 totalPrice: (quantity ?? existing.quantity) * existing.pricePerItem,
+//             },
+//         });
+
+//         return new Response(
+//             JSON.stringify({ message: "Cart updated successfully", data: updatedItem }),
+//             { status: 200 }
+//         );
+//     } catch (error) {
+//         return new Response(
+//             JSON.stringify({ message: "Failed to update cart", error: error.message }),
+//             { status: 500 }
+//         );
+//     }
+// }
+
 export async function PUT(req) {
     try {
         const body = await req.json();
-        const { id, quantity } = body;
+        const { id, ...updateData } = body;
 
-        if (!id) {
-            return new Response(
-                JSON.stringify({ message: "Cart ID is required" }),
-                { status: 400 }
-            );
-        }
+        if (!id) return new Response(JSON.stringify({ message: "Cart ID is required" }), { status: 400 });
 
         const existing = await prisma.cart.findUnique({ where: { id } });
-        if (!existing) {
-            return new Response(
-                JSON.stringify({ message: "Cart item not found" }),
-                { status: 404 }
-            );
+        if (!existing) return new Response(JSON.stringify({ message: "Cart item not found" }), { status: 404 });
+
+        // Agar totalPrice na diya ho, calculate kar lo
+        if (!updateData.totalPrice) {
+            const quantity = updateData.quantity ?? existing.quantity;
+            const pricePerItem = updateData.pricePerItem ?? existing.pricePerItem;
+            updateData.totalPrice = quantity * pricePerItem;
         }
 
         const updatedItem = await prisma.cart.update({
             where: { id },
-            data: {
-                quantity: quantity ?? existing.quantity,
-                totalPrice: (quantity ?? existing.quantity) * existing.pricePerItem,
-            },
+            data: { ...updateData }, // ✅ yahan pricePerItem, currencySymbol, selectedCountry, totalPrice sab update ho jaayega
         });
 
         return new Response(
-            JSON.stringify({ message: "Cart updated successfully", data: updatedItem }),
+            JSON.stringify({ message: "Cart item updated successfully", data: updatedItem }),
             { status: 200 }
         );
     } catch (error) {
-        return new Response(
-            JSON.stringify({ message: "Failed to update cart", error: error.message }),
-            { status: 500 }
-        );
+        return new Response(JSON.stringify({ message: "Failed to update cart item", error: error.message }), { status: 500 });
     }
 }
+
 
 export async function DELETE(req) {
     try {
         const body = await req.json();
         const { id, clearAll, userId } = body;
-        console.log("id" , id)
-        console.log("clearAll" , clearAll)
-        console.log("userId" , userId)
+        console.log("id", id)
+        console.log("clearAll", clearAll)
+        console.log("userId", userId)
         // Case 1: Clear all items for a user
         if (clearAll && userId) {
             await prisma.cart.deleteMany({
