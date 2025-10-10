@@ -356,7 +356,7 @@ export async function GET(req) {
             },
         });
 
-        const updatedProducts = convertProducts(products, countryCode, countryPricingList);
+        const updatedProducts = await convertProducts(products, countryCode, countryPricingList);
 
         return new Response(JSON.stringify(updatedProducts), { status: 200 });
     } catch (error) {

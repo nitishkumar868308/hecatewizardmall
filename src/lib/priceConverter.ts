@@ -125,14 +125,24 @@
 //     });
 // }
 
-export function convertPrice(basePriceINR, targetCountryCode, countryPricingList) {
-    console.log("basePriceINR" , basePriceINR)
-    console.log("targetCountryCode" , targetCountryCode)
-    console.log("countryPricingList" , countryPricingList)
+import { fetchConversionRates } from "./CustomHook/conversionRate"
+
+export async function convertPrice(basePriceINR, targetCountryCode, countryPricingList) {
+    const countryPricingListRates = await fetchConversionRates();
+
+    console.log("basePriceINR", basePriceINR);
+    console.log("targetCountryCode", targetCountryCode);
+    console.log("countryPricingList", countryPricingList);
+    console.log("countryPricingListRates", countryPricingListRates);
     const baseCountry = countryPricingList.find(c => c.code === "IN");
     const targetCountry = countryPricingList.find(c => c.code === targetCountryCode) || baseCountry;
 
-    const conversionRate = targetCountry?.conversionRate || 1; // INR → Target currency
+    const matchedCountry = countryPricingListRates.find(
+        (c) => c.currency === targetCountry.currency
+    ) || { conversionRate: 1 };
+    console.log("matchedCountry", matchedCountry)
+    const conversionRate = matchedCountry?.conversionRate || 1;
+    console.log("conversionRate", conversionRate)
     const multiplier = targetCountry?.multiplier || 1;
 
     const priceInTargetCurrency = basePriceINR * conversionRate;
@@ -145,46 +155,93 @@ export function convertPrice(basePriceINR, targetCountryCode, countryPricingList
     };
 }
 
+export async function convertProducts(products, countryCode, countryPricingList) {
+    console.log("productsbackend", products);
 
-
-export function convertProducts(products, countryCode, countryPricingList) {
-    console.log("productsbackend" , products)
     const normalizedCountryCode =
         countryCode.length === 3 ? countryCode.slice(0, 2).toUpperCase() : countryCode.toUpperCase();
 
-    return products.map((p) => {
-        const { price, currency, currencySymbol } = convertPrice(
-            Number(p.price),
-            countryCode,
-            countryPricingList
-        );
+    // Map products asynchronously
+    const convertedProducts = await Promise.all(
+        products.map(async (p) => {
+            const { price, currency, currencySymbol } = await convertPrice(
+                Number(p.price),
+                countryCode,
+                countryPricingList
+            );
 
-        const matchedMarketLink = p.marketLinks?.find(
-            (link) => link.countryCode?.toUpperCase() === normalizedCountryCode
-        ) || null;
+            const matchedMarketLink =
+                p.marketLinks?.find(
+                    (link) => link.countryCode?.toUpperCase() === normalizedCountryCode
+                ) || null;
 
-        return {
-            ...p,
-            price,
-            currency,
-            currencySymbol,
-            variations: p.variations?.map((v) => {
-                const { price: vPrice, currency: vCurrency, currencySymbol: vSymbol } = convertPrice(
-                    Number(v.price),
-                    countryCode,
-                    countryPricingList
-                );
+            const variations = await Promise.all(
+                (p.variations || []).map(async (v) => {
+                    const { price: vPrice, currency: vCurrency, currencySymbol: vSymbol } =
+                        await convertPrice(Number(v.price), countryCode, countryPricingList);
 
-                return {
-                    ...v,
-                    price: vPrice,
-                    currency: vCurrency,
-                    currencySymbol: vSymbol,
-                };
-            }),
-            matchedMarketLink,
-            marketLinks: p.marketLinks || [],
-        };
-    });
+                    return {
+                        ...v,
+                        price: vPrice,
+                        currency: vCurrency,
+                        currencySymbol: vSymbol,
+                    };
+                })
+            );
+
+            return {
+                ...p,
+                price,
+                currency,
+                currencySymbol,
+                variations,
+                matchedMarketLink,
+                marketLinks: p.marketLinks || [],
+            };
+        })
+    );
+
+    return convertedProducts;
 }
+
+// export function convertProducts(products, countryCode, countryPricingList) {
+//     console.log("productsbackend", products)
+//     const normalizedCountryCode =
+//         countryCode.length === 3 ? countryCode.slice(0, 2).toUpperCase() : countryCode.toUpperCase();
+
+//     return products.map((p) => {
+//         const { price, currency, currencySymbol } = convertPrice(
+//             Number(p.price),
+//             countryCode,
+//             countryPricingList
+//         );
+
+//         const matchedMarketLink = p.marketLinks?.find(
+//             (link) => link.countryCode?.toUpperCase() === normalizedCountryCode
+//         ) || null;
+
+//         return {
+//             ...p,
+//             price,
+//             currency,
+//             currencySymbol,
+//             variations: p.variations?.map((v) => {
+//                 const { price: vPrice, currency: vCurrency, currencySymbol: vSymbol } = convertPrice(
+//                     Number(v.price),
+//                     countryCode,
+//                     countryPricingList
+//                 );
+
+//                 return {
+//                     ...v,
+//                     price: vPrice,
+//                     currency: vCurrency,
+//                     currencySymbol: vSymbol,
+//                 };
+//             }),
+//             matchedMarketLink,
+//             marketLinks: p.marketLinks || [],
+//         };
+//     });
+// }
 

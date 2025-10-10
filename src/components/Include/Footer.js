@@ -107,6 +107,12 @@ const Footer = () => {
                     </div>
                 </div>
             </div>
+            <div className="text-center text-gray-100 space-y-2">
+                <h3 className="text-lg font-semibold">Disclaimer</h3>
+                <p className="text-sm font-light asd">
+                    Results are not guaranteed, and we do not assure any specific outcomes.
+                </p>
+            </div>
 
             {/* Bottom Bar */}
             <div className="border-t border-gray-700 mt-6 py-4 text-center text-gray-400 text-sm font-functionPro">
