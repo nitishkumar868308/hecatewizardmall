@@ -61,11 +61,13 @@ const Topbar = () => {
     // };
     const handleChange = async (e) => {
         const selectedCountry = e.target.value;
+        console.log("selectedCountry", selectedCountry)
         dispatch(setCountry(selectedCountry));
         localStorage.setItem("selectedCountry", selectedCountry);
 
         // Fetch updated products
-        dispatch(fetchCountryTaxes(selectedCountry));
+        const { payload } = await dispatch(fetchCountryTaxes(selectedCountry));
+        console.log("Fetched taxes for", selectedCountry, payload);
         const { payload: updatedProducts } = await dispatch(fetchProducts(selectedCountry));
 
         try {
@@ -104,7 +106,7 @@ const Topbar = () => {
 
             await Promise.all(promises);
             // Fetch latest cart
-
+            await dispatch(fetchCountryTaxes(selectedCountry)).unwrap();
 
             await dispatch(fetchCart());
         } catch (err) {

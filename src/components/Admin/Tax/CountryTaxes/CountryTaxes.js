@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import Loader from "@/components/Include/Loader";
 import {
-    fetchCountryTaxes,
+    fetchAllCountryTaxes,
     createCountryTax,
     updateCountryTax,
     deleteCountryTax,
@@ -18,7 +18,7 @@ import { useCountries } from "@/lib/CustomHook/useCountries";
 
 const CountryTaxes = () => {
     const dispatch = useDispatch();
-    const { countryTax } = useSelector((state) => state.countryTax);
+    const { allCountryTaxes  } = useSelector((state) => state.countryTax);
     const { categories } = useSelector((state) => state.category);
     const [search, setSearch] = useState("");
     const [modalOpen, setModalOpen] = useState(false);
@@ -26,7 +26,7 @@ const CountryTaxes = () => {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const { countries } = useCountries();
     console.log("countries", countries)
-    console.log("countryTax", countryTax)
+    console.log("allCountryTaxes", allCountryTaxes)
     const [newTax, setNewTax] = useState({
         country: "",
         category: "",
@@ -47,11 +47,8 @@ const CountryTaxes = () => {
     const [deleteId, setDeleteId] = useState(null);
     const [loading, setLoading] = useState(false);
 
-
-
-
     useEffect(() => {
-        dispatch(fetchCountryTaxes());
+        dispatch(fetchAllCountryTaxes());
         dispatch(fetchCategories())
     }, [dispatch]);
 
@@ -123,9 +120,10 @@ const CountryTaxes = () => {
             }
 
 
-            await dispatch(fetchCountryTaxes());
+            await dispatch(fetchAllCountryTaxes());
             toast.success("Country Tax(s) added successfully");
             setNewTax({ country: "", category: "", type: "General", percentageGeneral: "", percentageGST: "" });
+            
             setModalOpen(false);
         } catch (err) {
             toast.error(err.message || "Failed to add");
@@ -175,6 +173,7 @@ const CountryTaxes = () => {
         try {
             await dispatch(deleteCountryTax(deleteId)).unwrap();
             toast.success("Deleted successfully");
+            await dispatch(fetchAllCountryTaxes()).unwrap();
             setDeleteModalOpen(false);
         } catch (err) {
             toast.error(err.message || "Failed to delete");
@@ -183,7 +182,7 @@ const CountryTaxes = () => {
         }
     };
 
-    const filtered = countryTax.filter((c) =>
+    const filtered = allCountryTaxes.filter((c) =>
         c.country.toLowerCase().includes(search.toLowerCase()) ||
         c.category?.name.toLowerCase().includes(search.toLowerCase())
     );

@@ -13,7 +13,8 @@ import {
   fetchCountryTaxes,
 } from "@/app/redux/slices/countryTaxes/countryTaxesSlice";
 import { HomeIcon, BuildingOffice2Icon, CubeIcon } from "@heroicons/react/24/outline";
-
+import { createOrder } from "@/app/redux/slices/order/orderSlice";
+import { load } from "@cashfreepayments/cashfree-js";
 
 const Checkout = () => {
   const dispatch = useDispatch();
@@ -37,7 +38,27 @@ const Checkout = () => {
   const [shippingOption, setShippingOption] = useState([]);
   const [selectedShippingOption, setSelectedShippingOption] = useState(null);
   const [selectedCountry, setSelectedCountry] = useState(null);
+
+  // const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // const handleClick = () => {
+  //   setIsModalOpen(true);
+  // };
+
+  // const closeModal = () => {
+  //   setIsModalOpen(false);
+  // };
+
   console.log("countryTax", countryTax)
+  const [lastCountry, setLastCountry] = useState(null);
+
+  useEffect(() => {
+    if (country) {
+      setSelectedCountry(country); // sync with Redux
+      dispatch(fetchCountryTaxes(country));
+    }
+  }, [country, dispatch]);
+
 
   const methods = [
     {
@@ -101,12 +122,6 @@ const Checkout = () => {
     }
   }, []);
 
-  useEffect(() => {
-    const country = localStorage.getItem("selectedCountry");
-
-    dispatch(fetchCountryTaxes(country));
-
-  }, [dispatch]);
 
   useEffect(() => {
     dispatch(fetchCart());
@@ -276,9 +291,62 @@ const Checkout = () => {
     }
   }, [shippingOptions]);
 
+  const getCartItemOffer = (cartItem) => {
+    const product = products.find(p => p.id === cartItem.productId);
+    if (!product) return {};
 
-  console.log("shippingOptions", shippingOptions)
-  const handleClick = () => {
+    // get all offers linked to this product
+    const productOffers = offers.filter(o => product.offerId && o.id === product.offerId);
+
+    const buyXGetYOfferRaw = productOffers.find(o => o.discountType === "buyXGetY");
+    console.log("buyXGetYOfferRaw ", buyXGetYOfferRaw)
+    const discountOfferRaw = productOffers.find(o => o.discountType === "percentage");
+    console.log("discountOfferRaw ", discountOfferRaw)
+
+    // map to consistent format for cart display
+    const buyXGetYOffer = buyXGetYOfferRaw
+      ? { buy: buyXGetYOfferRaw.discountValue.buy, free: buyXGetYOfferRaw.discountValue.free }
+      : null;
+    console.log("buyXGetYOffer ", buyXGetYOffer)
+    const discountOffer = discountOfferRaw
+      ? { discountPercentage: discountOfferRaw.discountValue || 0 }
+      : null;
+    console.log("discountOffer", discountOffer)
+
+    return { buyXGetYOffer, discountOffer };
+  };
+
+  // Subtotal including tax
+  const subtotal = useMemo(() => {
+    return userCart
+      .filter(item => selectedItems.includes(item.id))
+      .reduce((sum, item) => {
+        const qty = quantities[item.id] || 1;
+        const price = Number(item.pricePerItem || item.price);
+        let discountedTotal = price * qty;
+
+        const { discountOffer } = getCartItemOffer(item);
+        if (discountOffer?.discountPercentage?.percent) {
+          discountedTotal -= (discountedTotal * discountOffer.discountPercentage.percent) / 100;
+        }
+
+        let taxAmount = 0;
+        const product = products.find(p => p.id === item.productId);
+        if (product) {
+          const matchedTax = countryTax.find(
+            (ct) =>
+              ct.countryCode === selectedCountry &&
+              ct.categoryId === product.categoryId &&
+              ct.type === "General"
+          );
+          if (matchedTax) taxAmount = (discountedTotal * (matchedTax.generalTax || 0)) / 100;
+        }
+
+        return sum + discountedTotal + taxAmount;
+      }, 0);
+  }, [userCart, selectedItems, quantities, products, countryTax, selectedCountry]);
+
+  const handleClick = async () => {
     const orderData = {
       user: {
         id: user?.id,
@@ -335,71 +403,23 @@ const Checkout = () => {
       paymentMethod: selected,
 
     };
+    try {
+      const data = await dispatch(createOrder(orderData)).unwrap();
 
-
+      console.log("Cashfree data:", data);
+      if (!data.sessionId) {
+        throw new Error("No session ID returned");
+      }
+      const cashfree = await load({ mode: "sandbox" }); // or "production"
+      cashfree.checkout({
+        paymentSessionId: data.sessionId,
+        redirectTarget: "_self", // open in same tab
+      });
+    } catch (err) {
+      console.error("Checkout error:", err);
+    }
     console.log("Order Data:", orderData);
   };
-
-
-  const getCartItemOffer = (cartItem) => {
-    const product = products.find(p => p.id === cartItem.productId);
-    if (!product) return {};
-
-    // get all offers linked to this product
-    const productOffers = offers.filter(o => product.offerId && o.id === product.offerId);
-
-    const buyXGetYOfferRaw = productOffers.find(o => o.discountType === "buyXGetY");
-    console.log("buyXGetYOfferRaw ", buyXGetYOfferRaw)
-    const discountOfferRaw = productOffers.find(o => o.discountType === "percentage");
-    console.log("discountOfferRaw ", discountOfferRaw)
-
-    // map to consistent format for cart display
-    const buyXGetYOffer = buyXGetYOfferRaw
-      ? { buy: buyXGetYOfferRaw.discountValue.buy, free: buyXGetYOfferRaw.discountValue.free }
-      : null;
-    console.log("buyXGetYOffer ", buyXGetYOffer)
-    const discountOffer = discountOfferRaw
-      ? { discountPercentage: discountOfferRaw.discountValue || 0 }
-      : null;
-    console.log("discountOffer", discountOffer)
-
-    return { buyXGetYOffer, discountOffer };
-  };
-
-  // Subtotal including tax
-  const subtotal = userCart
-    .filter(item => selectedItems.includes(item.id))
-    .reduce((sum, item) => {
-      const qty = quantities[item.id] || 1;
-      const price = Number(item.pricePerItem || item.price);
-      const product = products.find(p => p.id === item.productId);
-
-      // --- Apply Discount ---
-      let discountedTotal = price * qty;
-      const { discountOffer } = getCartItemOffer(item);
-      let discountPercent = 0;
-      if (discountOffer?.discountPercentage?.percent) {
-        discountPercent = Number(discountOffer.discountPercentage.percent);
-        discountedTotal -= (discountedTotal * discountPercent) / 100;
-      }
-
-      // --- Apply Tax on discounted amount ---
-      let taxAmount = 0;
-      if (product) {
-        const matchedTax = countryTax.find(
-          (ct) =>
-            ct.countryCode === selectedCountry &&
-            ct.categoryId === product.categoryId &&
-            ct.type === "General"
-        );
-        if (matchedTax) {
-          taxAmount = (discountedTotal * (matchedTax.generalTax || 0)) / 100;
-        }
-      }
-
-      return sum + discountedTotal + taxAmount;
-    }, 0);
-
 
   const shipping = selectedShippingOption?.price || 0;
   const grandTotal = subtotal + shipping;
@@ -411,10 +431,6 @@ const Checkout = () => {
   const currency = selectedItems.length > 0
     ? userCart.find(item => selectedItems.includes(item.id))?.currency || "INR"
     : "INR";
-
-
-
-
 
 
   return (
@@ -442,7 +458,7 @@ const Checkout = () => {
             userCart.map((cartItem) => {
               const { buyXGetYOffer, discountOffer } = getCartItemOffer(cartItem);
               const product = products.find((p) => p.id === cartItem.productId);
-
+              console.log("productTax", product)
               const qty = quantities[cartItem.id] || 1;
               const pricePerItem = Number(cartItem.pricePerItem || cartItem.price);
               let originalTotal = pricePerItem * qty;
@@ -866,7 +882,6 @@ const Checkout = () => {
       )}
 
 
-
       {/* Remove Item Modal */}
       {
         modalOpen && (
@@ -900,6 +915,8 @@ const Checkout = () => {
           </div>
         )
       }
+
+      {/* <PaymentModal isOpen={isModalOpen} onClose={closeModal} /> */}
     </div >
   );
 };

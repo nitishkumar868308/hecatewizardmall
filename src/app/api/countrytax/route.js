@@ -26,7 +26,7 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const countryCode = searchParams.get("country");
     const taxes = await prisma.countryTax.findMany({
-        where: { deleted: 0, countryCode }, // filter by country
+        where: { deleted: 0, countryCode },
         include: { category: true },
         orderBy: { createdAt: "desc" },
     });

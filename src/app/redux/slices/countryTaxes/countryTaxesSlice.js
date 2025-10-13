@@ -13,6 +13,19 @@ import axios from "axios";
 //         }
 //     }
 // );
+
+export const fetchAllCountryTaxes = createAsyncThunk(
+    "countryTax/fetchAllCountryTaxes",
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await axios.get("/api/countrytax/all");
+            return response.data.data; // API returns { message, data }
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to fetch all country taxes");
+        }
+    }
+);
+
 export const fetchCountryTaxes = createAsyncThunk(
     "countryTax/fetchCountryTax",
     async (countryCode, { rejectWithValue }) => {
@@ -69,20 +82,43 @@ const countryTaxSlice = createSlice({
     name: "countryTax",
     initialState: {
         countryTax: [],
+        allCountryTaxes: [],
         loading: false,
         error: null,
     },
     reducers: {},
     extraReducers: (builder) => {
+        builder
+            .addCase(fetchAllCountryTaxes.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchAllCountryTaxes.fulfilled, (state, action) => {
+                state.loading = false;
+                state.allCountryTaxes = action.payload;
+            })
+            .addCase(fetchAllCountryTaxes.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || action.error.message;
+            });
+
         // Fetch
         builder
             .addCase(fetchCountryTaxes.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
+            // .addCase(fetchCountryTaxes.fulfilled, (state, action) => {
+            //     state.loading = false;
+            //     // state.countryTax = action.payload;
+            //     state.countryTax = [...action.payload];
+            // })
+
             .addCase(fetchCountryTaxes.fulfilled, (state, action) => {
                 state.loading = false;
-                state.countryTax = action.payload;
+                state.countryTax = Array.isArray(action.payload)
+                    ? action.payload
+                    : [action.payload]; // handle single or multiple response
             })
             .addCase(fetchCountryTaxes.rejected, (state, action) => {
                 state.loading = false;

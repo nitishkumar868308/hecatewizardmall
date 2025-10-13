@@ -14,6 +14,20 @@ import axios from "axios";
 //     }
 // );
 
+// Fetch all products (no country pricing)
+export const fetchAllProducts = createAsyncThunk(
+    "products/fetchAllProducts",
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await axios.get("/api/products/all"); // your new endpoint
+            return response.data;
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to fetch all products");
+        }
+    }
+);
+
+
 // Fetch all products
 export const fetchProducts = createAsyncThunk(
     "products/fetchProducts",
@@ -102,6 +116,20 @@ const productsSlice = createSlice({
     },
     reducers: {},
     extraReducers: (builder) => {
+        builder
+            .addCase(fetchAllProducts.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchAllProducts.fulfilled, (state, action) => {
+                state.loading = false;
+                state.products = action.payload; // replace current products with all products
+            })
+            .addCase(fetchAllProducts.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || action.error.message;
+            });
+
         // Fetch products
         builder
             .addCase(fetchProducts.pending, (state) => {
@@ -125,7 +153,7 @@ const productsSlice = createSlice({
             })
             .addCase(createProduct.fulfilled, (state, action) => {
                 state.loading = false;
-                 state.products.unshift(action.payload.data);  // add newly created product to the list
+                state.products.unshift(action.payload.data);  // add newly created product to the list
             })
             .addCase(createProduct.rejected, (state, action) => {
                 state.loading = false;

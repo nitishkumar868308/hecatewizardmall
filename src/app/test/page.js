@@ -954,10 +954,10 @@
 
 "use client";
 
-import React,{useState} from 'react';
+import React, { useState } from 'react';
 import ProductsPage from '@/components/Include/Products/ProductsPage';
 import {
-    fetchProducts,
+    fetchAllProducts,
     deleteProduct,
     updateProducttoggle
 } from "@/app/redux/slices/products/productSlice";
@@ -975,6 +975,7 @@ const Page = () => {
     const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
     const { products } = useSelector((state) => state.products);
+    console.log("products", products)
     const { subcategories } = useSelector((state) => state.subcategory);
     const { categories } = useSelector((state) => state.category);
     const { attributes } = useSelector((state) => state.attributes);
@@ -985,7 +986,7 @@ const Page = () => {
     console.log("productOffers", productOffers)
 
     React.useEffect(() => {
-        dispatch(fetchProducts());
+        dispatch(fetchAllProducts());
         dispatch(fetchCategories());
         dispatch(fetchSubcategories());
         dispatch(fetchOffers());
@@ -999,7 +1000,7 @@ const Page = () => {
             .unwrap()
             .then((res) => {
                 toast.success(res.message || "Product updated successfully!!!");
-                dispatch(fetchProducts());
+                dispatch(fetchAllProducts());
             })
             .catch((err) => {
                 toast.error(err.error || "Something went wrong");
