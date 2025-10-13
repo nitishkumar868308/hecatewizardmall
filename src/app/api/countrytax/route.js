@@ -2,25 +2,38 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 // GET - fetch all taxes
-export async function GET(req) {
-    try {
-        const taxes = await prisma.countryTax.findMany({
-            where: { deleted: 0 },
-            include: { category: true },
-            orderBy: { createdAt: "desc" },
-        });
+// export async function GET(req) {
+//     try {
+//         const taxes = await prisma.countryTax.findMany({
+//             where: { deleted: 0 },
+//             include: { category: true },
+//             orderBy: { createdAt: "desc" },
+//         });
 
-        return new Response(
-            JSON.stringify({ message: "Country taxes fetched successfully", data: taxes }),
-            { status: 200 }
-        );
-    } catch (error) {
-        return new Response(
-            JSON.stringify({ message: "Failed to fetch country taxes", error: error.message }),
-            { status: 500 }
-        );
-    }
+//         return new Response(
+//             JSON.stringify({ message: "Country taxes fetched successfully", data: taxes }),
+//             { status: 200 }
+//         );
+//     } catch (error) {
+//         return new Response(
+//             JSON.stringify({ message: "Failed to fetch country taxes", error: error.message }),
+//             { status: 500 }
+//         );
+//     }
+// }
+// GET
+export async function GET(req) {
+    const { searchParams } = new URL(req.url);
+    const countryCode = searchParams.get("country");
+    const taxes = await prisma.countryTax.findMany({
+        where: { deleted: 0, countryCode }, // filter by country
+        include: { category: true },
+        orderBy: { createdAt: "desc" },
+    });
+
+    return new Response(JSON.stringify({ message: "Country taxes fetched successfully", data: taxes }), { status: 200 });
 }
+
 
 // POST - create new tax
 export async function POST(req) {

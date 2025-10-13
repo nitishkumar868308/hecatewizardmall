@@ -6,16 +6,19 @@ import { fetchCart, deleteCartItem, updateCart } from "@/app/redux/slices/addToC
 import toast from 'react-hot-toast';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CreditCard, CreditCardFront, Wallet, DollarSign } from "lucide-react";
+import { CreditCard, CreditCardFront, Wallet, DollarSign, Edit } from "lucide-react";
 import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 import { fetchOffers } from '@/app/redux/slices/offer/offerSlice'
 import {
   fetchCountryTaxes,
 } from "@/app/redux/slices/countryTaxes/countryTaxesSlice";
+import { HomeIcon, BuildingOffice2Icon, CubeIcon } from "@heroicons/react/24/outline";
+
 
 const Checkout = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.me);
+  const country = useSelector((state) => state.country);
   const { items } = useSelector((state) => state.cart);
   const router = useRouter();
   const [quantities, setQuantities] = useState({});
@@ -54,6 +57,27 @@ const Checkout = () => {
     },
   ];
 
+  const getTypeIcon = (addr) => {
+    const type = addr?.type?.toLowerCase() || "other"; // default "other"
+
+    switch (type) {
+      case "home":
+        return <HomeIcon className="w-5 h-5 text-gray-800 inline-block mr-1" />;
+      case "office":
+        return <BuildingOffice2Icon className="w-5 h-5 text-gray-600 inline-block mr-1" />;
+      default:
+        // Other -> Initial based circle
+        const initials = addr?.customType
+          ? addr.customType.substring(0, 2).toUpperCase()
+          : "O";
+        const shade = addr?.customType ? 200 + (addr.customType.charCodeAt(0) % 3) * 100 : 200;
+        return (
+          <div className={`w-5 h-5 rounded-full bg-gray-${shade} flex items-center justify-center text-gray-800 text-xs font-bold mr-1`}>
+            {initials}
+          </div>
+        );
+    }
+  };
 
   useEffect(() => {
     const storedCountry = localStorage.getItem("selectedCountry");
@@ -77,14 +101,19 @@ const Checkout = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const country = localStorage.getItem("selectedCountry");
 
+    dispatch(fetchCountryTaxes(country));
+
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(fetchCart());
     dispatch(fetchMe());
     dispatch(fetchProducts());
     dispatch(fetchOffers());
-    dispatch(fetchCountryTaxes())
+    // dispatch(fetchCountryTaxes())
   }, [dispatch]);
 
   // Set default shipping address
@@ -114,6 +143,16 @@ const Checkout = () => {
     if (userCart.length > 0 && selectedItems.length === 0) {
       setSelectedItems(userCart.map(item => item.id));
       setSelectAll(true);
+    }
+  }, [userCart]);
+
+  useEffect(() => {
+    if (userCart.length > 0) {
+      const updatedQuantities = userCart.reduce((acc, item) => {
+        acc[item.id] = item.quantity || 1;
+        return acc;
+      }, {});
+      setQuantities(updatedQuantities);
     }
   }, [userCart]);
 
@@ -205,19 +244,40 @@ const Checkout = () => {
   }, [user, selectedShipping]);
 
 
-  const shippingOptions = [
-    ...(user?.addresses || []),
-    ...(user?.address ? [{
-      id: "default_address",
-      name: user.name,
-      mobile: user.phone,
-      address: user.address,
-      city: user.city,
-      state: user.state,
-      pincode: user.pincode,
-    }] : []),
-  ];
+  const shippingOptions = useMemo(() => {
+    return [
+      ...(user?.addresses || []),
+      ...(user?.address ? [{
+        id: "default_address",
+        name: user.name,
+        mobile: user.phone,
+        address: user.address,
+        city: user.city,
+        state: user.state,
+        pincode: user.pincode,
+        isDefault: user.isDefault
+      }] : []),
+    ];
+  }, [user?.addresses, user?.address, user?.isDefault, user?.name, user?.phone, user?.city, user?.state, user?.pincode]);
 
+
+  useEffect(() => {
+    if (shippingOptions.length > 0) {
+      const defaultAddr = shippingOptions.find(addr => addr.isDefault);
+      const fallbackAddr = shippingOptions.find(addr => addr.id === 'default_address');
+      const toSelect = defaultAddr
+        ? defaultAddr.id
+        : fallbackAddr
+          ? fallbackAddr.id
+          : shippingOptions[0].id;
+
+      setSelectedShipping(toSelect);
+      setTempShipping(toSelect);
+    }
+  }, [shippingOptions]);
+
+
+  console.log("shippingOptions", shippingOptions)
   const handleClick = () => {
     const orderData = {
       user: {
@@ -263,6 +323,7 @@ const Checkout = () => {
             paidQty,
             total: `${item.currencySymbol}${(unitPrice * paidQty).toFixed(2)}`,
             image: item.image,
+            currency: item.currency,
             currencySymbol: item.currencySymbol,
           };
         }),
@@ -346,6 +407,15 @@ const Checkout = () => {
   const currencySymbol = selectedItems.length > 0
     ? userCart.find(item => selectedItems.includes(item.id))?.currencySymbol || "$"
     : "$";
+
+  const currency = selectedItems.length > 0
+    ? userCart.find(item => selectedItems.includes(item.id))?.currency || "INR"
+    : "INR";
+
+
+
+
+
 
   return (
     <div className=" bg-gray-50 py-8 px-4">
@@ -438,16 +508,16 @@ const Checkout = () => {
                         {discountPercent > 0 ? (
                           <>
                             <span className="text-gray-400 line-through">
-                              {cartItem.currencySymbol}
-                              {originalTotal.toFixed(2)}
+                              {`${cartItem.currency} ${cartItem.currencySymbol}${originalTotal.toFixed(2)}`}
                             </span>
+
                             <span className="text-green-700 font-semibold">
                               {discountPercent}% OFF
                             </span>
                           </>
                         ) : (
-                          <span className="text-gray-400">
-                            {cartItem.currencySymbol}
+                          <span className="text-gray-400 line-through">
+                            {cartItem.currency} {cartItem.currencySymbol}
                             {originalTotal.toFixed(2)}
                           </span>
                         )}
@@ -483,7 +553,7 @@ const Checkout = () => {
 
                       {/* Total After Discount + Tax */}
                       <p className="text-gray-900 font-bold mt-2 text-lg">
-                        Total: {cartItem.currencySymbol}
+                        Total: {cartItem.currency} {cartItem.currencySymbol}
                         {totalWithTax.toFixed(2)}
                       </p>
                     </div>
@@ -521,12 +591,55 @@ const Checkout = () => {
         {/* Right - Order Summary */}
         <div className="bg-white shadow-lg rounded-xl p-6 sticky top-6 max-h-[90vh] overflow-y-auto space-y-6">
           {/* Order Summary */}
-          <div className="flex justify-between text-gray-600">
+
+          {/* Shipping Address Summary */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-md font-semibold text-gray-700">Shipping Address</h4>
+              <button
+                className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-900 text-sm cursor-pointer"
+                onClick={() => {
+                  setTempShipping(selectedShipping); // modal me pre-select
+                  setShippingModalOpen(true);
+                }}
+              >
+                Change
+              </button>
+            </div>
+            <div className="text-gray-600">
+              <div className="flex justify-between items-center font-semibold text-gray-800">
+                <span>{selectedAddress?.name || user?.name}</span>
+                <span>{selectedAddress?.mobile || user?.phone}</span>
+              </div>
+              <div className="mt-1 text-gray-700 text-sm">
+                {selectedShipping === "default_address"
+                  ? user?.address || "No address available"
+                  : [selectedAddress?.address, selectedAddress?.city, selectedAddress?.state, selectedAddress?.country, selectedAddress?.pincode]
+                    .filter(Boolean)
+                    .join(", ") || "No address available"
+                }
+
+              </div>
+            </div>
+          </div>
+
+
+          {/* Billing Address (optional collapse for compactness) */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="text-md font-semibold text-gray-700 mb-1">Billing Address</h4>
+            <div className="text-gray-600 text-sm">
+              <div className="font-semibold">{user?.name}</div>
+              <div>{user?.phone}</div>
+              <div className="truncate">{user?.address || "No billing address"}</div>
+            </div>
+          </div>
+
+          <div className="flex justify-between font-bold text-lg">
             <span>Subtotal</span>
-            <span>{currencySymbol}{subtotal.toFixed(2)}</span>
+            <span>{currency} {currencySymbol}{subtotal.toFixed(2)}</span>
           </div>
           <div className="space-y-4">
-            <span className="text-gray-700 font-semibold text-lg">Shipping</span>
+            <span className="flex justify-between font-bold text-lg">Shipping</span>
             <div className="flex flex-col gap-3">
               {shippingOption.map((option) => {
                 const isSelected = selectedShippingOption?.name === option.name;
@@ -549,7 +662,7 @@ const Checkout = () => {
                       <div className="flex justify-between items-center">
                         <span className="font-semibold">{option.name}</span>
                         {option.price && (
-                          <span className="font-medium">{currencySymbol}{option.price.toFixed(2)}</span>
+                          <span className="font-medium">{currency} {currencySymbol}{option.price.toFixed(2)}</span>
                         )}
                       </div>
                       {!option.price && (
@@ -566,47 +679,7 @@ const Checkout = () => {
 
           <div className="flex justify-between font-bold text-lg border-t pt-3">
             <span>Total</span>
-            <span>{currencySymbol}{grandTotal.toFixed(2)}</span>
-          </div>
-          {/* Shipping Address */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-md font-semibold text-gray-700">Shipping Address</h4>
-              <button
-                className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-900 text-sm cursor-pointer"
-                onClick={() => {
-                  setTempShipping(selectedShipping);
-                  setShippingModalOpen(true);
-                }}
-              >
-                Change
-              </button>
-            </div>
-            <div className="text-gray-600">
-              <div className="flex justify-between items-center font-semibold text-gray-800">
-                <span>{user?.addresses?.length ? selectedAddress?.name : user?.name}</span>
-                <span>{user?.addresses?.length ? selectedAddress?.mobile : user?.phone}</span>
-              </div>
-              <div className="mt-1 text-gray-700 text-sm">
-                {selectedShipping === "default_address"
-                  ? user.address // direct string
-                  : [selectedAddress?.address, selectedAddress?.city, selectedAddress?.state, selectedAddress?.pincode]
-                    .filter(Boolean) // remove empty values
-                    .join(", ")
-                }
-              </div>
-
-            </div>
-          </div>
-
-          {/* Billing Address (optional collapse for compactness) */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="text-md font-semibold text-gray-700 mb-1">Billing Address</h4>
-            <div className="text-gray-600 text-sm">
-              <div className="font-semibold">{user?.name}</div>
-              <div>{user?.phone}</div>
-              <div className="truncate">{user?.address || "No billing address"}</div>
-            </div>
+            <span>{currency} {currencySymbol}{grandTotal.toFixed(2)}</span>
           </div>
 
           {/* Payment Method */}
@@ -661,79 +734,139 @@ const Checkout = () => {
       </div>
 
       {/* Remove / Change Address Modal */}
-      {
-        shippingModalOpen && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="bg-white w-full max-w-md p-6 rounded-xl">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Shipping Address</h3>
-              <div className="space-y-3 max-h-72 overflow-y-auto">
-                {shippingOptions?.length > 0 ? (
-                  <div>
-                    {shippingOptions.map((addr) => (
-                      <label
-                        key={addr.id}
-                        className={`block p-3 border rounded-lg cursor-pointer transition ${tempShipping === addr.id ? "border-gray-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}
-                      >
-                        <input
-                          type="radio"
-                          name="shippingAddress"
-                          value={addr.id}
-                          checked={tempShipping === addr.id}
-                          onChange={() => setTempShipping(addr.id)}
-                          className="mr-2"
-                        />
-                        <div className="text-gray-800 font-semibold">{addr.name}</div>
-                        <div className="text-gray-600 text-sm">{addr.mobile}</div>
-                        <div className="text-gray-600 text-sm whitespace-pre-line">{addr.address}</div>
-                        <div className="text-gray-600 text-sm">{addr.pincode}</div>
-                      </label>
-                    ))}
+      {shippingModalOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6">
+          <div className="bg-white w-full max-w-lg sm:max-w-md rounded-2xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden">
 
-                    {/* Confirm / Cancel buttons */}
-                    <div className="flex justify-end gap-3 mt-4">
-                      <button
-                        onClick={() => setShippingModalOpen(false)}
-                        className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedShipping(tempShipping);
-                          setShippingModalOpen(false);
-                        }}
-                        className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 cursor-pointer"
-                      >
-                        Confirm
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center p-5">
-                    <p className="text-gray-600 mb-3">No shipping address found.</p>
-
-                    <div className="flex justify-center gap-3"> {/* 👈 Added this wrapper */}
-                      <button
-                        onClick={() => setShippingModalOpen(false)}
-                        className="px-4 py-2 cursor-pointer bg-gray-200 rounded-lg hover:bg-gray-300"
-                      >
-                        Cancel
-                      </button>
-
-                      <Link href="/dashboard?addresses">
-                        <button className="px-4 py-2 bg-gray-600 text-white rounded-lg cursor-pointer hover:bg-gray-900">
-                          Add Address
-                        </button>
-                      </Link>
-                    </div>
-                  </div>
-
-                )}
-              </div>
+            {/* Header */}
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
+                Select Shipping Address
+              </h3>
+              <Link href="/dashboard?addresses">
+                <button className="px-4 py-2 bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-lg text-sm sm:text-base hover:scale-105 transition-transform">
+                  Add New Address
+                </button>
+              </Link>
             </div>
+
+            {/* Addresses List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {shippingOptions?.length > 0 ? (
+                shippingOptions.map((addr) => (
+                  <label
+                    key={addr.id}
+                    className={`block p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${tempShipping === addr.id
+                      ? "border-gray-500 bg-gray-100 shadow"
+                      : "border-gray-200 hover:border-gray-300"
+                      }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Radio button */}
+                      <input
+                        type="radio"
+                        name="shippingAddress"
+                        value={addr.id}
+                        checked={tempShipping === addr.id}
+                        onChange={() => setTempShipping(addr.id)}
+                        className="mt-1 scale-110 accent-gray-700"
+                      />
+
+
+
+                      <div className="flex-1 flex flex-col">
+                        {/* Type + Default + Edit */}
+                        <div className="flex items-center justify-between gap-2 font-semibold text-gray-800 mb-1 text-sm sm:text-base">
+                          {/* Left: Type + Icon */}
+                          <div className="flex items-center gap-1">
+                            {getTypeIcon(addr)}
+                            {addr.type === "Other" ? `${addr.type} (${addr.customType || ""})` : addr.type}
+                          </div>
+
+                          {/* Right: Default + Edit */}
+                          <div className="flex items-center gap-2">
+                            {addr.isDefault && (
+                              <div className="flex items-center gap-1">
+                                <input type="checkbox" checked readOnly className="w-4 h-4 accent-green-600 cursor-default" />
+                                <span className="text-green-600 text-sm font-semibold">Default</span>
+                              </div>
+                            )}
+
+                            {/* Edit icon */}
+                            {addr.id !== "default_address" && (
+                              <Link href={`/dashboard?addresses=true&editId=${addr.id}`}>
+                                <button className="text-gray-500 hover:text-gray-800 transition p-1 rounded-full">
+                                  <Edit className="h-4 w-4 cursor-pointer text-gray-500" />
+                                </button>
+                              </Link>
+                            )}
+
+                          </div>
+                        </div>
+
+
+                        {/* Name & mobile */}
+                        <div className="flex justify-between items-center">
+                          <div className="font-semibold text-gray-600">{addr.name}</div>
+                          <div className="text-gray-600 text-right text-sm">{addr.mobile}</div>
+
+                        </div>
+
+                        {/* Full address */}
+                        <div className="text-gray-600 text-sm mt-1 sm:mt-2 whitespace-pre-line">
+                          {addr.address}, {addr.city}, {addr.state}, {addr.country} - {addr.pincode}
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                ))
+
+
+              ) : (
+                <div className="text-center p-6">
+                  <p className="text-gray-600 mb-4">No shipping address found.</p>
+                  <div className="flex flex-col sm:flex-row justify-center gap-3">
+                    <button
+                      onClick={() => setShippingModalOpen(false)}
+                      className="px-5 py-2 bg-gray-200 rounded-lg text-gray-700 hover:bg-gray-300 transition"
+                    >
+                      Cancel
+                    </button>
+                    <Link href="/dashboard?addresses">
+                      <button className="px-5 py-2 bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-lg hover:scale-105 transition-transform">
+                        Add Address
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Sticky Buttons */}
+            <div className="flex justify-end gap-3 p-4 border-t bg-white">
+              <button
+                onClick={() => setShippingModalOpen(false)}
+                className="px-5 py-2 bg-gray-200 rounded-lg text-gray-700 hover:bg-gray-300 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedShipping(tempShipping);
+                  setShippingModalOpen(false);
+                }}
+                className="px-5 py-2 bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-lg hover:scale-105 transition-transform"
+              >
+                Confirm
+              </button>
+            </div>
+
           </div>
-        )
-      }
+        </div>
+      )}
+
+
+
       {/* Remove Item Modal */}
       {
         modalOpen && (

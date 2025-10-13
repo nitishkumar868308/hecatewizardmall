@@ -129,11 +129,6 @@ import { fetchConversionRates } from "./CustomHook/conversionRate"
 
 export async function convertPrice(basePriceINR, targetCountryCode, countryPricingList) {
     const countryPricingListRates = await fetchConversionRates();
-
-    console.log("basePriceINR", basePriceINR);
-    console.log("targetCountryCode", targetCountryCode);
-    console.log("countryPricingList", countryPricingList);
-    console.log("countryPricingListRates", countryPricingListRates);
     const baseCountry = countryPricingList.find(c => c.code === "IN");
     const targetCountry = countryPricingList.find(c => c.code === targetCountryCode) || baseCountry;
 

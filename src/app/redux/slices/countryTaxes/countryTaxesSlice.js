@@ -2,17 +2,29 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 // Fetch all country taxes
+// export const fetchCountryTaxes = createAsyncThunk(
+//     "countryTax/fetchCountryTax",
+//     async (_, { rejectWithValue }) => {
+//         try {
+//             const response = await axios.get("/api/countrytax");
+//             return response.data.data; // API returns { message, data }
+//         } catch (err) {
+//             return rejectWithValue(err.response?.data || "Failed to fetch country taxes");
+//         }
+//     }
+// );
 export const fetchCountryTaxes = createAsyncThunk(
     "countryTax/fetchCountryTax",
-    async (_, { rejectWithValue }) => {
+    async (countryCode, { rejectWithValue }) => {
         try {
-            const response = await axios.get("/api/countrytax");
-            return response.data.data; // API returns { message, data }
+            const response = await axios.get(`/api/countrytax?country=${countryCode}`);
+            return response.data.data;
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to fetch country taxes");
         }
     }
 );
+
 
 // Create new country tax
 export const createCountryTax = createAsyncThunk(

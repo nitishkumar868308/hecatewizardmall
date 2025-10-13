@@ -6,23 +6,31 @@ import { setCountry } from "@/app/redux/slices/countrySlice";
 import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 import { usePathname } from "next/navigation";
 import { fetchCart, updateCart } from "@/app/redux/slices/addToCart/addToCartSlice";
+import { useCountries } from "@/lib/CustomHook/useCountries";
+import {
+    fetchCountryTaxes,
+} from "@/app/redux/slices/countryTaxes/countryTaxesSlice";
 
 const Topbar = () => {
     const dispatch = useDispatch();
     const { countryPricing } = useSelector((state) => state.countryPricing);
     const country = useSelector((state) => state.country);
+    console.log("country", country)
     const [mounted, setMounted] = useState(false);
     const { items } = useSelector((state) => state.cart);
     const { user } = useSelector((state) => state.me);
     const { products } = useSelector((state) => state.products);
+    console.log("productstopbar", products)
     const userCart = useMemo(() => {
         return items?.filter(item => String(item.userId) === String(user?.id)) || [];
     }, [items, user?.id]);
     console.log("userCart", userCart)
+    const { countries } = useCountries();
     const pathname = usePathname();
     useEffect(() => setMounted(true), []);
     useEffect(() => {
         dispatch(fetchCountryPricing());
+
     }, [dispatch]);
 
     useEffect(() => {
@@ -35,7 +43,7 @@ const Topbar = () => {
         }
     }, [countryPricing, country, dispatch]);
 
-    const countries = [...countryPricing]
+    const countriesprice = [...countryPricing]
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         .map((c) => ({
             code: c.code,
@@ -45,67 +53,64 @@ const Topbar = () => {
     if (!mounted) return null;
 
 
-    const handleChange = (e) => {
-        const selectedCountry = e.target.value;
-        dispatch(setCountry(selectedCountry));
-        localStorage.setItem("selectedCountry", selectedCountry); // persist
-        dispatch(fetchProducts(selectedCountry));
-    };
-    // const handleChange = async (e) => {
+    // const handleChange = (e) => {
     //     const selectedCountry = e.target.value;
     //     dispatch(setCountry(selectedCountry));
-    //     localStorage.setItem("selectedCountry", selectedCountry);
+    //     localStorage.setItem("selectedCountry", selectedCountry); // persist
     //     dispatch(fetchProducts(selectedCountry));
-
-    //     try {
-    //         // 🔹 Selected country ka pricing info lo
-    //         const selectedCountryData = countryPricing.find(
-    //             (c) => c.code === selectedCountry
-    //         );
-
-    //         if (!selectedCountryData) {
-    //             console.warn("No pricing found for this country:", selectedCountry);
-    //             return;
-    //         }
-
-    //         const { currencySymbol, multiplier } = selectedCountryData;
-
-    //         await Promise.all(
-    //             userCart.map((item) => {
-    //                 // 🔹 Product fetch karo cart se linked
-    //                 const product = products.find((p) => p.id === item.productId);
-    //                 console.log("productCart" , product)
-    //                 // 🔹 Hamesha base INR price lo (variation level agar hai)
-    //                 const basePrice =
-    //                     product?.variations?.find((v) => v.id === item.variationId)?.price ||
-    //                     product?.price ||
-    //                     item.pricePerItem; // fallback
-
-    //                 console.log("Base INR Price:", basePrice);
-
-    //                 // 🔹 New country multiplier lagao
-    //                 const newPrice = basePrice * multiplier;
-    //                 const newTotal = newPrice * item.quantity;
-
-    //                 console.log("→ newTotal", newTotal);
-
-    //                 return dispatch(
-    //                     updateCart({
-    //                         id: item.id,
-    //                         pricePerItem: newPrice,
-    //                         totalPrice: newTotal,
-    //                         currencySymbol: currencySymbol || item.currencySymbol,
-    //                         selectedCountry,
-    //                     })
-    //                 ).unwrap();
-    //             })
-    //         );
-
-    //         await dispatch(fetchCart());
-    //     } catch (err) {
-    //         console.error("❌ Failed to update cart items:", err);
-    //     }
     // };
+    const handleChange = async (e) => {
+        const selectedCountry = e.target.value;
+        dispatch(setCountry(selectedCountry));
+        localStorage.setItem("selectedCountry", selectedCountry);
+
+        // Fetch updated products
+        dispatch(fetchCountryTaxes(selectedCountry));
+        const { payload: updatedProducts } = await dispatch(fetchProducts(selectedCountry));
+
+        try {
+            // Update each cart item with new price from updatedProducts
+            const promises = userCart.map((item) => {
+                const product = updatedProducts.find(p => p.id === item.productId);
+                if (!product) return null;
+
+                let selectedCountryObj = countries.find(
+                    (c) => c.code.toUpperCase() === selectedCountry
+                );
+
+                if (!selectedCountryObj && selectedCountry.length === 3) {
+                    selectedCountryObj = countries.find(
+                        (c) => c.code.toUpperCase().startsWith(selectedCountry.slice(0, 2))
+                    );
+                }
+
+                const selectedCountryCode = selectedCountryObj?.name || selectedCountry;
+
+                const variation = product.variations.find(v => v.id === item.variationId) || product;
+                const newPrice = variation.price;
+                const newTotal = newPrice * item.quantity;
+                const currencySymbol = variation.currencySymbol || product.currencySymbol;
+                const currency = variation.currency || product.currency;
+
+                return dispatch(updateCart({
+                    id: item.id,
+                    pricePerItem: newPrice,
+                    totalPrice: newTotal,
+                    currencySymbol,
+                    selectedCountry: selectedCountryCode,
+                    currency
+                })).unwrap();
+            }).filter(Boolean);
+
+            await Promise.all(promises);
+            // Fetch latest cart
+
+
+            await dispatch(fetchCart());
+        } catch (err) {
+            console.error("Failed to update cart:", err);
+        }
+    };
 
 
 
@@ -124,7 +129,7 @@ const Topbar = () => {
                             onChange={handleChange}
                             className="bg-black border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base"
                         >
-                            {countries.map((c) => (
+                            {countriesprice.map((c) => (
                                 <option key={c.code} value={c.code}>
                                     {c.name}
                                 </option>

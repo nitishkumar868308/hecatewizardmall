@@ -465,6 +465,8 @@ const ProductDetail = () => {
 
         const price = selectedVariation?.price || product.price;
         const currencySymbol = selectedVariation?.currencySymbol || product.currencySymbol || "₹";
+        const currency = selectedVariation?.currency || product.currency || "₹";
+        console.log("currency" , currency)
         const totalPrice = price * quantity;
 
         const flatAttributes = {};
@@ -476,6 +478,7 @@ const ProductDetail = () => {
             productName: product.name,
             quantity,
             pricePerItem: price,
+            currency,
             currencySymbol,
             totalPrice,
             productId: product.id,
@@ -485,7 +488,6 @@ const ProductDetail = () => {
             image: mainImage || "No Image",
             selectedCountry, // ✅ full country name dynamically
         };
-
         try {
             const result = await dispatch(addToCartAsync(cartItem)).unwrap();
             toast.success(result.message || "Item added to cart!");
@@ -633,11 +635,10 @@ const ProductDetail = () => {
                     <div>
                         <h1 className="text-5xl mb-6 text-gray-900">  {selectedVariation?.name || product.name}</h1>
                         <p className="text-3xl text-gray-700 mb-6 font-semibold">
-                            <p className="text-3xl text-gray-700 mb-6 font-semibold">
                                 {(selectedVariation?.currency ?? product.currency) + " "}
                                 {(selectedVariation?.currencySymbol ?? product.currencySymbol)}
                                 {selectedVariation?.price ?? product.price}
-                            </p>
+                         
 
                             {/* {selectedVariation?.price ?? product.price} */}
                         </p>

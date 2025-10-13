@@ -458,14 +458,14 @@ const Header = () => {
 
                                                         {/* Price */}
                                                         <p className="text-sm font-medium text-gray-700 mt-1">
-                                                            {item.currencySymbol}
+                                                             {item.currency} {item.currencySymbol}
                                                             {(item.pricePerItem * item.quantity).toFixed(2)}
                                                         </p>
                                                     </div>
 
                                                     {/* Total Price */}
                                                     <div className="text-sm font-bold text-gray-900 whitespace-nowrap">
-                                                        {item.currencySymbol}
+                                                         {item.currency} {item.currencySymbol}
                                                         {(item.pricePerItem * item.quantity).toFixed(2)}
                                                     </div>
                                                 </div>

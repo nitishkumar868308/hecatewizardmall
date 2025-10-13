@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 
 export async function PUT(req) {
     try {
-        const { id, name, email, password, gender, phone, address, profileImage } = await req.json();
+        const { id, name, email, password, gender, phone, address, profileImage, country, state, city, pincode } = await req.json();
 
         if (!id) {
             return Response.json({ message: "User ID is required" }, { status: 400 });
@@ -14,7 +14,7 @@ export async function PUT(req) {
             return Response.json({ message: "User not found" }, { status: 404 });
         }
 
-        let updateData = { name, email, gender, phone, address,profileImage };
+        let updateData = { name, email, gender, phone, address, profileImage, country, state, city, pincode };
 
         if (password) {
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -36,7 +36,11 @@ export async function PUT(req) {
                     gender: updatedUser.gender,
                     phone: updatedUser.phone,
                     address: updatedUser.address,
-                    profileImage : updatedUser.profileImage
+                    profileImage: updatedUser.profileImage,
+                    country: updatedUser.country,
+                    state: updatedUser.state,
+                    city: updatedUser.city,
+                    pincode: updatedUser.pincode,
                 },
             },
             { status: 200 }

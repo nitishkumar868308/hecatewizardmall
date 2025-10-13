@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { Provider } from 'react-redux';
 import store from './redux/store';
 import { Toaster } from 'react-hot-toast';
+import "react-international-phone/style.css";
 
 const firaSans = Fira_Sans({
   variable: "--font-fira-sans",
