@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import axios from "axios";
 
 const prisma = new PrismaClient();
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
 export async function POST(req) {
     try {
@@ -76,8 +77,8 @@ export async function POST(req) {
                     customer_phone: customerPhone,
                 },
                 order_meta: {
-                    return_url: `http://localhost:3000/payment-success?order_id=${orderNumber}`,
-                    notify_url: `http://localhost:3000/api/orders/verify`,
+                    return_url: `${baseUrl}/payment-success?order_id=${orderNumber}`,
+                    notify_url: `${baseUrl}/api/orders/verify`,
                 },
             },
             {
