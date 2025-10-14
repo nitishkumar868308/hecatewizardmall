@@ -173,7 +173,7 @@ export async function POST(req) {
             marketLinks,
             isDefault
         } = body;
-        console.log("isDefault", isDefault)
+        // console.log("isDefault", isDefault)
         if (!name?.trim() || !subcategory || !sku?.trim()) {
             return new Response(
                 JSON.stringify({ message: "Name, Subcategory, and SKU are required" }),
@@ -302,7 +302,7 @@ export async function POST(req) {
             }
         });
 
-        console.log("product", product)
+        // console.log("product", product)
 
         return new Response(
             JSON.stringify({ message: "Product created successfully with variations", data: product }),
@@ -453,21 +453,21 @@ export async function PUT(req) {
             isDefault
         } = data;
 
-        console.log("===== Backend received product data =====");
-        console.log({
-            name,
-            sku,
-            price,
-            stock,
-            tags,
-            offers,
-            primaryOffer,
-            categoryId,
-            subcategoryId,
-            isDefault
-        });
+        // console.log("===== Backend received product data =====");
+        // console.log({
+        //     name,
+        //     sku,
+        //     price,
+        //     stock,
+        //     tags,
+        //     offers,
+        //     primaryOffer,
+        //     categoryId,
+        //     subcategoryId,
+        //     isDefault
+        // });
 
-        console.log("===== Backend received variations =====");
+        // console.log("===== Backend received variations =====");
         variations.forEach((v, i) => {
             console.log(`Variation #${i + 1}:`, v);
         });
@@ -496,9 +496,9 @@ export async function PUT(req) {
                 };
             });
 
-        console.log("variationsUpdate JSON:", JSON.stringify(variationsUpdate, null, 2));
+        // console.log("variationsUpdate JSON:", JSON.stringify(variationsUpdate, null, 2));
 
-        console.log("variationsUpdate", variationsUpdate)
+        // console.log("variationsUpdate", variationsUpdate)
 
 
         // Create new variations with unique SKU (frontend responsibility)
@@ -529,11 +529,11 @@ export async function PUT(req) {
         // Delete hone wale = jo DB mein hain but frontend se missing hain
         const variationsToDelete = existingVariationIds.filter(id => !incomingVariationIds.includes(id));
 
-        console.log("variationsToDelete", variationsToDelete);
+        // console.log("variationsToDelete", variationsToDelete);
 
-        console.log("variationsCreate JSON:", JSON.stringify(variationsCreate, null, 2));
+        // console.log("variationsCreate JSON:", JSON.stringify(variationsCreate, null, 2));
 
-        console.log("variationsCreate", variationsCreate)
+        // console.log("variationsCreate", variationsCreate)
         const variationSkus = variations.map(v => v.sku);
         if (new Set(variationSkus).size !== variationSkus.length) {
             return new Response(JSON.stringify({ message: "Duplicate SKU in variations" }), { status: 400 });
@@ -613,7 +613,7 @@ export async function PUT(req) {
             },
         });
 
-        console.log("updatedProduct", updatedProduct)
+        // console.log("updatedProduct", updatedProduct)
 
         return new Response(
             JSON.stringify({

@@ -107,12 +107,12 @@ export const config = { api: { bodyParser: { sizeLimit: "200mb" } } };
 export async function POST(req) {
     try {
         const formData = await req.formData();
-        console.log("formData", formData)
+        // console.log("formData", formData)
         // Accept both 'image' and 'video' keys
         const files = formData.getAll("image").length
             ? formData.getAll("image")
             : formData.getAll("video");
-        console.log("Number of files:", files.length);
+        // console.log("Number of files:", files.length);
         if (!files.length) throw new Error("No file uploaded");
 
         const uploadDir = path.join(process.cwd(), "public", "uploads", "products");

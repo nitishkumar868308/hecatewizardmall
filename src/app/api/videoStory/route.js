@@ -27,9 +27,9 @@ export async function POST(req) {
     try {
         const body = await req.json();
         const { title, url, active } = body;
-        console.log("title" , title)
-        console.log("url" , url)
-        console.log("active" , active)
+        // console.log("title" , title)
+        // console.log("url" , url)
+        // console.log("active" , active)
 
         if (!title || typeof title !== "string") {
             return new Response(

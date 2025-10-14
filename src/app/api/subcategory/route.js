@@ -10,7 +10,7 @@ export async function GET(req) {
             orderBy: { createdAt: "desc" },
             include: { category: true }
         });
-        console.log("subcategories" , subcategories)
+        // console.log("subcategories" , subcategories)
 
         return new Response(
             JSON.stringify({ message: "Subcategories fetched successfully", data: subcategories }),
@@ -29,7 +29,7 @@ export async function POST(req) {
     try {
         const body = await req.json();
         const { name, categoryId, active, image } = body;
-        console.log("image" , image)
+        // console.log("image" , image)
 
         // Validation
         if (!name || typeof name !== "string") {

@@ -26,7 +26,7 @@ const AddCategory = () => {
     const [newCategoryImage, setNewCategoryImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [loading, setLoading] = useState(false);
-    console.log("categories", categories)
+    //console.log("categories", categories)
     useEffect(() => {
         dispatch(fetchCategories());
     }, [dispatch]);
@@ -183,9 +183,9 @@ const AddCategory = () => {
     const filteredCategories = categories.filter((c) =>
         c.name.toLowerCase().includes(search.toLowerCase())
     );
-    console.log("filteredCategories", filteredCategories)
+   // console.log("filteredCategories", filteredCategories)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    console.log("baseUrl" , baseUrl)
+   // console.log("baseUrl" , baseUrl)
 
     // console.log("Image Preview URL =>", newCategoryImage
     //     ? URL.createObjectURL(newCategoryImage)

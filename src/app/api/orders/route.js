@@ -7,9 +7,6 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 export async function POST(req) {
     try {
         const body = await req.json();
-        console.log("process.env.CASHFREE_APP_ID" , process.env.CASHFREE_APP_ID)
-         console.log("process.env.CASHFREE_VERSION" , process.env.CASHFREE_VERSION)
-          console.log("process.env.CASHFREE_SECRET_KEY" , process.env.CASHFREE_SECRET_KEY)
         // 1️⃣ Create order in DB without orderNumber first
         let orderRecord = await prisma.orders.create({
             data: {

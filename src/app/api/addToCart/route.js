@@ -155,9 +155,9 @@ export async function DELETE(req) {
     try {
         const body = await req.json();
         const { id, clearAll, userId } = body;
-        console.log("id", id)
-        console.log("clearAll", clearAll)
-        console.log("userId", userId)
+        // console.log("id", id)
+        // console.log("clearAll", clearAll)
+        // console.log("userId", userId)
         // Case 1: Clear all items for a user
         if (clearAll && userId) {
             await prisma.cart.deleteMany({

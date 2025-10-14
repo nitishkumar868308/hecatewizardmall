@@ -41,17 +41,17 @@ import { parsePhoneNumberFromString } from 'libphonenumber-js';
     const AddressSchema = (countryCode) =>
   Yup.object().shape({
     name: Yup.string().required("Full name is required"),
-    mobile: Yup.string()
-      .required("Mobile number is required")
-      .test(
-        "is-valid-phone",
-        "Invalid phone number",
-        function (value) {
-          if (!value) return false;
-          const phone = parsePhoneNumberFromString(value, countryCode);
-          return phone ? phone.isValid() : false;
-        }
-      ),
+    // mobile: Yup.string()
+    //   .required("Mobile number is required")
+    //   .test(
+    //     "is-valid-phone",
+    //     "Invalid phone number",
+    //     function (value) {
+    //       if (!value) return false;
+    //       const phone = parsePhoneNumberFromString(value, countryCode);
+    //       return phone ? phone.isValid() : false;
+    //     }
+    //   ),
     pincode: Yup.string()
       .matches(/^[0-9]{6}$/, "Enter valid 6-digit pincode")
       .required("Pincode is required"),

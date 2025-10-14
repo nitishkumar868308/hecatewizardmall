@@ -1,70 +1,90 @@
+// app/api/orders/verify/route.js
 import { PrismaClient } from "@prisma/client";
-import { sendMail } from "@/lib/mailer"; // your mail utility
+import { sendMail } from "@/lib/mailer";
+import { orderConfirmationTemplate } from "@/lib/templates/orderConfirmationTemplate";
 
 const prisma = new PrismaClient();
 
 export async function POST(req) {
     try {
-        const data = await req.json();
-        console.log("Cashfree Webhook Data:", data);
+        const body = await req.json();
+        console.log("Verification body:", body);
 
-        const { order_id, order_status, payment_method, payment_id } = data;
-
-        if (!order_id) {
-            return new Response(JSON.stringify({ message: "Missing order_id" }), { status: 400 });
+        const orderNumber = body.order_id || body.orderNumber;
+        if (!orderNumber) {
+            return new Response(JSON.stringify({ message: "Missing orderNumber" }), { status: 400 });
         }
 
-        // 🟢 Handle payment success
-        if (order_status === "PAID") {
-            const updatedOrder = await prisma.orders.update({
-                where: { orderNumber: order_id },
-                data: {
-                    paymentStatus: "PAID",
-                    status: "COMPLETED",
-                    paymentMethod: payment_method || null,
-                    transactionId: payment_id || null,
-                },
-                include: {
-                    user: true, // assuming relation exists for email
-                },
-            });
-
-            console.log("✅ Payment success, order updated:", updatedOrder);
-
-            // 📧 Send confirmation email
-            await sendMail({
-                to: updatedOrder.user?.email,
-                subject: `Order Confirmed - ${updatedOrder.orderNumber}`,
-                html: orderConfirmationTemplate({
-                    name: updatedOrder.shippingName,
-                    orderId: updatedOrder.orderNumber,
-                    total: updatedOrder.totalAmount,
-                }),
-            });
-
-            return new Response(JSON.stringify({ success: true }), { status: 200 });
-        }
-
-        // 🔴 Handle payment failed or pending
-        if (["FAILED", "PENDING", "CANCELLED"].includes(order_status)) {
-            // Delete order
-            await prisma.orders.deleteMany({
-                where: { orderNumber: order_id },
-            });
-
-            console.log("❌ Order deleted due to failed/pending payment:", order_id);
-
-            return new Response(
-                JSON.stringify({ message: `Order deleted - status: ${order_status}` }),
-                { status: 200 }
-            );
-        }
-
-        return new Response(JSON.stringify({ message: "Unhandled payment status" }), { status: 400 });
-    } catch (error) {
-        console.error("Webhook Error:", error.message);
-        return new Response(JSON.stringify({ message: "Webhook failed", error: error.message }), {
-            status: 500,
+        const order = await prisma.orders.findFirst({
+            where: { orderNumber },
+            include: { user: true },
         });
+
+        if (!order) {
+            return new Response(JSON.stringify({ message: "Order not found" }), { status: 404 });
+        }
+
+        let isPaid = false;
+
+        // ✅ 1. Check order_status
+        const cfOrderStatus = (body.order_status || "").toUpperCase();
+
+        // ✅ 2. Check payments array
+        const cfPayments = body.payments || [];
+        const cfPaymentStatus = Array.isArray(cfPayments) && cfPayments.length ? cfPayments[0]?.status : "";
+
+        // ✅ 3. Check entity_simulation (sandbox)
+        const cfPaymentSimulationStatus = body.entity_simulation?.payment_status || "";
+
+        // ✅ 4. Check entity-level status (some webhooks)
+        const cfEntityPaymentStatus = (body.payment_status || "").toUpperCase();
+
+        console.log({ cfOrderStatus, cfPayments, cfPaymentStatus, cfPaymentSimulationStatus, cfEntityPaymentStatus });
+
+        if (["PAID", "ACTIVE", "COMPLETED", "SUCCESS"].includes(cfOrderStatus)) isPaid = true;
+        else if (["PAID", "SUCCESS"].includes((cfPaymentStatus || "").toUpperCase())) isPaid = true;
+        else if (["SUCCESS"].includes((cfPaymentSimulationStatus || "").toUpperCase())) isPaid = true;
+        else if (["PAID", "SUCCESS"].includes(cfEntityPaymentStatus)) isPaid = true;
+
+        // Update DB
+        const updatedOrder = await prisma.orders.update({
+            where: { id: order.id },
+            data: {
+                paymentStatus: isPaid ? "PAID" : "FAILED",
+                status: isPaid ? "PROCESSING" : "CANCELLED",
+            },
+        });
+
+        console.log("Updated order:", updatedOrder);
+
+        // Send emails if PAID
+        if (isPaid) {
+            if (updatedOrder.user?.email) {
+                await sendMail({
+                    to: updatedOrder.user.email,
+                    subject: `Order Confirmed - ${updatedOrder.orderNumber}`,
+                    html: orderConfirmationTemplate({
+                        name: updatedOrder.shippingName,
+                        orderId: updatedOrder.orderNumber,
+                        total: updatedOrder.totalAmount,
+                    }),
+                });
+            }
+
+            await sendMail({
+                to: process.env.ADMIN_EMAIL || "admin@yourshop.com",
+                subject: `New Order Placed - ${updatedOrder.orderNumber}`,
+                html: `
+          <p>New order by ${updatedOrder.shippingName} (${updatedOrder.shippingPhone})</p>
+          <p>Order ID: ${updatedOrder.orderNumber}</p>
+          <p>Total: ₹${updatedOrder.totalAmount}</p>
+        `,
+            });
+        }
+
+        return new Response(JSON.stringify({ message: "Payment verified", updatedOrder }), { status: 200 });
+    } catch (error) {
+        console.error("Verification failed:", error.message);
+        return new Response(JSON.stringify({ message: "Verification failed", error: error.message }), { status: 500 });
     }
 }
