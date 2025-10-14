@@ -25,16 +25,18 @@ export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
   const isHome = pathname === "/";
+  const hideLayout = pathname.startsWith("/admin") || pathname.startsWith("/payment-success");
+
 
   return (
     <html lang="en">
       <body className={`${firaSans.variable} ${firaCode.variable} antialiased`}>
         <Provider store={store}>
-          {!isAdmin && <DefaultPage />}
+          {!hideLayout && <DefaultPage />}
           <main className="pt-[60px] md:pt-0">
             {children}
           </main>
-          {!isAdmin && <Footer />}
+          {!hideLayout && <Footer />}
           <Toaster position="top-right" reverseOrder={false} />
         </Provider>
       </body>

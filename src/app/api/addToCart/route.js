@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 export async function GET(req) {
     try {
         const cart = await prisma.cart.findMany({
+            where: { is_buy: false },
             orderBy: { createdAt: "desc" },
         });
 
@@ -61,6 +62,7 @@ export async function POST(req) {
                 userId: userId || null,
                 image,
                 selectedCountry: selectedCountry || null,
+                is_buy: false,
             },
         });
 

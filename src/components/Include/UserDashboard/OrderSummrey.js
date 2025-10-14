@@ -1,6 +1,16 @@
 import React from 'react'
+import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 const OrderSummrey = () => {
+    const dispatch = useDispatch();
+    const { user } = useSelector((state) => state.me);
+    console.log("userOrder", user)
+
+    useEffect(() => {
+        dispatch(fetchMe());
+    }, [dispatch]);
+
     return (
         <>
             <div className="space-y-6">

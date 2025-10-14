@@ -400,8 +400,6 @@ const Checkout = () => {
       subtotal: `${userCart[0]?.currencySymbol || '₹'}${subtotal.toFixed(2)}`,
       shipping: `${userCart[0]?.currencySymbol || '₹'}${shipping}`,
       total: `${userCart[0]?.currencySymbol || '₹'}${grandTotal.toFixed(2)}`,
-      paymentMethod: selected,
-
     };
     try {
       const data = await dispatch(createOrder(orderData)).unwrap();
@@ -410,7 +408,7 @@ const Checkout = () => {
       if (!data.sessionId) {
         throw new Error("No session ID returned");
       }
-      const cashfree = await load({ mode: "sandbox" }); // or "production"
+      const cashfree = await load({ mode: "sandbox" });
       cashfree.checkout({
         paymentSessionId: data.sessionId,
         redirectTarget: "_self", // open in same tab

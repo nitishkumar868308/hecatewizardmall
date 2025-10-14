@@ -13,6 +13,20 @@ enum Gender {
   OTHER
 }
 
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   name      String
@@ -29,6 +43,7 @@ model User {
   state     String?
   carts Cart[]
   addresses Address[]
+  orders    Orders[] 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
@@ -179,6 +194,7 @@ model Cart {
   userId        Int?
   user          User?     @relation(fields: [userId], references: [id])    
   image         String?
+  is_buy         Boolean?   @default(false)
   selectedCountry String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -266,6 +282,40 @@ model ContactMessage {
   deletedAt DateTime?                     
 }
 
+model Orders {
+  id             Int      @id @default(autoincrement())
+  orderNumber    String?  
+  userId         Int?     
+  user           User?    @relation(fields: [userId], references: [id])
+  
+  shippingName    String?
+  shippingPhone   String?
+  shippingAddress String?
+  shippingCity    String?
+  shippingState   String?
+  shippingPincode String?
 
+  billingName    String?
+  billingPhone   String?
+  billingAddress String?
+  billingCity    String?
+  billingState   String?
+  billingPincode String?
 
+  items           Json      
+  subtotal        Float?
+  shippingCharges Float?
+  taxAmount       Float?    
+  discountAmount  Float?    
+  totalAmount     Float?
+  paymentMethod   String?
+
+  status          OrderStatus   @default(PENDING)   // order status
+  paymentStatus   PaymentStatus @default(PENDING)   // payment status
+
+  active          Boolean  @default(true)
+  deleted         Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
 
