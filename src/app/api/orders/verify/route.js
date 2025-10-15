@@ -1,3 +1,4 @@
+// app/api/orders/verify/route.js
 import { PrismaClient } from "@prisma/client";
 import { sendMail } from "@/lib/mailer";
 import { orderConfirmationTemplate } from "@/lib/templates/orderConfirmationTemplate";
@@ -9,13 +10,15 @@ export async function POST(req) {
         const body = await req.json();
         console.log("Webhook body:", JSON.stringify(body, null, 2));
 
-        // ✅ Cashfree new payload paths
-        const orderNumber = body?.data?.order?.order_id;
-        const paymentStatus = body?.data?.payment?.payment_status;
-        const paymentMethod = body?.data?.payment?.payment_method;
-        const customerEmail = body?.data?.customer_details?.customer_email;
-
+        // ✅ Support both sandbox & live payloads
+        const orderNumber = body.order_id || body.data?.order?.order_id;
+        const paymentStatus = body.payment?.payment_status || body.data?.payment?.payment_status;
+        const paymentMethod = body.payment?.payment_method || body.data?.payment?.payment_method;
+        const customerEmail = body.customer_email || body.data?.customer_details?.customer_email;
+        console.log("orderNumber" , orderNumber)
+        console.log("paymentStatus" , paymentStatus)
         if (!orderNumber) {
+            console.error("Missing orderNumber");
             return new Response(JSON.stringify({ message: "Missing orderNumber" }), { status: 400 });
         }
 
@@ -26,6 +29,7 @@ export async function POST(req) {
         });
 
         if (!order) {
+            console.error("Order not found:", orderNumber);
             return new Response(JSON.stringify({ message: "Order not found" }), { status: 404 });
         }
 
