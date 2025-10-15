@@ -1,68 +1,77 @@
-// lib/templates/orderConfirmationTemplate.js
-export function orderConfirmationTemplateAdmin({ name, orderId, total, downloadLink }) {
-  return `
-  <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc; padding: 20px;">
-    <table width="100%" cellspacing="0" cellpadding="0" 
-      style="max-width: 600px; margin: auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+// lib/templates/orderConfirmationTemplateAdmin.js
+
+export function orderConfirmationTemplateAdmin({ adminName, orderId, total, logoUrl }) {
+        const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/image/logo PNG.png`;
+    return `
+  <div style="margin:0;padding:0;background-color:#f5f5f5;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" 
+      style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+      
       <thead>
         <tr>
-          <td style="background: linear-gradient(90deg, #0d6efd, #6610f2); padding: 30px; text-align: center; color: #fff;">
-            <h1 style="margin: 0; font-size: 24px;">🎉 Order Confirmed!</h1>
-            <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Thank you for shopping with us</p>
+          <td style="padding:20px;text-align:center;background-color:#ffffff;border-bottom:1px solid #e5e5e5;">
+            <img src="${logoUrl}" alt="Store Logo" style="max-width:140px;height:auto;"/>
           </td>
         </tr>
       </thead>
+
       <tbody>
         <tr>
-          <td style="padding: 30px 25px;">
-            <p style="font-size: 16px; color: #333;">Hi <strong>${name}</strong>,</p>
-            <p style="font-size: 15px; color: #555;">
-              We're excited to let you know that your order has been successfully placed and is being processed.
+          <td style="padding:30px;">
+            <p style="font-size:15px;color:#333;margin:0 0 20px 0;">
+              A new order has been placed. Below are the details:
             </p>
 
-            <div style="background-color: #f8f9fa; border-radius: 10px; padding: 15px; margin-top: 20px;">
-              <table width="100%" style="font-size: 14px; color: #444;">
+            <div style="background:#f8f8f8;border-radius:8px;padding:15px;margin-top:15px;">
+              <table width="100%" cellpadding="6" cellspacing="0" style="font-size:14px;color:#000;">
                 <tr>
                   <td><strong>Order ID:</strong></td>
-                  <td style="text-align: right;">${orderId}</td>
+                  <td style="text-align:right;">${orderId}</td>
                 </tr>
                 <tr>
                   <td><strong>Total Amount:</strong></td>
-                  <td style="text-align: right;">₹${total}</td>
-                </tr>
-                <tr>
-                  <td><strong>Status:</strong></td>
-                  <td style="text-align: right; color: green;"><b>Confirmed</b></td>
+                  <td style="text-align:right;">₹${total}</td>
                 </tr>
               </table>
             </div>
 
-            <div style="text-align: center; margin-top: 30px;">
-              <a href="${downloadLink}" 
-                 style="background: #0d6efd; color: #fff; padding: 12px 25px; border-radius: 6px; 
-                 text-decoration: none; font-weight: 500; display: inline-block;">
-                📄 Download Invoice
-              </a>
-            </div>
-
-            <p style="font-size: 14px; color: #555; margin-top: 25px;">
-              You’ll receive another update when your order ships.  
-              For any queries, feel free to reply to this email.
+            <p style="font-size:14px;color:#555;margin-top:25px;">
+              Please check the admin panel to process this order.
             </p>
-            <p style="font-size: 14px; color: #333;">Warm regards,</p>
-            <p style="font-weight: 600; color: #0d6efd;">Your Store Team</p>
+
+            <p style="font-size:14px;color:#333;margin-top:20px;">Regards,</p>
+            <p style="font-weight:600;color:#000;">Your Store System</p>
           </td>
         </tr>
       </tbody>
+
       <tfoot>
         <tr>
-          <td style="background-color: #f1f1f1; text-align: center; padding: 15px; font-size: 12px; color: #555;">
+          <td style="background:#fafafa;text-align:center;padding:15px;font-size:12px;color:#666;border-top:1px solid #e5e5e5;">
             © ${new Date().getFullYear()} Your Store. All rights reserved.<br/>
-            <a href="#" style="color:#0d6efd; text-decoration:none;">Visit Store</a> | 
-            <a href="#" style="color:#0d6efd; text-decoration:none;">Track Order</a>
+            <a href="#" style="color:#000;text-decoration:none;">Go to Dashboard</a>
           </td>
         </tr>
       </tfoot>
     </table>
-  </div>`;
+
+    <!-- ✅ Responsive Fix -->
+    <style>
+      @media only screen and (max-width: 600px) {
+        table {
+          width: 95% !important;
+        }
+        td {
+          padding: 15px !important;
+        }
+        img {
+          max-width: 120px !important;
+        }
+        p, td {
+          font-size: 14px !important;
+        }
+      }
+    </style>
+  </div>
+  `;
 }
