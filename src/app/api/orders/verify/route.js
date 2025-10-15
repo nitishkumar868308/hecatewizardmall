@@ -68,7 +68,11 @@ export async function POST(req) {
                         items: updatedOrder.items,
                     }),
                 });
-                console.log("enviaResponse" , enviaResponse)
+                console.log("enviaResponse", enviaResponse)
+                if (!enviaResponse.ok) {
+                    const text = await enviaResponse.text();
+                    throw new Error(`Envia API error: ${enviaResponse.status} ${text}`);
+                }
                 const trackingData = await enviaResponse.json();
                 console.log("Envia shipment created:", trackingData);
 
