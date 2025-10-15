@@ -16,7 +16,7 @@ export async function POST(req) {
         const paymentMethod = body.payment?.payment_method || body.data?.payment?.payment_method;
         const customerEmail = body.customer_email || body.data?.customer_details?.customer_email;
         console.log("orderNumber", orderNumber)
-        console.log("paymentStatus", paymentStatus)
+        console.log("customerEmail", customerEmail)
         if (!orderNumber) {
             console.error("Missing orderNumber");
             return new Response(JSON.stringify({ message: "Missing orderNumber" }), { status: 400 });
@@ -44,7 +44,9 @@ export async function POST(req) {
                 status: isPaid ? "PROCESSING" : "CANCELLED",
                 paymentMethod: JSON.stringify(paymentMethod),
             },
+              include: { user: true },
         });
+        console.log("updatedOrder with user:", updatedOrder);
         console.log("updatedOrder" , updatedOrder)
         console.log("Updated Order Payment Status:", updatedOrder.paymentStatus);
 
@@ -87,7 +89,7 @@ export async function POST(req) {
         if (isPaid) {
             try {
                 await sendMail({
-                    to: "kumarnitish4384@gmail.com",
+                    to: updatedOrder.user.email,
                     subject: `Order Confirmed - ${updatedOrder.orderNumber}`,
                     html: orderConfirmationTemplate({
                         name: updatedOrder.shippingName,
