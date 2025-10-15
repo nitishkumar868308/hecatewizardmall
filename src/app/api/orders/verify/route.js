@@ -124,7 +124,7 @@ export async function POST(req) {
                             reference: ""
                         },
                         packages: updatedOrder.items.map(item => ({
-                            content: item.name,
+                            content: item.name || "Product", 
                             amount: item.quantity,
                             type: "box",
                             dimensions: { length: 10, width: 10, height: 10 }, // replace with real dimensions if available
