@@ -4,119 +4,119 @@ import { orderConfirmationTemplate } from "@/lib/templates/orderConfirmationTemp
 
 const prisma = new PrismaClient();
 
-// export async function POST(req) {
-//     try {
-//         const body = await req.json();
-//         console.log("Webhook body:", JSON.stringify(body, null, 2));
-
-//         const orderNumber = body.order_id || body.orderNumber;
-//         if (!orderNumber) {
-//             return new Response(JSON.stringify({ message: "Missing orderNumber" }), { status: 400 });
-//         }
-
-//         // 1️⃣ Fetch order from DB
-//         const order = await prisma.orders.findFirst({
-//             where: { orderNumber },
-//             include: { user: true },
-//         });
-
-//         if (!order) {
-//             return new Response(JSON.stringify({ message: "Order not found" }), { status: 404 });
-//         }
-
-//         // 2️⃣ Determine payment success
-//         const cfOrderStatus = (body.order_status || "").toUpperCase();
-//         const cfPayments = body.payments || [];
-//         const cfPaymentStatus = Array.isArray(cfPayments) && cfPayments.length ? cfPayments[0]?.status : "";
-//         const cfPaymentSimulationStatus = body.entity_simulation?.payment_status || "";
-//         const cfEntityPaymentStatus = (body.payment_status || "").toUpperCase();
-
-//         const isPaid =
-//             ["PAID", "SUCCESS", "ACTIVE", "COMPLETED"].includes(cfOrderStatus) ||
-//             ["PAID", "SUCCESS"].includes((cfPaymentStatus || "").toUpperCase()) ||
-//             ["SUCCESS"].includes((cfPaymentSimulationStatus || "").toUpperCase()) ||
-//             ["PAID", "SUCCESS"].includes(cfEntityPaymentStatus);
-
-//         // 3️⃣ Update DB
-//         const updatedOrder = await prisma.orders.update({
-//             where: { id: order.id },
-//             data: {
-//                 paymentStatus: isPaid ? "PAID" : "FAILED",
-//                 status: isPaid ? "PROCESSING" : "CANCELLED",
-//             },
-//         });
-
-//         console.log("Updated Order Payment Status:", updatedOrder.paymentStatus);
-
-//         // 4️⃣ Create Envia shipment if payment success
-//         if (isPaid) {
-//             try {
-//                 const enviaResponse = await fetch("https://sandbox.envia.com/api/v1/shipments", {
-//                     method: "POST",
-//                     headers: {
-//                         Authorization: `Bearer ${process.env.ENVIA_API_KEY}`,
-//                         "Content-Type": "application/json",
-//                     },
-//                     body: JSON.stringify({
-//                         order_id: updatedOrder.orderNumber,
-//                         customer_name: updatedOrder.shippingName,
-//                         customer_phone: updatedOrder.shippingPhone,
-//                         shipping_address: updatedOrder.shippingAddress,
-//                         shipping_city: updatedOrder.shippingCity,
-//                         shipping_state: updatedOrder.shippingState,
-//                         shipping_pincode: updatedOrder.shippingPincode,
-//                         items: updatedOrder.items,
-//                     }),
-//                 });
-
-//                 const trackingData = await enviaResponse.json();
-//                 console.log("Envia shipment created:", trackingData);
-
-//                 // Save tracking number in DB
-//                 if (trackingData.tracking_number) {
-//                     await prisma.orders.update({
-//                         where: { id: updatedOrder.id },
-//                         data: { trackingNumber: trackingData.tracking_number },
-//                     });
-//                 }
-//             } catch (err) {
-//                 console.error("Envia shipment creation failed:", err);
-//             }
-//         }
-
-//         // 5️⃣ Send emails if PAID
-//         if (isPaid && updatedOrder.user?.email) {
-//             await sendMail({
-//                 to: updatedOrder.user.email,
-//                 subject: `Order Confirmed - ${updatedOrder.orderNumber}`,
-//                 html: orderConfirmationTemplate({
-//                     name: updatedOrder.shippingName,
-//                     orderId: updatedOrder.orderNumber,
-//                     total: updatedOrder.totalAmount,
-//                 }),
-//             });
-
-//             await sendMail({
-//                 to: process.env.ADMIN_EMAIL || "admin@yourshop.com",
-//                 subject: `New Order Placed - ${updatedOrder.orderNumber}`,
-//                 html: `
-//           <p>New order by ${updatedOrder.shippingName} (${updatedOrder.shippingPhone})</p>
-//           <p>Order ID: ${updatedOrder.orderNumber}</p>
-//           <p>Total: ₹${updatedOrder.totalAmount}</p>
-//         `,
-//             });
-//         }
-
-//         return new Response(JSON.stringify({ message: "Payment verified", updatedOrder }), { status: 200 });
-//     } catch (error) {
-//         console.error("Verification failed:", error.message || error);
-//         return new Response(
-//             JSON.stringify({ message: "Verification failed", error: error.message || error }),
-//             { status: 500 }
-//         );
-//     }
-// }
-
 export async function POST(req) {
-    return new Response(JSON.stringify({ message: "Webhook received" }), { status: 200 });
+    try {
+        const body = await req.json();
+        console.log("Webhook body:", JSON.stringify(body, null, 2));
+
+        const orderNumber = body.order_id || body.orderNumber;
+        if (!orderNumber) {
+            return new Response(JSON.stringify({ message: "Missing orderNumber" }), { status: 400 });
+        }
+
+        // 1️⃣ Fetch order from DB
+        const order = await prisma.orders.findFirst({
+            where: { orderNumber },
+            include: { user: true },
+        });
+
+        if (!order) {
+            return new Response(JSON.stringify({ message: "Order not found" }), { status: 404 });
+        }
+
+        // 2️⃣ Determine payment success
+        const cfOrderStatus = (body.order_status || "").toUpperCase();
+        const cfPayments = body.payments || [];
+        const cfPaymentStatus = Array.isArray(cfPayments) && cfPayments.length ? cfPayments[0]?.status : "";
+        const cfPaymentSimulationStatus = body.entity_simulation?.payment_status || "";
+        const cfEntityPaymentStatus = (body.payment_status || "").toUpperCase();
+
+        const isPaid =
+            ["PAID", "SUCCESS", "ACTIVE", "COMPLETED"].includes(cfOrderStatus) ||
+            ["PAID", "SUCCESS"].includes((cfPaymentStatus || "").toUpperCase()) ||
+            ["SUCCESS"].includes((cfPaymentSimulationStatus || "").toUpperCase()) ||
+            ["PAID", "SUCCESS"].includes(cfEntityPaymentStatus);
+
+        // 3️⃣ Update DB
+        const updatedOrder = await prisma.orders.update({
+            where: { id: order.id },
+            data: {
+                paymentStatus: isPaid ? "PAID" : "FAILED",
+                status: isPaid ? "PROCESSING" : "CANCELLED",
+            },
+        });
+
+        console.log("Updated Order Payment Status:", updatedOrder.paymentStatus);
+
+        // 4️⃣ Create Envia shipment if payment success
+        if (isPaid) {
+            try {
+                const enviaResponse = await fetch("https://sandbox.envia.com/api/v1/shipments", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${process.env.ENVIA_API_KEY}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        order_id: updatedOrder.orderNumber,
+                        customer_name: updatedOrder.shippingName,
+                        customer_phone: updatedOrder.shippingPhone,
+                        shipping_address: updatedOrder.shippingAddress,
+                        shipping_city: updatedOrder.shippingCity,
+                        shipping_state: updatedOrder.shippingState,
+                        shipping_pincode: updatedOrder.shippingPincode,
+                        items: updatedOrder.items,
+                    }),
+                });
+
+                const trackingData = await enviaResponse.json();
+                console.log("Envia shipment created:", trackingData);
+
+                // Save tracking number in DB
+                if (trackingData.tracking_number) {
+                    await prisma.orders.update({
+                        where: { id: updatedOrder.id },
+                        data: { trackingNumber: trackingData.tracking_number },
+                    });
+                }
+            } catch (err) {
+                console.error("Envia shipment creation failed:", err);
+            }
+        }
+
+        // 5️⃣ Send emails if PAID
+        if (isPaid && updatedOrder.user?.email) {
+            await sendMail({
+                to: updatedOrder.user.email,
+                subject: `Order Confirmed - ${updatedOrder.orderNumber}`,
+                html: orderConfirmationTemplate({
+                    name: updatedOrder.shippingName,
+                    orderId: updatedOrder.orderNumber,
+                    total: updatedOrder.totalAmount,
+                }),
+            });
+
+            await sendMail({
+                to: process.env.ADMIN_EMAIL || "admin@yourshop.com",
+                subject: `New Order Placed - ${updatedOrder.orderNumber}`,
+                html: `
+          <p>New order by ${updatedOrder.shippingName} (${updatedOrder.shippingPhone})</p>
+          <p>Order ID: ${updatedOrder.orderNumber}</p>
+          <p>Total: ₹${updatedOrder.totalAmount}</p>
+        `,
+            });
+        }
+
+        return new Response(JSON.stringify({ message: "Payment verified", updatedOrder }), { status: 200 });
+    } catch (error) {
+        console.error("Verification failed:", error.message || error);
+        return new Response(
+            JSON.stringify({ message: "Verification failed", error: error.message || error }),
+            { status: 500 }
+        );
+    }
 }
+
+// export async function POST(req) {
+//     return new Response(JSON.stringify({ message: "Webhook received" }), { status: 200 });
+// }
