@@ -191,7 +191,7 @@ export async function POST(req) {
                     to: process.env.ADMIN_EMAIL || "admin@yourshop.com",
                     subject: `New Order Placed - ${updatedOrder.orderNumber}`,
                     html: orderConfirmationTemplateAdmin({
-                        name: updatedOrder.user.name || updatedOrder.shippingName,
+                        // name: updatedOrder.user.name || updatedOrder.shippingName,
                         orderId: updatedOrder.orderNumber,
                         total: updatedOrder.totalAmount,
                         downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/invoice/${updatedOrder.orderNumber}`
