@@ -115,8 +115,10 @@ export async function POST(req) {
                             street: updatedOrder.shippingAddress,
                             number: updatedOrder.shippingNumber || "",
                             district: updatedOrder.shippingDistrict || "",
-                            city: updatedOrder.shippingCity,
-                            state: updatedOrder.shippingState,
+                            // city: updatedOrder.shippingCity,
+                            // state: updatedOrder.shippingState,
+                            state: "NL",
+                            country: "MX",
                             country: "MX",
                             postalCode: updatedOrder.shippingPincode,
                             reference: ""
