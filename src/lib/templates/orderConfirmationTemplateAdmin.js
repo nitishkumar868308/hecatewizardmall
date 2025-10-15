@@ -39,8 +39,6 @@ export function orderConfirmationTemplateAdmin({ orderId, total }) {
               Please check the admin panel to process this order.
             </p>
 
-            <p style="font-size:14px;color:#333;margin-top:20px;">Regards,</p>
-            <p style="font-weight:600;color:#000;">Your Store System</p>
           </td>
         </tr>
       </tbody>
