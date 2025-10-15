@@ -1,7 +1,6 @@
 // app/api/orders/invoice/[orderId]/route.js
 import { PrismaClient } from "@prisma/client";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import fetch from "node-fetch"; // to fetch logo image
 
 const prisma = new PrismaClient();
 
@@ -51,7 +50,6 @@ export async function GET(req, { params }) {
 
         const pdfBytes = await pdfDoc.save();
 
-        // 🟦 Return PDF response
         return new Response(pdfBytes, {
             status: 200,
             headers: {
