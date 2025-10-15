@@ -45,7 +45,7 @@ export async function POST(req) {
                 paymentMethod: JSON.stringify(paymentMethod),
             },
         });
-
+        console.log("updatedOrder" , updatedOrder)
         console.log("Updated Order Payment Status:", updatedOrder.paymentStatus);
 
         // 4️⃣ Create Envia shipment if payment success
@@ -84,10 +84,10 @@ export async function POST(req) {
         }
 
         // 5️⃣ Send emails if PAID
-        if (isPaid && updatedOrder.user?.email) {
+        if (isPaid) {
             try {
                 await sendMail({
-                    to: updatedOrder.user.email,
+                    to: "kumarnitish4384@gmail.com",
                     subject: `Order Confirmed - ${updatedOrder.orderNumber}`,
                     html: orderConfirmationTemplate({
                         name: updatedOrder.shippingName,
