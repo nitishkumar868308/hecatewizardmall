@@ -133,7 +133,7 @@ export async function POST(req) {
                             lengthUnit: "CM",
                             declaredValue: item.price || 0
                         })),
-                        shipment: { carrier: "ups", service: "saver", type: 1 },
+                        shipment: { carrier: "dhl", service: "express", type: 1 },
                         settings: { printFormat: "PDF", printSize: "STOCK_4X6" }
                     })
                 });
