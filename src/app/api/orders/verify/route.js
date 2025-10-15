@@ -51,7 +51,7 @@ export async function POST(req) {
 
             // 5️⃣ Create Envia shipment (try/catch to prevent crash)
             try {
-                const enviaResponse = await fetch("https://sandbox.envia.com/api/v1/shipments", {
+                const enviaResponse = await fetch("https://ship-test.envia.com/api/v1/shipments", {
                     method: "POST",
                     headers: {
                         Authorization: `Bearer ${process.env.ENVIA_API_KEY}`,
@@ -68,7 +68,7 @@ export async function POST(req) {
                         items: updatedOrder.items,
                     }),
                 });
-
+                console.log("enviaResponse" , enviaResponse)
                 const trackingData = await enviaResponse.json();
                 console.log("Envia shipment created:", trackingData);
 
