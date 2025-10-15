@@ -103,7 +103,7 @@ export async function POST(req) {
                             district: "Mirasierra",
                             city: "Monterrey",
                             state: "NL",
-                            country: "MX",
+                            country: "IN",
                             postalCode: "66236",
                             reference: ""
                         },
@@ -118,8 +118,8 @@ export async function POST(req) {
                             // city: updatedOrder.shippingCity,
                             // state: updatedOrder.shippingState,
                             state: "NL",
-                            country: "MX",
-                            country: "MX",
+                            country: "IN",
+                            city: "Monterrey",
                             postalCode: updatedOrder.shippingPincode,
                             reference: ""
                         },
@@ -137,7 +137,7 @@ export async function POST(req) {
                         settings: { printFormat: "PDF", printSize: "STOCK_4X6" }
                     })
                 });
-                console.log("response" , response)
+                console.log("response", response)
                 // if (!response.ok) {
                 //     const text = await response.text();
                 //     throw new Error(`Envia API error: ${response.status} ${text}`);
