@@ -50,41 +50,111 @@ export async function POST(req) {
         if (isPaid && order.paymentStatus !== "PAID") {
 
             // 5️⃣ Create Envia shipment (try/catch to prevent crash)
+            // try {
+            //     const enviaResponse = await fetch("https://shipping-test.envia.com/api/v1/shipments", {
+            //         method: "POST",
+            //         headers: {
+            //             Authorization: `Bearer ${process.env.ENVIA_API_KEY}`,
+            //             "Content-Type": "application/json",
+            //         },
+            //         body: JSON.stringify({
+            //             order_id: updatedOrder.orderNumber,
+            //             customer_name: updatedOrder.shippingName,
+            //             customer_phone: updatedOrder.shippingPhone,
+            //             shipping_address: updatedOrder.shippingAddress,
+            //             shipping_city: updatedOrder.shippingCity,
+            //             shipping_state: updatedOrder.shippingState,
+            //             shipping_pincode: updatedOrder.shippingPincode,
+            //             items: updatedOrder.items,
+            //         }),
+            //     });
+            //     console.log("enviaResponse", enviaResponse)
+            //     if (!enviaResponse.ok) {
+            //         const text = await enviaResponse.text();
+            //         throw new Error(`Envia API error: ${enviaResponse.status} ${text}`);
+            //     }
+            //     const trackingData = await enviaResponse.json();
+            //     console.log("Envia shipment created:", trackingData);
+
+            //     if (trackingData.tracking_number) {
+            //         await prisma.orders.update({
+            //             where: { id: updatedOrder.id },
+            //             data: { trackingNumber: trackingData.tracking_number },
+            //         });
+            //     }
+            // } catch (err) {
+            //     console.error("Envia shipment creation failed:", err.message || err);
+            // }
             try {
-                const enviaResponse = await fetch("https://ship-test.envia.com/api/v1/shipments", {
+                const response = await fetch("https://api-test.envia.com/ship/generate/", {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${process.env.ENVIA_API_KEY}`,
-                        "Content-Type": "application/json",
+                        Authorization: `Bearer c3a7feff396d65c57bc9dc0500888fd6aa6eb24e0a8dc3d4ee3c5979421a0938`,
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        order_id: updatedOrder.orderNumber,
-                        customer_name: updatedOrder.shippingName,
-                        customer_phone: updatedOrder.shippingPhone,
-                        shipping_address: updatedOrder.shippingAddress,
-                        shipping_city: updatedOrder.shippingCity,
-                        shipping_state: updatedOrder.shippingState,
-                        shipping_pincode: updatedOrder.shippingPincode,
-                        items: updatedOrder.items,
-                    }),
+                        origin: {
+                            name: "Healing Herbs Oils Shop",
+                            company: "Healing Herbs Oils",
+                            email: "healingherbsoilsshop@gmail.com",
+                            phone: "8116300800",
+                            street: "Av Vasconcelos",
+                            number: "1400",
+                            district: "Mirasierra",
+                            city: "Monterrey",
+                            state: "NL",
+                            country: "MX",
+                            postalCode: "66236",
+                            reference: ""
+                        },
+                        destination: {
+                            name: updatedOrder.shippingName,
+                            company: "",
+                            email: updatedOrder.shippingEmail,
+                            phone: updatedOrder.shippingPhone,
+                            street: updatedOrder.shippingAddress,
+                            number: updatedOrder.shippingNumber || "",
+                            district: updatedOrder.shippingDistrict || "",
+                            city: updatedOrder.shippingCity,
+                            state: updatedOrder.shippingState,
+                            country: "MX",
+                            postalCode: updatedOrder.shippingPincode,
+                            reference: ""
+                        },
+                        packages: updatedOrder.items.map(item => ({
+                            content: item.name,
+                            amount: item.quantity,
+                            type: "box",
+                            dimensions: { length: 10, width: 10, height: 10 }, // replace with real dimensions if available
+                            weight: item.weight || 1,
+                            weightUnit: "KG",
+                            lengthUnit: "CM",
+                            declaredValue: item.price || 0
+                        })),
+                        shipment: { carrier: "ups", service: "saver", type: 1 },
+                        settings: { printFormat: "PDF", printSize: "STOCK_4X6" }
+                    })
                 });
-                console.log("enviaResponse", enviaResponse)
-                if (!enviaResponse.ok) {
-                    const text = await enviaResponse.text();
-                    throw new Error(`Envia API error: ${enviaResponse.status} ${text}`);
-                }
-                const trackingData = await enviaResponse.json();
-                console.log("Envia shipment created:", trackingData);
+                console.log("response" , response)
+                // if (!response.ok) {
+                //     const text = await response.text();
+                //     throw new Error(`Envia API error: ${response.status} ${text}`);
+                // }
 
-                if (trackingData.tracking_number) {
+                const shipmentData = await response.json();
+                console.log("Shipment created:", shipmentData);
+
+                // Save tracking number in DB
+                if (shipmentData.tracking_number) {
                     await prisma.orders.update({
                         where: { id: updatedOrder.id },
-                        data: { trackingNumber: trackingData.tracking_number },
+                        data: { trackingNumber: shipmentData.tracking_number }
                     });
                 }
             } catch (err) {
-                console.error("Envia shipment creation failed:", err.message || err);
+                console.error("Envia shipment creation failed:", err.message);
             }
+
 
             // 6️⃣ Send Customer Email
             try {
