@@ -1,5 +1,5 @@
 // lib/templates/orderConfirmationTemplate.js
-export function orderConfirmationTemplate({ name, orderId, total, downloadLink }) {
+export function orderConfirmationTemplateAdmin({ name, orderId, total, downloadLink }) {
   return `
   <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc; padding: 20px;">
     <table width="100%" cellspacing="0" cellpadding="0" 

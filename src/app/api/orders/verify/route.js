@@ -2,6 +2,7 @@
 import { PrismaClient } from "@prisma/client";
 import { sendMail } from "@/lib/mailer";
 import { orderConfirmationTemplate } from "@/lib/templates/orderConfirmationTemplate";
+import { orderConfirmationTemplateAdmin } from "@/lib/templates/orderConfirmationTemplateAdmin";
 
 const prisma = new PrismaClient();
 
@@ -86,57 +87,62 @@ export async function POST(req) {
             //     console.error("Envia shipment creation failed:", err.message || err);
             // }
             try {
-                const response = await fetch("https://api-test.envia.com/ship/generate/", {
+                const response = await fetch("https://ship-test.envia.com/api/v1/shipments", {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer c3a7feff396d65c57bc9dc0500888fd6aa6eb24e0a8dc3d4ee3c5979421a0938`,
-                        "Content-Type": "application/json"
+                        Authorization: "Bearer c3a7feff396d65c57bc9dc0500888fd6aa6eb24e0a8dc3d4ee3c5979421a0938",
+                        "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
                         origin: {
                             name: "Healing Herbs Oils Shop",
-                            company: "Healing Herbs Oils",
+                            company: "Healing Herbs Oils Shop",
                             email: "healingherbsoilsshop@gmail.com",
-                            phone: "8116300800",
-                            street: "Av Vasconcelos",
-                            number: "1400",
-                            district: "Mirasierra",
-                            city: "Monterrey",
-                            state: "NL",
+                            phone: "9876543210",
+                            street: "MG Road",
+                            number: "12",
+                            district: "Bandra",
+                            city: "Mumbai",
+                            state: "MH",
                             country: "IN",
-                            postalCode: "66236",
-                            reference: ""
+                            postalCode: "400050",
                         },
                         destination: {
-                            name: updatedOrder.shippingName,
-                            company: "",
-                            email: updatedOrder.shippingEmail,
-                            phone: updatedOrder.shippingPhone,
-                            street: updatedOrder.shippingAddress,
-                            number: updatedOrder.shippingNumber || "",
-                            district: updatedOrder.shippingDistrict || "",
-                            // city: updatedOrder.shippingCity,
-                            // state: updatedOrder.shippingState,
-                            state: "NL",
+                            name: "Nitish Kumar",
+                            company: "Customer",
+                            email: "customer@gmail.com",
+                            phone: "9876543211",
+                            street: "Sector 62",
+                            number: "45",
+                            district: "Noida",
+                            city: "Noida",
+                            state: "UP",
                             country: "IN",
-                            city: "Monterrey",
-                            postalCode: updatedOrder.shippingPincode,
-                            reference: ""
+                            postalCode: "201301",
                         },
-                        packages: updatedOrder.items.map(item => ({
-                            content: item.name || "Product", 
-                            amount: item.quantity,
-                            type: "box",
-                            dimensions: { length: 10, width: 10, height: 10 }, // replace with real dimensions if available
-                            weight: item.weight || 1,
-                            weightUnit: "KG",
-                            lengthUnit: "CM",
-                            declaredValue: item.price || 0
-                        })),
-                        shipment: { carrier: "dhl", service: "express", type: 1 },
-                        settings: { printFormat: "PDF", printSize: "STOCK_4X6" }
-                    })
+                        packages: [
+                            {
+                                content: "Essential Oils",
+                                amount: 1,
+                                type: "box",
+                                weight: 0.5, // in kg
+                                width: 10,
+                                height: 10,
+                                length: 10,
+                            },
+                        ],
+                        shipment: {
+                            carrier: "DHL", // ⚠️ Use only supported test carrier
+                            service: "standard", // or express
+                            type: 1, // 1 = normal, 2 = COD
+                            reference: "ORDER_001",
+                        },
+                    }),
                 });
+
+                const data = await response.json();
+                console.log("Shipment Response:", data);
+
                 console.log("response", response)
                 // if (!response.ok) {
                 //     const text = await response.text();
@@ -168,6 +174,7 @@ export async function POST(req) {
                             name: updatedOrder.user.name || updatedOrder.shippingName,
                             orderId: updatedOrder.orderNumber,
                             total: updatedOrder.totalAmount,
+                            downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/invoice/${updatedOrder.orderNumber}`
                         }),
                     });
                     console.log("Customer email sent ✅");
@@ -183,9 +190,12 @@ export async function POST(req) {
                 await sendMail({
                     to: process.env.ADMIN_EMAIL || "admin@yourshop.com",
                     subject: `New Order Placed - ${updatedOrder.orderNumber}`,
-                    html: `<p>New order by ${updatedOrder.user?.name || updatedOrder.shippingName} (${updatedOrder.shippingPhone})</p>
-                           <p>Order ID: ${updatedOrder.orderNumber}</p>
-                           <p>Total: ₹${updatedOrder.totalAmount}</p>`,
+                    html: orderConfirmationTemplateAdmin({
+                        name: updatedOrder.user.name || updatedOrder.shippingName,
+                        orderId: updatedOrder.orderNumber,
+                        total: updatedOrder.totalAmount,
+                        downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/invoice/${updatedOrder.orderNumber}`
+                    }),
                 });
                 console.log("Admin email sent ✅");
             } catch (err) {
