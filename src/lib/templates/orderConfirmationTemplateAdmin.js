@@ -1,6 +1,6 @@
 // lib/templates/orderConfirmationTemplateAdmin.js
 
-export function orderConfirmationTemplateAdmin({ orderId, total }) {
+export function orderConfirmationTemplateAdmin({ orderId, total, currency }) {
         const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/image/logo PNG.png`;
     return `
   <div style="margin:0;padding:0;background-color:#f5f5f5;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
