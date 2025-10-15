@@ -30,7 +30,7 @@ export function orderConfirmationTemplateAdmin({ orderId, total }) {
                 </tr>
                 <tr>
                   <td><strong>Total Amount:</strong></td>
-                  <td style="text-align:right;">₹${total}</td>
+                  <td style="text-align:right;">${currency} ${total}</td>
                 </tr>
               </table>
             </div>

@@ -1,5 +1,5 @@
-export function orderConfirmationTemplate({ name, orderId, total, downloadLink }) {
-    const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/image/logo.png`;
+export function orderConfirmationTemplate({ name, orderId, total,currency, downloadLink }) {
+    const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/image/logo PNG.png`;
   return `
   <div style="margin:0;padding:0;background-color:#f5f5f5;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" 
@@ -31,7 +31,7 @@ export function orderConfirmationTemplate({ name, orderId, total, downloadLink }
                 </tr>
                 <tr>
                   <td><strong>Total Amount:</strong></td>
-                  <td style="text-align:right;">₹${total}</td>
+                  <td style="text-align:right;">${currency} ${total}</td>
                 </tr>
                 <tr>
                   <td><strong>Status:</strong></td>

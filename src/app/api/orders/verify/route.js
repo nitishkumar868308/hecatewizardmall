@@ -42,6 +42,7 @@ export async function POST(req) {
                 paymentStatus: isPaid ? "PAID" : "FAILED",
                 status: isPaid ? "PROCESSING" : "CANCELLED",
                 paymentMethod: JSON.stringify(paymentMethod),
+                paymentCurrency
             },
             include: { user: true }, // ✅ include user for email
         });
@@ -174,6 +175,7 @@ export async function POST(req) {
                             name: updatedOrder.user.name || updatedOrder.shippingName,
                             orderId: updatedOrder.orderNumber,
                             total: updatedOrder.totalAmount,
+                            currency: updatedOrder.paymentCurrency || "INR",
                             downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/invoice/${updatedOrder.orderNumber}`
                         }),
                     });
@@ -194,6 +196,7 @@ export async function POST(req) {
                         // name: updatedOrder.user.name || updatedOrder.shippingName,
                         orderId: updatedOrder.orderNumber,
                         total: updatedOrder.totalAmount,
+                        currency: updatedOrder.paymentCurrency || "INR",
                         downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/invoice/${updatedOrder.orderNumber}`
                     }),
                 });

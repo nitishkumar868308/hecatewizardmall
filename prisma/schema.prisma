@@ -309,7 +309,7 @@ model Orders {
   discountAmount  Float?    
   totalAmount     Float?
   paymentMethod   String?
-
+  paymentCurrency String?
   status          OrderStatus   @default(PENDING)   // order status
   paymentStatus   PaymentStatus @default(PENDING)   // payment status
 
