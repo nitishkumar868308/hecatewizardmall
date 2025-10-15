@@ -9,7 +9,12 @@ export async function POST(req) {
         const body = await req.json();
         console.log("Webhook body:", JSON.stringify(body, null, 2));
 
-        const orderNumber = body.order_id || body.orderNumber;
+        // ✅ Cashfree new payload paths
+        const orderNumber = body?.data?.order?.order_id;
+        const paymentStatus = body?.data?.payment?.payment_status;
+        const paymentMethod = body?.data?.payment?.payment_method;
+        const customerEmail = body?.data?.customer_details?.customer_email;
+
         if (!orderNumber) {
             return new Response(JSON.stringify({ message: "Missing orderNumber" }), { status: 400 });
         }
@@ -25,24 +30,15 @@ export async function POST(req) {
         }
 
         // 2️⃣ Determine payment success
-        const cfOrderStatus = (body.order_status || "").toUpperCase();
-        const cfPayments = body.payments || [];
-        const cfPaymentStatus = Array.isArray(cfPayments) && cfPayments.length ? cfPayments[0]?.status : "";
-        const cfPaymentSimulationStatus = body.entity_simulation?.payment_status || "";
-        const cfEntityPaymentStatus = (body.payment_status || "").toUpperCase();
+        const isPaid = ["PAID", "SUCCESS"].includes((paymentStatus || "").toUpperCase());
 
-        const isPaid =
-            ["PAID", "SUCCESS", "ACTIVE", "COMPLETED"].includes(cfOrderStatus) ||
-            ["PAID", "SUCCESS"].includes((cfPaymentStatus || "").toUpperCase()) ||
-            ["SUCCESS"].includes((cfPaymentSimulationStatus || "").toUpperCase()) ||
-            ["PAID", "SUCCESS"].includes(cfEntityPaymentStatus);
-
-        // 3️⃣ Update DB
+        // 3️⃣ Update DB with payment info
         const updatedOrder = await prisma.orders.update({
             where: { id: order.id },
             data: {
                 paymentStatus: isPaid ? "PAID" : "FAILED",
                 status: isPaid ? "PROCESSING" : "CANCELLED",
+                paymentMethod: JSON.stringify(paymentMethod),
             },
         });
 
@@ -72,7 +68,6 @@ export async function POST(req) {
                 const trackingData = await enviaResponse.json();
                 console.log("Envia shipment created:", trackingData);
 
-                // Save tracking number in DB
                 if (trackingData.tracking_number) {
                     await prisma.orders.update({
                         where: { id: updatedOrder.id },
@@ -100,10 +95,10 @@ export async function POST(req) {
                 to: process.env.ADMIN_EMAIL || "admin@yourshop.com",
                 subject: `New Order Placed - ${updatedOrder.orderNumber}`,
                 html: `
-          <p>New order by ${updatedOrder.shippingName} (${updatedOrder.shippingPhone})</p>
-          <p>Order ID: ${updatedOrder.orderNumber}</p>
-          <p>Total: ₹${updatedOrder.totalAmount}</p>
-        `,
+                    <p>New order by ${updatedOrder.shippingName} (${updatedOrder.shippingPhone})</p>
+                    <p>Order ID: ${updatedOrder.orderNumber}</p>
+                    <p>Total: ₹${updatedOrder.totalAmount}</p>
+                `,
             });
         }
 
@@ -116,7 +111,3 @@ export async function POST(req) {
         );
     }
 }
-
-// export async function POST(req) {
-//     return new Response(JSON.stringify({ message: "Webhook received" }), { status: 200 });
-// }
