@@ -15,8 +15,8 @@ export async function POST(req) {
         const paymentStatus = body.payment?.payment_status || body.data?.payment?.payment_status;
         const paymentMethod = body.payment?.payment_method || body.data?.payment?.payment_method;
         const customerEmail = body.customer_email || body.data?.customer_details?.customer_email;
-        console.log("orderNumber" , orderNumber)
-        console.log("paymentStatus" , paymentStatus)
+        console.log("orderNumber", orderNumber)
+        console.log("paymentStatus", paymentStatus)
         if (!orderNumber) {
             console.error("Missing orderNumber");
             return new Response(JSON.stringify({ message: "Missing orderNumber" }), { status: 400 });
@@ -85,26 +85,35 @@ export async function POST(req) {
 
         // 5️⃣ Send emails if PAID
         if (isPaid && updatedOrder.user?.email) {
-            await sendMail({
-                to: updatedOrder.user.email,
-                subject: `Order Confirmed - ${updatedOrder.orderNumber}`,
-                html: orderConfirmationTemplate({
-                    name: updatedOrder.shippingName,
-                    orderId: updatedOrder.orderNumber,
-                    total: updatedOrder.totalAmount,
-                }),
-            });
+            try {
+                await sendMail({
+                    to: updatedOrder.user.email,
+                    subject: `Order Confirmed - ${updatedOrder.orderNumber}`,
+                    html: orderConfirmationTemplate({
+                        name: updatedOrder.shippingName,
+                        orderId: updatedOrder.orderNumber,
+                        total: updatedOrder.totalAmount,
+                    }),
+                });
+                console.log("Customer email sent ✅");
+            } catch (err) {
+                console.error("Customer email failed:", err);
+            }
 
-            await sendMail({
-                to: process.env.ADMIN_EMAIL || "admin@yourshop.com",
-                subject: `New Order Placed - ${updatedOrder.orderNumber}`,
-                html: `
-                    <p>New order by ${updatedOrder.shippingName} (${updatedOrder.shippingPhone})</p>
-                    <p>Order ID: ${updatedOrder.orderNumber}</p>
-                    <p>Total: ₹${updatedOrder.totalAmount}</p>
-                `,
-            });
+            try {
+                await sendMail({
+                    to: process.env.ADMIN_EMAIL || "admin@yourshop.com",
+                    subject: `New Order Placed - ${updatedOrder.orderNumber}`,
+                    html: `<p>New order by ${updatedOrder.shippingName} (${updatedOrder.shippingPhone})</p>
+                   <p>Order ID: ${updatedOrder.orderNumber}</p>
+                   <p>Total: ₹${updatedOrder.totalAmount}</p>`,
+                });
+                console.log("Admin email sent ✅");
+            } catch (err) {
+                console.error("Admin email failed:", err);
+            }
         }
+
 
         return new Response(JSON.stringify({ message: "Payment verified", updatedOrder }), { status: 200 });
     } catch (error) {

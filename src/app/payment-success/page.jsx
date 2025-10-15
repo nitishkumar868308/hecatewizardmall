@@ -18,23 +18,6 @@ export default function PaymentSuccessPage() {
         }
     }, [orderId]);
 
-    // app/payment-success/page.js
-    useEffect(() => {
-        const verifyPayment = async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const order_id = urlParams.get("order_id");
-            const res = await fetch("/api/orders/verify", {
-                method: "POST",
-                body: JSON.stringify({ order_id }),
-                headers: { "Content-Type": "application/json" },
-            });
-            const data = await res.json();
-            console.log("Payment verification:", data);
-        };
-        verifyPayment();
-    }, []);
-
-
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 ">
             <div className="bg-white shadow-lg rounded-2xl max-w-lg w-full p-10 text-center transform transition-all hover:scale-[1.02] mt-10 mb-10">

@@ -75,6 +75,7 @@ export async function POST(req) {
                 },
                 order_meta: {
                     return_url: `${baseUrl}/payment-success?order_id=${orderNumber}`,
+                    // notify_url: `${baseUrl}/api/orders/verify`,
                     notify_url: `${baseUrl}/api/orders/verify`,
                 },
             },
