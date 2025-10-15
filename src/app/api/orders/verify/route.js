@@ -35,6 +35,11 @@ export async function POST(req) {
         // 2️⃣ Determine payment success
         const isPaid = ["PAID", "SUCCESS"].includes((paymentStatus || "").toUpperCase());
 
+        const paymentCurrency =
+            body.payment?.payment_currency ||
+            body.data?.payment?.payment_currency;
+        console.log("paymentCurrency" , paymentCurrency)
+
         // 3️⃣ Update DB with payment info
         const updatedOrder = await prisma.orders.update({
             where: { id: order.id },
