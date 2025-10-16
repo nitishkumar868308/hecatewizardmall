@@ -30,6 +30,7 @@ export async function GET(req) {
                 name: true,
                 sku: true,
                 price: true,
+                image:true,
                 category: { select: { id: true, name: true } },
                 subcategory: { select: { id: true, name: true } },
                 primaryOffer: true,

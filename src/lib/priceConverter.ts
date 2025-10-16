@@ -197,41 +197,43 @@ export async function convertProducts(products, countryCode, countryPricingList)
 
 let conversionRatesCache = null;
 
-export async function convertProductsFast(products, countryCode, countryPricingList) {
+export async function initConversionRatesCache() {
     if (!conversionRatesCache) {
         conversionRatesCache = await fetchConversionRates();
     }
+}
 
-    const normalizedCountryCode =
-        countryCode.length === 3 ? countryCode.slice(0, 2).toUpperCase() : countryCode.toUpperCase();
+export function convertProductsFast(products, countryCode, countryPricingList) {
+    if (!conversionRatesCache) throw new Error("Conversion rates not initialized");
 
-    // Create lookup maps
+    const normalizedCountryCode = (countryCode.length === 3 ? countryCode.slice(0, 2) : countryCode).toUpperCase();
+
     const countryPricingMap = {};
-    countryPricingList.forEach(c => { countryPricingMap[c.code.toUpperCase()] = c; });
+    countryPricingList.forEach(c => countryPricingMap[c.code.toUpperCase()] = c);
 
     const conversionRatesMap = {};
-    conversionRatesCache.forEach(c => { conversionRatesMap[c.currency] = c; });
+    conversionRatesCache.forEach(c => conversionRatesMap[c.currency] = c);
+
+    const targetCountry = countryPricingMap[normalizedCountryCode] || countryPricingMap["IN"] || { multiplier: 1, currency: "INR", currencySymbol: "₹" };
+    const matchedCountry = conversionRatesMap[targetCountry.currency] || { conversionRate: 1, currency: targetCountry.currency, currencySymbol: targetCountry.currencySymbol };
+
+    const multiplier = (matchedCountry.conversionRate || 1) * (targetCountry.multiplier || 1);
 
     return products.map(p => {
-        const basePrice = Number(p.price) || 0;
+        const price = Math.round((Number(p.price) || 0) * multiplier * 100) / 100;
 
-        const targetCountry = countryPricingMap[countryCode.toUpperCase()] || countryPricingMap["IN"] || { multiplier: 1, currency: "INR", currencySymbol: "₹" };
-        const matchedCountry = conversionRatesMap[targetCountry.currency] || { conversionRate: 1, currency: targetCountry.currency, currencySymbol: targetCountry.currencySymbol };
+        const variations = (p.variations || []).map(v => ({
+            ...v,
+            price: Math.round((Number(v.price) || 0) * multiplier * 100) / 100,
+            currency: matchedCountry.currency,
+            currencySymbol: matchedCountry.currencySymbol
+        }));
 
-        const finalPrice = Math.round(basePrice * (matchedCountry.conversionRate || 1) * (targetCountry.multiplier || 1) * 100) / 100;
-
-        const variations = (p.variations || []).map(v => {
-            const varBasePrice = Number(v.price) || 0;
-            const varFinalPrice = Math.round(varBasePrice * (matchedCountry.conversionRate || 1) * (targetCountry.multiplier || 1) * 100) / 100;
-            return { ...v, price: varFinalPrice, currency: matchedCountry.currency, currencySymbol: matchedCountry.currencySymbol };
-        });
-
-        const matchedMarketLink =
-            p.marketLinks?.find(link => link.countryCode?.toUpperCase() === normalizedCountryCode) || null;
+        const matchedMarketLink = p.marketLinks?.find(link => link.countryCode?.toUpperCase() === normalizedCountryCode) || null;
 
         return {
             ...p,
-            price: finalPrice,
+            price,
             currency: matchedCountry.currency,
             currencySymbol: matchedCountry.currencySymbol,
             variations,
@@ -240,6 +242,8 @@ export async function convertProductsFast(products, countryCode, countryPricingL
         };
     });
 }
+
+
 
 
 
