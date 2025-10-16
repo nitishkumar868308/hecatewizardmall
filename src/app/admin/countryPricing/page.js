@@ -28,6 +28,7 @@ const CountryPricing = () => {
         multiplier: "",
         currency: "",
         active: true,
+        conversionRate: ""
     });
     const [deleteId, setDeleteId] = useState(null);
     console.log("countryPricing", countryPricing)
@@ -85,7 +86,7 @@ const CountryPricing = () => {
     // Modal handlers
     const openAddModal = () => {
         setModalType("add");
-        setCurrentPricing({ id: null, code: "", multiplier: 1, currency: "", active: true });
+        setCurrentPricing({ id: null, code: "", multiplier: 1, currency: "", active: true, conversionRate: "" });
         setIsModalOpen(true);
     };
     const openEditModal = (item) => {
@@ -145,11 +146,11 @@ const CountryPricing = () => {
                         placeholder="Search Country..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="border rounded-lg px-4 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        className="border rounded-lg px-4 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-gray-400"
                     />
                     <button
                         onClick={openAddModal}
-                        className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow cursor-pointer"
+                        className="flex items-center gap-2 bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg shadow cursor-pointer"
                     >
                         <Plus className="w-5 h-5" /> Add Country
                     </button>
@@ -165,6 +166,7 @@ const CountryPricing = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">S.No</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Country Code</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Multiplier</th>
+                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conversion Rate</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Currency</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -176,6 +178,7 @@ const CountryPricing = () => {
                                     <td className="px-4 py-4">{idx + 1}</td>
                                     <td className="px-6 py-4 font-medium">{item.code}</td>
                                     <td className="px-6 py-4">{item.multiplier}</td>
+                                     <td className="px-6 py-4">{item.conversionRate}</td>
                                     <td className="px-6 py-4">{item.currency}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded-full text-sm ${item.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
@@ -210,7 +213,7 @@ const CountryPricing = () => {
             <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} className="relative z-50">
                 <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
-                    <Dialog.Panel className="bg-white rounded max-w-md w-full p-6">
+                    <Dialog.Panel className="bg-white rounded max-w-xl w-full p-6">
                         {modalType === "delete" ? (
                             <>
                                 <Dialog.Title className="text-lg font-bold text-red-600">Delete Country Pricing</Dialog.Title>
@@ -221,15 +224,118 @@ const CountryPricing = () => {
                                 </div>
                             </>
                         ) : (
+                            // <>
+                            //     <Dialog.Title className="text-lg font-bold mb-4 text-center">{modalType === "add" ? "Add Country Pricing" : "Edit Country Pricing"}</Dialog.Title>
+                            //     <div className="flex flex-col gap-4">
+                            //         {/* Country Select with Search */}
+                            //         <div className="w-full">
+                            //             <label className="block text-sm font-semibold bg-gradient-to-r from-gray-500 to-gray-800 bg-clip-text text-transparent mb-1">
+                            //                 Search Country
+                            //             </label>
+
+                            //             <div className="relative">
+                            //                 <input
+                            //                     type="text"
+                            //                     placeholder="Search Country..."
+                            //                     className="border rounded px-3 py-2 w-full"
+                            //                     value={currentPricing.country || ""}
+                            //                     onChange={(e) => {
+                            //                         const searchValue = e.target.value.toLowerCase();
+                            //                         setFilteredCountries(
+                            //                             countries.filter(
+                            //                                 (c) =>
+                            //                                     c.name.toLowerCase().includes(searchValue) ||
+                            //                                     c.code.toLowerCase().includes(searchValue)
+                            //                             )
+                            //                         );
+                            //                         setShowDropdown(true);
+                            //                         setCurrentPricing({ ...currentPricing, country: e.target.value });
+                            //                     }}
+                            //                     onFocus={() => setShowDropdown(true)}
+                            //                     disabled={modalType === "edit"}
+                            //                 />
+
+                            //                 {showDropdown && filteredCountries.length > 0 && (
+                            //                     <ul className="absolute z-10 w-full bg-white border rounded mt-1 max-h-40 overflow-auto">
+                            //                         {filteredCountries.map((c) => (
+                            //                             <li
+                            //                                 key={c.code}
+                            //                                 className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                            //                                 onClick={() => {
+                            //                                     setCurrentPricing({
+                            //                                         ...currentPricing,
+                            //                                         country: c.name,
+                            //                                         code: c.code,
+                            //                                         currency: c.currency,
+                            //                                         currencySymbol: c.currencySymbol,
+                            //                                     });
+                            //                                     setShowDropdown(false);
+                            //                                 }}
+                            //                             >
+                            //                                 {c.name} ({c.code})
+                            //                             </li>
+                            //                         ))}
+                            //                     </ul>
+                            //                 )}
+                            //             </div>
+                            //         </div>
+                            //         {/* Currency input */}
+                            //         <input
+                            //             type="text"
+                            //             placeholder="Currency"
+                            //             className="border rounded px-3 py-2 w-full bg-gray-100 cursor-not-allowed"
+                            //             value={currentPricing.currency || ""}
+                            //             readOnly
+                            //         />
+
+                            //         <input
+                            //             type="text"
+                            //             placeholder="currencySymbol"
+                            //             className="border rounded px-3 py-2 w-full bg-gray-100 cursor-not-allowed"
+                            //             value={currentPricing.currencySymbol || ""}
+                            //             readOnly
+                            //         />
+
+                            //         <label className="block text-sm font-semibold bg-gradient-to-r from-gray-500 to-gray-800 bg-clip-text text-transparent ">
+                            //             Amount Multiplier
+                            //         </label>
+                            //         <input
+                            //             type="number"
+                            //             placeholder="Multiplier"
+                            //             className="border rounded px-3 py-2 w-full"
+                            //             value={currentPricing.multiplier ?? ""}
+                            //             onChange={(e) => {
+                            //                 const value = e.target.value;
+                            //                 setCurrentPricing({
+                            //                     ...currentPricing,
+                            //                     multiplier: value === "" ? "" : parseFloat(value),
+                            //                 });
+                            //             }}
+                            //         />
+                            //         <div className="flex justify-end gap-2">
+                            //             <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded cursor-pointer">Cancel</button>
+                            //             <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer">
+                            //                 {modalType === "add" ? "Add" : "Save"}
+                            //             </button>
+                            //         </div>
+                            //     </div>
+                            // </>
                             <>
-                                <Dialog.Title className="text-lg font-bold mb-4">{modalType === "add" ? "Add Country Pricing" : "Edit Country Pricing"}</Dialog.Title>
-                                <div className="flex flex-col gap-4">
-                                    {/* Country Select with Search */}
-                                    <div className="relative">
+                                <Dialog.Title className="text-2xl font-semibold text-center text-gray-900 mb-6">
+                                    {modalType === "add" ? "Add Country Pricing" : "Edit Country Pricing"}
+                                </Dialog.Title>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Country Select */}
+                                    <div className="flex flex-col relative">
+                                        <label htmlFor="country" className="mb-1 text-gray-700 font-medium">
+                                            Select Country
+                                        </label>
                                         <input
                                             type="text"
-                                            placeholder="Search Country..."
-                                            className="border rounded px-3 py-2 w-full"
+                                            id="country"
+                                            placeholder="Search Country"
+                                            className="w-full border border-gray-300 rounded-md px-4 py-3 text-gray-900 focus:border-black focus:ring-1 focus:ring-black outline-none transition"
                                             value={currentPricing.country || ""}
                                             onChange={(e) => {
                                                 const searchValue = e.target.value.toLowerCase();
@@ -248,11 +354,11 @@ const CountryPricing = () => {
                                         />
 
                                         {showDropdown && filteredCountries.length > 0 && (
-                                            <ul className="absolute z-10 w-full bg-white border rounded mt-1 max-h-40 overflow-auto">
+                                            <ul className="absolute top-full left-0 z-10 w-full bg-white border border-gray-200 rounded-md mt-1 shadow max-h-44 overflow-auto">
                                                 {filteredCountries.map((c) => (
                                                     <li
                                                         key={c.code}
-                                                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                                        className="px-4 py-2 text-gray-900 hover:bg-gray-100 cursor-pointer transition-colors"
                                                         onClick={() => {
                                                             setCurrentPricing({
                                                                 ...currentPricing,
@@ -264,52 +370,106 @@ const CountryPricing = () => {
                                                             setShowDropdown(false);
                                                         }}
                                                     >
-                                                        {c.name} ({c.code})
+                                                        {c.name} <span className="text-gray-500">({c.code})</span>
                                                     </li>
                                                 ))}
                                             </ul>
                                         )}
                                     </div>
 
-                                    {/* Currency input */}
-                                    <input
-                                        type="text"
-                                        placeholder="Currency"
-                                        className="border rounded px-3 py-2 w-full bg-gray-100 cursor-not-allowed"
-                                        value={currentPricing.currency || ""}
-                                        readOnly
-                                    />
 
-                                    <input
-                                        type="text"
-                                        placeholder="currencySymbol"
-                                        className="border rounded px-3 py-2 w-full bg-gray-100 cursor-not-allowed"
-                                        value={currentPricing.currencySymbol || ""}
-                                        readOnly
-                                    />
+                                    {/* Currency */}
+                                    <div className="flex flex-col">
+                                        <label htmlFor="currency" className="mb-1 text-gray-700 font-medium">
+                                            Currency
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="currency"
+                                            placeholder="Currency"
+                                            className="w-full border border-gray-300 rounded-md px-4 py-3 bg-gray-100 text-gray-700 cursor-not-allowed"
+                                            value={currentPricing.currency || ""}
+                                            readOnly
+                                        />
+                                    </div>
 
+                                    {/* Currency Symbol */}
+                                    <div className="flex flex-col">
+                                        <label htmlFor="symbol" className="mb-1 text-gray-700 font-medium">
+                                            Currency Symbol
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="symbol"
+                                            placeholder="Currency Symbol"
+                                            className="w-full border border-gray-300 rounded-md px-4 py-3 bg-gray-100 text-gray-700 cursor-not-allowed"
+                                            value={currentPricing.currencySymbol || ""}
+                                            readOnly
+                                        />
+                                    </div>
 
-                                    <input
-                                        type="number"
-                                        placeholder="Multiplier"
-                                        className="border rounded px-3 py-2 w-full"
-                                        value={currentPricing.multiplier ?? ""}
-                                        onChange={(e) => {
-                                            const value = e.target.value;
-                                            setCurrentPricing({
-                                                ...currentPricing,
-                                                multiplier: value === "" ? "" : parseFloat(value),
-                                            });
-                                        }}
-                                    />
-                                    <div className="flex justify-end gap-2">
-                                        <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded cursor-pointer">Cancel</button>
-                                        <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer">
-                                            {modalType === "add" ? "Add" : "Save"}
-                                        </button>
+                                    {/* Amount Multiplier */}
+                                    <div className="flex flex-col">
+                                        <label htmlFor="multiplier" className="mb-1 text-gray-700 font-medium">
+                                            Amount Multiplier
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="multiplier"
+                                            placeholder="Amount Multiplier"
+                                            className="w-full border border-gray-300 rounded-md px-4 py-3 text-gray-900 focus:border-black focus:ring-1 focus:ring-black outline-none transition"
+                                            value={currentPricing.multiplier ?? ""}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                setCurrentPricing({
+                                                    ...currentPricing,
+                                                    multiplier: value === "" ? "" : parseFloat(value),
+                                                });
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* Conversion Rate */}
+                                    <div className="flex flex-col">
+                                        <label htmlFor="conversionRate" className="mb-1 text-gray-700 font-medium">
+                                            Conversion Rate
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="conversionRate"
+                                            placeholder="Conversion Rate"
+                                            className="w-full border border-gray-300 rounded-md px-4 py-3 text-gray-900 focus:border-black focus:ring-1 focus:ring-black outline-none transition"
+                                            value={currentPricing.conversionRate ?? ""}
+                                            onChange={(e) =>
+                                                setCurrentPricing({
+                                                    ...currentPricing,
+                                                    conversionRate: e.target.value === "" ? "" : parseFloat(e.target.value),
+                                                })
+                                            }
+                                        />
                                     </div>
                                 </div>
+
+                                {/* Actions */}
+                                <div className="flex justify-end gap-3 mt-6">
+                                    <button
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="px-6 py-2 cursor-pointer border border-gray-300 rounded-md text-gray-800 hover:bg-gray-50 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSave}
+                                        className="px-6 py-2 bg-black cursor-pointer text-white rounded-md hover:bg-gray-900 transition"
+                                    >
+                                        {modalType === "add" ? "Add" : "Save"}
+                                    </button>
+                                </div>
                             </>
+
+
+
+
                         )}
                     </Dialog.Panel>
                 </div>

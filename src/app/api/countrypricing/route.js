@@ -26,7 +26,7 @@ export async function GET(req) {
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { country, code, multiplier, currency, active, currencySymbol } = body;
+        const { country, code, multiplier, currency, active, currencySymbol, conversionRate } = body;
 
         if (!country || !code || !multiplier || !currency || !currencySymbol) {
             return new Response(
@@ -53,6 +53,7 @@ export async function POST(req) {
                 multiplier: parseFloat(multiplier),
                 currency,
                 currencySymbol,
+                conversionRate,
                 active: active ?? true,
             },
         });
@@ -72,7 +73,7 @@ export async function POST(req) {
 export async function PUT(req) {
     try {
         const body = await req.json();
-        const { id, country, code, multiplier, currency, active, deleted } = body;
+        const { id, country, code, multiplier, currency, active, deleted, conversionRate } = body;
 
         if (!id) {
             return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
@@ -103,6 +104,7 @@ export async function PUT(req) {
                 currency: currency ?? existing.currency,
                 active: active ?? existing.active,
                 deleted: deleted ?? existing.deleted,
+                conversionRate : conversionRate ?? existing.conversionRate
             },
         });
 
