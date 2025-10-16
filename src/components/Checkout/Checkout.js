@@ -413,7 +413,7 @@ const Checkout = () => {
       const cashfree = await load({ mode: "sandbox" });
       cashfree.checkout({
         paymentSessionId: data.sessionId,
-        redirectTarget: "_modal",
+        redirectTarget: "_self",
         redirectUrl: `${baseUrl}/payment-processing?order_id=${data.orderNumber}`,
       });
     } catch (err) {
