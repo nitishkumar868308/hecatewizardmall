@@ -346,6 +346,8 @@ const Checkout = () => {
       }, 0);
   }, [userCart, selectedItems, quantities, products, countryTax, selectedCountry]);
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
   const handleClick = async () => {
     const orderData = {
       user: {
