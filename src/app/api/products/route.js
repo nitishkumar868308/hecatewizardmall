@@ -328,38 +328,112 @@ export async function POST(req) {
 }
 
 
+let countryPricingCache = {};
+// export async function GET(req) {
+//     try {
+//         const countryCode = req.headers.get("x-country") || "IN";
+
+//         const countryPricingList = await prisma.countryPricing.findMany({
+//             where: { deleted: 0, active: true },
+//         });
+
+//         const products = await prisma.product.findMany({
+//             where: {
+//                 deleted: 0,
+//             },
+//             include: {
+//                 variations: {
+//                     include: {
+//                         tags: true,
+//                     }
+//                 },
+//                 category: true,
+//                 subcategory: true,
+//                 offers: true,
+//                 primaryOffer: true,
+//                 tags: true,
+//                 marketLinks: true,
+//             },
+//         });
+
+//         const updatedProducts = await convertProducts(products, countryCode, countryPricingList);
+
+//         return new Response(JSON.stringify(updatedProducts), { status: 200 });
+//     } catch (error) {
+//         return new Response(
+//             JSON.stringify({ message: "Failed to fetch products", error: error.message }),
+//             { status: 500 }
+//         );
+//     }
+// }
+
+// DELETE soft delete product
 
 export async function GET(req) {
     try {
         const countryCode = req.headers.get("x-country") || "IN";
+        const url = new URL(req.url);
+        const page = Number(url.searchParams.get("page") || 1);
+        const limit = Number(url.searchParams.get("limit") || 50);
+        const skip = (page - 1) * limit;
 
-        const countryPricingList = await prisma.countryPricing.findMany({
-            where: { deleted: 0, active: true },
-        });
+        // Cache country pricing for faster lookup
+        if (!countryPricingCache[countryCode]) {
+            const countryPricingList = await prisma.countryPricing.findMany({
+                where: { deleted: 0, active: true },
+            });
+            countryPricingCache[countryCode] = countryPricingList;
+        }
 
-        const products = await prisma.product.findMany({
-            where: {
-                deleted: 0,
-            },
-            include: {
-                variations: {
-                    include: {
-                        tags: true,
-                    }
-                },
-                category: true,
-                subcategory: true,
-                offers: true,
+        // Fetch basic product data first
+        const productsBasic = await prisma.product.findMany({
+            where: { deleted: 0 },
+            skip,
+            take: limit,
+            select: {
+                id: true,
+                name: true,
+                sku: true,
+                price: true,
+                category: { select: { id: true, name: true } },
+                subcategory: { select: { id: true, name: true } },
                 primaryOffer: true,
-                tags: true,
-                marketLinks: true,
             },
         });
 
-        const updatedProducts = await convertProducts(products, countryCode, countryPricingList);
+        // Fetch heavy relations in parallel for each product
+        const productsFull = await Promise.all(
+            productsBasic.map(async (prod) => {
+                const [variations, offers, marketLinks, tags] = await Promise.all([
+                    prisma.variation.findMany({
+                        where: { productId: prod.id },
+                        include: { tags: true },
+                    }),
+                    prisma.offer.findMany({ where: { productId: prod.id } }),
+                    prisma.marketLink.findMany({ where: { productId: prod.id } }),
+                    prisma.tag.findMany({ where: { productId: prod.id } }),
+                ]);
+
+                return {
+                    ...prod,
+                    variations,
+                    offers,
+                    marketLinks,
+                    tags,
+                };
+            })
+        );
+
+        // Convert products if needed (price calculation, etc.)
+        const updatedProducts = await convertProducts(
+            productsFull,
+            countryCode,
+            countryPricingCache[countryCode]
+        );
 
         return new Response(JSON.stringify(updatedProducts), { status: 200 });
     } catch (error) {
+        console.error("Error fetching products:", error);
         return new Response(
             JSON.stringify({ message: "Failed to fetch products", error: error.message }),
             { status: 500 }
@@ -367,7 +441,6 @@ export async function GET(req) {
     }
 }
 
-// DELETE soft delete product
 export async function DELETE(req) {
     try {
         const body = await req.json();
