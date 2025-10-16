@@ -38,7 +38,7 @@ export async function POST(req) {
         const paymentCurrency =
             body.payment?.payment_currency ||
             body.data?.payment?.payment_currency;
-        console.log("paymentCurrency" , paymentCurrency)
+        console.log("paymentCurrency", paymentCurrency)
 
         // 3️⃣ Update DB with payment info
         const updatedOrder = await prisma.orders.update({
@@ -55,7 +55,12 @@ export async function POST(req) {
 
         // 4️⃣ Idempotency check - Only process if not already PAID
         if (isPaid && order.paymentStatus !== "PAID") {
-
+            if (order.items?.length > 0) {
+                await prisma.cart.updateMany({
+                    where: { id: { in: order.items.map(i => i.id) }, is_buy: false },
+                    data: { is_buy: true },
+                });
+            }
             // 5️⃣ Create Envia shipment (try/catch to prevent crash)
             // try {
             //     const enviaResponse = await fetch("https://shipping-test.envia.com/api/v1/shipments", {
@@ -213,7 +218,14 @@ export async function POST(req) {
             console.log("Order already processed, skipping email & shipment");
         }
 
-        return new Response(JSON.stringify({ message: "Payment verified", updatedOrder }), { status: 200 });
+        return new Response(
+            JSON.stringify({
+                message: isPaid ? "Payment successful" : "Payment failed",
+                success: isPaid,
+                updatedOrder,
+            }),
+            { status: 200 }
+        );
     } catch (error) {
         console.error("Verification failed:", error.message || error);
         return new Response(

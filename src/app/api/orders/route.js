@@ -45,13 +45,13 @@ export async function POST(req) {
         });
 
         // 4️⃣ Update cat items to mark them as bought
-        await prisma.cart.updateMany({
-            where: {
-                id: { in: body.items.map(item => item.id) },
-                is_buy: false,
-            },
-            data: { is_buy: true },
-        });
+        // await prisma.cart.updateMany({
+        //     where: {
+        //         id: { in: body.items.map(item => item.id) },
+        //         is_buy: false,
+        //     },
+        //     data: { is_buy: true },
+        // });
 
         // 5️⃣ Prepare customer details for Cashfree
         const customerEmail = body.user?.email || "example@gmail.com";
@@ -74,7 +74,7 @@ export async function POST(req) {
                     customer_phone: customerPhone,
                 },
                 order_meta: {
-                    return_url: `${baseUrl}/payment-success?order_id=${orderNumber}`,
+                    //return_url: `${baseUrl}/payment-success?order_id=${orderNumber}`,
                     // notify_url: `${baseUrl}/api/orders/verify`,
                     notify_url: `${baseUrl}/api/orders/verify`,
                 },

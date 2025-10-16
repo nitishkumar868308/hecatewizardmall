@@ -411,7 +411,8 @@ const Checkout = () => {
       const cashfree = await load({ mode: "sandbox" });
       cashfree.checkout({
         paymentSessionId: data.sessionId,
-        redirectTarget: "_self", // open in same tab
+        redirectTarget: "_modal",
+        redirectUrl: `${baseUrl}/payment-processing?order_id=${data.orderNumber}`,
       });
     } catch (err) {
       console.error("Checkout error:", err);
