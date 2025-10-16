@@ -224,7 +224,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { HandRaisedIcon } from '@heroicons/react/24/outline';
-import { fetchProducts } from "@/app/redux/slices/products/productSlice";
+import { fetchFastProducts } from "@/app/redux/slices/products/productSlice";
 import { useSelector, useDispatch } from "react-redux";
 
 function useInView(threshold = 0.2) {
@@ -254,7 +254,7 @@ const ProductSlider = ({ showSection = "both" }) => {
     const dispatch = useDispatch();
     console.log("products" , products)
     useEffect(() => {
-        dispatch(fetchProducts());
+        dispatch(fetchFastProducts());
     }, [dispatch]);
 
     useEffect(() => {

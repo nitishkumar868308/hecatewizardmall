@@ -328,70 +328,25 @@ export async function POST(req) {
 }
 
 
-let countryPricingCache = {};
-// export async function GET(req) {
-//     try {
-//         const countryCode = req.headers.get("x-country") || "IN";
-
-//         const countryPricingList = await prisma.countryPricing.findMany({
-//             where: { deleted: 0, active: true },
-//         });
-
-//         const products = await prisma.product.findMany({
-//             where: {
-//                 deleted: 0,
-//             },
-//             include: {
-//                 variations: {
-//                     include: {
-//                         tags: true,
-//                     }
-//                 },
-//                 category: true,
-//                 subcategory: true,
-//                 offers: true,
-//                 primaryOffer: true,
-//                 tags: true,
-//                 marketLinks: true,
-//             },
-//         });
-
-//         const updatedProducts = await convertProducts(products, countryCode, countryPricingList);
-
-//         return new Response(JSON.stringify(updatedProducts), { status: 200 });
-//     } catch (error) {
-//         return new Response(
-//             JSON.stringify({ message: "Failed to fetch products", error: error.message }),
-//             { status: 500 }
-//         );
-//     }
-// }
-
-// DELETE soft delete product
 
 export async function GET(req) {
     try {
         const countryCode = req.headers.get("x-country") || "IN";
-        const url = new URL(req.url);
-        const page = Number(url.searchParams.get("page") || 1);
-        const limit = Number(url.searchParams.get("limit") || 50);
-        const skip = (page - 1) * limit;
 
-        // Cache country pricing
-        if (!countryPricingCache[countryCode]) {
-            const countryPricingList = await prisma.countryPricing.findMany({
-                where: { deleted: 0, active: true },
-            });
-            countryPricingCache[countryCode] = countryPricingList;
-        }
-
-        // Fetch products with all relations included
+        const countryPricingList = await prisma.countryPricing.findMany({
+            where: { deleted: 0, active: true },
+        });
+        
         const products = await prisma.product.findMany({
-            where: { deleted: 0 },
-            skip,
-            take: limit,
+            where: {
+                deleted: 0,
+            },
             include: {
-                variations: { include: { tags: true } },
+                variations: {
+                    include: {
+                        tags: true,
+                    }
+                },
                 category: true,
                 subcategory: true,
                 offers: true,
@@ -401,16 +356,10 @@ export async function GET(req) {
             },
         });
 
-        // Convert products if needed (price calculation, etc.)
-        const updatedProducts = await convertProducts(
-            products,
-            countryCode,
-            countryPricingCache[countryCode]
-        );
+        const updatedProducts = await convertProducts(products, countryCode, countryPricingList);
 
         return new Response(JSON.stringify(updatedProducts), { status: 200 });
     } catch (error) {
-        console.error("Error fetching products:", error);
         return new Response(
             JSON.stringify({ message: "Failed to fetch products", error: error.message }),
             { status: 500 }
@@ -418,6 +367,7 @@ export async function GET(req) {
     }
 }
 
+// DELETE soft delete product
 export async function DELETE(req) {
     try {
         const body = await req.json();

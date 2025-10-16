@@ -195,6 +195,53 @@ export async function convertProducts(products, countryCode, countryPricingList)
     return convertedProducts;
 }
 
+let conversionRatesCache = null;
+
+export async function convertProductsFast(products, countryCode, countryPricingList) {
+    if (!conversionRatesCache) {
+        conversionRatesCache = await fetchConversionRates();
+    }
+
+    const normalizedCountryCode =
+        countryCode.length === 3 ? countryCode.slice(0, 2).toUpperCase() : countryCode.toUpperCase();
+
+    // Create lookup maps
+    const countryPricingMap = {};
+    countryPricingList.forEach(c => { countryPricingMap[c.code.toUpperCase()] = c; });
+
+    const conversionRatesMap = {};
+    conversionRatesCache.forEach(c => { conversionRatesMap[c.currency] = c; });
+
+    return products.map(p => {
+        const basePrice = Number(p.price) || 0;
+
+        const targetCountry = countryPricingMap[countryCode.toUpperCase()] || countryPricingMap["IN"] || { multiplier: 1, currency: "INR", currencySymbol: "₹" };
+        const matchedCountry = conversionRatesMap[targetCountry.currency] || { conversionRate: 1, currency: targetCountry.currency, currencySymbol: targetCountry.currencySymbol };
+
+        const finalPrice = Math.round(basePrice * (matchedCountry.conversionRate || 1) * (targetCountry.multiplier || 1) * 100) / 100;
+
+        const variations = (p.variations || []).map(v => {
+            const varBasePrice = Number(v.price) || 0;
+            const varFinalPrice = Math.round(varBasePrice * (matchedCountry.conversionRate || 1) * (targetCountry.multiplier || 1) * 100) / 100;
+            return { ...v, price: varFinalPrice, currency: matchedCountry.currency, currencySymbol: matchedCountry.currencySymbol };
+        });
+
+        const matchedMarketLink =
+            p.marketLinks?.find(link => link.countryCode?.toUpperCase() === normalizedCountryCode) || null;
+
+        return {
+            ...p,
+            price: finalPrice,
+            currency: matchedCountry.currency,
+            currencySymbol: matchedCountry.currencySymbol,
+            variations,
+            matchedMarketLink,
+            marketLinks: p.marketLinks || [],
+        };
+    });
+}
+
+
 
 // export async function convertPrice(basePriceINR, targetCountryCode, countryPricingList) {
 //     const countryPricingListRates = await fetchConversionRates();

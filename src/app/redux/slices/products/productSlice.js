@@ -14,6 +14,22 @@ import axios from "axios";
 //     }
 // );
 
+export const fetchFastProducts = createAsyncThunk(
+    "products/fetchFastProducts",
+    async ({ page = 1, limit = 50 } = {}, { getState, rejectWithValue }) => {
+        try {
+            const state = getState();
+            const countryCode = state.country || "IN";
+            const response = await axios.get(`/api/products/fast?page=${page}&limit=${limit}`, {
+                headers: { "x-country": countryCode },
+            });
+            return response.data;
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to fetch fast products");
+        }
+    }
+);
+
 // Fetch all products (no country pricing)
 export const fetchAllProducts = createAsyncThunk(
     "products/fetchAllProducts",
@@ -44,9 +60,6 @@ export const fetchProducts = createAsyncThunk(
         }
     }
 );
-
-
-
 
 // Create new product
 export const createProduct = createAsyncThunk(
@@ -116,6 +129,20 @@ const productsSlice = createSlice({
     },
     reducers: {},
     extraReducers: (builder) => {
+        builder
+            .addCase(fetchFastProducts.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchFastProducts.fulfilled, (state, action) => {
+                state.loading = false;
+                state.products = action.payload;
+            })
+            .addCase(fetchFastProducts.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || action.error.message;
+            });
+
         builder
             .addCase(fetchAllProducts.pending, (state) => {
                 state.loading = true;
