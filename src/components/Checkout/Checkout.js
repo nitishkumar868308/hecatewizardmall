@@ -411,11 +411,36 @@ const Checkout = () => {
         throw new Error("No session ID returned");
       }
       const cashfree = await load({ mode: "sandbox" });
+      // cashfree.checkout({
+      //   paymentSessionId: data.sessionId,
+      //   redirectTarget: "_self",
+      //   redirectUrl: `${baseUrl}/payment-processing?order_id=${data.orderNumber}`,
+      // });
       cashfree.checkout({
         paymentSessionId: data.sessionId,
-        redirectTarget: "_self",
-        redirectUrl: `${baseUrl}/payment-processing?order_id=${data.orderNumber}`,
+        redirectTarget: "_modal", // or "_self"
+        onComplete: async (cfData) => {
+          try {
+            // verify order from your backend to ensure idempotency
+            const res = await fetch(`/api/orders/verify`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ order_id: data.orderNumber }),
+            });
+            console.log("res" , res)
+            const result = await res.json();
+            console.log("result" , result)
+            if (result.success) {
+              window.location.href = `/payment-success?order_id=${data.orderNumber}`;
+            } else {
+              window.location.href = `/payment-failed?order_id=${data.orderNumber}`;
+            }
+          } catch (err) {
+            window.location.href = `/payment-failed?order_id=${data.orderNumber}`;
+          }
+        },
       });
+
     } catch (err) {
       console.error("Checkout error:", err);
     }
