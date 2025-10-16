@@ -51,11 +51,11 @@ const ProductDetail = () => {
     const { user } = useSelector((state) => state.me);
     const { items } = useSelector((state) => state.cart);
     const country = useSelector((state) => state.country);
-    console.log("country", country)
+    console.log("products", products)
 
 
     useEffect(() => {
-        const prod = products.find((p) => p.id === id);
+        const prod = products.find((p) => p.id == id);
         setCurrentProduct(prod || null);
     }, [products, id]);
     // const product = products.find((p) => p.id === id);
@@ -612,14 +612,14 @@ const ProductDetail = () => {
                             />
                         ))} */}
                         {mainImage && thumbnailImages.length > 0 && thumbnailImages
-                            .filter(img => img?.trim()) // ignore empty or whitespace-only strings
+                            .filter(img => img?.trim()) 
                             .map((img, index) => (
                                 <img
                                     key={img || index}
-                                    src={img || undefined} // <-- Empty string ko undefined ya null karo
+                                    src={img || undefined}
                                     alt={`${product.name}-${index}`}
                                     onClick={() => setMainImage(img)}
-                                    unoptimized
+                                    // unoptimized
                                     className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 transition ${mainImage === img ? "border-blue-600 scale-105" : "border-gray-300 hover:scale-105"}`}
                                 />
                             ))
