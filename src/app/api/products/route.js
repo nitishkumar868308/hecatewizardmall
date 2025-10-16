@@ -377,7 +377,7 @@ export async function GET(req) {
         const limit = Number(url.searchParams.get("limit") || 50);
         const skip = (page - 1) * limit;
 
-        // Cache country pricing for faster lookup
+        // Cache country pricing
         if (!countryPricingCache[countryCode]) {
             const countryPricingList = await prisma.countryPricing.findMany({
                 where: { deleted: 0, active: true },
@@ -385,48 +385,25 @@ export async function GET(req) {
             countryPricingCache[countryCode] = countryPricingList;
         }
 
-        // Fetch basic product data first
-        const productsBasic = await prisma.product.findMany({
+        // Fetch products with all relations included
+        const products = await prisma.product.findMany({
             where: { deleted: 0 },
             skip,
             take: limit,
-            select: {
-                id: true,
-                name: true,
-                sku: true,
-                price: true,
-                category: { select: { id: true, name: true } },
-                subcategory: { select: { id: true, name: true } },
+            include: {
+                variations: { include: { tags: true } },
+                category: true,
+                subcategory: true,
+                offers: true,
                 primaryOffer: true,
+                tags: true,
+                marketLinks: true,
             },
         });
 
-        // Fetch heavy relations in parallel for each product
-        const productsFull = await Promise.all(
-            productsBasic.map(async (prod) => {
-                const [variations, offers, marketLinks, tags] = await Promise.all([
-                    prisma.variation.findMany({
-                        where: { productId: prod.id },
-                        include: { tags: true },
-                    }),
-                    prisma.offer.findMany({ where: { productId: prod.id } }),
-                    prisma.marketLink.findMany({ where: { productId: prod.id } }),
-                    prisma.tag.findMany({ where: { productId: prod.id } }),
-                ]);
-
-                return {
-                    ...prod,
-                    variations,
-                    offers,
-                    marketLinks,
-                    tags,
-                };
-            })
-        );
-
         // Convert products if needed (price calculation, etc.)
         const updatedProducts = await convertProducts(
-            productsFull,
+            products,
             countryCode,
             countryPricingCache[countryCode]
         );
