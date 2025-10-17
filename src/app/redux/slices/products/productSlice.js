@@ -124,6 +124,7 @@ const productsSlice = createSlice({
     name: "products",
     initialState: {
         products: [],
+        fastProducts: [],
         loading: false,
         error: null,
     },
@@ -136,7 +137,7 @@ const productsSlice = createSlice({
             })
             .addCase(fetchFastProducts.fulfilled, (state, action) => {
                 state.loading = false;
-                state.products = action.payload;
+                state.fastProducts = action.payload;
             })
             .addCase(fetchFastProducts.rejected, (state, action) => {
                 state.loading = false;

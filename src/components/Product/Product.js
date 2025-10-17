@@ -250,9 +250,9 @@ const ProductSlider = ({ showSection = "both" }) => {
     const [showDemo, setShowDemo] = useState(true);
     const router = useRouter();
     const { ref, inView } = useInView(0.2);
-    const { products } = useSelector((state) => state.products);
+    const { fastProducts  } = useSelector((state) => state.products);
     const dispatch = useDispatch();
-    console.log("products" , products)
+    console.log("fastProducts " , fastProducts )
     useEffect(() => {
         dispatch(fetchFastProducts());
     }, [dispatch]);
@@ -365,7 +365,7 @@ const ProductSlider = ({ showSection = "both" }) => {
         </Swiper>
     );
 
-    const newArrivals = [...products]
+    const newArrivals = [...fastProducts ]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 8);
 
@@ -387,7 +387,7 @@ const ProductSlider = ({ showSection = "both" }) => {
                             </motion.div>
                         </div>
                     )}
-                    {renderSlider(products.filter(p => p.active))}
+                    {renderSlider(fastProducts .filter(p => p.active))}
                 </div>
             )}
 
@@ -395,7 +395,7 @@ const ProductSlider = ({ showSection = "both" }) => {
             {(showSection.includes('both') || showSection.includes('related')) && (
                 <div className="w-full px-4 py-8">
                     <h2 className="text-2xl mb-6 font-functionPro">Related Products</h2>
-                    {renderSlider(products)}
+                    {renderSlider(fastProducts )}
                 </div>
             )}
 
