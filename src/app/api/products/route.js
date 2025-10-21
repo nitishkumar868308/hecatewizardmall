@@ -375,6 +375,9 @@ export async function GET(req) {
                 tags: {
                     select: { id: true, name: true },
                 },
+                offers: {
+                    select: { id: true, name: true },
+                },
                 primaryOffer: {
                     select: { id: true, name: true },
                 },
@@ -384,16 +387,16 @@ export async function GET(req) {
 
                 variations: {
                     select: {
+                        variationName: true,
                         id: true,
                         name: true,
+                        image,
                         tags: {
                             select: { id: true, name: true },
                         },
                     },
                 },
             },
-
-            // ⚡ Limit results for better performance
             take: 1000,
         });
 

@@ -56,6 +56,7 @@ const ProductDetail = () => {
 
     useEffect(() => {
         const prod = products.find((p) => p.id == id);
+        console.log("prod", prod)
         setCurrentProduct(prod || null);
     }, [products, id]);
     // const product = products.find((p) => p.id === id);
@@ -70,7 +71,7 @@ const ProductDetail = () => {
 
     useEffect(() => {
         if (!currentProduct) return;
-
+        console.log("currentProduct", currentProduct)
         // Reset selected attributes based on new product
         const attrs = {};
         currentProduct.variations?.forEach((v) => {
@@ -466,7 +467,7 @@ const ProductDetail = () => {
         const price = selectedVariation?.price || product.price;
         const currencySymbol = selectedVariation?.currencySymbol || product.currencySymbol || "₹";
         const currency = selectedVariation?.currency || product.currency || "₹";
-        console.log("currency" , currency)
+        console.log("currency", currency)
         const totalPrice = price * quantity;
 
         const flatAttributes = {};
@@ -612,7 +613,7 @@ const ProductDetail = () => {
                             />
                         ))} */}
                         {mainImage && thumbnailImages.length > 0 && thumbnailImages
-                            .filter(img => img?.trim()) 
+                            .filter(img => img?.trim())
                             .map((img, index) => (
                                 <img
                                     key={img || index}
@@ -635,10 +636,10 @@ const ProductDetail = () => {
                     <div>
                         <h1 className="text-5xl mb-6 text-gray-900">  {selectedVariation?.name || product.name}</h1>
                         <p className="text-3xl text-gray-700 mb-6 font-semibold">
-                                {(selectedVariation?.currency ?? product.currency) + " "}
-                                {(selectedVariation?.currencySymbol ?? product.currencySymbol)}
-                                {selectedVariation?.price ?? product.price}
-                         
+                            {(selectedVariation?.currency ?? product.currency) + " "}
+                            {(selectedVariation?.currencySymbol ?? product.currencySymbol)}
+                            {selectedVariation?.price ?? product.price}
+
 
                             {/* {selectedVariation?.price ?? product.price} */}
                         </p>
