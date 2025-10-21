@@ -336,24 +336,65 @@ export async function GET(req) {
         const countryPricingList = await prisma.countryPricing.findMany({
             where: { deleted: 0, active: true },
         });
-        
+
+        // const products = await prisma.product.findMany({
+        //     where: {
+        //         deleted: 0,
+        //     },
+        //     include: {
+        //         variations: {
+        //             include: {
+        //                 tags: true,
+        //             }
+        //         },
+        //         category: true,
+        //         subcategory: true,
+        //         offers: true,
+        //         primaryOffer: true,
+        //         tags: true,
+        //         marketLinks: true,
+        //     },
+        // });
         const products = await prisma.product.findMany({
             where: {
                 deleted: 0,
             },
-            include: {
-                variations: {
-                    include: {
-                        tags: true,
-                    }
+            select: {
+                id: true,
+                name: true,
+                price: true,
+                active: true,
+                image: true,
+
+                category: {
+                    select: { id: true, name: true },
                 },
-                category: true,
-                subcategory: true,
-                offers: true,
-                primaryOffer: true,
-                tags: true,
-                marketLinks: true,
+                subcategory: {
+                    select: { id: true, name: true },
+                },
+                tags: {
+                    select: { id: true, name: true },
+                },
+                primaryOffer: {
+                    select: { id: true, name: true },
+                },
+                marketLinks: {
+                    select: { id: true, name: true },
+                },
+
+                variations: {
+                    select: {
+                        id: true,
+                        name: true,
+                        tags: {
+                            select: { id: true, name: true },
+                        },
+                    },
+                },
             },
+
+            // ⚡ Limit results for better performance
+            take: 1000,
         });
 
         const updatedProducts = await convertProducts(products, countryCode, countryPricingList);
