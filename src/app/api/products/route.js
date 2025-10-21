@@ -337,68 +337,68 @@ export async function GET(req) {
             where: { deleted: 0, active: true },
         });
 
-        // const products = await prisma.product.findMany({
-        //     where: {
-        //         deleted: 0,
-        //     },
-        //     include: {
-        //         variations: {
-        //             include: {
-        //                 tags: true,
-        //             }
-        //         },
-        //         category: true,
-        //         subcategory: true,
-        //         offers: true,
-        //         primaryOffer: true,
-        //         tags: true,
-        //         marketLinks: true,
-        //     },
-        // });
         const products = await prisma.product.findMany({
             where: {
                 deleted: 0,
             },
-            select: {
-                id: true,
-                name: true,
-                price: true,
-                active: true,
-                image: true,
-
-                category: {
-                    select: { id: true, name: true },
-                },
-                subcategory: {
-                    select: { id: true, name: true },
-                },
-                tags: {
-                    select: { id: true, name: true },
-                },
-                offers: {
-                    select: { id: true, name: true },
-                },
-                primaryOffer: {
-                    select: { id: true, name: true },
-                },
-                marketLinks: {
-                    select: { id: true, name: true },
-                },
-
+            include: {
                 variations: {
-                    select: {
-                        variationName: true,
-                        id: true,
-                        name: true,
-                        image,
-                        tags: {
-                            select: { id: true, name: true },
-                        },
-                    },
+                    include: {
+                        tags: true,
+                    }
                 },
+                category: true,
+                subcategory: true,
+                offers: true,
+                primaryOffer: true,
+                tags: true,
+                marketLinks: true,
             },
-            take: 1000,
         });
+        // const products = await prisma.product.findMany({
+        //     where: {
+        //         deleted: 0,
+        //     },
+        //     select: {
+        //         id: true,
+        //         name: true,
+        //         price: true,
+        //         active: true,
+        //         image: true,
+
+        //         category: {
+        //             select: { id: true, name: true },
+        //         },
+        //         subcategory: {
+        //             select: { id: true, name: true },
+        //         },
+        //         tags: {
+        //             select: { id: true, name: true },
+        //         },
+        //         offers: {
+        //             select: { id: true, name: true },
+        //         },
+        //         primaryOffer: {
+        //             select: { id: true, name: true },
+        //         },
+        //         marketLinks: {
+        //             select: { id: true, name: true },
+        //         },
+
+        //         variations: {
+        //             select: {
+        //                 variationName: true,
+        //                 id: true,
+        //                 name: true,
+        //                 image,
+        //                 tags: {
+        //                     select: { id: true, name: true },
+        //                 },
+        //             },
+        //         },
+        //     },
+        //     take: 1000,
+        // });
 
         const updatedProducts = await convertProducts(products, countryCode, countryPricingList);
 
