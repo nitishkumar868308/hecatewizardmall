@@ -657,7 +657,7 @@ export async function PUT(req) {
             },
         });
 
-        // console.log("updatedProduct", updatedProduct)
+        console.log("updatedProduct", updatedProduct)
 
         return new Response(
             JSON.stringify({

@@ -234,7 +234,16 @@ const ProductModalWrapper = ({
 
     const handleUpdateProduct = async () => {
         setLoading(true);
-
+        let imageUrls = [];
+        if (newImage) {
+            if (Array.isArray(newImage)) {
+                imageUrls = await Promise.all(newImage.map(img => handleImageUpload(img)));
+                console.log("imageUrls", imageUrls)
+            } else {
+                const url = await handleImageUpload(newImage);
+                imageUrls = Array.isArray(url) ? url : [url];
+            }
+        }
         // Flattened variations data
         const formattedVariations = variationsData.map(v => ({
             id: v.id || undefined,
@@ -252,6 +261,10 @@ const ProductModalWrapper = ({
 
         const productTags = editProductData.tags?.map(tag => ({ id: Number(tag.id) })) || [];
         console.log("editProductData", editProductData)
+        const combinedImages = [
+            ...(editProductData.image || []), // existing images from DB
+            ...imageUrls                        // new uploaded images
+        ];
 
         const productData = {
             name: editProductData.name,
@@ -259,7 +272,7 @@ const ProductModalWrapper = ({
             description: editProductData.description,
             price: editProductData.price,
             stock: editProductData.stock,
-            image: editProductData.image,
+            image: combinedImages,
             // offers: editProductData.offers?.length
             //     ? { set: [], connect: editProductData.offers.map(o => ({ id: o.id })) }
             //     : undefined,

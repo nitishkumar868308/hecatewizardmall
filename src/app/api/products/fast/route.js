@@ -95,7 +95,7 @@ export async function GET(req) {
                 createdAt: true,
             },
         });
-
+        console.log("products" , products)
         const updatedProducts = await convertProductsFast(
             products,
             countryCode,

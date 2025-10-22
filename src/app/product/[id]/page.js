@@ -206,7 +206,7 @@ const ProductDetail = () => {
             // अगर किसी attribute का default value variationAttributes में मौजूद नहीं है
             Object.entries(variationAttributes).forEach(([attr, values]) => {
                 if (!initialSelected[attr] && values.length) {
-                    initialSelected[attr] = values[0]; // fallback
+                    initialSelected[attr] = values[0];
                 }
             });
         } else {
@@ -301,7 +301,7 @@ const ProductDetail = () => {
         if (matchedVariation?.image?.length) {
             setCurrentImages(matchedVariation.image);
             setMainImage(matchedVariation.image[0]?.trim() || "/image/logo PNG.png");
-        } else if (!matchedVariation && product.image?.length) {
+        } else if (product.image?.length) {
             setCurrentImages(product.image);
             setMainImage(product.image[0]?.trim() || "/image/logo PNG.png");
         } else {
