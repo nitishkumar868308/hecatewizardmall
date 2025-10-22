@@ -75,7 +75,7 @@ const Footer = () => {
 
                         <div className="flex items-center gap-2 text-gray-300 hover:text-gray-100 transition cursor-pointer">
                             <MapPin className="h-5 w-5" />
-                            <span>27 Deepali, Pitampura, New Delhi 90210</span>
+                            <span>27 Deepali, Pitampura, New Delhi 110034</span>
 
                         </div>
 

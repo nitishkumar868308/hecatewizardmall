@@ -48,11 +48,17 @@ const TermsPage = () => {
                         We reserve the right to amend these terms and conditions at any time without prior notice. By continuing to use this website, you agree to be bound by the updated terms.
                     </p>
                 </section>
-
+                {/* Disclaimer */}
+                <section>
+                    <h2 className="text-2xl font-semibold mb-2">Disclaimer</h2>
+                    <p className="text-lg">
+                        Results may vary, and we do not guarantee any specific outcomes. The information provided on this website is for general guidance and informational purposes only.
+                    </p>
+                </section>
                 {/* Operated By */}
                 <section>
                     <h2 className="text-2xl font-semibold mb-2">Operated By</h2>
-                    <p className="text-lg">Kakullie A Jain</p>
+                    <p className="text-lg">Kakullie A Jain And Pratiek A Jain</p>
                 </section>
 
             </div>
