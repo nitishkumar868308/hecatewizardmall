@@ -83,7 +83,7 @@ export async function GET(req) {
 
         // Fetch only necessary fields
         const products = await prisma.product.findMany({
-            where: { deleted: 0 },
+            where: { deleted: 0, active: true },
             skip,
             take: limit,
             select: {
