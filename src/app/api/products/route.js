@@ -171,7 +171,9 @@ export async function POST(req) {
             variations,
             tags,
             marketLinks,
-            isDefault
+            isDefault,
+            minQuantity,
+            bulkPrice
         } = body;
         // console.log("isDefault", isDefault)
         if (!name?.trim() || !subcategory || !sku?.trim()) {
@@ -263,6 +265,8 @@ export async function POST(req) {
                 color: color ?? null,
                 tags,
                 isDefault,
+                minQuantity: minQuantity?.toString() ?? null,
+                bulkPrice: bulkPrice?.toString() ?? null,
                 marketLinks: marketLinks?.connect?.length > 0
                     ? { connect: marketLinks.connect.map(link => ({ id: link.id })) }
                     : undefined,
@@ -340,6 +344,10 @@ export async function GET(req) {
         const products = await prisma.product.findMany({
             where: {
                 deleted: 0,
+                active: true,
+                NOT: {
+                    image: { equals: [] }  // image array empty na ho
+                }
             },
             include: {
                 variations: {
@@ -494,7 +502,9 @@ export async function PUT(req) {
             variations = [],
             tags = [],
             marketLinks,
-            isDefault
+            isDefault,
+            minQuantity,
+            bulkPrice
         } = data;
 
         // console.log("===== Backend received product data =====");
@@ -622,6 +632,8 @@ export async function PUT(req) {
                 size,
                 color,
                 isDefault,
+                minQuantity: minQuantity?.toString() ?? null,
+                bulkPrice: bulkPrice?.toString() ?? null,
                 otherCountriesPrice: otherCountriesPrice != null ? otherCountriesPrice.toString() : existing.otherCountriesPrice,
                 image: image.length ? image : existing.image,
                 category: categoryId ? { connect: { id: categoryId } } : undefined,

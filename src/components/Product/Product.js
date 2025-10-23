@@ -250,9 +250,9 @@ const ProductSlider = ({ showSection = "both" }) => {
     const [showDemo, setShowDemo] = useState(true);
     const router = useRouter();
     const { ref, inView } = useInView(0.2);
-    const { fastProducts  } = useSelector((state) => state.products);
+    const { fastProducts } = useSelector((state) => state.products);
     const dispatch = useDispatch();
-    console.log("fastProducts " , fastProducts )
+    console.log("fastProducts ", fastProducts)
     useEffect(() => {
         dispatch(fetchFastProducts());
     }, [dispatch]);
@@ -330,7 +330,21 @@ const ProductSlider = ({ showSection = "both" }) => {
                     <div className="relative group w-full overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-white cursor-pointer">
                         {/* Image */}
                         <div className="relative w-full h-72 sm:h-80 md:h-96 lg:h-[500px]">
-                            {product.image ? (
+                            {/* {product.image ? (
+                                <Image
+                                    src={Array.isArray(product.image) ? product.image[0] : product.image}
+                                    alt={product.name}
+                                    fill
+                                    className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105 rounded-xl"
+                                    onClick={() => handleProductClick(product.id)}
+                                    unoptimized
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-lg font-semibold rounded-xl">
+                                    No Image
+                                </div>
+                            )} */}
+                            {product.image && product.image.length > 0 ? (
                                 <Image
                                     src={Array.isArray(product.image) ? product.image[0] : product.image}
                                     alt={product.name}
@@ -344,6 +358,7 @@ const ProductSlider = ({ showSection = "both" }) => {
                                     No Image
                                 </div>
                             )}
+
 
                             {/* Text overlay at bottom */}
                             <div className="absolute bottom-0 w-full bg-gradient-to-t from-black/70 to-transparent p-4 text-center rounded-b-xl">
@@ -365,7 +380,7 @@ const ProductSlider = ({ showSection = "both" }) => {
         </Swiper>
     );
 
-    const newArrivals = [...fastProducts ]
+    const newArrivals = [...fastProducts]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 8);
 
@@ -387,7 +402,7 @@ const ProductSlider = ({ showSection = "both" }) => {
                             </motion.div>
                         </div>
                     )}
-                    {renderSlider(fastProducts .filter(p => p.active))}
+                    {renderSlider(fastProducts.filter(p => p.active))}
                 </div>
             )}
 
@@ -395,7 +410,7 @@ const ProductSlider = ({ showSection = "both" }) => {
             {(showSection.includes('both') || showSection.includes('related')) && (
                 <div className="w-full px-4 py-8">
                     <h2 className="text-2xl mb-6 font-functionPro">Related Products</h2>
-                    {renderSlider(fastProducts )}
+                    {renderSlider(fastProducts)}
                 </div>
             )}
 

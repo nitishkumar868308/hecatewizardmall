@@ -87,6 +87,7 @@ const MultiSelectDropdown = ({ offers, currentData, setCurrentData }) => {
     // Convert objects to IDs on mount
     useEffect(() => {
         if (currentData.offers && currentData.offers.length > 0) {
+            // Convert to ID array only if objects exist
             if (typeof currentData.offers[0] === "object") {
                 setCurrentData(prev => ({
                     ...prev,
@@ -96,7 +97,8 @@ const MultiSelectDropdown = ({ offers, currentData, setCurrentData }) => {
         } else if (!currentData.offers) {
             setCurrentData(prev => ({ ...prev, offers: [] }));
         }
-    }, []);
+    }, [currentData.offers]); // 👈 Add dependency here
+
 
     const toggleOffer = (id) => {
         const selected = currentData.offers || [];

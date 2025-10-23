@@ -114,6 +114,8 @@ model Product {
   offers          Offer[] @relation("ProductOffers")
   tags            Tag[]       @relation("ProductTags") 
   marketLinks MarketLink[] 
+  minQuantity     String?   
+  bulkPrice       String?   
 }
 
 model ProductVariation {

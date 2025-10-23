@@ -585,7 +585,7 @@ const ProductDetail = () => {
                                         src={mainImage?.trim() || "/image/logo PNG.png"}   // ✅ empty string handle
                                         alt={product.name || "Product Image"}
                                         fill
-                                        className={`object-cover w-full h-full cursor-zoom-in transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"
+                                        className={`object-contain w-full h-full cursor-zoom-in transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"
                                             }`}
                                         onLoadingComplete={() => setImageLoaded(true)}
                                         unoptimized
@@ -691,7 +691,7 @@ const ProductDetail = () => {
                         </div> */}
 
 
-                        <div className="flex flex-col gap-3 mb-6">
+                        {/* <div className="flex flex-col gap-3 mb-6">
                             {[...new Map(product.offers.map(o => [o.id, o])).values()].map((offer, index) => (
                                 <div
                                     key={index}
@@ -702,12 +702,42 @@ const ProductDetail = () => {
                                 </div>
                             ))}
                         </div>
+                        <div>Bulk Price</div> */}
+                        {(product.offers?.length > 0 || (product.minQuantity && product.bulkPrice)) && (
+                            <div className="mt-4 text-sm text-gray-800 space-y-2">
+
+                                {/* 🔥 Offers */}
+                                {product.offers && product.offers.length > 0 && (
+                                    <div>
+                                        {[...new Map(product.offers.map(o => [o.id, o])).values()].map((offer, index) => (
+                                            <div key={index} className="flex items-start gap-1">
+                                                <span className="text-yellow-600">🔥</span>
+                                                <span>
+                                                    <strong>{offer.title ? `${offer.title}: ` : ""}</strong>
+                                                    {offer.description}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* 💰 Bulk offer */}
+                                {product.minQuantity && product.bulkPrice && (
+                                    <div className="flex items-center gap-1 text-green-700">
+                                        <span>💰</span>
+                                        <span>
+                                            Buy <strong>{product.minQuantity}+</strong> items at{" "}
+                                            <strong>{product.currencySymbol || "₹"}{product.bulkPrice}</strong> each
+                                        </span>
+                                    </div>
+                                )}
+
+                            </div>
+                        )}
 
 
 
                         {/* Quantity & Add to Cart */}
-
-
                         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mt-4">
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                                 <div className="flex items-center border rounded-lg overflow-hidden">

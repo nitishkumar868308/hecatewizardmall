@@ -532,7 +532,11 @@ const Checkout = () => {
                     />
                     <div className="flex flex-col justify-between flex-1">
                       <h3 className="font-semibold text-lg text-gray-800">{cartItem.productName}</h3>
-                      <p className="text-gray-500 text-sm">Variation: {cartItem.attributes.color}</p>
+                      <p className="text-gray-500 text-sm">
+                        {Object.entries(cartItem.attributes || {})
+                          .map(([key, val]) => `${key}: ${val}`)
+                          .join(", ")}
+                      </p>
 
                       {/* Pricing */}
                       <div className="flex items-center gap-2 mt-1 flex-wrap">

@@ -83,7 +83,13 @@ export async function GET(req) {
 
         // Fetch only necessary fields
         const products = await prisma.product.findMany({
-            where: { deleted: 0, active: true },
+            where: {
+                deleted: 0,
+                active: true,
+                NOT: {
+                    image: { equals: [] }  // image array empty na ho
+                }
+            },
             skip,
             take: limit,
             select: {
@@ -95,7 +101,8 @@ export async function GET(req) {
                 createdAt: true,
             },
         });
-        console.log("products" , products)
+
+        console.log("products", products)
         const updatedProducts = await convertProductsFast(
             products,
             countryCode,

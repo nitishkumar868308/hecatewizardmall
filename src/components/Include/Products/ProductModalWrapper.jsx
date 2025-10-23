@@ -176,6 +176,8 @@ const ProductModalWrapper = ({
                 color: newProduct.colors || [],
                 sku: newProduct.sku ?? null,
                 otherCountriesPrice: newProduct.otherCountriesPrice ?? null,
+                minQuantity: newProduct.minQuantity ?? null,
+                bulkPrice: newProduct.bulkPrice ?? null,
                 marketLinks: (newProduct.marketLinks || []).length > 0
                     ? { connect: newProduct.marketLinks.map(link => ({ id: link.id })) }
                     : undefined,
@@ -265,7 +267,18 @@ const ProductModalWrapper = ({
             ...(editProductData.image || []), // existing images from DB
             ...imageUrls                        // new uploaded images
         ];
+        const cleanedOffers = Array.isArray(editProductData.offers)
+            ? editProductData.offers
+                .filter(Boolean) // remove undefined/null
+                .map(o => typeof o === "object" ? Number(o.id) : Number(o))
+                .filter(Boolean)
+            : [];
 
+        // If primaryOffer exists but not in offers, add it
+        if (editProductData.primaryOffer?.id && !cleanedOffers.includes(Number(editProductData.primaryOffer.id))) {
+            cleanedOffers.push(Number(editProductData.primaryOffer.id));
+        }
+        console.log("cleanedOffers", cleanedOffers)
         const productData = {
             name: editProductData.name,
             short: editProductData.short,
@@ -273,15 +286,25 @@ const ProductModalWrapper = ({
             price: editProductData.price,
             stock: editProductData.stock,
             image: combinedImages,
+            minQuantity: editProductData.minQuantity ?? null,
+            bulkPrice: editProductData.bulkPrice ?? null,
             // offers: editProductData.offers?.length
             //     ? { set: [], connect: editProductData.offers.map(o => ({ id: o.id })) }
             //     : undefined,
-            offers: editProductData.offers?.length
-                ? { set: [], connect: editProductData.offers.map(o => ({ id: Number(o.id) })) }
+            // offers: editProductData.offers?.length
+            //     ? { set: [], connect: editProductData.offers.map(o => ({ id: Number(o.id) })) }
+            //     : undefined,
+            offers: cleanedOffers.length
+                ? { set: [], connect: cleanedOffers.map(id => ({ id })) }
                 : undefined,
-            primaryOffer: editProductData.offers?.[0]?.id
-                ? { connect: { id: Number(editProductData.offers[0].id) } }
-                : undefined,
+            primaryOffer: editProductData.primaryOffer?.id
+                ? { connect: { id: Number(editProductData.primaryOffer.id) } }
+                : cleanedOffers.length
+                    ? { connect: { id: cleanedOffers[0] } }
+                    : undefined,
+            // primaryOffer: editProductData.offers?.[0]?.id
+            //     ? { connect: { id: Number(editProductData.offers[0].id) } }
+            //     : undefined,
             // primaryOffer: editProductData.offers?.length
             //     ? { connect: { id: editProductData.offers[0].id } }
             //     : undefined,
@@ -509,10 +532,12 @@ const ProductModalWrapper = ({
             newVariationDetails[variationKey] = {
                 id: existingVar?.id,
                 price: existingVar?.price ?? currentData.price,
-                short: existingVar?.short ?? currentData.short,
+                // short: existingVar?.short ?? currentData.short,
+                short: currentData.short,
                 stock: existingVar?.stock ?? currentData.stock,
                 name: currentData.name,
-                description: existingVar?.description ?? currentData.description,
+                description: currentData.description,
+                // description: existingVar?.description ?? currentData.description,
                 images: existingVar?.image ?? (currentData.image ? [...currentData.image] : []),
                 // tags: (existingVar[variationKey]?.tags || currentData.tags)?.map(tag =>
                 //     typeof tag === 'string' ? { name: tag } : tag

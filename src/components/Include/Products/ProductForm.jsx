@@ -51,10 +51,6 @@ const ProductForm = ({
         }
     }, [isEdit, editModalOpen]);
 
-
-
-
-
     // Add tag to product
     const addTag = (tagName) => {
         if (!tagName?.trim()) {
@@ -309,6 +305,40 @@ const ProductForm = ({
                         ))}
                     </div>
                 </div>
+
+                {/* {Bulk Price} */}
+                <div className="flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">Bulk Price</label>
+
+                    <div className="flex gap-4">
+                        {/* Minimum Quantity */}
+                        <div className="flex-1">
+                            <input
+                                type="number"
+                                placeholder="Min Quantity"
+                                value={currentData.minQuantity || ""}
+                                onChange={(e) =>
+                                    setCurrentData({ ...currentData, minQuantity: e.target.value })
+                                }
+                                className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                            />
+                        </div>
+
+                        {/* Price */}
+                        <div className="flex-1">
+                            <input
+                                type="number"
+                                placeholder="Price"
+                                value={currentData.bulkPrice || ""}
+                                onChange={(e) =>
+                                    setCurrentData({ ...currentData, bulkPrice: e.target.value })
+                                }
+                                className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                            />
+                        </div>
+                    </div>
+                </div>
+
 
                 {/* Description */}
                 {/* <div className="col-span-1 md:col-span-2 flex flex-col">
