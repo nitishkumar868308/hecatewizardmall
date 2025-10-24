@@ -373,7 +373,7 @@ const ProductForm = ({
                 </div>
 
                 {/* Images */}
-                <div className="col-span-1 md:col-span-2 flex flex-col">
+                {/* <div className="col-span-1 md:col-span-2 flex flex-col">
                     <label className="mb-2 font-medium text-gray-700">Product Images</label>
                     <input
                         type="file"
@@ -401,7 +401,7 @@ const ProductForm = ({
                                     alt={`Product ${idx}`}
                                     className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
                                 />
-                            ))} */}
+                    
                         {newImage?.length > 0 ? (
                             newImage.map((img, idx) => (
                                 <img
@@ -412,7 +412,7 @@ const ProductForm = ({
                                 />
                             ))
                         ) : (
-                            /* warna DB se aayi images show karo */
+                      
                             currentData.image?.map((img, idx) => (
                                 <img
                                     key={idx}
@@ -423,7 +423,66 @@ const ProductForm = ({
                             ))
                         )}
                     </div>
+                </div> */}
+
+                <div className="col-span-1 md:col-span-2 flex flex-col">
+                    <label className="mb-2 font-medium text-gray-700">Product Images</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) =>
+                            setNewImage((prev = []) => [...prev, ...Array.from(e.target.files)])
+                        }
+                        className="mb-4 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer transition"
+                    />
+                    <div className="flex gap-3 flex-wrap">
+                        {/* Preview new images */}
+                        {newImage?.map((img, idx) => (
+                            <div key={idx} className="relative w-32 h-32">
+                                <img
+                                    src={URL.createObjectURL(img)}
+                                    alt={`Preview ${idx}`}
+                                    className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setNewImage((prev) => prev.filter((_, i) => i !== idx))}
+                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        ))}
+
+                        {/* Preview existing DB images (Edit mode) */}
+                        {currentData?.image?.length > 0 &&
+                            currentData.image.map((img, idx) => (
+                                <div key={idx} className="relative w-32 h-32">
+                                    <img
+                                        src={img}
+                                        alt={`Product ${idx}`}
+                                        className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setCurrentData((prev) => ({
+                                                ...prev,
+                                                image: prev.image?.filter((_, i) => i !== idx) || [],
+                                            }))
+                                        }
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                    </div>
+
                 </div>
+
+
             </form>
         </div>
     );

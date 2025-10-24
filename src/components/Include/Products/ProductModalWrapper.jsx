@@ -33,7 +33,7 @@ const ProductModalWrapper = ({
     const [selectedAttributes, setSelectedAttributes] = useState({});
     const [searchTerm, setSearchTerm] = useState("");
     const [expandedAttrs, setExpandedAttrs] = useState({});
-    const [newImage, setNewImage] = useState(null);
+    const [newImage, setNewImage] = useState([]);
     const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
     const getVariationKey = (attrs = {}) => {
@@ -224,7 +224,7 @@ const ProductModalWrapper = ({
             setActiveSection("product");
             setCurrentVariations([]);
             setVariationDetails({});
-            setNewImage(null);
+            setNewImage([]);
             setModalOpen(false)
         } catch (err) {
             toast.error(err?.message || "Failed to create product");
@@ -335,6 +335,7 @@ const ProductModalWrapper = ({
             const res = await dispatch(updateProduct({ id: editProductData.id, data: productData })).unwrap();
             toast.success("Product updated successfully!");
             setEditProductData(res);
+            setNewImage([]);  
             // setModalOpen(false);
         } catch (err) {
             toast.error(err.message || "Failed to update product");
@@ -532,12 +533,12 @@ const ProductModalWrapper = ({
             newVariationDetails[variationKey] = {
                 id: existingVar?.id,
                 price: existingVar?.price ?? currentData.price,
-                // short: existingVar?.short ?? currentData.short,
-                short: currentData.short,
+                short: existingVar?.short ?? currentData.short,
+                // short: currentData.short,
                 stock: existingVar?.stock ?? currentData.stock,
                 name: currentData.name,
-                description: currentData.description,
-                // description: existingVar?.description ?? currentData.description,
+                //description: currentData.description,
+                description: existingVar?.description ?? currentData.description,
                 images: existingVar?.image ?? (currentData.image ? [...currentData.image] : []),
                 // tags: (existingVar[variationKey]?.tags || currentData.tags)?.map(tag =>
                 //     typeof tag === 'string' ? { name: tag } : tag

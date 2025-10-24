@@ -35,7 +35,7 @@ export async function POST(req) {
             );
         }
 
-        if (!discountType || !["percentage", "buyXGetY"].includes(discountType)) {
+        if (!discountType || !["percentage", "buyXGetY", "rangeBuyXGetY"].includes(discountType)) {
             return new Response(
                 JSON.stringify({ message: "Invalid discountType" }),
                 { status: 400 }

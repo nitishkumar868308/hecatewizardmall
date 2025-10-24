@@ -13,6 +13,7 @@ const ProductTable = ({
     setDeleteProductId,
     setDeleteModalOpen,
 }) => {
+    console.log("products", products)
     return (
         <div className="overflow-x-auto">
             <div className="min-w-full bg-white shadow-lg rounded-lg">
@@ -20,6 +21,7 @@ const ProductTable = ({
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sub Category</th>
@@ -33,11 +35,19 @@ const ProductTable = ({
                         {products.map((p, idx) => (
                             <tr key={`${p.id}-${idx}`} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4">{idx + 1}</td>
+                                 <td className="px-6 py-4">
+                                    {p.image && p.image.length > 0 ? (
+                                        <img src={p.image[0]} alt={p.name} className="w-12 h-12 object-cover rounded" />
+                                    ) : (
+                                        <span className="text-red-500 italic">Image missing</span>
+                                    )}
+                                </td>
                                 <td className="px-6 py-4">{p.name}</td>
                                 <td className="px-6 py-4">{categories.find(s => s.id === p.categoryId)?.name || "-"}</td>
                                 <td className="px-6 py-4">{subcategories.find(s => s.id === p.subcategoryId)?.name || "-"}</td>
                                 <td className="px-6 py-4">{p.price}</td>
-                                <td className="px-6 py-4">{p.stock}</td>
+                                <td className="px-6 py-4">{p.stock}</td>                             
+
                                 <td className="px-6 py-4">
                                     <label className="inline-flex items-center cursor-pointer">
                                         <input
@@ -51,13 +61,14 @@ const ProductTable = ({
                                         </span>
                                     </label>
                                 </td>
+
                                 <td className="px-6 py-4 flex gap-3">
                                     <button className="text-blue-500 hover:text-blue-700 cursor-pointer" onClick={() => openModal(p)}>
                                         <View className="w-5 h-5" />
                                     </button>
                                     <button
                                         onClick={() => {
-                                            console.log("p" , p)
+                                            console.log("p", p)
                                             setEditProductData({ ...p, variations: p.variations || [] });
                                             handleEditClick(p);
                                         }}
@@ -72,6 +83,8 @@ const ProductTable = ({
                                         <Trash2 className="w-5 h-5" />
                                     </button>
                                 </td>
+
+
                             </tr>
                         ))}
                         {products.length === 0 && (

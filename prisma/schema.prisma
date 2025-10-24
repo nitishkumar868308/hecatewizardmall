@@ -78,6 +78,7 @@ model Subcategory {
   image      String?
   active     Boolean  @default(true)
   products   Product[]
+  offerId     Int?      
   deleted    Int      @default(0) // 0 = not deleted, 1 = deleted
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

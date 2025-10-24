@@ -114,7 +114,7 @@ const Offer = () => {
                     />
                     <button
                         onClick={openModal}
-                        className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow cursor-pointer"
+                        className="flex items-center gap-2 bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg shadow cursor-pointer"
                     >
                         <Plus className="w-5 h-5" /> Add Offer
                     </button>
@@ -146,7 +146,9 @@ const Offer = () => {
                                             ? `${o.discountValue.percent || 0}%`
                                             : o.discountType === "buyXGetY"
                                                 ? `Buy ${o.discountValue.buy || 0} Get ${o.discountValue.free || 0} Free`
-                                                : ""}
+                                                : o.discountType === "rangeBuyXGetY"
+                                                    ? `Buy ${o.discountValue.start || 0}-${o.discountValue.end || 0} Get ${o.discountValue.free || 0} Free`
+                                                    : ""}
                                     </td>
 
                                     <td className="px-6 py-4 whitespace-nowrap text-gray-800">{o.type}</td>
@@ -217,6 +219,7 @@ const Offer = () => {
                         >
                             <option value="percentage">Percentage</option>
                             <option value="buyXGetY">Buy X Get Y Free</option>
+                            <option value="rangeBuyXGetY">Range Buy X Get Y Free</option>
                         </select>
 
                         {/* Discount Value Dynamic Inputs */}
@@ -261,6 +264,48 @@ const Offer = () => {
                             </div>
                         )}
 
+                        {newOffer.discountType === "rangeBuyXGetY" && (
+                            <div className="flex gap-2 mb-4">
+                                <input
+                                    type="number"
+                                    placeholder="Start Range (e.g., 12)"
+                                    value={newOffer.discountValue.start || ""}
+                                    onChange={(e) =>
+                                        setNewOffer({
+                                            ...newOffer,
+                                            discountValue: { ...newOffer.discountValue, start: parseInt(e.target.value) },
+                                        })
+                                    }
+                                    className="border rounded-lg px-4 py-2 w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="End Range (e.g., 19)"
+                                    value={newOffer.discountValue.end || ""}
+                                    onChange={(e) =>
+                                        setNewOffer({
+                                            ...newOffer,
+                                            discountValue: { ...newOffer.discountValue, end: parseInt(e.target.value) },
+                                        })
+                                    }
+                                    className="border rounded-lg px-4 py-2 w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Free Quantity"
+                                    value={newOffer.discountValue.free || ""}
+                                    onChange={(e) =>
+                                        setNewOffer({
+                                            ...newOffer,
+                                            discountValue: { ...newOffer.discountValue, free: parseInt(e.target.value) },
+                                        })
+                                    }
+                                    className="border rounded-lg px-4 py-2 w-full mt-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                />
+                            </div>
+                        )}
+
+
                         {/* Description */}
                         <input
                             type="text"
@@ -274,7 +319,7 @@ const Offer = () => {
                         <div className="mb-4">
                             <p className="font-medium mb-2">Apply Offer To:</p>
                             <div className="flex flex-wrap gap-4">
-                                {["product", "category"].map((type) => (
+                                {["product", "Subcategory"].map((type) => (
                                     <label key={type} className="flex items-center gap-2 cursor-pointer">
                                         <input
                                             type="checkbox"
@@ -303,7 +348,7 @@ const Offer = () => {
                             </button>
                             <button
                                 onClick={handleAddOffer}
-                                className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-800 cursor-pointer"
                             >
                                 Add
                             </button>
@@ -337,6 +382,7 @@ const Offer = () => {
                         >
                             <option value="percentage">Percentage</option>
                             <option value="buyXGetY">Buy X Get Y Free</option>
+                            <option value="rangeBuyXGetY">Range Buy X Get Y Free</option>
                         </select>
 
                         {editOffer.discountType === "percentage" && (
@@ -385,7 +431,7 @@ const Offer = () => {
                         <div className="mb-4">
                             <p className="font-medium mb-2">Apply Offer To:</p>
                             <div className="flex flex-wrap gap-4">
-                                {["product", "category"].map((type) => (
+                                {["product", "Subcategory"].map((type) => (
                                     <label key={type} className="flex items-center gap-2 cursor-pointer">
                                         <input
                                             type="checkbox"

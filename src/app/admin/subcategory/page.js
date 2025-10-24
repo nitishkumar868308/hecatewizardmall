@@ -12,6 +12,7 @@ import { fetchCategories } from "@/app/redux/slices/addCategory/addCategorySlice
 import { useDispatch, useSelector } from "react-redux";
 import toast from 'react-hot-toast';
 import Image from "next/image";
+import { fetchOffers } from '@/app/redux/slices/offer/offerSlice'
 
 const AddSubcategory = () => {
     const dispatch = useDispatch();
@@ -26,10 +27,12 @@ const AddSubcategory = () => {
     const [editSubcategory, setEditSubcategory] = useState({});
     const [deleteSubcategoryId, setDeleteSubcategoryId] = useState(null);
     const [newImage, setNewImage] = useState(null);
-
+    const { offers } = useSelector((state) => state.offers);
+    console.log("offers", offers)
     useEffect(() => {
         dispatch(fetchSubcategories());
         dispatch(fetchCategories());
+        dispatch(fetchOffers())
     }, [dispatch]);
 
     const handleImageChange = (e) => {
@@ -69,10 +72,11 @@ const AddSubcategory = () => {
                     categoryId: parseInt(newSubcategory.categoryId),
                     image: imageUrl,
                     active: true,
+                    offerId: newSubcategory.offerId ? parseInt(newSubcategory.offerId) : null,
                 })
             ).unwrap();
             toast.success("Subcategory added successfully");
-            setNewSubcategory({ name: "", categoryId: "" });
+            setNewSubcategory({ name: "", categoryId: "", offerId: "" });
             setNewImage(null);
             setModalOpen(false);
         } catch (err) {
@@ -95,6 +99,7 @@ const AddSubcategory = () => {
                     categoryId: parseInt(editSubcategory.categoryId),
                     image: imageUrl,
                     active: editSubcategory.active,
+                    offerId: editSubcategory.offerId ? parseInt(editSubcategory.offerId) : null,
                 })
             ).unwrap();
             toast.success("Subcategory updated successfully");
@@ -142,11 +147,11 @@ const AddSubcategory = () => {
                         placeholder="Search subcategories..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="border rounded-lg px-4 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        className="border rounded-lg px-4 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-gray-400"
                     />
                     <button
                         onClick={() => setModalOpen(true)}
-                        className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow cursor-pointer"
+                        className="flex items-center gap-2 bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg shadow cursor-pointer"
                     >
                         <Plus className="w-5 h-5" /> Add Subcategory
                     </button>
@@ -296,6 +301,29 @@ const AddSubcategory = () => {
                             className="border rounded-lg px-4 py-2 w-full mb-4"
                         />
 
+                        <select
+                            value={newSubcategory.offerId || ""}
+                            onChange={(e) => setNewSubcategory({ ...newSubcategory, offerId: e.target.value })}
+                            className="border rounded-lg px-4 py-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                            <option value="">Select Offer (Optional)</option>
+                            {offers
+                                .filter((offer) => offer.type.includes("Subcategory") && offer.active)
+                                .map((offer) => (
+                                    <option key={offer.id} value={offer.id}>
+                                        {offer.name} (
+                                        {offer.discountType === "percentage"
+                                            ? `${offer.discountValue.percent}%`
+                                            : offer.discountType === "buyXGetY"
+                                                ? `Buy ${offer.discountValue.buy} Get ${offer.discountValue.free}`
+                                                : "Offer"}
+                                        )
+                                    </option>
+                                ))}
+                        </select>
+
+
+
                         <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => setModalOpen(false)}
@@ -305,7 +333,7 @@ const AddSubcategory = () => {
                             </button>
                             <button
                                 onClick={handleAddSubcategory}
-                                className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-800 cursor-pointer"
                             >
                                 {loading ? "Adding..." : "Add"}
                             </button>
@@ -376,6 +404,30 @@ const AddSubcategory = () => {
                             </div>
                         )}
 
+                        <select
+                            value={editSubcategory.offerId || ""}
+                            onChange={(e) =>
+                                setEditSubcategory({ ...editSubcategory, offerId: e.target.value })
+                            }
+                            className="border rounded-lg px-4 py-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                            <option value="">Select Offer (Optional)</option>
+                            {offers
+                                .filter((offer) => offer.type.includes("Subcategory") && offer.active)
+                                .map((offer) => (
+                                    <option key={offer.id} value={offer.id}>
+                                        {offer.name} (
+                                        {offer.discountType === "percentage"
+                                            ? `${offer.discountValue.percent}%`
+                                            : offer.discountType === "buyXGetY"
+                                                ? `Buy ${offer.discountValue.buy} Get ${offer.discountValue.free}`
+                                                : "Offer"}
+                                        )
+                                    </option>
+                                ))}
+                        </select>
+
+
                         <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => setEditModalOpen(false)}
@@ -385,7 +437,7 @@ const AddSubcategory = () => {
                             </button>
                             <button
                                 onClick={handleEditSubcategoryFunc}
-                                className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-800 cursor-pointer"
                             >
                                 Update
                             </button>

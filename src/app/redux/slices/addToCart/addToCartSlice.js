@@ -48,7 +48,7 @@ export const deleteCartItem = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const response = await axios.delete("/api/addToCart", { data: { id } });
-            return response.data.data;
+            return response.data;
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to delete cart item");
         }

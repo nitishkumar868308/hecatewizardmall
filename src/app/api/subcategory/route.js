@@ -28,7 +28,7 @@ export async function GET(req) {
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { name, categoryId, active, image } = body;
+        const { name, categoryId, active, image, offerId } = body;
         // console.log("image" , image)
 
         // Validation
@@ -56,7 +56,8 @@ export async function POST(req) {
                 name,
                 categoryId,
                 active: active ?? true,
-                image: image ?? null
+                image: image ?? null,
+                offerId: offerId ?? null,
             },
         });
 
@@ -76,7 +77,7 @@ export async function POST(req) {
 export async function PUT(req) {
     try {
         const body = await req.json();
-        const { id, name, categoryId, active, deleted, image } = body;
+        const { id, name, categoryId, active, deleted, image, offerId } = body;
 
         if (!id) {
             return new Response(JSON.stringify({ message: "Subcategory ID is required" }), { status: 400 });
@@ -95,6 +96,7 @@ export async function PUT(req) {
                 active: active ?? existing.active,
                 deleted: deleted ?? existing.deleted,
                 image: image ?? existing.image,
+                offerId: offerId ?? null,
             },
         });
 

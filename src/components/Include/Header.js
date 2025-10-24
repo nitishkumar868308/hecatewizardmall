@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { ShoppingCart, User, Menu, X, Search, LogOut, LayoutDashboard } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { ShoppingCart, User, Menu, X, Search, LogOut, LayoutDashboard, Trash } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Login from "./Login";
@@ -18,8 +18,12 @@ import {
 import {
     fetchSubcategories,
 } from "@/app/redux/slices/subcategory/subcategorySlice";
-import { fetchCart, updateLocalCartItem, updateCart } from "@/app/redux/slices/addToCart/addToCartSlice";
+import { fetchCart, updateLocalCartItem, updateCart, deleteCartItem } from "@/app/redux/slices/addToCart/addToCartSlice";
 import SearchPage from "./SearchPage";
+import ProductOffers from "../Product/ProductOffers/ProductOffers";
+import ConfirmModal from "../ConfirmModal";
+import toast from "react-hot-toast";
+import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 
 const Header = () => {
     const [active, setActive] = useState("Home");
@@ -40,17 +44,33 @@ const Header = () => {
     console.log("user", user)
     const userCart = items?.filter((item) => item.userId === (user?.id)) || [];
     console.log("userCart", userCart)
-    const userCartCount = userCart.length;
+    // const userCartCount = userCart.length;
     console.log("categories", categories)
     console.log("subcategories", subcategories)
+    const [selectedItemId, setSelectedItemId] = useState(null);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const { products } = useSelector((state) => state.products);
+    const [userCartState, setUserCartState] = useState([]);
+    useEffect(() => {
+        setUserCartState(prev => {
+            // Only update if different length or different ids
+            const prevIds = prev.map(i => i.id).join(',');
+            const newIds = userCart.map(i => i.id).join(',');
+            if (prevIds !== newIds) {
+                return userCart;
+            }
+            return prev;
+        });
+    }, [userCart]);
 
 
-
-
+    const userCartCount = userCartState.length;
+    console.log("userCartCount", userCartCount);
     useEffect(() => {
         dispatch(fetchCart())
         dispatch(fetchCategories());
         dispatch(fetchSubcategories());
+        dispatch(fetchProducts());
     }, [dispatch]);
 
     useEffect(() => {
@@ -174,6 +194,76 @@ const Header = () => {
     };
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     console.log("baseUrl", baseUrl)
+
+    const handleDelete = async () => {
+        try {
+            const result = await dispatch(deleteCartItem(selectedItemId)).unwrap();
+            console.log("result", result)
+            toast.success(result.message || "Item deleted successfully");
+            dispatch(fetchCart())
+            setIsConfirmOpen(false);
+        } catch (err) {
+            toast.error(err.message || "Failed to delete item");
+        }
+    };
+
+    // Function to update color quantity
+    const updateColorQuantity = (productId, color, delta) => {
+        setUserCartState(prevCart => {
+            return prevCart.map(item => {
+                if (item.productId === productId && item.attributes?.color === color) {
+                    const newQty = Math.max(0, item.quantity + delta);
+                    return { ...item, quantity: newQty };
+                }
+                return item;
+            }).filter(item => item.quantity > 0); // remove if 0
+        });
+    };
+
+    // Group cart ignoring color for card
+    const groupedCart = useMemo(() => {
+        return userCartState.reduce((acc, item) => {
+            const key = item.productId + '-' + Object.entries(item.attributes || {})
+                .filter(([k]) => k !== 'color')
+                .map(([k, v]) => `${k}:${v}`).join('|');
+
+            if (!acc[key]) {
+                acc[key] = {
+                    productId: item.productId,
+                    productName: item.productName,
+                    attributes: { ...item.attributes, color: null },
+                    currency: item.currency,
+                    itemIds: [item.id], // ✅ store original item id
+                    colors: [{ color: item.attributes?.color, quantity: item.quantity, pricePerItem: item.pricePerItem, image: item.image, itemId: item.id }]
+                };
+            } else {
+                acc[key].itemIds.push(item.id);
+                const colorIndex = acc[key].colors.findIndex(c => c.color === item.attributes?.color);
+                if (colorIndex >= 0) {
+                    acc[key].colors[colorIndex].quantity += item.quantity;
+                } else {
+                    acc[key].colors.push({ color: item.attributes?.color, quantity: item.quantity, pricePerItem: item.pricePerItem, image: item.image, itemId: item.id });
+                }
+            }
+            return acc;
+        }, {});
+    }, [userCartState]);
+
+    const removeColorFromCart = (productId, color) => {
+        setUserCartState(prevCart =>
+            prevCart.filter(item => !(item.productId === productId && item.attributes?.color === color))
+        );
+    };
+
+
+    const removeProductFromCart = (item) => {
+        setUserCartState(prevCart =>
+            prevCart.filter(cartItem => !item.itemIds.includes(cartItem.id))
+        );
+    };
+
+
+
     return (
         <>
             <header className="w-full bg-[#161619] shadow-md md:relative fixed md:static top-0 z-50">
@@ -390,6 +480,8 @@ const Header = () => {
                         </button>
 
 
+
+
                         {isOpen && (
                             <div className="fixed inset-0 z-50 flex">
                                 {/* Overlay */}
@@ -403,7 +495,6 @@ const Header = () => {
                                     className="ml-auto w-100 h-full bg-white shadow-2xl p-6 flex flex-col transform transition-transform duration-300 ease-in-out z-50"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    {/* Close Button */}
                                     <button
                                         className="self-end w-8 h-8 cursor-pointer flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-900 hover:text-white shadow-md transition-colors duration-200"
                                         onClick={() => setIsOpen(false)}
@@ -413,63 +504,96 @@ const Header = () => {
 
                                     <h2 className="text-2xl font-bold text-center mt-4 mb-6">Your Cart</h2>
 
-                                    {/* Cart Items */}
                                     <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                                         {userCartCount > 0 ? (
-                                            userCart.map((item, index) => (
-                                                <div
-                                                    key={item.id}
-                                                    className="flex items-center gap-4 p-3 border rounded-lg shadow-sm hover:shadow-md transition bg-gray-50"
-                                                >
-                                                    {/* Product Image */}
-                                                    <img
-                                                        src={item.image || "/placeholder.png"}
-                                                        alt={item.productName}
-                                                        className="w-16 h-16 object-cover rounded-md border"
-                                                    />
+                                            Object.values(groupedCart).map((item, index) => {
+                                                const fullProduct = products.find(p => p.id === item.productId);
+                                                const totalQuantity = item.colors.reduce((sum, c) => sum + c.quantity, 0);
 
-                                                    {/* Product Details */}
-                                                    <div className="flex-1 flex flex-col gap-1">
-                                                        <h3 className="text-sm font-semibold text-gray-800 line-clamp-1">
-                                                            {item.productName}
-                                                        </h3>
-                                                        <p className="text-xs text-gray-500">
-                                                            {Object.entries(item.attributes || {})
-                                                                .map(([key, val]) => `${key}: ${val}`)
-                                                                .join(", ")}
-                                                        </p>
+                                                return (
+                                                    <div key={index} className="relative flex flex-col gap-4 p-3 border rounded-lg shadow-sm hover:shadow-md transition bg-gray-50">
 
-                                                        {/* Quantity Selector */}
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <button
-                                                                className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
-                                                                onClick={() => updateQuantity(index, -1)}
-                                                            >
-                                                                -
-                                                            </button>
-                                                            <span className="px-2 text-sm">{item.quantity}</span>
-                                                            <button
-                                                                className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
-                                                                onClick={() => updateQuantity(index, 1)}
-                                                            >
-                                                                +
-                                                            </button>
+                                                        {/* Delete Button */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedItemId(item); // poora grouped item pass karo
+                                                                setIsConfirmOpen(true);
+                                                            }}
+                                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                                                            title="Remove item"
+                                                        >
+                                                            <Trash className="w-5 h-5" />
+                                                        </button>
+
+                                                        {/* Product Name */}
+                                                        <div className="flex items-center gap-3 cursor-pointer">
+                                                            <Link href={`/product/${item.productId}`} onClick={() => setIsOpen(false)}>
+                                                                <img src={item.colors[0].image || "/placeholder.png"} alt={item.productName} className="w-16 h-16 object-cover rounded-md border" />
+                                                                <h3 className="text-sm font-semibold text-gray-800 line-clamp-1">{item.productName}</h3>
+                                                            </Link>
                                                         </div>
 
-                                                        {/* Price */}
-                                                        <p className="text-sm font-medium text-gray-700 mt-1">
-                                                             {item.currency} {item.currencySymbol}
-                                                            {(item.pricePerItem * item.quantity).toFixed(2)}
-                                                        </p>
-                                                    </div>
+                                                        {/* Variation details */}
+                                                        {Object.entries(item.attributes).filter(([k]) => k !== 'color').map(([k, v]) => (
+                                                            <p key={k} className="text-xs text-gray-500">{k}: {v}</p>
+                                                        ))}
 
-                                                    {/* Total Price */}
-                                                    <div className="text-sm font-bold text-gray-900 whitespace-nowrap">
-                                                         {item.currency} {item.currencySymbol}
-                                                        {(item.pricePerItem * item.quantity).toFixed(2)}
+                                                        {/* Color + quantity controls */}
+                                                        {item.colors.map((c, idx) => (
+                                                            <div key={idx} className="flex items-center justify-between gap-2 mt-1">
+                                                                <span className="text-xs text-gray-500">{c.color}</span>
+                                                                <div className="flex items-center gap-1">
+                                                                    <button onClick={() => updateColorQuantity(item.productId, c.color, -1)} className="w-6 h-6 bg-gray-200 rounded hover:bg-gray-300">-</button>
+                                                                    <span className="px-2 text-sm">{c.quantity}</span>
+                                                                    <button onClick={() => updateColorQuantity(item.productId, c.color, 1)} className="w-6 h-6 bg-gray-200 rounded hover:bg-gray-300">+</button>
+                                                                </div>
+                                                                <span className="text-sm font-medium text-gray-700">{item.currency} {(c.pricePerItem * c.quantity).toFixed(2)}</span>
+                                                                <button
+                                                                    onClick={() => removeColorFromCart(item.productId, c.color)}
+                                                                    className="text-red-500 hover:text-red-700 ml-2"
+                                                                >
+                                                                    ✕
+                                                                </button>
+
+                                                            </div>
+                                                        ))}
+
+                                                        {/* Offers */}
+                                                        {fullProduct && (
+                                                            <div className="mt-1 text-xs text-green-700 space-y-1">
+                                                                {Array.isArray(fullProduct.offers) &&
+                                                                    fullProduct.offers
+                                                                        .filter((offer) => {
+                                                                            if (offer.discountType === "rangeBuyXGetY") {
+                                                                                const { start, end } = offer.discountValue || {};
+                                                                                return totalQuantity >= start && totalQuantity <= end;
+                                                                            }
+                                                                            if (offer.discountType === "bulk") {
+                                                                                return totalQuantity >= fullProduct.minQuantity;
+                                                                            }
+                                                                            return offer.applied;
+                                                                        })
+                                                                        .map((offer, idx) => {
+                                                                            const rangeMsg =
+                                                                                offer.discountType === "rangeBuyXGetY"
+                                                                                    ? `Pay ${totalQuantity - (offer.discountValue?.free || 0)}, get ${offer.discountValue?.free} free ✅`
+                                                                                    : offer.description;
+                                                                            return (
+                                                                                <div key={idx} className="flex justify-between items-center">
+                                                                                    <span className="font-medium">{rangeMsg}</span>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Total Price */}
+                                                        <div className="text-sm font-bold text-gray-900 whitespace-nowrap self-end mt-2">
+                                                            {item.currency} {item.colors.reduce((sum, c) => sum + c.pricePerItem * c.quantity, 0).toFixed(2)}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))
+                                                )
+                                            })
                                         ) : (
                                             <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
                                         )}
@@ -493,8 +617,85 @@ const Header = () => {
                             </div>
                         )}
 
+                        {/* 
+                                        {userCartCount > 0 ? (
+                                            userCart.map((item, index) => {
+                                                const fullProduct = products.find(p => p.id === item.productId);
+                                                return (
+                                                    <div
+                                                        key={item.id}
+                                                        className="relative flex items-center gap-4 p-3 border rounded-lg shadow-sm hover:shadow-md transition bg-gray-50"
+                                                    >
+                                               
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedItemId(item.id); // delete karne wala item
+                                                                setIsConfirmOpen(true);      // modal open
+                                                            }}
+                                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                                                            title="Remove item"
+                                                        >
+                                                            <Trash className="w-5 h-5" />
+                                                        </button>
+
+                                                        <div className="flex items-center gap-3 cursor-pointer">
+                                                            <Link href={`/product/${item.productId}`} className="flex items-center gap-3" onClick={() => setIsOpen(false)} >
+                                                                <img
+                                                                    src={item.image || "/placeholder.png"}
+                                                                    alt={item.productName}
+                                                                    className="w-16 h-16 object-cover rounded-md border"
+                                                                />
+                                                                <h3 className="text-sm font-semibold text-gray-800 line-clamp-1">
+                                                                    {item.productName}
+                                                                </h3>
+                                                            </Link>
+                                                        </div>
+
+                                                  
+                                                        <div className="flex-1 flex flex-col gap-1 ml-2">
+                                                            <p className="text-xs text-gray-500">
+                                                                {Object.entries(item.attributes || {})
+                                                                    .map(([key, val]) => `${key}: ${val}`)
+                                                                    .join(", ")}
+                                                            </p>
+
+                                                        
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <button
+                                                                    className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
+                                                                    onClick={() => updateQuantity(index, -1)}
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <span className="px-2 text-sm">{item.quantity}</span>
+                                                                <button
+                                                                    className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
+                                                                    onClick={() => updateQuantity(index, 1)}
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
+
+                                                            <p className="text-sm font-medium text-gray-700 mt-1">
+                                                                {item.currency} {(item.pricePerItem * item.quantity).toFixed(2)}
+                                                            </p>
+                                                        </div>
+
+                                                  <ProductOffers product={fullProduct} quantity={item.quantity} /> 
+
+                                                  
+                                                        <div className="text-sm font-bold text-gray-900 whitespace-nowrap self-center ml-auto">
+                                                            {item.currency} {(item.pricePerItem * item.quantity).toFixed(2)}
+                                                        </div>
+                                                    </div>
 
 
+                                                )
+                                            })
+
+                                        ) : (
+                                            <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
+                                        )} */}
 
 
                         {/* <button onClick={() => setLoginModalOpen(true)} className="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition text-white font-functionPro">
@@ -524,12 +725,12 @@ const Header = () => {
                                         </div>
                                     </div> */}
                                     <div className="flex items-center gap-3 cursor-pointer group">
-                                    
+
                                         <div className="text-white text-sm sm:text-base md:text-lg font-medium">
                                             Welcome,
                                         </div>
 
-                            
+
                                         <div className="relative h-14 w-14 rounded-full overflow-hidden border-2 border-white bg-gray-500 flex items-center justify-center">
                                             {user.profileImage ? (
                                                 <Image
@@ -596,34 +797,42 @@ const Header = () => {
                             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                         </button>
                     </div>
-                </div>
+                </div >
 
                 {/* Mobile Menu */}
-                {mobileMenuOpen && (
-                    <div className="md:hidden px-4 pb-3 font-functionPro">
-                        <ul className="flex flex-col gap-3">
-                            {menuItems.map((item) => (
-                                <li key={item}>
-                                    <button
-                                        onClick={() => handleMenuClick(item)}
-                                        className={`w-full text-left px-3 py-2 rounded-lg font-medium transition cursor-pointer ${active === item
-                                            ? "bg-white text-[#161619]"
-                                            : "text-white hover:bg-gray-700"
-                                            }`}
-                                    >
-                                        {item}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-            </header>
+                {
+                    mobileMenuOpen && (
+                        <div className="md:hidden px-4 pb-3 font-functionPro">
+                            <ul className="flex flex-col gap-3">
+                                {menuItems.map((item) => (
+                                    <li key={item}>
+                                        <button
+                                            onClick={() => handleMenuClick(item)}
+                                            className={`w-full text-left px-3 py-2 rounded-lg font-medium transition cursor-pointer ${active === item
+                                                ? "bg-white text-[#161619]"
+                                                : "text-white hover:bg-gray-700"
+                                                }`}
+                                        >
+                                            {item}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )
+                }
+            </header >
 
             <Modal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)}>
                 <Login onClose={() => setLoginModalOpen(false)} />
             </Modal>
-
+            <ConfirmModal
+                isOpen={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                title="Confirm Delete"
+                message="Are you sure you want to remove this item from your cart?"
+                onConfirm={handleDelete}
+            />
         </>
 
     );

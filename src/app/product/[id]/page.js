@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import DOMPurify from "dompurify";
 import { useCountries } from "@/lib/CustomHook/useCountries";
 import { AlertTriangle } from "lucide-react";
+import ProductOffers from "@/components/Product/ProductOffers/ProductOffers";
 
 const ProductDetail = () => {
     const dispatch = useDispatch();
@@ -565,6 +566,30 @@ const ProductDetail = () => {
         setReviewForm({ name: "", rating: 0, comment: "" });
     };
 
+    // Displayed price with bulk logic
+    const displayedPrice = () => {
+        const price = selectedVariation?.price ?? product.price;
+        const bulkPrice = product.bulkPrice ?? null;
+        const minQty = product.minQuantity ?? null;
+
+        if (minQty && bulkPrice && quantity >= minQty) {
+            return { original: price, discounted: bulkPrice }; // return object for UI
+        }
+        return { original: price };
+    };
+
+    // Check rangeBuyXGetY offer applied
+    const getRangeOfferApplied = (offer) => {
+        if (!offer || offer.discountType !== "rangeBuyXGetY") return null;
+        const { start, end, free } = offer.discountValue || {};
+        if (quantity >= start && quantity <= end) {
+            const payQty = quantity - free; // number of items to pay for
+            return `Offer applied: Pay ${payQty}, get ${free} free ✅`;
+        }
+        return null;
+    };
+
+
 
     return (
         <>
@@ -635,14 +660,33 @@ const ProductDetail = () => {
                 <div className="md:w-1/2 flex flex-col justify-between font-functionPro">
                     <div>
                         <h1 className="text-5xl mb-6 text-gray-900">  {selectedVariation?.name || product.name}</h1>
-                        <p className="text-3xl text-gray-700 mb-6 font-semibold">
+                        {/* <p className="text-3xl text-gray-700 mb-6 font-semibold">
                             {(selectedVariation?.currency ?? product.currency) + " "}
                             {(selectedVariation?.currencySymbol ?? product.currencySymbol)}
                             {selectedVariation?.price ?? product.price}
 
 
-                            {/* {selectedVariation?.price ?? product.price} */}
+                        {selectedVariation?.price ?? product.price}
+                        </p> */}
+                        {/* <p className="text-3xl text-gray-700 mb-6 font-semibold">
+                            {(selectedVariation?.currency ?? product.currency) + " "}
+                            {(selectedVariation?.currencySymbol ?? product.currencySymbol)}
+                            {displayedPrice()}
+                        </p> */}
+                        <p className="text-3xl text-gray-700 mb-6 font-semibold">
+                            {(selectedVariation?.currency ?? product.currency) + " "}
+
+                            {(() => {
+                                const priceObj = displayedPrice();
+                                return priceObj.discounted
+                                    ? <>
+                                        <span className="line-through text-gray-500 mr-2">{priceObj.original}</span>
+                                        <span>{priceObj.discounted}</span>
+                                    </>
+                                    : priceObj.original;
+                            })()}
                         </p>
+
                         <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                             {selectedVariation?.short || product.short}
                         </p>
@@ -691,22 +735,54 @@ const ProductDetail = () => {
                         </div> */}
 
 
-                        {/* <div className="flex flex-col gap-3 mb-6">
-                            {[...new Map(product.offers.map(o => [o.id, o])).values()].map((offer, index) => (
-                                <div
-                                    key={index}
-                                    className="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-md shadow-sm break-words"
-                                >
-                                    <span className="font-semibold">🔥 </span>
-                                    <span>{offer.description}</span>
+                        {/* <div className="p-4 rounded-md shadow-sm bg-green-200 border-l-4 border-yellow-500 flex flex-col gap-2 mb-6">
+                            {[...new Map([...product.offers, product.minQuantity && product.bulkPrice ? {
+                                id: "bulk-offer",
+                                description: quantity >= product.minQuantity
+                                    ? `Bulk price applied: ${product.currencySymbol}${product.bulkPrice} each`
+                                    : `Buy ${product.minQuantity}+ items to get ${product.currencySymbol}${product.bulkPrice} each`,
+                                type: ["product"],
+                                applied: quantity >= product.minQuantity
+                            } : null].filter(Boolean).map(o => [o.id, o])).values()].map((offer, index) => (
+                                <div key={index} className="flex justify-between items-center">
+                                    <span className="font-semibold">🔥 {offer.description}</span>
+                                    {offer.applied && <span className="ml-2 text-sm font-medium text-green-700">Applied ✅</span>}
                                 </div>
                             ))}
-                        </div>
-                        <div>Bulk Price</div> */}
-                        {(product.offers?.length > 0 || (product.minQuantity && product.bulkPrice)) && (
+                        </div> */}
+                        {/* <div className="p-4 rounded-md shadow-sm bg-green-200 border-l-4 border-yellow-500 flex flex-col gap-2 mb-6">
+                            {[...new Map([...product.offers, product.minQuantity && product.bulkPrice ? {
+                                id: "bulk-offer",
+                                description: quantity >= product.minQuantity
+                                    ? `Bulk price applied: ${product.currencySymbol}${product.bulkPrice} each`
+                                    : `Buy ${product.minQuantity}+ items to get ${product.currencySymbol}${product.bulkPrice} each`,
+                                type: ["product"],
+                                applied: quantity >= product.minQuantity,
+                                discountType: "bulk"
+                            } : null].filter(Boolean).map(o => [o.id, o])).values()].map((offer, index) => {
+                                // Range offer applied message
+                                const rangeAppliedMsg = getRangeOfferApplied(offer);
+
+                                return (
+                                    <div key={index} className="flex justify-between items-center">
+                                        <span className="font-semibold">
+                                            {offer.discountType === "rangeBuyXGetY"
+                                                ? `Buy minimum ${offer.discountValue.start}, get ${offer.discountValue.free} free`
+                                                : offer.description
+                                            }
+                                        </span>
+                                        {offer.applied && <span className="ml-2 text-sm font-medium text-green-700">Applied ✅</span>}
+                                        {rangeAppliedMsg && <span className="ml-2 text-sm font-medium text-green-700">{rangeAppliedMsg}</span>}
+                                    </div>
+                                );
+                            })}
+                        </div> */}
+
+                        <ProductOffers product={product} quantity={quantity} />
+                        {/* {(product.offers?.length > 0 || (product.minQuantity && product.bulkPrice)) && (
                             <div className="mt-4 text-sm text-gray-800 space-y-2">
 
-                                {/* 🔥 Offers */}
+                           
                                 {product.offers && product.offers.length > 0 && (
                                     <div>
                                         {[...new Map(product.offers.map(o => [o.id, o])).values()].map((offer, index) => (
@@ -721,7 +797,6 @@ const ProductDetail = () => {
                                     </div>
                                 )}
 
-                                {/* 💰 Bulk offer */}
                                 {product.minQuantity && product.bulkPrice && (
                                     <div className="flex items-center gap-1 text-green-700">
                                         <span>💰</span>
@@ -733,7 +808,7 @@ const ProductDetail = () => {
                                 )}
 
                             </div>
-                        )}
+                        )} */}
 
 
 
