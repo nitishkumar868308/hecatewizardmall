@@ -492,7 +492,7 @@ const Header = () => {
 
                                 {/* Drawer */}
                                 <div
-                                    className="ml-auto w-100 h-full bg-white shadow-2xl p-6 flex flex-col transform transition-transform duration-300 ease-in-out z-50"
+                                    className="ml-auto w-130 h-full bg-white shadow-2xl p-6 flex flex-col transform transition-transform duration-300 ease-in-out z-50"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <button
@@ -504,7 +504,7 @@ const Header = () => {
 
                                     <h2 className="text-2xl font-bold text-center mt-4 mb-6">Your Cart</h2>
 
-                                    <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                                    {/* <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                                         {userCartCount > 0 ? (
                                             Object.values(groupedCart).map((item, index) => {
                                                 const fullProduct = products.find(p => p.id === item.productId);
@@ -513,7 +513,7 @@ const Header = () => {
                                                 return (
                                                     <div key={index} className="relative flex flex-col gap-4 p-3 border rounded-lg shadow-sm hover:shadow-md transition bg-gray-50">
 
-                                                        {/* Delete Button */}
+                                                      
                                                         <button
                                                             onClick={() => {
                                                                 setSelectedItemId(item); // poora grouped item pass karo
@@ -525,7 +525,7 @@ const Header = () => {
                                                             <Trash className="w-5 h-5" />
                                                         </button>
 
-                                                        {/* Product Name */}
+                                                 
                                                         <div className="flex items-center gap-3 cursor-pointer">
                                                             <Link href={`/product/${item.productId}`} onClick={() => setIsOpen(false)}>
                                                                 <img src={item.colors[0].image || "/placeholder.png"} alt={item.productName} className="w-16 h-16 object-cover rounded-md border" />
@@ -533,12 +533,11 @@ const Header = () => {
                                                             </Link>
                                                         </div>
 
-                                                        {/* Variation details */}
                                                         {Object.entries(item.attributes).filter(([k]) => k !== 'color').map(([k, v]) => (
                                                             <p key={k} className="text-xs text-gray-500">{k}: {v}</p>
                                                         ))}
 
-                                                        {/* Color + quantity controls */}
+                                                    
                                                         {item.colors.map((c, idx) => (
                                                             <div key={idx} className="flex items-center justify-between gap-2 mt-1">
                                                                 <span className="text-xs text-gray-500">{c.color}</span>
@@ -558,7 +557,7 @@ const Header = () => {
                                                             </div>
                                                         ))}
 
-                                                        {/* Offers */}
+                                               
                                                         {fullProduct && (
                                                             <div className="mt-1 text-xs text-green-700 space-y-1">
                                                                 {Array.isArray(fullProduct.offers) &&
@@ -587,7 +586,7 @@ const Header = () => {
                                                             </div>
                                                         )}
 
-                                                        {/* Total Price */}
+                                                  
                                                         <div className="text-sm font-bold text-gray-900 whitespace-nowrap self-end mt-2">
                                                             {item.currency} {item.colors.reduce((sum, c) => sum + c.pricePerItem * c.quantity, 0).toFixed(2)}
                                                         </div>
@@ -597,7 +596,302 @@ const Header = () => {
                                         ) : (
                                             <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
                                         )}
+                                    </div> */}
+
+                                    <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                                        {userCartCount > 0 ? (
+                                            Object.values(groupedCart).map((item, index) => {
+                                                const fullProduct = products.find(p => p.id === item.productId);
+                                                const totalQuantity = item.colors.reduce((sum, c) => sum + c.quantity, 0);
+
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        className="relative p-3 border rounded-lg shadow-sm bg-white hover:shadow-md transition-all duration-200"
+                                                    >
+                                                        {/* Delete entire product */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedItemId(item);
+                                                                setIsConfirmOpen(true);
+                                                            }}
+                                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                                                            title="Remove item"
+                                                        >
+                                                            <Trash className="w-5 h-5" />
+                                                        </button>
+
+                                                        {/* Product Name */}
+                                                        <div className="mb-2">
+                                                            <Link
+                                                                href={`/product/${item.productId}`}
+                                                                onClick={() => setIsOpen(false)}
+                                                            >
+                                                                <h3 className="text-base font-semibold text-gray-900 hover:text-blue-600 line-clamp-1">
+                                                                    {item.productName}
+                                                                </h3>
+                                                            </Link>
+                                                        </div>
+
+                                                        {/* Offers */}
+                                                        {fullProduct && (
+                                                            <div className="mt-2 text-xs text-green-700 space-y-1">
+                                                                {(() => {
+                                                                    // 🟢 Merge normal offers + bulk offer
+                                                                    const offersList = [
+                                                                        ...(Array.isArray(fullProduct.offers) ? fullProduct.offers : []),
+                                                                        fullProduct.minQuantity && fullProduct.bulkPrice
+                                                                            ? {
+                                                                                id: "bulk-offer",
+                                                                                discountType: "bulk",
+                                                                                applied: totalQuantity >= fullProduct.minQuantity,
+                                                                                description: `Buy ${fullProduct.minQuantity}+ items at ₹${fullProduct.bulkPrice} each`,
+                                                                            }
+                                                                            : null,
+                                                                    ].filter(Boolean);
+
+                                                                    // 🟢 Filter only applied offers
+                                                                    const appliedOffers = offersList.filter((offer) => {
+                                                                        if (offer.discountType === "rangeBuyXGetY") {
+                                                                            const { start, end } = offer.discountValue || {};
+                                                                            return totalQuantity >= start && totalQuantity <= end;
+                                                                        }
+                                                                        if (offer.discountType === "bulk") {
+                                                                            return totalQuantity >= fullProduct.minQuantity;
+                                                                        }
+                                                                        return offer.applied;
+                                                                    });
+
+                                                                    // 🟢 If no offers applied, show nothing
+                                                                    if (appliedOffers.length === 0) return null;
+
+                                                                    return (
+                                                                        <div className="border border-green-200 bg-green-50 rounded-md p-2 text-green-800">
+                                                                            <div className="font-semibold text-sm flex items-center gap-1">
+                                                                                ✅ Offer Applied
+                                                                            </div>
+
+                                                                            <ul className="mt-1 list-disc list-inside space-y-1 text-xs">
+                                                                                {appliedOffers.map((offer, idx) => {
+                                                                                    let message = offer.description || "";
+
+                                                                                    if (offer.discountType === "rangeBuyXGetY") {
+                                                                                        const { free } = offer.discountValue || {};
+                                                                                        message = `Buy ${totalQuantity - free}, get ${free} free`;
+                                                                                    }
+
+                                                                                    if (offer.discountType === "bulk") {
+                                                                                        message = `Bulk offer: ₹${fullProduct.bulkPrice} per item (Min ${fullProduct.minQuantity})`;
+                                                                                    }
+
+                                                                                    return <li key={idx}>{message}</li>;
+                                                                                })}
+                                                                            </ul>
+                                                                        </div>
+                                                                    );
+                                                                })()}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Variation attributes (size, etc.) */}
+                                                        <div className="flex flex-wrap gap-x-3 text-xs text-gray-500 mb-2">
+                                                            {Object.entries(item.attributes)
+                                                                .filter(([k]) => k !== "color")
+                                                                .map(([k, v]) => (
+                                                                    <span key={k}>
+                                                                        <span className="capitalize">{k}:</span> {v}
+                                                                    </span>
+                                                                ))}
+                                                        </div>
+
+                                                        {/* Color + Quantity row */}
+                                                        {/* Color + Quantity row */}
+                                                        <div className="flex flex-col gap-2">
+                                                            {(() => {
+                                                                const totalQuantity = item.colors.reduce((sum, c) => sum + c.quantity, 0);
+
+                                                                // Identify offers
+                                                                const rangeOffer = Array.isArray(fullProduct?.offers)
+                                                                    ? fullProduct.offers.find(o =>
+                                                                        o.discountType === "rangeBuyXGetY" &&
+                                                                        totalQuantity >= o.discountValue?.start &&
+                                                                        totalQuantity <= o.discountValue?.end
+                                                                    )
+                                                                    : null;
+
+                                                                const bulkOffer =
+                                                                    fullProduct?.minQuantity &&
+                                                                    fullProduct?.bulkPrice &&
+                                                                    totalQuantity >= fullProduct.minQuantity;
+
+                                                                // Determine applied offer
+                                                                let appliedOffer = null;
+                                                                if (rangeOffer) appliedOffer = "range";
+                                                                if (bulkOffer && (!rangeOffer || fullProduct.bulkPrice * totalQuantity < item.colors.reduce((s, c) => s + c.pricePerItem * c.quantity, 0)))
+                                                                    appliedOffer = "bulk";
+
+                                                                // For range offer (get free), find payable qty
+                                                                const freeQty = rangeOffer?.discountValue?.free || 0;
+
+                                                                // Flatten color items sorted by price descending
+                                                                const sortedItems = [...item.colors]
+                                                                    .sort((a, b) => b.pricePerItem - a.pricePerItem)
+                                                                    .flatMap(c => Array(c.quantity).fill(c));
+
+                                                                // Mark free items (for Buy X Get Y)
+                                                                const paidItems = sortedItems.slice(0, Math.max(totalQuantity - freeQty, 0));
+                                                                const freeItems = sortedItems.slice(totalQuantity - freeQty);
+
+                                                                return item.colors.map((c, idx) => {
+                                                                    // Count how many of this color are free
+                                                                    const freeCount = freeItems.filter(f => f.color === c.color).length;
+
+                                                                    // Determine new price if offer applied
+                                                                    let displayPrice = c.pricePerItem;
+                                                                    let isDiscounted = false;
+
+                                                                    if (appliedOffer === "bulk") {
+                                                                        displayPrice = fullProduct.bulkPrice;
+                                                                        isDiscounted = true;
+                                                                    } else if (appliedOffer === "range" && freeCount > 0) {
+                                                                        isDiscounted = true; // show visual difference
+                                                                    }
+
+                                                                    const totalPrice = (displayPrice * c.quantity).toFixed(2);
+                                                                    const originalTotal = (c.pricePerItem * c.quantity).toFixed(2);
+
+                                                                    return (
+                                                                        <div
+                                                                            key={idx}
+                                                                            className="flex items-center justify-between gap-2 border-t pt-2"
+                                                                        >
+                                                                            <div className="flex items-center gap-2">
+                                                                                <img
+                                                                                    src={c.image || "/placeholder.png"}
+                                                                                    alt={c.color}
+                                                                                    className="w-10 h-10 object-cover rounded-md border"
+                                                                                />
+                                                                                <span className="text-sm font-medium text-gray-700">
+                                                                                    {c.color}
+                                                                                </span>
+                                                                                {freeCount > 0 && (
+                                                                                    <span className="text-xs text-green-600 font-medium">
+                                                                                        +{freeCount} free
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+
+                                                                            <div className="flex items-center gap-1">
+                                                                                <button
+                                                                                    onClick={() => updateColorQuantity(item.productId, c.color, -1)}
+                                                                                    className="w-7 h-7 bg-gray-200 rounded hover:bg-gray-300 text-sm font-semibold"
+                                                                                >
+                                                                                    -
+                                                                                </button>
+                                                                                <span className="px-2 text-sm">{c.quantity}</span>
+                                                                                <button
+                                                                                    onClick={() => updateColorQuantity(item.productId, c.color, 1)}
+                                                                                    className="w-7 h-7 bg-gray-200 rounded hover:bg-gray-300 text-sm font-semibold"
+                                                                                >
+                                                                                    +
+                                                                                </button>
+                                                                            </div>
+
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-sm font-semibold text-gray-800">
+                                                                                    {isDiscounted ? (
+                                                                                        <>
+                                                                                            <span className="line-through text-gray-400 mr-1">
+                                                                                                {item.currency} {originalTotal}
+                                                                                            </span>
+                                                                                            <span className="text-green-700 font-bold">
+                                                                                                {item.currency} {totalPrice}
+                                                                                            </span>
+                                                                                        </>
+                                                                                    ) : (
+                                                                                        <>
+                                                                                            {item.currency} {totalPrice}
+                                                                                        </>
+                                                                                    )}
+                                                                                </span>
+                                                                                <button
+                                                                                    onClick={() => removeColorFromCart(item.productId, c.color)}
+                                                                                    className="text-red-500 hover:text-red-700"
+                                                                                >
+                                                                                    ✕
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                });
+                                                            })()}
+                                                        </div>
+
+
+
+
+                                                        {/* Total Price */}
+                                                        {/* <div className="text-sm font-bold text-gray-900 text-right mt-3 border-t pt-2">
+                                                            Total: {item.currency}{" "}
+                                                            {item.colors
+                                                                .reduce((sum, c) => sum + c.pricePerItem * c.quantity, 0)
+                                                                .toFixed(2)}
+                                                        </div> */}
+                                                        <div className="text-sm font-bold text-gray-900 text-right mt-3 border-t pt-2">
+                                                            {(() => {
+                                                                const totalOriginal = item.colors
+                                                                    .reduce((sum, c) => sum + c.pricePerItem * c.quantity, 0);
+
+                                                                let totalDiscounted = totalOriginal;
+
+                                                                // 🟢 Apply Bulk Price if applicable
+                                                                if (fullProduct?.minQuantity && fullProduct?.bulkPrice && totalQuantity >= fullProduct.minQuantity) {
+                                                                    totalDiscounted = fullProduct.bulkPrice * totalQuantity;
+                                                                }
+
+                                                                // 🟢 Apply Range Offer if applicable
+                                                                if (Array.isArray(fullProduct?.offers)) {
+                                                                    fullProduct.offers.forEach((offer) => {
+                                                                        if (offer.discountType === "rangeBuyXGetY") {
+                                                                            const { start, end, free } = offer.discountValue || {};
+                                                                            if (totalQuantity >= start && totalQuantity <= end) {
+                                                                                const payable = totalQuantity - (free || 0);
+                                                                                totalDiscounted = fullProduct.price * payable;
+                                                                            }
+                                                                        }
+                                                                    });
+                                                                }
+
+                                                                const isDiscounted = totalDiscounted < totalOriginal;
+
+                                                                return (
+                                                                    <div>
+                                                                        <span>Total: {item.currency} </span>
+                                                                        {isDiscounted ? (
+                                                                            <>
+                                                                                <span className="line-through text-gray-400 mr-2">
+                                                                                    {totalOriginal.toFixed(2)}
+                                                                                </span>
+                                                                                <span className="text-green-700">
+                                                                                    {totalDiscounted.toFixed(2)} ✅
+                                                                                </span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <span>{totalOriginal.toFixed(2)}</span>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                        </div>
+
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
+                                        )}
                                     </div>
+
 
                                     {/* Checkout Button */}
                                     {userCartCount > 0 && (

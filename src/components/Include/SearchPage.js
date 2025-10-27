@@ -20,7 +20,7 @@ const SearchPage = () => {
     const { products } = useSelector((state) => state.products);
     const { subcategories } = useSelector((state) => state.subcategory);
     const { categories } = useSelector((state) => state.category);
-    console.log("subcategories", subcategories)
+    console.log("products", products)
 
     // Fetch data
     useEffect(() => {
@@ -65,13 +65,50 @@ const SearchPage = () => {
 
     const normalizedQuery = query.trim().replace(/\s+/g, " ").toLowerCase();
 
+    // const filtered =
+    //     normalizedQuery === ""
+    //         ? []
+    //         : combinedResults.filter((item) =>
+    //             item.name.toLowerCase().includes(normalizedQuery)
+    //         );
     const filtered =
         normalizedQuery === ""
             ? []
-            : combinedResults.filter((item) =>
-                item.name.toLowerCase().includes(normalizedQuery)
-            );
+            : combinedResults
+                .map((item) => {
+                    const nameMatch = item.name?.toLowerCase().includes(normalizedQuery);
 
+                    // ✅ Handle tags (array of strings or objects)
+                    const tagsArray = Array.isArray(item.tags) ? item.tags : [];
+                    const matchedTag = tagsArray.find((tag) => {
+                        const tagValue =
+                            typeof tag === "string" ? tag : tag.name || tag.tag || "";
+                        return tagValue.toLowerCase().includes(normalizedQuery);
+                    });
+
+                    // ✅ Handle variations (array)
+                    const variationsArray = Array.isArray(item.variations)
+                        ? item.variations
+                        : [];
+                    const matchedVariation = variationsArray.find((v) =>
+                        v.variationName?.toLowerCase().includes(normalizedQuery)
+                    );
+
+                    // ✅ Create match reason
+                    let matchReason = "";
+                    if (matchedTag) matchReason = `Matched tag: ${matchedTag.name || matchedTag.tag || matchedTag}`;
+                    else if (matchedVariation)
+                        matchReason = `Matched variation: ${matchedVariation.variationName}`;
+                    else if (nameMatch) matchReason = `Matched by name`;
+
+                    return nameMatch || matchedTag || matchedVariation
+                        ? { ...item, matchReason }
+                        : null;
+                })
+                .filter(Boolean)
+                .sort((a, b) => (a.matchReason.includes("tag") ? -1 : 1));
+
+    console.log("filtered", filtered)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     console.log("baseUrl", baseUrl)
 
@@ -111,7 +148,7 @@ const SearchPage = () => {
                             <Search className="h-6 w-6 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Search for products, categories, subcategories..."
+                                placeholder="Search for products, categories, subcategories, tags..."
                                 className="w-full text-lg focus:outline-none px-2 py-2 text-black"
                                 autoFocus
                                 value={query}
@@ -150,6 +187,9 @@ const SearchPage = () => {
                                             <div className="flex flex-col">
                                                 <div className="font-semibold text-black text-lg">{item.name}</div>
                                                 <div className="text-gray-500 text-sm mt-1">{item.type}</div>
+                                                {item.matchReason && (
+                                                    <div className="text-gray-400 text-xs mt-0.5 italic">{item.matchReason}</div>
+                                                )}
                                             </div>
 
                                             {/* Image */}
@@ -164,6 +204,7 @@ const SearchPage = () => {
                                                     />
                                                 </div>
                                             )}
+
                                         </div>
                                     ))
                                 ) : (

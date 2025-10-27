@@ -52,7 +52,7 @@ const ProductDetail = () => {
     const { user } = useSelector((state) => state.me);
     const { items } = useSelector((state) => state.cart);
     const country = useSelector((state) => state.country);
-    console.log("products", products)
+    console.log("user", user)
 
 
     useEffect(() => {
@@ -132,6 +132,23 @@ const ProductDetail = () => {
     //     if (!products.length) dispatch(fetchProducts());
     //     dispatch(fetchOffers());
     // }, [dispatch, products.length]);
+    // useEffect(() => {
+    //     if (user && selectedVariation) {
+    //         // Find if the user already has this variation in cart
+    //         const existingCartItem = user.carts?.find(
+    //             (item) =>
+    //                 item.productId === product.id &&
+    //                 item.variationId === selectedVariation.id
+    //         );
+
+    //         if (existingCartItem) {
+    //             setQuantity(existingCartItem.quantity);
+    //         } else {
+    //             setQuantity(1); // default
+    //         }
+    //     }
+    // }, [user, selectedVariation, product]);
+
     useEffect(() => {
         if (items && Array.isArray(items) && user?.id) {
             const filtered = items.filter((item) => item.userId == String(user.id));
@@ -501,6 +518,9 @@ const ProductDetail = () => {
         }
     };
 
+
+
+
     const clearCart = async () => {
         if (!user || !user.id) {
             toast.error("Please login to clear cart.");
@@ -589,7 +609,18 @@ const ProductDetail = () => {
         return null;
     };
 
+    // const isInCart = user?.carts?.some(
+    //     (item) =>
+    //         item.productId === product.id &&
+    //         item.variationId === selectedVariation?.id
+    // );
 
+    const existingCartItem = user?.carts?.find(
+        (item) =>
+            item.productId === product.id &&
+            item.variationId === selectedVariation?.id
+    );
+    const existingCartQuantity = existingCartItem?.quantity ?? 0;
 
     return (
         <>
@@ -836,6 +867,13 @@ const ProductDetail = () => {
                                 >
                                     Add to Cart
                                 </button>
+                                {/* <button
+                                    onClick={addToCart}
+                                    className="px-10 py-4 bg-gray-700 text-white rounded-lg hover:bg-black transition cursor-pointer shadow-lg text-xl"
+                                >
+                                    {isInCart ? "Update Cart" : "Add to Cart"}
+                                </button> */}
+
 
                                 {product.matchedMarketLink && (
                                     <a
@@ -852,10 +890,14 @@ const ProductDetail = () => {
                                     </a>
                                 )}
                             </div>
-
-
-
                         </div>
+
+
+                        <p className="text-gray-700 mt-3">
+                            {existingCartQuantity > 0
+                                ? `Already in your cart: ${existingCartQuantity}`
+                                : ""}
+                        </p>
                         <p className="text-lg text-gray-600 mt-8 leading-relaxed">
                             Tag: {Array.isArray(selectedVariation?.tags)
                                 ? selectedVariation.tags.map(tag => tag.name).join(", ")
