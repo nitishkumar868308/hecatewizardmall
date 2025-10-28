@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 import { fetchSubcategories } from "@/app/redux/slices/subcategory/subcategorySlice";
 import { fetchCategories } from "@/app/redux/slices/addCategory/addCategorySlice";
+import { fetchTags } from "@/app/redux/slices/tag/tagSlice";
 
 const SearchPage = () => {
     const dispatch = useDispatch();
@@ -16,7 +17,7 @@ const SearchPage = () => {
 
     const [query, setQuery] = useState("");
     const [open, setOpen] = useState(false);
-
+    const { tags, } = useSelector((state) => state.tags);
     const { products } = useSelector((state) => state.products);
     const { subcategories } = useSelector((state) => state.subcategory);
     const { categories } = useSelector((state) => state.category);
@@ -27,6 +28,7 @@ const SearchPage = () => {
         dispatch(fetchProducts());
         dispatch(fetchCategories());
         dispatch(fetchSubcategories());
+        dispatch(fetchTags())
     }, [dispatch]);
 
     // Close modal on click outside or Esc key
@@ -57,13 +59,14 @@ const SearchPage = () => {
     }, [open]);
 
     // Combine and filter results
-    const combinedResults = [
-        ...(products || []).map((item) => ({ ...item, type: "Product" })),
-        ...(subcategories || []).map((item) => ({ ...item, type: "Subcategory" })),
-        ...(categories || []).map((item) => ({ ...item, type: "Category" })),
-    ];
+    // const combinedResults = [
+    //     ...(products || []).map((item) => ({ ...item, type: "Product" })),
+    //     ...(subcategories || []).map((item) => ({ ...item, type: "Subcategory" })),
+    //     ...(categories || []).map((item) => ({ ...item, type: "Category" })),
+    //     ...(tags || []).map((item) => ({ ...item, type: "Tag" })),
+    // ];
 
-    const normalizedQuery = query.trim().replace(/\s+/g, " ").toLowerCase();
+    // const normalizedQuery = query.trim().replace(/\s+/g, " ").toLowerCase();
 
     // const filtered =
     //     normalizedQuery === ""
@@ -71,42 +74,49 @@ const SearchPage = () => {
     //         : combinedResults.filter((item) =>
     //             item.name.toLowerCase().includes(normalizedQuery)
     //         );
+    // Combine and filter results
+    const combinedResults = [
+        ...(tags || []).map((item) => ({ ...item, type: "Tag" })),
+        ...(products || []).map((item) => ({ ...item, type: "Product" })),
+        ...(subcategories || []).map((item) => ({ ...item, type: "Subcategory" })),
+        ...(categories || []).map((item) => ({ ...item, type: "Category" })),
+        
+    ];
+
+    // Normalize query
+    const normalizedQuery = query.trim().replace(/\s+/g, " ").toLowerCase();
+    const queryWords = normalizedQuery.split(" ").filter(Boolean);
+
+    // Smart match function 🔍
+    const matchesQuery = (item) => {
+        const textFields = [
+            item.name,
+            item.description,
+            item.category?.name,
+            item.subcategory?.name,
+            Array.isArray(item.tags)
+                ? item.tags.map((t) => (typeof t === "string" ? t : t.name)).join(" ")
+                : "",
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+        // ✅ Flexible matching — allows partial but strong relevance
+        const matchCount = queryWords.filter((word) =>
+            textFields.includes(word)
+        ).length;
+
+        // at least half the words should match
+        return matchCount >= Math.ceil(queryWords.length / 2);
+    };
+
+    // Apply filter
     const filtered =
         normalizedQuery === ""
             ? []
-            : combinedResults
-                .map((item) => {
-                    const nameMatch = item.name?.toLowerCase().includes(normalizedQuery);
+            : combinedResults.filter((item) => matchesQuery(item));
 
-                    // ✅ Handle tags (array of strings or objects)
-                    const tagsArray = Array.isArray(item.tags) ? item.tags : [];
-                    const matchedTag = tagsArray.find((tag) => {
-                        const tagValue =
-                            typeof tag === "string" ? tag : tag.name || tag.tag || "";
-                        return tagValue.toLowerCase().includes(normalizedQuery);
-                    });
-
-                    // ✅ Handle variations (array)
-                    const variationsArray = Array.isArray(item.variations)
-                        ? item.variations
-                        : [];
-                    const matchedVariation = variationsArray.find((v) =>
-                        v.variationName?.toLowerCase().includes(normalizedQuery)
-                    );
-
-                    // ✅ Create match reason
-                    let matchReason = "";
-                    if (matchedTag) matchReason = `Matched tag: ${matchedTag.name || matchedTag.tag || matchedTag}`;
-                    else if (matchedVariation)
-                        matchReason = `Matched variation: ${matchedVariation.variationName}`;
-                    else if (nameMatch) matchReason = `Matched by name`;
-
-                    return nameMatch || matchedTag || matchedVariation
-                        ? { ...item, matchReason }
-                        : null;
-                })
-                .filter(Boolean)
-                .sort((a, b) => (a.matchReason.includes("tag") ? -1 : 1));
 
     console.log("filtered", filtered)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -170,9 +180,13 @@ const SearchPage = () => {
                                                     url = `/categories?category=${encodeURIComponent(item.name)}&&subcategory=All`;
                                                 } else if (item.type === "Subcategory") {
                                                     url = `/categories?category=${encodeURIComponent(item.category?.name || "")}&&subcategory=${encodeURIComponent(item.name)}`;
-                                                } else if (item.type === "Product") {
+                                                } else if (item.type === "Tag") {
+                                                    url = `/categories?tag=${encodeURIComponent(item.name)}`;
+                                                }
+                                                else if (item.type === "Product") {
                                                     url = `/product/${item.id}`;
                                                 }
+
 
                                                 router.push(url);
                                                 setQuery("");
@@ -187,9 +201,6 @@ const SearchPage = () => {
                                             <div className="flex flex-col">
                                                 <div className="font-semibold text-black text-lg">{item.name}</div>
                                                 <div className="text-gray-500 text-sm mt-1">{item.type}</div>
-                                                {item.matchReason && (
-                                                    <div className="text-gray-400 text-xs mt-0.5 italic">{item.matchReason}</div>
-                                                )}
                                             </div>
 
                                             {/* Image */}

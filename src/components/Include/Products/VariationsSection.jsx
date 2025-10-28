@@ -408,10 +408,6 @@ const VariationsSection = ({
 
     };
 
-
-
-
-
     return (
         <div className="h-full mx-auto max-h-[90vh] md:max-h-[75vh] overflow-y-auto space-y-5 p-2 sm:p-4">
             <div className="mb-4">
@@ -591,7 +587,47 @@ const VariationsSection = ({
 
                                                 </div>
                                             );
-                                        } else if (field.key === "tags") {
+                                        }
+                                        else if (field.type === "custom-bulk") {
+                                            const minQty = variationDetails[variationKey]?.minQuantity || "";
+                                            const bulkPrice = variationDetails[variationKey]?.bulkPrice || "";
+
+                                            return (
+                                                <div key={field.key} className="flex flex-col">
+                                                    <label className="mb-2 font-medium text-gray-700">Bulk Price</label>
+
+                                                    <div className="flex gap-4">
+                                                        {/* Min Quantity */}
+                                                        <div className="flex-1">
+                                                            <input
+                                                                type="number"
+                                                                placeholder="Min Quantity"
+                                                                value={minQty}
+                                                                onChange={(e) =>
+                                                                    handleVariationChange(variationKey, "minQuantity", e.target.value)
+                                                                }
+                                                                className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                                                            />
+                                                        </div>
+
+                                                        {/* Bulk Price */}
+                                                        <div className="flex-1">
+                                                            <input
+                                                                type="number"
+                                                                placeholder="Price"
+                                                                value={bulkPrice}
+                                                                onChange={(e) =>
+                                                                    handleVariationChange(variationKey, "bulkPrice", e.target.value)
+                                                                }
+                                                                className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        else if (field.key === "tags") {
                                             const currentTags = variationDetails[variationKey]?.tags || [];
 
                                             return (

@@ -286,7 +286,9 @@ export async function POST(req) {
                                     connect: v.tags.map(tag => ({ id: Number(tag.id) }))
                                 }
                                 : undefined,
-                            otherCountriesPrice: v.otherCountriesPrice?.toString() ?? otherCountriesPrice?.toString() ?? null
+                            otherCountriesPrice: v.otherCountriesPrice?.toString() ?? otherCountriesPrice?.toString() ?? null,
+                            minQuantity: minQuantity?.toString() ?? null,
+                            bulkPrice: bulkPrice?.toString() ?? null,
                         }))
                     }
                     : undefined
@@ -520,6 +522,8 @@ export async function PUT(req) {
         //     subcategoryId,
         //     isDefault
         // });
+        console.log("Offers being updated:", offers);
+        console.log("Primary Offer being updated:", primaryOffer);
 
         // console.log("===== Backend received variations =====");
         variations.forEach((v, i) => {
@@ -545,7 +549,9 @@ export async function PUT(req) {
                         description: v.description ?? existingVar.description,
                         tags: v.tags?.length
                             ? { set: v.tags.map(tag => ({ id: Number(tag.id) })) }
-                            : undefined
+                            : undefined,
+                        minQuantity: v.minQuantity != null ? v.minQuantity.toString() : null,
+                        bulkPrice: v.bulkPrice != null ? v.bulkPrice.toString() : null,
                     }
                 };
             });
@@ -569,7 +575,9 @@ export async function PUT(req) {
                 name: v.name,
                 tags: v.tags?.length
                     ? { connect: v.tags.map(tag => ({ id: Number(tag.id) })) }
-                    : undefined
+                    : undefined,
+                minQuantity: v.minQuantity != null ? v.minQuantity.toString() : null,
+                bulkPrice: v.bulkPrice != null ? v.bulkPrice.toString() : null,
             }));
 
         // PUT handler ke andar, variationsUpdate aur variationsCreate ke baad:
@@ -638,12 +646,27 @@ export async function PUT(req) {
                 image: image.length ? image : existing.image,
                 category: categoryId ? { connect: { id: categoryId } } : undefined,
                 subcategory: subcategoryId ? { connect: { id: subcategoryId } } : undefined,
-                offers: Array.isArray(offers) && offers.length
-                    ? { set: [], connect: offers.map(o => ({ id: Number(o.id) })) }
-                    : undefined,
-                primaryOffer: primaryOffer && primaryOffer.id != null
-                    ? { connect: { id: Number(primaryOffer.id) } }
-                    : undefined,
+                // offers: Array.isArray(offers) && offers.length
+                //     ? { set: [], connect: offers.map(o => ({ id: Number(o.id) })) }
+                //     : undefined,
+                //             primaryOffer: primaryOffer && primaryOffer.id != null
+                // ? { connect: { id: Number(primaryOffer.id) } }
+                // : undefined,
+                offers:
+                    Array.isArray(offers)
+                        ? { set: offers.map(o => ({ id: Number(o.id) })) }
+                        : offers && (offers.set?.length || offers.connect?.length)
+                            ? {
+                                set: offers.set?.map(o => ({ id: Number(o.id) })) ?? [],
+                                connect: offers.connect?.map(o => ({ id: Number(o.id) })) ?? [],
+                            }
+                            : undefined,
+
+                primaryOffer:
+                    primaryOffer?.id
+                        ? { connect: { id: Number(primaryOffer.id) } }
+                        : { disconnect: true },
+
                 tags: tags?.length ? { set: [], connect: tags.map(tag => ({ id: Number(tag.id) })) } : undefined,
                 marketLinks: marketLinks?.connect
                     ? { set: marketLinks.connect.map(link => ({ id: link.id })) }

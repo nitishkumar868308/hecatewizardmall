@@ -1311,6 +1311,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchFastProducts } from "@/app/redux/slices/products/productSlice";
 import { fetchSubcategories } from "@/app/redux/slices/subcategory/subcategorySlice";
 import { fetchCategories } from "@/app/redux/slices/addCategory/addCategorySlice";
+import { fetchTags } from "@/app/redux/slices/tag/tagSlice";
+
 
 const sortOptions = ["Price: Low to High", "Price: High to Low"];
 
@@ -1321,7 +1323,8 @@ const Categories = () => {
     const { products } = useSelector((state) => state.products);
     const { subcategories } = useSelector((state) => state.subcategory);
     const { categories } = useSelector((state) => state.category);
-
+    const { tags } = useSelector((state) => state.tags);
+    const [selectedTag, setSelectedTag] = useState("All");
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [selectedSubcategory, setSelectedSubcategory] = useState("All");
     const highestPrice = products.length
@@ -1341,6 +1344,7 @@ const Categories = () => {
         dispatch(fetchFastProducts());
         dispatch(fetchSubcategories());
         dispatch(fetchCategories());
+        dispatch(fetchTags());
     }, [dispatch]);
 
     useEffect(() => {
@@ -1368,17 +1372,38 @@ const Categories = () => {
     }, [searchParams, categories, subcategories]);
 
     // Filter products
+    // const baseFiltered = products
+    //     .filter(
+    //         (p) =>
+    //             p.active &&
+    //             (selectedCategory === "All" || p.categoryId === selectedCategory) &&
+    //             (selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory)
+    //     )
+    //     .filter((p) => p.price <= priceRange)
+    //     .sort((a, b) =>
+    //         sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
+    //     );
     const baseFiltered = products
-        .filter(
-            (p) =>
-                p.active &&
-                (selectedCategory === "All" || p.categoryId === selectedCategory) &&
-                (selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory)
-        )
-        .filter((p) => p.price <= priceRange)
+        .filter((p) => {
+            const matchCategory =
+                selectedCategory === "All" || p.categoryId === selectedCategory;
+            const matchSubcategory =
+                selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory;
+            const matchTag =
+                selectedTag === "All" ||
+                (Array.isArray(p.tags)
+                    ? p.tags.some(
+                        (t) => (String(t?.name || t || "")).toLowerCase() === selectedTag.toLowerCase()
+                    )
+                    : false);
+
+
+            return p.active && matchCategory && matchSubcategory && matchTag && p.price <= priceRange;
+        })
         .sort((a, b) =>
             sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
         );
+
 
     // Determine if we should show subcategory cards instead of products
     const showSubcategoryCards =
@@ -1522,6 +1547,31 @@ const Categories = () => {
                                 ))}
                             </ul>
                         </div>
+
+                        {/* Tags */}
+                        <div>
+                            <h3 className="font-semibold mb-2">Tags</h3>
+                            <ul className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+                                <li
+                                    onClick={() => setSelectedTag("All")}
+                                    className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedTag === "All" ? "bg-blue-200 font-semibold" : ""
+                                        }`}
+                                >
+                                    All
+                                </li>
+                                {tags.map((tag) => (
+                                    <li
+                                        key={tag.id}
+                                        onClick={() => setSelectedTag(tag.name)}
+                                        className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedTag === tag.name ? "bg-blue-200 font-semibold" : ""
+                                            }`}
+                                    >
+                                        {tag.name}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
 
                         {/* Price */}
                         <div>

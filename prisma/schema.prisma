@@ -140,6 +140,8 @@ model ProductVariation {
   updatedAt   DateTime @updatedAt
 
   tags        Tag[]    @relation("VariationTags")
+  minQuantity     String?   
+  bulkPrice       String?  
 }
 
 

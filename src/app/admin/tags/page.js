@@ -36,10 +36,20 @@ const AddTag = () => {
 
     const handleImageUpload = async (file) => {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("image", file);
+
         const res = await fetch("/api/upload", { method: "POST", body: formData });
-        const data = await res.json();
-        return data.url;
+
+        let data;
+        try {
+            data = await res.json();
+        } catch (err) {
+            throw new Error("Server did not return valid JSON");
+        }
+
+        if (!res.ok) throw new Error(data.message || "Upload failed");
+
+        return data.urls; // single URL or array of URLs
     };
 
     const handleAddTag = async () => {

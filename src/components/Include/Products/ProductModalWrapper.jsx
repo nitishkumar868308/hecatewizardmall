@@ -119,7 +119,8 @@ const ProductModalWrapper = ({
             tags: details.tags && details.tags.length > 0
                 ? details.tags.map(tag => ({ id: tag.id }))   // ✅ only id pass
                 : [],
-
+            bulkPrice: details.bulkPrice ?? newProduct.bulkPrice ?? null,
+            minQuantity: details.minQuantity ?? newProduct.minQuantity ?? null,
         };
     });
     console.log("variationsData", variationsData)
@@ -156,7 +157,11 @@ const ProductModalWrapper = ({
             // if (!subcategoryId) return toast.error("Subcategory is required");
 
             const categoryId = newProduct.categoryId ? parseInt(newProduct.categoryId) : null;
-
+            const validOfferIds = Array.isArray(newProduct.offers)
+                ? newProduct.offers
+                    .map((o) => (typeof o === "object" ? o.id : o))
+                    .filter((id) => id && !isNaN(id))
+                : [];
             // Prepare product data including variations
             const productData = {
                 name: newProduct.name?.trim() || "",
@@ -184,16 +189,23 @@ const ProductModalWrapper = ({
                 isDefault: typeof newProduct.isDefault === "string"
                     ? JSON.parse(newProduct.isDefault)
                     : newProduct.isDefault ?? null,
-
-                offers: newProduct.offers && newProduct.offers.length > 0
-                    ? {
-                        connect: newProduct.offers.map((id) => ({ id: parseInt(id) }))
-                    }
+                offers: validOfferIds.length
+                    ? { connect: validOfferIds.map((id) => ({ id: Number(id) })) }
                     : undefined,
 
-                primaryOffer: newProduct.offers && newProduct.offers.length > 0
-                    ? { connect: { id: parseInt(newProduct.offers[0]) } }
-                    : undefined,
+                primaryOffer:
+                    validOfferIds.length > 0
+                        ? { connect: { id: Number(validOfferIds[0]) } }
+                        : undefined,
+                // offers: newProduct.offers && newProduct.offers.length > 0
+                //     ? {
+                //         connect: newProduct.offers.map((id) => ({ id: parseInt(id) }))
+                //     }
+                //     : undefined,
+
+                // primaryOffer: newProduct.offers && newProduct.offers.length > 0
+                //     ? { connect: { id: parseInt(newProduct.offers[0]) } }
+                //     : undefined,
                 tags: newProduct.tags && newProduct.tags.length > 0
                     ? { connect: newProduct.tags.map(tag => ({ id: tag.id })) }
                     : undefined,
@@ -258,6 +270,8 @@ const ProductModalWrapper = ({
             image: Array.isArray(v.image) ? v.image.flat() : v.image ? [v.image] : [],
             description: v.description,
             tags: v.tags?.map(tag => ({ id: Number(tag.id) })) || [],
+            bulkPrice: v.bulkPrice,
+            minQuantity: v.minQuantity,
         }));
         console.log("formattedVariations", formattedVariations)
 
@@ -268,15 +282,12 @@ const ProductModalWrapper = ({
             ...imageUrls                        // new uploaded images
         ];
         const cleanedOffers = Array.isArray(editProductData.offers)
-            ? editProductData.offers
-                .filter(Boolean) // remove undefined/null
-                .map(o => typeof o === "object" ? Number(o.id) : Number(o))
-                .filter(Boolean)
+            ? editProductData.offers.map(o => Number(o.id || o)).filter(Boolean)
             : [];
 
-        // If primaryOffer exists but not in offers, add it
         if (editProductData.primaryOffer?.id && !cleanedOffers.includes(Number(editProductData.primaryOffer.id))) {
             cleanedOffers.push(Number(editProductData.primaryOffer.id));
+
         }
         console.log("cleanedOffers", cleanedOffers)
         const productData = {
@@ -335,7 +346,7 @@ const ProductModalWrapper = ({
             const res = await dispatch(updateProduct({ id: editProductData.id, data: productData })).unwrap();
             toast.success("Product updated successfully!");
             setEditProductData(res);
-            setNewImage([]);  
+            setNewImage([]);
             // setModalOpen(false);
         } catch (err) {
             toast.error(err.message || "Failed to update product");
@@ -503,7 +514,7 @@ const ProductModalWrapper = ({
         const attrValues = Object.values(selectedAttributes)
             .filter(a => a.values?.length)
             .map(a => a.values);
-
+        console.log("attrValues", attrValues)
         if (attrValues.length === 0) {
             setCurrentVariations([]);
             setVariationDetails({});
@@ -512,7 +523,7 @@ const ProductModalWrapper = ({
 
         const cartesian = arr =>
             arr.reduce((a, b) => a.flatMap(d => b.map(e => [...d, e])), [[]]);
-
+        console.log("cartesian", cartesian)
         const combinations = cartesian(attrValues);
         const attrNames = Object.keys(selectedAttributes);
 
@@ -543,13 +554,39 @@ const ProductModalWrapper = ({
                 // tags: (existingVar[variationKey]?.tags || currentData.tags)?.map(tag =>
                 //     typeof tag === 'string' ? { name: tag } : tag
                 // ),
+                bulkPrice:
+                    existingVar?.bulkPrice && existingVar.bulkPrice.length > 0
+                        ? existingVar.bulkPrice
+                        : currentData?.bulkPrice && currentData.bulkPrice.length > 0
+                            ? currentData.bulkPrice
+                            : [],
+                minQuantity: existingVar?.minQuantity && existingVar.minQuantity.length > 0
+                    ? existingVar.minQuantity
+                    : currentData?.minQuantity && currentData.minQuantity.length > 0
+                        ? currentData.minQuantity
+                        : [],
                 tags: existingVar?.tags ?? currentData.tags ?? [],
                 marketLinks: existingVar?.marketLinks ?? currentData.marketLinks ?? [],
                 sku: existingVar?.sku ?? generateSKU(currentData.sku || "", variationObj),
             };
+            // newVariationDetails[variationKey] = {
+            //     id: existingVar?.id || null,
+            //     price: existingVar?.price ?? currentData?.price ?? newProduct?.price ?? null,
+            //     short: existingVar?.short ?? currentData?.short ?? newProduct?.short ?? "",
+            //     stock: existingVar?.stock ?? currentData?.stock ?? newProduct?.stock ?? 0,
+            //     name: currentData?.name ?? newProduct?.name ?? "",
+            //     description: existingVar?.description ?? currentData?.description ?? newProduct?.description ?? "",
+            //     images: existingVar?.image ?? currentData?.image ?? newProduct?.image ?? [],
+            //     tags: existingVar?.tags ?? currentData?.tags ?? newProduct?.tags ?? [],
+            //     marketLinks: existingVar?.marketLinks ?? currentData?.marketLinks ?? newProduct?.marketLinks ?? [],
+            //     sku: existingVar?.sku ?? generateSKU(currentData?.sku || newProduct?.sku || "", variationObj),
+            // };
+
 
             return variationObj;
         });
+        console.log("---- VARIATION MAP KEYS ----", Object.keys(variationMap));
+        console.log("---- NEW KEYS ----", Object.keys(newVariationDetails));
 
         setVariationDetails(newVariationDetails);
         setCurrentVariations(variationsWithKeys);
@@ -569,6 +606,19 @@ const ProductModalWrapper = ({
         });
         return attrs;
     };
+    // const parseAttributes = (variationName = "") => {
+    //     const attrs = {};
+    //     variationName
+    //         .split(/[/,|]/)
+    //         .map(part => part.trim())
+    //         .forEach((part) => {
+    //             const [key, value] = part.split(/[:=]/).map(s => s.trim());
+    //             if (key && value) attrs[key] = value;
+    //         });
+    //     return attrs;
+    // };
+
+
 
 
     // ✅ Load variations from DB in edit mode
@@ -811,8 +861,9 @@ const ProductModalWrapper = ({
                                     { key: "price", type: "number", placeholder: "Price" },
                                     { key: "stock", type: "number", placeholder: "Stock" },
                                     { key: "sku", type: "text", placeholder: "Enter SKU Detail" },
-                                    { key: "description", type: "textarea", placeholder: "Description" },
+                                    { key: "bulkPricing", type: "custom-bulk", placeholder: "Bulk Price" },
                                     { key: "images", type: "file", placeholder: "Product Image" },
+                                    { key: "description", type: "textarea", placeholder: "Description" },
                                 ]}
                                 setCurrentData={setCurrentData}
                                 currentData={currentData}

@@ -518,7 +518,7 @@ const ProductDetail = () => {
         }
     };
 
-
+    
 
 
     const clearCart = async () => {
@@ -809,7 +809,7 @@ const ProductDetail = () => {
                             })}
                         </div> */}
 
-                        <ProductOffers product={product} quantity={quantity} />
+                        <ProductOffers selectedVariation={selectedVariation} product={product} quantity={quantity} />
                         {/* {(product.offers?.length > 0 || (product.minQuantity && product.bulkPrice)) && (
                             <div className="mt-4 text-sm text-gray-800 space-y-2">
 
