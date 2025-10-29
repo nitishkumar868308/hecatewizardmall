@@ -18,6 +18,6 @@ export async function uploadToCloudinary(files, folderName = 'default') {
         if (!res.ok) throw new Error(data.message || 'Upload failed');
         uploadedUrls.push(data.url);
     }
-
+    console.log("uploadedUrls", uploadedUrls)
     return uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls; // return single URL if one file
 }
