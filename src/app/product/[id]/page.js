@@ -52,7 +52,7 @@ const ProductDetail = () => {
     const { user } = useSelector((state) => state.me);
     const { items } = useSelector((state) => state.cart);
     const country = useSelector((state) => state.country);
-    console.log("user", user)
+    console.log("items", items)
 
 
     useEffect(() => {
@@ -482,11 +482,13 @@ const ProductDetail = () => {
 
         setLoading(true);
 
-        const price = selectedVariation?.price || product.price;
+        const priceObj = displayedPrice();
+        const finalPricePerItem = Number(priceObj.discounted ?? priceObj.original);
+        // const price = selectedVariation?.price || product.price;
         const currencySymbol = selectedVariation?.currencySymbol || product.currencySymbol || "₹";
         const currency = selectedVariation?.currency || product.currency || "₹";
         console.log("currency", currency)
-        const totalPrice = price * quantity;
+        const totalPrice = finalPricePerItem * quantity;
 
         const flatAttributes = {};
         Object.entries(selectedAttributes).forEach(([key, val]) => {
@@ -496,7 +498,7 @@ const ProductDetail = () => {
         const cartItem = {
             productName: product.name,
             quantity,
-            pricePerItem: price,
+            pricePerItem: finalPricePerItem,
             currency,
             currencySymbol,
             totalPrice,
@@ -518,7 +520,7 @@ const ProductDetail = () => {
         }
     };
 
-    
+
 
 
     const clearCart = async () => {
@@ -588,15 +590,17 @@ const ProductDetail = () => {
 
     // Displayed price with bulk logic
     const displayedPrice = () => {
-        const price = selectedVariation?.price ?? product.price;
-        const bulkPrice = product.bulkPrice ?? null;
-        const minQty = product.minQuantity ?? null;
+        const basePrice = selectedVariation?.price ?? product.price;
+        const bulkPrice = selectedVariation?.bulkPrice ?? product.bulkPrice ?? null;
+        const minQty = selectedVariation?.minQuantity ?? product.minQuantity ?? null;
 
-        if (minQty && bulkPrice && quantity >= minQty) {
-            return { original: price, discounted: bulkPrice }; // return object for UI
+        if (bulkPrice && minQty && quantity >= minQty) {
+            return { original: basePrice, discounted: bulkPrice };
         }
-        return { original: price };
+
+        return { original: basePrice };
     };
+
 
     // Check rangeBuyXGetY offer applied
     const getRangeOfferApplied = (offer) => {

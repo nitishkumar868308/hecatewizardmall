@@ -151,51 +151,128 @@ export async function PUT(req) {
 }
 
 
+// export async function DELETE(req) {
+//     try {
+//         const body = await req.json();
+//         const { id, clearAll, userId, } = body;
+//         // console.log("id", id)
+//         // console.log("clearAll", clearAll)
+//         // console.log("userId", userId)
+//         // Case 1: Clear all items for a user
+//         if (clearAll && userId) {
+//             await prisma.cart.deleteMany({
+//                 where: { userId: parseInt(userId) },
+//             });
+
+//             return new Response(
+//                 JSON.stringify({ message: "All cart items cleared successfully" }),
+//                 { status: 200 }
+//             );
+//         }
+
+//         // Case 2: Delete a single item
+//         if (!id) {
+//             return new Response(
+//                 JSON.stringify({ message: "Cart ID is required" }),
+//                 { status: 400 }
+//             );
+//         }
+
+//         const existing = await prisma.cart.findUnique({ where: { id } });
+//         if (!existing) {
+//             return new Response(
+//                 JSON.stringify({ message: "Cart item not found" }),
+//                 { status: 404 }
+//             );
+//         }
+
+//         await prisma.cart.delete({ where: { id } });
+
+//         if (id?.length) {
+//             await prisma.cart.deleteMany({
+//                 where: {
+//                     id: { in: id },
+//                 },
+//             });
+//             return new Response(
+//                 JSON.stringify({ message: "Selected cart items deleted successfully" }),
+//                 { status: 200 }
+//             );
+//         }
+
+//         return new Response(
+//             JSON.stringify({ message: "Cart item deleted successfully" }),
+//             { status: 200 }
+//         );
+
+
+
+
+//     } catch (error) {
+//         return new Response(
+//             JSON.stringify({ message: "Failed to delete cart item(s)", error: error.message }),
+//             { status: 500 }
+//         );
+//     }
+// }
 export async function DELETE(req) {
     try {
         const body = await req.json();
         const { id, clearAll, userId } = body;
-        // console.log("id", id)
-        // console.log("clearAll", clearAll)
-        // console.log("userId", userId)
-        // Case 1: Clear all items for a user
+
+        // 🧹 Case 1: Clear all items for a user
         if (clearAll && userId) {
             await prisma.cart.deleteMany({
                 where: { userId: parseInt(userId) },
             });
-
             return new Response(
                 JSON.stringify({ message: "All cart items cleared successfully" }),
                 { status: 200 }
             );
         }
 
-        // Case 2: Delete a single item
+        // ❌ Case 2: If no ID is provided
         if (!id) {
             return new Response(
-                JSON.stringify({ message: "Cart ID is required" }),
+                JSON.stringify({ message: "Cart ID(s) are required" }),
                 { status: 400 }
             );
         }
 
-        const existing = await prisma.cart.findUnique({ where: { id } });
-        if (!existing) {
+        // 🧩 Case 3: Handle both single ID and multiple IDs
+        if (Array.isArray(id)) {
+            // multiple itemIds delete
+            await prisma.cart.deleteMany({
+                where: { id: { in: id } },
+            });
             return new Response(
-                JSON.stringify({ message: "Cart item not found" }),
-                { status: 404 }
+                JSON.stringify({ message: "Selected cart items deleted successfully" }),
+                { status: 200 }
+            );
+        } else {
+            // single item delete
+            const existing = await prisma.cart.findUnique({ where: { id } });
+            if (!existing) {
+                return new Response(
+                    JSON.stringify({ message: "Cart item not found" }),
+                    { status: 404 }
+                );
+            }
+
+            await prisma.cart.delete({ where: { id } });
+            return new Response(
+                JSON.stringify({ message: "Cart item deleted successfully" }),
+                { status: 200 }
             );
         }
 
-        await prisma.cart.delete({ where: { id } });
-
-        return new Response(
-            JSON.stringify({ message: "Cart item deleted successfully" }),
-            { status: 200 }
-        );
-
     } catch (error) {
+        console.error("DELETE ERROR:", error);
         return new Response(
-            JSON.stringify({ message: "Failed to delete cart item(s)", error: error.message }),
+            JSON.stringify({
+                message: "Failed to delete cart item(s)",
+                error: error.message,
+            }),
             { status: 500 }
         );
     }

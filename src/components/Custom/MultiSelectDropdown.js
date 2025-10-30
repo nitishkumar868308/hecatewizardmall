@@ -160,16 +160,24 @@ const MultiSelectDropdown = ({ offers, currentData, setCurrentData }) => {
     const dropdownRef = useRef(null);
 
     // ✅ Initialize from currentData when editing
+    // useEffect(() => {
+    //     if (currentData?.offers?.length > 0) {
+    //         const ids = currentData.offers.map((o) =>
+    //             typeof o === "object" ? o.id : Number(o)
+    //         );
+    //         setSelectedIds(ids);
+    //     } else {
+    //         setSelectedIds([]);
+    //     }
+    // }, [currentData.offers]);
     useEffect(() => {
         if (currentData?.offers?.length > 0) {
             const ids = currentData.offers.map((o) =>
                 typeof o === "object" ? o.id : Number(o)
             );
             setSelectedIds(ids);
-        } else {
-            setSelectedIds([]);
         }
-    }, [currentData.offers]);
+    }, []);
 
     // ✅ Close dropdown when clicking outside
     useEffect(() => {

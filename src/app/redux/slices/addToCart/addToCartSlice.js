@@ -45,15 +45,16 @@ export const updateCart = createAsyncThunk(
 // Delete cart item
 export const deleteCartItem = createAsyncThunk(
     "cart/deleteCartItem",
-    async (id, { rejectWithValue }) => {
+    async (payload, { rejectWithValue }) => {
         try {
-            const response = await axios.delete("/api/addToCart", { data: { id } });
+            const response = await axios.delete("/api/addToCart", { data: payload });
             return response.data;
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to delete cart item");
         }
     }
 );
+
 
 // Delete All data
 export const clearCartAsync = createAsyncThunk(

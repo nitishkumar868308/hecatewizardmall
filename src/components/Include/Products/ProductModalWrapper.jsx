@@ -117,7 +117,7 @@ const ProductModalWrapper = ({
             // ),
             sku: details.sku ?? newProduct.sku ?? null,
             tags: details.tags && details.tags.length > 0
-                ? details.tags.map(tag => ({ id: tag.id }))   // ✅ only id pass
+                ? details.tags.map(tag => ({ id: tag.id }))
                 : [],
             bulkPrice: details.bulkPrice ?? newProduct.bulkPrice ?? null,
             minQuantity: details.minQuantity ?? newProduct.minQuantity ?? null,
@@ -290,6 +290,9 @@ const ProductModalWrapper = ({
 
         }
         console.log("cleanedOffers", cleanedOffers)
+        console.log("Before update — tags in currentData:", currentData.tags);
+        console.log("Before update — tags in editProductData:", editProductData.tags);
+
         const productData = {
             name: editProductData.name,
             short: editProductData.short,

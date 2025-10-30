@@ -50,17 +50,43 @@ const ProductForm = ({
     //         }));
     //     }
     // }, [isEdit, editModalOpen]);
+    // useEffect(() => {
+    //     if (isEdit && editProductData) {
+    //         setCurrentData((prev) => ({
+    //             ...prev,
+    //             ...editProductData,
+    //             tags: (editProductData.tags || []).map((t) =>
+    //                 typeof t === "string" ? { id: t, name: t } : { id: t.id, name: t.name }
+    //             ),
+    //             offers: (editProductData.offers || []).map((o) =>
+    //                 typeof o === "string"
+    //                     ? { id: Number(o), name: productOffers.find(p => p.id === Number(o))?.name || "Unknown" }
+    //                     : { id: o.id, name: o.name }
+    //             ),
+    //             primaryOffer: editProductData.primaryOffer
+    //                 ? {
+    //                     id: editProductData.primaryOffer.id,
+    //                     name: editProductData.primaryOffer.name,
+    //                 }
+    //                 : null,
+    //         }));
+    //     }
+    // }, [isEdit, editModalOpen, editProductData, productOffers]);
     useEffect(() => {
-        if (isEdit && editProductData) {
-            setCurrentData((prev) => ({
-                ...prev,
+        if (isEdit && editModalOpen && editProductData) {
+            setCurrentData({
                 ...editProductData,
                 tags: (editProductData.tags || []).map((t) =>
                     typeof t === "string" ? { id: t, name: t } : { id: t.id, name: t.name }
                 ),
                 offers: (editProductData.offers || []).map((o) =>
                     typeof o === "string"
-                        ? { id: Number(o), name: productOffers.find(p => p.id === Number(o))?.name || "Unknown" }
+                        ? {
+                            id: Number(o),
+                            name:
+                                productOffers.find((p) => p.id === Number(o))?.name ||
+                                "Unknown",
+                        }
                         : { id: o.id, name: o.name }
                 ),
                 primaryOffer: editProductData.primaryOffer
@@ -69,9 +95,10 @@ const ProductForm = ({
                         name: editProductData.primaryOffer.name,
                     }
                     : null,
-            }));
+            });
         }
-    }, [isEdit, editModalOpen, editProductData, productOffers]);
+    }, [editModalOpen, isEdit]);
+
 
     // Add tag to product
     const addTag = (tagName) => {

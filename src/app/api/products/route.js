@@ -547,8 +547,13 @@ export async function PUT(req) {
                         sku: existingVar.sku,
                         image: Array.isArray(v.image) ? v.image.flat() : v.image ? [v.image] : existingVar.image,
                         description: v.description ?? existingVar.description,
-                        tags: v.tags?.length
-                            ? { set: v.tags.map(tag => ({ id: Number(tag.id) })) }
+                        // tags: v.tags?.length
+                        //     ? { set: v.tags.map(tag => ({ id: Number(tag.id) })) }
+                        //     : undefined,
+                        tags: Array.isArray(v.tags)
+                            ? v.tags.length > 0
+                                ? { set: v.tags.map(tag => ({ id: Number(tag.id) })) }
+                                : { set: [] } // ✅ ensures old tags are cleared
                             : undefined,
                         minQuantity: v.minQuantity != null ? v.minQuantity.toString() : null,
                         bulkPrice: v.bulkPrice != null ? v.bulkPrice.toString() : null,
@@ -667,7 +672,12 @@ export async function PUT(req) {
                         ? { connect: { id: Number(primaryOffer.id) } }
                         : { disconnect: true },
 
-                tags: tags?.length ? { set: [], connect: tags.map(tag => ({ id: Number(tag.id) })) } : undefined,
+                tags: Array.isArray(tags)
+                    ? tags.length > 0
+                        ? { set: tags.map(tag => ({ id: Number(tag.id) })) } // replace all
+                        : { set: [] } // clear all
+                    : undefined,
+
                 marketLinks: marketLinks?.connect
                     ? { set: marketLinks.connect.map(link => ({ id: link.id })) }
                     : { set: [] }, // clear if empty
