@@ -193,31 +193,7 @@ const Header = () => {
     //     dispatch(updateLocalCartItem({ id: item.id, newQuantity }));
     //     dispatch(updateCart({ id: item.id, quantity: newQuantity }));
     // };
-    const updateQuantity = (itemId, delta) => {
-        setUserCartState((prev) => {
-            return prev.map((item) => {
-                if (item.id === itemId) {
-                    const newQuantity = Math.max(1, item.quantity + delta);
-                    console.log("newQuantity", newQuantity)
-                    return {
-                        ...item,
-                        quantity: newQuantity,
-                        totalPrice: item.pricePerItem * newQuantity,
-                    };
-                }
-                return item;
-            });
-        });
 
-        // ✅ Redux ko bhi update karo (sync backend)
-        const item = userCartState.find((i) => i.id === itemId);
-        if (!item) return;
-
-        const newQuantity = Math.max(1, item.quantity + delta);
-        console.log("newQuantity", newQuantity)
-        dispatch(updateLocalCartItem({ id: item.id, newQuantity }));
-        dispatch(updateCart({ id: item.id, quantity: newQuantity }));
-    };
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     console.log("baseUrl", baseUrl)
@@ -267,28 +243,6 @@ const Header = () => {
     //         }).filter(item => item.quantity > 0); // remove if 0
     //     });
     // };
-    const updateColorQuantity = (productId, color, delta) => {
-        console.log("Updating:", { productId, color, delta });
-
-        setUserCartState(prevCart =>
-            prevCart
-                .map(item => {
-                    const itemColor = (item.attributes?.color || "").toLowerCase().trim();
-                    const matchColor = (color || "").toLowerCase().trim();
-
-                    if (item.productId === productId && itemColor === matchColor) {
-                        const newQty = Math.max(0, item.quantity + delta);
-                        console.log("✅ Match found:", itemColor, "-> newQty:", newQty);
-                        return { ...item, quantity: newQty };
-                    }
-
-                    return item;
-                })
-                .filter(item => item.quantity > 0)
-        );
-    };
-
-
     // Group cart ignoring color for card
     // const groupedCart = useMemo(() => {
     //     return userCartState.reduce((acc, item) => {
@@ -319,6 +273,88 @@ const Header = () => {
     //         return acc;
     //     }, {});
     // }, [userCartState]);
+    // const updateQuantity = (itemId, delta) => {
+    //     setUserCartState((prev) => {
+    //         return prev.map((item) => {
+    //             if (item.id === itemId) {
+    //                 const newQuantity = Math.max(1, item.quantity + delta);
+    //                 console.log("newQuantity", newQuantity)
+    //                 return {
+    //                     ...item,
+    //                     quantity: newQuantity,
+    //                     totalPrice: item.pricePerItem * newQuantity,
+    //                 };
+    //             }
+    //             return item;
+    //         });
+    //     });
+
+    //     // ✅ Redux ko bhi update karo (sync backend)
+    //     const item = userCartState.find((i) => i.id === itemId);
+    //     if (!item) return;
+
+    //     const newQuantity = Math.max(1, item.quantity + delta);
+    //     console.log("newQuantity", newQuantity)
+    //     dispatch(updateLocalCartItem({ id: item.id, newQuantity }));
+    //     dispatch(updateCart({ id: item.id, quantity: newQuantity }));
+    // };
+    const updateQuantity = (itemId, delta) => {
+        setUserCartState((prev) =>
+            prev.map((item) => {
+                if (item.id === itemId) {
+                    const newQuantity = Math.max(1, item.quantity + delta);
+
+                    // ✅ Determine if bulk offer should be applied
+                    const isBulkActive = newQuantity >= (item.colorMinQty || 0);
+                    const effectivePrice = isBulkActive
+                        ? (item.colorBulkPrice ?? item.pricePerItem)
+                        : (item.colorPrice ?? item.pricePerItem);
+
+                    const updatedItem = {
+                        ...item,
+                        quantity: newQuantity,
+                        totalPrice: effectivePrice * newQuantity,
+                        appliedPrice: effectivePrice, // (optional debug)
+                    };
+
+                    console.log("🧮 Local Update:", updatedItem);
+                    return updatedItem;
+                }
+                return item;
+            })
+        );
+
+        // Sync Redux + DB
+        const item = userCartState.find((i) => i.id === itemId);
+        if (!item) return;
+
+        const newQuantity = Math.max(1, item.quantity + delta);
+        const isBulkActive = newQuantity >= (item.colorMinQty || 0);
+        const effectivePrice = isBulkActive
+            ? (item.colorBulkPrice ?? item.pricePerItem)
+            : (item.colorPrice ?? item.pricePerItem);
+
+        console.log("📦 Redux Sync:", {
+            id: item.id,
+            newQuantity,
+            effectivePrice,
+            totalPrice: effectivePrice * newQuantity,
+        });
+
+        dispatch(updateLocalCartItem({
+            id: item.id,
+            newQuantity,
+            totalPrice: effectivePrice * newQuantity,
+        }));
+
+        dispatch(updateCart({
+            id: item.id,
+            quantity: newQuantity,
+        }));
+    };
+
+
+
     const groupedCart = useMemo(() => {
         const acc = {};
 
@@ -339,7 +375,8 @@ const Header = () => {
                     colors: [],
                 };
             } else {
-                acc[key] = { ...acc[key], itemIds: [...acc[key].itemIds] }; // new reference
+                // acc[key] = { ...acc[key], itemIds: [...acc[key].itemIds] }; // new reference
+                acc[key] = { ...acc[key], itemIds: [...acc[key].itemIds, item.id] };
             }
 
             // ✅ now safely handle color
@@ -378,6 +415,72 @@ const Header = () => {
 
         return JSON.parse(JSON.stringify(acc));
     }, [JSON.stringify(userCartState)]);
+
+    // 🧠 Helper: Find matching color variation for the same size
+    // const findColorVariation = (fullProduct, c, item) => {
+    //     if (!fullProduct?.variations?.length) return null;
+
+    //     const currentSize =
+    //         c.size?.toLowerCase().trim() ||
+    //         item?.attributes?.size?.toLowerCase().trim() ||
+    //         null;
+
+    //     const currentColor = c.color?.toLowerCase().trim();
+
+    //     return fullProduct.variations.find((v) => {
+    //         const name = v.variationName?.toLowerCase().trim() || "";
+
+    //         // ✅ normalize spaces and symbols
+    //         const normalized = name.replace(/[\s/,-]+/g, " ").trim();
+
+    //         // ✅ exact match logic (full word boundary)
+    //         const colorMatch = new RegExp(`\\b${currentColor}\\b`).test(normalized);
+    //         const sizeMatch = currentSize
+    //             ? new RegExp(`\\b${currentSize}\\b`).test(normalized)
+    //             : true;
+
+    //         // ✅ both must match
+    //         return colorMatch && sizeMatch;
+    //     });
+    // };
+    const findColorVariation = (fullProduct, c, item) => {
+        if (!fullProduct?.variations?.length) return null;
+
+        // ✅ Extract size properly — prioritize color-level first, then fallback
+        const currentSize =
+            (c.size && c.size.toLowerCase().trim()) ||
+            (item.attributes?.size && item.attributes.size.toLowerCase().trim()) ||
+            null;
+
+        const currentColor =
+            (c.color && c.color.toLowerCase().trim()) ||
+            (item.attributes?.color && item.attributes.color.toLowerCase().trim()) ||
+            null;
+
+        if (!currentColor) return null; // must have color
+
+        // ✅ exact color+size match from variation name
+        const matched = fullProduct.variations.find((v) => {
+            const name = v.variationName?.toLowerCase().trim() || "";
+            const normalized = name.replace(/[\s/,-]+/g, " ").trim();
+
+            const colorMatch = new RegExp(`\\b${currentColor}\\b`).test(normalized);
+            const sizeMatch = currentSize
+                ? new RegExp(`\\b${currentSize}\\b`).test(normalized)
+                : true;
+
+            return colorMatch && sizeMatch;
+        });
+
+        // ✅ Debug log to confirm
+        console.log(
+            `🧩 Matched for ${currentColor}/${currentSize || "no-size"} →`,
+            matched?.variationName,
+            matched?.bulkPrice
+        );
+
+        return matched;
+    };
 
     useEffect(() => {
         console.log("🟢 groupedCart changed:", JSON.parse(JSON.stringify(groupedCart)));
@@ -503,7 +606,8 @@ const Header = () => {
                                                                     src={imgSrc}
                                                                     alt={cat.name}
                                                                     fill
-                                                                    className="object-cover hover:scale-105 transition-transform duration-300"
+                                                                    className="object-cover hover:scale-125 transition-transform duration-500 ease-in-out"
+
                                                                     unoptimized
                                                                 />
                                                             </div>
@@ -716,7 +820,7 @@ const Header = () => {
                                         )}
                                     </div> */}
 
-                                    <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                                    {/* <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                                         {userCartCount > 0 ? (
                                             Object.values(groupedCart).map((item, index) => {
                                                 console.log("groupedCart", groupedCart)
@@ -729,7 +833,6 @@ const Header = () => {
                                                         key={index}
                                                         className="relative p-3 border rounded-lg shadow-sm bg-white hover:shadow-md transition-all duration-200"
                                                     >
-                                                        {/* Delete entire product */}
                                                         <button
                                                             onClick={() => {
                                                                 setSelectedItemId(item);
@@ -741,7 +844,6 @@ const Header = () => {
                                                             <Trash className="w-5 h-5" />
                                                         </button>
 
-                                                        {/* Product Name */}
                                                         <div className="mb-2">
                                                             <Link
                                                                 href={`/product/${item.productId}`}
@@ -753,7 +855,6 @@ const Header = () => {
                                                             </Link>
                                                         </div>
 
-                                                        {/* Offers */}
                                                         {fullProduct && (
                                                             <div className="mt-2 text-xs text-green-700 space-y-1">
                                                                 {(() => {
@@ -832,7 +933,6 @@ const Header = () => {
                                                         )}
 
 
-                                                        {/* Variation attributes (size, etc.) */}
                                                         <div className="flex flex-wrap gap-x-3 text-xs text-gray-500 mb-2">
                                                             {Object.entries(item.attributes)
                                                                 .filter(([k]) => k !== "color")
@@ -842,8 +942,6 @@ const Header = () => {
                                                                     </span>
                                                                 ))}
                                                         </div>
-
-                                                        {/* Color + Quantity row */}
                                                         <div className="flex flex-col gap-2">
                                                             {(() => {
                                                                 const totalQuantity = item.colors.reduce((sum, c) => sum + c.quantity, 0);
@@ -917,8 +1015,6 @@ const Header = () => {
                                                                                         </span>
                                                                                     )}
                                                                                 </div>
-
-                                                                                {/* Quantity buttons */}
                                                                                 <div className="flex items-center gap-2 mt-1">
                                                                                     <button
                                                                                         className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
@@ -936,7 +1032,6 @@ const Header = () => {
                                                                                 </div>
                                                                             </div>
 
-                                                                            {/* 🟢 Pricing Details */}
                                                                             {(() => {
                                                                                 const originalTotal = (c.pricePerItem * c.quantity).toFixed(2);
                                                                                 let finalPrice = c.pricePerItem;
@@ -955,7 +1050,6 @@ const Header = () => {
 
                                                                                 return (
                                                                                     <div className="pl-12 text-sm text-gray-800">
-                                                                                        {/* Show original and discounted price */}
                                                                                         {showDiscount ? (
                                                                                             <>
                                                                                                 <div>
@@ -979,7 +1073,6 @@ const Header = () => {
                                                                                 );
                                                                             })()}
 
-                                                                            {/* Delete button */}
                                                                             <div className="flex justify-end">
                                                                                 <button
                                                                                     onClick={() => {
@@ -1002,13 +1095,12 @@ const Header = () => {
 
 
 
-                                                        {/* Total Price */}
-                                                        {/* <div className="text-sm font-bold text-gray-900 text-right mt-3 border-t pt-2">
+                                                      <div className="text-sm font-bold text-gray-900 text-right mt-3 border-t pt-2">
                                                             Total: {item.currency}{" "}
                                                             {item.colors
                                                                 .reduce((sum, c) => sum + c.pricePerItem * c.quantity, 0)
                                                                 .toFixed(2)}
-                                                        </div> */}
+                                                        </div>
                                                         <div className="text-sm font-bold text-gray-900 text-right mt-3 border-t pt-2">
                                                             {(() => {
                                                                 const totalOriginal = item.colors
@@ -1062,7 +1154,227 @@ const Header = () => {
                                         ) : (
                                             <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
                                         )}
+                                    </div> */}
+                                    <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+
+                                        {userCartCount > 0 ? (
+                                            Object.values(groupedCart).map((item, index) => {
+                                                const fullProduct = products.find(p => p.id === item.productId);
+                                                if (!fullProduct) return null;
+
+                                                const baseVariation =
+                                                    fullProduct?.variations?.find(v => v.id === item.variationId) ||
+                                                    fullProduct?.selectedVariation ||
+                                                    null;
+
+                                                const totalVariationQty = item.colors.reduce((sum, c) => sum + c.quantity, 0);
+
+                                                const minRequired = Math.min(
+                                                    ...item.colors.map(c =>
+                                                        Number(c.minQuantity || baseVariation?.minQuantity || fullProduct?.minQuantity || 0)
+                                                    )
+                                                );
+
+                                                const isVariationOfferActive = totalVariationQty >= minRequired;
+
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        className="relative p-3 border rounded-lg shadow-sm bg-white hover:shadow-md transition-all duration-200"
+                                                    >
+                                                        {/* 🗑 Remove variation */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedItemId(item);
+                                                                setIsConfirmOpen(true);
+                                                            }}
+                                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                                                            title="Remove item"
+                                                        >
+                                                            <Trash className="w-5 h-5" />
+                                                        </button>
+
+                                                        {/* 🏷 Product Name */}
+                                                        <div className="mb-2">
+                                                            <Link href={`/product/${item.productId}`} onClick={() => setIsOpen(false)}>
+                                                                <h3 className="text-base font-semibold text-gray-900 hover:text-blue-600 line-clamp-1">
+                                                                    {item.productName}
+                                                                </h3>
+                                                            </Link>
+                                                        </div>
+
+                                                        {/* ✅ Offer Banner */}
+                                                        {isVariationOfferActive && (
+                                                            <div className="border border-green-200 bg-green-50 rounded-md p-2 text-green-800 mb-2">
+                                                                <div className="font-semibold text-sm flex items-center gap-1">✅ Offer Applied</div>
+                                                                <ul className="mt-1 list-disc list-inside space-y-1 text-xs">
+                                                                    {item.colors.map((c, i) => {
+                                                                        const matchVar = findColorVariation(fullProduct, c, item);
+                                                                        console.log(`🧩 Matched for ${c.color}/${c.size}:`, matchVar?.variationName, matchVar?.bulkPrice);
+                                                                        const bulkPrice = Number(matchVar?.bulkPrice || c.bulkPrice || baseVariation?.bulkPrice || fullProduct?.bulkPrice);
+                                                                        console.log("bulkPrice", bulkPrice)
+                                                                        const minQty = Number(matchVar?.minQuantity || c.minQuantity || baseVariation?.minQuantity || fullProduct?.minQuantity);
+                                                                        console.log("minQty", minQty)
+                                                                        return (
+                                                                            <li key={i}>
+                                                                                Bulk offer: ₹{bulkPrice} per item (Min {minQty})
+                                                                            </li>
+                                                                        );
+                                                                    })}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Attributes except color */}
+                                                        <div className="flex flex-wrap gap-x-3 text-xs text-gray-500 mb-2">
+                                                            {Object.entries(item.attributes)
+                                                                .filter(([k]) => k !== "color")
+                                                                .map(([k, v]) => (
+                                                                    <span key={k}>
+                                                                        <span className="capitalize">{k}:</span> {v}
+                                                                    </span>
+                                                                ))}
+                                                        </div>
+
+                                                        {/* 🎨 Each Color */}
+                                                        <div className="flex flex-col gap-2">
+                                                            {item.colors.map((c, idx) => {
+                                                                const matchVar = findColorVariation(fullProduct, c, item);
+
+                                                                const colorBulkPrice = Number(matchVar?.bulkPrice || c.bulkPrice || baseVariation?.bulkPrice || fullProduct?.bulkPrice);
+                                                                const colorMinQty = Number(matchVar?.minQuantity || c.minQuantity || baseVariation?.minQuantity || fullProduct?.minQuantity);
+                                                                const colorPrice = Number(matchVar?.price || c.pricePerItem);
+
+                                                                const originalTotal = colorPrice * c.quantity;
+                                                                const isBulkActive = totalVariationQty >= colorMinQty;
+
+                                                                const discountedTotal = isBulkActive ? colorBulkPrice * c.quantity : originalTotal;
+                                                                const savedAmount = isBulkActive ? (colorPrice - colorBulkPrice) * c.quantity : 0;
+
+                                                                return (
+                                                                    <div key={idx} className="flex flex-col gap-1 border-t pt-2">
+                                                                        {/* Color Name & Quantity */}
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <img
+                                                                                    src={c.image || "/placeholder.png"}
+                                                                                    alt={c.color}
+                                                                                    className="w-10 h-10 object-cover rounded-md border"
+                                                                                />
+                                                                                <span className="text-sm font-medium text-gray-700">{c.color}</span>
+                                                                            </div>
+
+                                                                            {/* Quantity Controls */}
+                                                                            <div className="flex items-center gap-2 mt-1">
+                                                                                <button
+                                                                                    className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
+                                                                                    onClick={() => updateQuantity(c.itemId, -1)}
+                                                                                >
+                                                                                    -
+                                                                                </button>
+                                                                                <span className="px-2 text-sm">{c.quantity}</span>
+                                                                                <button
+                                                                                    className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
+                                                                                    onClick={() => updateQuantity(c.itemId, 1)}
+                                                                                >
+                                                                                    +
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* 💰 Price Section */}
+                                                                        <div className="pl-12 text-sm text-gray-800">
+                                                                            {isBulkActive ? (
+                                                                                <>
+                                                                                    <div>
+                                                                                        <span className="line-through text-gray-400">
+                                                                                            ₹{colorPrice} × {c.quantity} = ₹{originalTotal.toFixed(2)}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div className="text-green-700 font-semibold">
+                                                                                        ₹{colorBulkPrice} × {c.quantity} = ₹{discountedTotal.toFixed(2)} ✅
+                                                                                    </div>
+                                                                                    <div className="text-xs text-green-600">
+                                                                                        You saved ₹{savedAmount.toFixed(2)} 🎉
+                                                                                    </div>
+                                                                                </>
+                                                                            ) : (
+                                                                                <div>
+                                                                                    ₹{colorPrice} × {c.quantity} = ₹{originalTotal.toFixed(2)}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+
+                                                                        {/* Remove color */}
+                                                                        <div className="flex justify-end">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    setSelectedItemId(item.itemIds[idx]);
+                                                                                    setIsConfirmOpen(true);
+                                                                                }}
+                                                                                className="text-red-500 hover:text-red-700 text-xs mt-1"
+                                                                            >
+                                                                                ✕ Remove
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+
+                                                        {/* 🧮 Total */}
+                                                        <div className="text-sm font-bold text-gray-900 text-right mt-3 border-t pt-2">
+                                                            {(() => {
+                                                                const totalOriginal = item.colors.reduce((sum, c) => {
+                                                                    const matchVar = findColorVariation(fullProduct, c, item);
+                                                                    const price = Number(matchVar?.price || c.pricePerItem);
+                                                                    return sum + price * c.quantity;
+                                                                }, 0);
+
+                                                                const totalDiscounted = item.colors.reduce((sum, c) => {
+                                                                    const matchVar = findColorVariation(fullProduct, c, item);
+                                                                    const bulkPrice = Number(matchVar?.bulkPrice || c.bulkPrice || fullProduct?.bulkPrice);
+                                                                    const minQty = Number(matchVar?.minQuantity || fullProduct?.minQuantity);
+                                                                    const isColorBulkActive = totalVariationQty >= minQty;
+                                                                    const effective = isColorBulkActive ? bulkPrice * c.quantity : (matchVar?.price || c.pricePerItem) * c.quantity;
+                                                                    return sum + effective;
+                                                                }, 0);
+
+                                                                const isDiscounted = totalDiscounted < totalOriginal;
+
+                                                                return (
+                                                                    <div>
+                                                                        <span>Total: {item.currency} </span>
+                                                                        {isDiscounted ? (
+                                                                            <>
+                                                                                <span className="line-through text-gray-400 mr-2">
+                                                                                    {totalOriginal.toFixed(2)}
+                                                                                </span>
+                                                                                <span className="text-green-700">{totalDiscounted.toFixed(2)} ✅</span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <span>{totalOriginal.toFixed(2)}</span>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
+                                        )}
                                     </div>
+
+
+
+
+
+
+
+
+
 
 
                                     {/* Checkout Button */}
