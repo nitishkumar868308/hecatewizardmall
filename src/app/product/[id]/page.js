@@ -8,17 +8,18 @@ import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 import { fetchOffers } from '@/app/redux/slices/offer/offerSlice'
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
-import { addToCartAsync, fetchCart, clearCartAsync } from "@/app/redux/slices/addToCart/addToCartSlice";
+import { addToCartAsync, fetchCart, clearCartAsync, updateCart, deleteCartItem } from "@/app/redux/slices/addToCart/addToCartSlice";
 import Loader from "@/components/Include/Loader";
 import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from "framer-motion";
 import DOMPurify from "dompurify";
 import { useCountries } from "@/lib/CustomHook/useCountries";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ShoppingCart, Trash2 } from "lucide-react";
 import ProductOffers from "@/components/Product/ProductOffers/ProductOffers";
 
 const ProductDetail = () => {
+    const [showConfirm, setShowConfirm] = useState(false);
     const dispatch = useDispatch();
     const [imageLoaded, setImageLoaded] = useState(false);
     const { countries } = useCountries();
@@ -54,14 +55,25 @@ const ProductDetail = () => {
     const country = useSelector((state) => state.country);
     console.log("items", items)
 
-
     useEffect(() => {
         const prod = products.find((p) => p.id == id);
         console.log("prod", prod)
         setCurrentProduct(prod || null);
     }, [products, id]);
     // const product = products.find((p) => p.id === id);
+    const cartItem = userCart?.find(
+        (item) => item.variationId === selectedVariation?.id
+    );
+    const isInCart = !!cartItem;
 
+    // 🟢 whenever selectedVariation or cart changes → sync quantity
+    useEffect(() => {
+        if (cartItem) {
+            setQuantity(cartItem.quantity); // ✅ set actual cart quantity
+        } else {
+            setQuantity(1); // ✅ reset when variation not in cart
+        }
+    }, [cartItem, selectedVariation]);
 
     useEffect(() => {
         dispatch(fetchCart());
@@ -360,8 +372,9 @@ const ProductDetail = () => {
     // Thumbnails: only show if more than 1 image
     const thumbnailImages = currentImages.length > 1 ? currentImages.filter(img => img !== mainImage) : [];
 
-    const increment = () => setQuantity(quantity + 1);
-    const decrement = () => quantity > 1 && setQuantity(quantity - 1);
+    // const increment = () => setQuantity(quantity + 1);
+    // const decrement = () => quantity > 1 && setQuantity(quantity - 1);
+
 
     const productWithOffer = products.map(product => {
         // get all offer names from the product's offers array
@@ -430,6 +443,531 @@ const ProductDetail = () => {
     // };
 
     // Assume `countries` array is already available (250 countries)
+    // const addToCart = async () => {
+    //     if (!user || !user.id) {
+    //         toast.error("Please login to add items to your cart.");
+    //         return;
+    //     }
+
+    //     let selectedCountryCode = localStorage.getItem("selectedCountry");
+    //     if (!selectedCountryCode) {
+    //         toast.error("Something went wrong! Country not found.");
+    //         return;
+    //     }
+
+    //     selectedCountryCode = selectedCountryCode.toUpperCase();
+
+    //     // 🔹 Find full country name dynamically from `countries` array
+    //     let selectedCountryObj = countries.find(
+    //         (c) => c.code.toUpperCase() === selectedCountryCode
+    //     );
+
+    //     // 🔹 If not found by 3-letter code, try first 2 letters (alpha-2 fallback)
+    //     if (!selectedCountryObj && selectedCountryCode.length === 3) {
+    //         selectedCountryObj = countries.find(
+    //             (c) => c.code.toUpperCase().startsWith(selectedCountryCode.slice(0, 2))
+    //         );
+    //     }
+
+    //     const selectedCountry = selectedCountryObj?.name || selectedCountryCode;
+
+    //     // ✅ Cart country check
+    //     if (userCart && userCart.length > 0) {
+    //         const cartCountry = userCart[0]?.selectedCountry;
+    //         if (cartCountry && cartCountry !== selectedCountry) {
+    //             setNewCountry(selectedCountry); // jo country add karni hai
+    //             setShowCountryModal(true);      // modal show karo
+    //             return; // wait for user action in modal
+    //         }
+    //     }
+
+
+    //     // ✅ Duplicate check
+    //     const isAlreadyInCart = userCart?.some(
+    //         (item) =>
+    //             item.productId === product.id &&
+    //             item.variationId === (selectedVariation?.id || null)
+    //     );
+    //     if (isAlreadyInCart) {
+    //         toast.error("This product is already in your cart!");
+    //         return;
+    //     }
+
+    //     setLoading(true);
+
+    //     const priceObj = displayedPrice();
+    //     const finalPricePerItem = Number(priceObj.discounted ?? priceObj.original);
+    //     // const price = selectedVariation?.price || product.price;
+    //     const currencySymbol = selectedVariation?.currencySymbol || product.currencySymbol || "₹";
+    //     const currency = selectedVariation?.currency || product.currency || "₹";
+    //     console.log("currency", currency)
+    //     const totalPrice = finalPricePerItem * quantity;
+
+    //     const flatAttributes = {};
+    //     Object.entries(selectedAttributes).forEach(([key, val]) => {
+    //         if (val && val !== "N/A") flatAttributes[key.toLowerCase()] = val;
+    //     });
+
+    //     const cartItem = {
+    //         productName: product.name,
+    //         quantity,
+    //         pricePerItem: finalPricePerItem,
+    //         currency,
+    //         currencySymbol,
+    //         bulkPrice: priceObj.bulkPrice || null,
+    //         bulkMinQty: priceObj.minQty || null,
+    //         offerApplied: priceObj.isBulkOffer || false,
+    //         totalPrice,
+    //         productId: product.id,
+    //         variationId: selectedVariation?.id || null,
+    //         attributes: flatAttributes,
+    //         userId: user.id,
+    //         image: mainImage || "No Image",
+    //         selectedCountry,
+    //     };
+    //     try {
+    //         const result = await dispatch(addToCartAsync(cartItem)).unwrap();
+    //         toast.success(result.message || "Item added to cart!");
+    //         dispatch(fetchCart());
+    //     } catch (err) {
+    //         toast.error(err.message || "Failed to add product");
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
+    // const addToCart = async () => {
+    //     if (!user || !user.id) {
+    //         toast.error("Please login to add items to your cart.");
+    //         return;
+    //     }
+
+    //     // 🔹 Get selected country
+    //     let selectedCountryCode = localStorage.getItem("selectedCountry");
+    //     if (!selectedCountryCode) {
+    //         toast.error("Something went wrong! Country not found.");
+    //         return;
+    //     }
+
+    //     selectedCountryCode = selectedCountryCode.toUpperCase();
+    //     let selectedCountryObj = countries.find(
+    //         (c) => c.code.toUpperCase() === selectedCountryCode
+    //     );
+
+    //     if (!selectedCountryObj && selectedCountryCode.length === 3) {
+    //         selectedCountryObj = countries.find((c) =>
+    //             c.code.toUpperCase().startsWith(selectedCountryCode.slice(0, 2))
+    //         );
+    //     }
+
+    //     const selectedCountry = selectedCountryObj?.name || selectedCountryCode;
+
+    //     // 🔹 Ensure cart country consistency
+    //     if (userCart && userCart.length > 0) {
+    //         const cartCountry = userCart[0]?.selectedCountry;
+    //         if (cartCountry && cartCountry !== selectedCountry) {
+    //             setNewCountry(selectedCountry);
+    //             setShowCountryModal(true);
+    //             return;
+    //         }
+    //     }
+
+    //     setLoading(true);
+
+    //     try {
+    //         // 1️⃣ Get Base Price (always original)
+    //         const priceObj = displayedPrice();
+    //         const basePrice = Number(priceObj.discounted ?? priceObj.original);
+    //         const currencySymbol =
+    //             selectedVariation?.currencySymbol || product.currencySymbol || "₹";
+    //         const currency = selectedVariation?.currency || product.currency || "INR";
+
+    //         // 2️⃣ Normalize Attributes
+    //         const flatAttributes = {};
+    //         Object.entries(selectedAttributes).forEach(([key, val]) => {
+    //             if (val && val !== "N/A") flatAttributes[key.toLowerCase()] = val;
+    //         });
+
+    //         // 3️⃣ Initialize Bulk Offer Variables
+    //         let offerApplied = false;
+    //         let bulkPrice = null;
+    //         let bulkMinQty = null;
+
+    //         const hasBulkOffer =
+    //             Number(product?.minQuantity) > 0 &&
+    //             Number(selectedVariation?.bulkPrice) > 0;
+
+    //         console.log("hasBulkOffer:", hasBulkOffer);
+
+    //         let sameGroupItems = [];
+    //         let totalGroupQty = quantity;
+
+    //         if (hasBulkOffer) {
+    //             const productMinQty = Number(product.minQuantity);
+    //             const variationBulkPrice = Number(selectedVariation.bulkPrice);
+    //             const variationBulkMinQty = Number(
+    //                 selectedVariation.bulkMinQty || productMinQty
+    //             );
+    //             const requiredQty = variationBulkMinQty || productMinQty;
+
+    //             // ✅ Group by same product + attributes (ignore color)
+    //             const coreAttributes = Object.entries(flatAttributes).filter(
+    //                 ([key]) => !["color", "colour"].includes(key.toLowerCase())
+    //             );
+    //             const coreKey = coreAttributes.map(([k, v]) => `${k}:${v}`).join("|");
+
+    //             // ✅ Find existing cart items in same group
+    //             sameGroupItems =
+    //                 userCart?.filter((item) => {
+    //                     if (item.productId !== product.id) return false;
+
+    //                     const itemCoreKey = Object.entries(item.attributes || {})
+    //                         .filter(([k]) => !["color", "colour"].includes(k.toLowerCase()))
+    //                         .map(([k, v]) => `${k}:${v}`)
+    //                         .join("|");
+
+    //                     return itemCoreKey === coreKey;
+    //                 }) || [];
+
+    //             totalGroupQty =
+    //                 sameGroupItems.reduce((sum, i) => sum + (i.quantity || 0), 0) +
+    //                 quantity;
+
+    //             console.log("🧩 BULK DEBUG →", {
+    //                 totalGroupQty,
+    //                 variationBulkPrice,
+    //                 variationBulkMinQty,
+    //                 productMinQty,
+    //                 requiredQty,
+    //             });
+
+    //             // ✅ Apply bulk offer if total quantity meets requirement
+    //             if (totalGroupQty >= requiredQty) {
+    //                 offerApplied = true;
+    //                 bulkPrice = variationBulkPrice;
+    //                 bulkMinQty = requiredQty;
+    //                 // 🧩 Take stable snapshot before mapping (avoid stale selectedVariation)
+    //                 const currentBulkPrice = Number(selectedVariation?.bulkPrice) || null;
+    //                 const currentBulkMinQty = Number(selectedVariation?.bulkMinQty) || null;
+
+
+    //                 // 🔥 Update only those items that share the SAME variation
+    //                 const updatedGroupItems = sameGroupItems.map((item) => {
+    //                     if (item.variationId === selectedVariation?.id) {
+    //                         return {
+    //                             ...item,
+    //                             totalPrice: currentBulkPrice ? currentBulkPrice * item.quantity : item.pricePerItem * item.quantity,
+    //                             offerApplied: !!currentBulkPrice,
+    //                             bulkPrice: currentBulkPrice,
+    //                             bulkMinQty: currentBulkMinQty,
+    //                         };
+    //                     }
+    //                     return item; // keep others untouched
+    //                 });
+
+    //                 console.log("updatedGroupItems", updatedGroupItems)
+
+    //                 if (updatedGroupItems.length > 0) {
+    //                     await Promise.all(
+    //                         updatedGroupItems.map((uItem) => dispatch(updateCart(uItem)))
+    //                     );
+    //                 }
+    //             } else {
+    //                 // ❌ Not enough quantity yet for bulk
+    //                 offerApplied = false;
+    //                 bulkPrice = null;
+    //                 bulkMinQty = null;
+    //             }
+    //         }
+
+    //         // 4️⃣ Prevent duplicate same variation + color
+    //         const isAlreadyInCart = userCart?.some(
+    //             (item) =>
+    //                 item.productId === product.id &&
+    //                 item.variationId === (selectedVariation?.id || null) &&
+    //                 item.attributes?.color === flatAttributes?.color
+    //         );
+    //         if (isAlreadyInCart) {
+    //             toast.error("This product is already in your cart!");
+    //             setLoading(false);
+    //             return;
+    //         }
+
+    //         // 5️⃣ Calculate Prices
+    //         const finalUnitPrice = basePrice; // always main price per item
+    //         const totalPrice =
+    //             offerApplied && bulkPrice
+    //                 ? bulkPrice * quantity // if offer, total uses bulkPrice
+    //                 : basePrice * quantity;
+
+    //         // 🧩 Normalize values
+    //         const normalizeNumber = (val) => {
+    //             if (val == null || val === "") return null;
+    //             if (typeof val === "object" && "toNumber" in val) return val.toNumber();
+    //             if (typeof val === "object" && "value" in val) return Number(val.value);
+    //             return Number(val);
+    //         };
+
+    //         const finalBulkPrice = normalizeNumber(bulkPrice);
+    //         const finalBulkMinQty = normalizeNumber(bulkMinQty);
+
+    //         console.log("✅ FINAL BULK VALUES:", {
+    //             finalBulkPrice,
+    //             finalBulkMinQty,
+    //             offerApplied,
+    //             basePrice,
+    //             totalPrice,
+    //         });
+
+    //         // 6️⃣ Prepare Cart Item
+    //         const cartItem = {
+    //             productName: product.name,
+    //             quantity,
+    //             pricePerItem: basePrice, // Always original
+    //             currency,
+    //             currencySymbol,
+    //             totalPrice,
+    //             bulkPrice: finalBulkPrice, // Only updates if offer applied
+    //             bulkMinQty: finalBulkMinQty,
+    //             offerApplied,
+    //             productId: product.id,
+    //             variationId: selectedVariation?.id || null,
+    //             attributes: flatAttributes,
+    //             userId: user.id,
+    //             image: mainImage || "No Image",
+    //             selectedCountry,
+    //         };
+
+    //         console.log("🛒 NEW CART ITEM:", cartItem);
+
+    //         // 7️⃣ Add to Cart
+    //         const result = await dispatch(addToCartAsync(cartItem)).unwrap();
+    //         toast.success(result.message || "Item added to cart!");
+
+    //         // ✅ Refresh cart
+    //         dispatch(fetchCart());
+    //     } catch (err) {
+    //         console.error("❌ ADD TO CART ERROR:", err);
+    //         toast.error(err.message || "Failed to add product");
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
+
+
+    // const increment = () => {
+    //     const newQty = quantity + 1;
+    //     setQuantity(newQty);
+    //     if (isInCart) handleUpdateQuantity(cartItem.id, newQty);
+    // };
+
+    // // ➖ decrement or delete
+    // const decrement = () => {
+    //     if (quantity === 1 && isInCart) {
+    //         setShowConfirm(true);
+    //     } else {
+    //         const newQty = Math.max(1, quantity - 1);
+    //         setQuantity(newQty);
+    //         if (isInCart) handleUpdateQuantity(cartItem.id, newQty);
+    //     }
+    // };
+    // const increment = async () => {
+    //     const newQty = quantity + 1;
+    //     setQuantity(newQty);
+
+    //     // 🔁 Recalculate bulk offer eligibility
+    //     const newBulkStatus = computeBulkStatus({
+    //         product,
+    //         selectedVariation,
+    //         selectedAttributes,
+    //         userCart,
+    //         quantity: newQty,
+    //     });
+
+    //     if (isInCart) {
+    //         const isBulkEligible = newBulkStatus.eligible;
+
+    //         await handleUpdateQuantity(cartItem.id, newQty, {
+    //             offerApplied: isBulkEligible,
+    //             bulkPrice: isBulkEligible ? newBulkStatus.variationBulkPrice : null,
+    //             bulkMinQty: isBulkEligible ? newBulkStatus.variationBulkMinQty : null,
+    //         });
+    //     }
+    // };
+    const increment = async () => {
+        const newQty = quantity + 1;
+        console.log("newQty", newQty);
+
+        // ✅ pehle local state update mat karo
+        // setQuantity(newQty);
+
+        // ✅ computeBulkStatus pehle karo taaki latest quantity pass ho
+        const newBulkStatus = computeBulkStatus({
+            product,
+            selectedVariation,
+            selectedAttributes,
+            userCart,
+            quantity: newQty,
+            cartItem,
+        });
+
+        if (isInCart) {
+            const isBulkEligible = newBulkStatus.eligible;
+
+            // ✅ Redux update (offerApplied + new qty)
+            await updateGroupBulkStatus(newBulkStatus, isBulkEligible, newQty);
+        }
+
+        // ✅ Redux update ke baad local quantity sync karo
+        setQuantity(newQty);
+    };
+
+
+    const decrement = async () => {
+        if (quantity === 1 && isInCart) {
+            setShowConfirm(true);
+        } else {
+            const newQty = Math.max(1, quantity - 1);
+            console.log("newQty", newQty)
+            setQuantity(newQty);
+
+            const newBulkStatus = computeBulkStatus({
+                product,
+                selectedVariation,
+                selectedAttributes,
+                userCart,
+                quantity: newQty,
+                cartItem,
+            });
+
+            if (isInCart) {
+                const isBulkEligible = newBulkStatus.eligible;
+                await updateGroupBulkStatus(newBulkStatus, isBulkEligible, newQty);
+            }
+        }
+    };
+
+
+    // const decrement = async () => {
+    //     if (quantity === 1 && isInCart) {
+    //         setShowConfirm(true);
+    //     } else {
+    //         const newQty = Math.max(1, quantity - 1);
+    //         setQuantity(newQty);
+
+    //         // 🔁 Recalculate bulk offer eligibility
+    //         const newBulkStatus = computeBulkStatus({
+    //             product,
+    //             selectedVariation,
+    //             selectedAttributes,
+    //             userCart,
+    //             quantity: newQty,
+    //             cartItem, // 👈 must pass current item
+    //         });
+
+
+    //         if (isInCart) {
+    //             const isBulkEligible = newBulkStatus.eligible;
+
+    //             await handleUpdateQuantity(cartItem.id, newQty, {
+    //                 offerApplied: isBulkEligible,
+    //                 bulkPrice: isBulkEligible ? newBulkStatus.variationBulkPrice : null,
+    //                 bulkMinQty: isBulkEligible ? newBulkStatus.variationBulkMinQty : null,
+    //             });
+    //         }
+    //     }
+    // };
+
+
+
+    const confirmDelete = async () => {
+        setShowConfirm(false);
+        await dispatch(deleteCartItem({ id: cartItem.id })).unwrap();
+
+        // 🔁 Get updated cart
+        const updatedCart = await dispatch(fetchCart()).unwrap();
+
+        // 🔄 Recalculate bulk for remaining variations
+        const newBulkStatus = computeBulkStatus({
+            product,
+            selectedVariation,
+            selectedAttributes,
+            userCart,
+            quantity: newQty,
+            cartItem, // 👈 must pass current item
+        });
+
+
+        const isBulkEligible = newBulkStatus.eligible;
+
+        // 🧠 Update all remaining variations in backend
+        const updates = newBulkStatus.sameGroupItems.map(it => ({
+            id: it.id,
+            offerApplied: isBulkEligible,
+            bulkPrice: isBulkEligible ? newBulkStatus.variationBulkPrice : null,
+            bulkMinQty: isBulkEligible ? newBulkStatus.variationBulkMinQty : null,
+        }));
+
+        for (const update of updates) {
+            await dispatch(updateCart(update)).unwrap();
+        }
+
+        setQuantity(1);
+    };
+
+    const updateGroupBulkStatus = async (bulkStatus, isBulkEligible, newQty) => {
+        const { sameGroupItems, variationBulkPrice, variationBulkMinQty } = bulkStatus;
+
+        // 🧠 Step 1: Decide for entire group
+        const applyOffer = isBulkEligible;
+        const bulkPrice = applyOffer ? variationBulkPrice : null;
+        const bulkMinQty = applyOffer ? variationBulkMinQty : null;
+
+        // 🧠 Step 2: Update all items in same group
+        await Promise.all(
+            sameGroupItems.map(item =>
+                handleUpdateQuantity(
+                    item.id,
+                    item.id === cartItem.id ? newQty : item.quantity,
+                    {
+                        offerApplied: applyOffer,
+                        bulkPrice,
+                        bulkMinQty,
+                    }
+                )
+            )
+        );
+        console.log("🧩 updateGroupBulkStatus:", {
+            isBulkEligible,
+            variationBulkPrice,
+            variationBulkMinQty,
+            sameGroupItems: sameGroupItems.map(i => ({
+                color: i.attributes?.color,
+                qty: i.quantity,
+                offerApplied: i.offerApplied
+            }))
+        });
+
+    };
+
+
+
+
+
+    const handleUpdateQuantity = async (cartItemId, newQty, extraFields = {}) => {
+        console.log("🛒 Updating cart item", { cartItemId, newQty, ...extraFields });
+
+        await dispatch(
+            updateCart({
+                id: cartItemId,
+                quantity: newQty,
+                ...extraFields, // offerApplied, bulkPrice, bulkMinQty
+            })
+        );
+    };
+
+
     const addToCart = async () => {
         if (!user || !user.id) {
             toast.error("Please login to add items to your cart.");
@@ -443,82 +981,358 @@ const ProductDetail = () => {
         }
 
         selectedCountryCode = selectedCountryCode.toUpperCase();
-
-        // 🔹 Find full country name dynamically from `countries` array
         let selectedCountryObj = countries.find(
             (c) => c.code.toUpperCase() === selectedCountryCode
         );
-
-        // 🔹 If not found by 3-letter code, try first 2 letters (alpha-2 fallback)
         if (!selectedCountryObj && selectedCountryCode.length === 3) {
-            selectedCountryObj = countries.find(
-                (c) => c.code.toUpperCase().startsWith(selectedCountryCode.slice(0, 2))
+            selectedCountryObj = countries.find((c) =>
+                c.code.toUpperCase().startsWith(selectedCountryCode.slice(0, 2))
             );
         }
-
         const selectedCountry = selectedCountryObj?.name || selectedCountryCode;
 
-        // ✅ Cart country check
         if (userCart && userCart.length > 0) {
             const cartCountry = userCart[0]?.selectedCountry;
             if (cartCountry && cartCountry !== selectedCountry) {
-                setNewCountry(selectedCountry); // jo country add karni hai
-                setShowCountryModal(true);      // modal show karo
-                return; // wait for user action in modal
+                setNewCountry(selectedCountry);
+                setShowCountryModal(true);
+                return;
             }
-        }
-
-
-        // ✅ Duplicate check
-        const isAlreadyInCart = userCart?.some(
-            (item) =>
-                item.productId === product.id &&
-                item.variationId === (selectedVariation?.id || null)
-        );
-        if (isAlreadyInCart) {
-            toast.error("This product is already in your cart!");
-            return;
         }
 
         setLoading(true);
 
-        const priceObj = displayedPrice();
-        const finalPricePerItem = Number(priceObj.discounted ?? priceObj.original);
-        // const price = selectedVariation?.price || product.price;
-        const currencySymbol = selectedVariation?.currencySymbol || product.currencySymbol || "₹";
-        const currency = selectedVariation?.currency || product.currency || "₹";
-        console.log("currency", currency)
-        const totalPrice = finalPricePerItem * quantity;
-
-        const flatAttributes = {};
-        Object.entries(selectedAttributes).forEach(([key, val]) => {
-            if (val && val !== "N/A") flatAttributes[key.toLowerCase()] = val;
-        });
-
-        const cartItem = {
-            productName: product.name,
-            quantity,
-            pricePerItem: finalPricePerItem,
-            currency,
-            currencySymbol,
-            totalPrice,
-            productId: product.id,
-            variationId: selectedVariation?.id || null,
-            attributes: flatAttributes,
-            userId: user.id,
-            image: mainImage || "No Image",
-            selectedCountry, // ✅ full country name dynamically
-        };
         try {
+            const priceObj = displayedPrice();
+            // const basePrice = Number(priceObj.discounted ?? priceObj.original);
+            const basePrice = Number(priceObj.original);
+            const currencySymbol =
+                selectedVariation?.currencySymbol || product.currencySymbol || "₹";
+            const currency = selectedVariation?.currency || product.currency || "INR";
+
+            const flatAttributes = {};
+            Object.entries(selectedAttributes).forEach(([key, val]) => {
+                if (val && val !== "N/A") flatAttributes[key.toLowerCase()] = val;
+            });
+
+            let offerApplied = false;
+            let bulkPrice = null;
+            let bulkMinQty = null;
+
+            const hasBulkOffer =
+                Number(product?.minQuantity) > 0 &&
+                Number(selectedVariation?.bulkPrice) > 0;
+
+            let sameGroupItems = [];
+            let totalGroupQty = quantity;
+
+            if (hasBulkOffer) {
+                const productMinQty = Number(product.minQuantity);
+                const variationBulkPrice = Number(selectedVariation.bulkPrice);
+                const variationBulkMinQty = Number(
+                    selectedVariation.bulkMinQty || productMinQty
+                );
+                const requiredQty = variationBulkMinQty || productMinQty;
+
+                const coreAttributes = Object.entries(flatAttributes).filter(
+                    ([key]) => !["color", "colour"].includes(key.toLowerCase())
+                );
+                const coreKey = coreAttributes.map(([k, v]) => `${k}:${v}`).join("|");
+
+                sameGroupItems =
+                    userCart?.filter((item) => {
+                        if (item.productId !== product.id) return false;
+
+                        const itemCoreKey = Object.entries(item.attributes || {})
+                            .filter(([k]) => !["color", "colour"].includes(k.toLowerCase()))
+                            .map(([k, v]) => `${k}:${v}`)
+                            .join("|");
+
+                        // ✅ Match based on same non-color attributes only
+                        return itemCoreKey === coreKey;
+                    }) || [];
+
+
+                totalGroupQty =
+                    sameGroupItems.reduce((sum, i) => sum + (i.quantity || 0), 0) +
+                    quantity;
+
+                console.log("🧩 BULK DEBUG →", {
+                    totalGroupQty,
+                    variationBulkPrice,
+                    variationBulkMinQty,
+                    requiredQty,
+                });
+
+                if (totalGroupQty >= requiredQty) {
+                    offerApplied = true;
+                    bulkMinQty = requiredQty;
+
+                    // 🔥 Update all items of same group (each keeps its own bulkPrice)
+                    const updatedGroupItems = sameGroupItems.map((item) => {
+                        // 🔍 Find each item's variation to get its own bulk price
+                        const itemVariation = product?.variations?.find(
+                            (v) => v.id === item.variationId
+                        );
+
+                        const itemBulkPrice =
+                            Number(itemVariation?.bulkPrice) ||
+                            Number(item.bulkPrice) ||
+                            basePrice;
+
+                        return {
+                            ...item,
+                            totalPrice: itemBulkPrice * item.quantity,
+                            offerApplied: true,
+                            bulkPrice: itemBulkPrice,
+                            bulkMinQty: requiredQty,
+                        };
+                    });
+
+
+                    console.log("updatedGroupItems:", updatedGroupItems);
+
+                    if (updatedGroupItems.length > 0) {
+                        await Promise.all(
+                            updatedGroupItems.map((uItem) => dispatch(updateCart(uItem)))
+                        );
+                    }
+
+                    // current item bhi apne bulkPrice ke sath offer apply karega
+                    bulkPrice = variationBulkPrice;
+                } else {
+                    offerApplied = false;
+                    bulkPrice = null;
+                    bulkMinQty = null;
+                }
+            }
+
+            const isAlreadyInCart = userCart?.some(
+                (item) =>
+                    item.productId === product.id &&
+                    item.variationId === (selectedVariation?.id || null) &&
+                    item.attributes?.color === flatAttributes?.color
+            );
+            if (isAlreadyInCart) {
+                toast.error("This product is already in your cart!");
+                setLoading(false);
+                return;
+            }
+
+            const totalPrice =
+                offerApplied && bulkPrice ? bulkPrice * quantity : basePrice * quantity;
+
+            const normalizeNumber = (val) => {
+                if (val == null || val === "") return null;
+                if (typeof val === "object" && "toNumber" in val) return val.toNumber();
+                if (typeof val === "object" && "value" in val) return Number(val.value);
+                return Number(val);
+            };
+
+            const finalBulkPrice = normalizeNumber(bulkPrice);
+            const finalBulkMinQty = normalizeNumber(bulkMinQty);
+
+            console.log("✅ FINAL BULK VALUES:", {
+                finalBulkPrice,
+                finalBulkMinQty,
+                offerApplied,
+            });
+
+            const cartItem = {
+                productName: product.name,
+                quantity,
+                pricePerItem: basePrice,
+                currency,
+                currencySymbol,
+                totalPrice,
+                bulkPrice: finalBulkPrice,
+                bulkMinQty: finalBulkMinQty,
+                offerApplied,
+                productId: product.id,
+                variationId: selectedVariation?.id || null,
+                attributes: flatAttributes,
+                userId: user.id,
+                image: mainImage || "No Image",
+                selectedCountry,
+            };
+
+            console.log("🛒 NEW CART ITEM:", cartItem);
+
             const result = await dispatch(addToCartAsync(cartItem)).unwrap();
             toast.success(result.message || "Item added to cart!");
             dispatch(fetchCart());
         } catch (err) {
+            console.error("❌ ADD TO CART ERROR:", err);
             toast.error(err.message || "Failed to add product");
         } finally {
             setLoading(false);
         }
     };
+
+    const handleAdd = () => {
+        addToCart(selectedVariation, quantity);
+    };
+
+
+    // Helper: compute whether bulk offer is active for the CURRENT selectedVariation + selectedAttributes + userCart
+    // ✅ Helper: compute whether bulk offer is active for the CURRENT selectedVariation + selectedAttributes + userCart
+    // const computeBulkStatus = ({ product, selectedVariation, selectedAttributes, userCart, quantity }) => {
+    //     const productMinQty = Number(product?.minQuantity || 0);
+    //     const variationBulkPrice = Number(selectedVariation?.bulkPrice ?? 0);
+    //     const variationBulkMinQty = Number((selectedVariation?.bulkMinQty ?? productMinQty) || 0);
+    //     const requiredQty = variationBulkMinQty || productMinQty;
+
+    //     // 🎯 Flatten attributes except color
+    //     const flatAttributes = {};
+    //     Object.entries(selectedAttributes || {}).forEach(([k, v]) => {
+    //         if (v && v !== "N/A") flatAttributes[k.toLowerCase()] = v;
+    //     });
+
+    //     const coreAttributes = Object.entries(flatAttributes)
+    //         .filter(([key]) => !["color", "colour"].includes(key.toLowerCase()));
+    //     const coreKey = coreAttributes.map(([k, v]) => `${k}:${v}`).join("|");
+
+    //     // 🧩 Find all cart items with same core attributes
+    //     const sameGroupItems = (Array.isArray(userCart) ? userCart : []).filter(item => {
+    //         if (!item) return false;
+    //         if (item.productId !== product.id) return false;
+    //         const itemCoreKey = Object.entries(item.attributes || {})
+    //             .filter(([k]) => !["color", "colour"].includes(k.toLowerCase()))
+    //             .map(([k, v]) => `${k}:${v}`)
+    //             .join("|");
+    //         return itemCoreKey === coreKey;
+    //     });
+
+    //     // 🧮 Total group quantity (existing + current)
+    //     const totalGroupQty = sameGroupItems.reduce((s, it) => s + (Number(it.quantity) || 0), 0) + Number(quantity || 0);
+
+    //     // ✅ BULK OFFER CHECK — updated
+    //     const offerApplied =
+    //         selectedVariation?.offerApplied === true ||
+    //         sameGroupItems.some(it => it.offerApplied === true);
+
+    //     const hasBulkOffer = variationBulkPrice > 0 && variationBulkMinQty > 0;
+    //     const eligible = hasBulkOffer && totalGroupQty >= requiredQty;
+
+
+    //     // 🧾 Update computed bulk price for each item
+    //     const updatedGroupItems = sameGroupItems.map(it => {
+    //         const itemVariation = product?.variations?.find(v => v.id === it.variationId);
+    //         const itemBulkPrice = Number(itemVariation?.bulkPrice ?? it.bulkPrice ?? 0) || null;
+    //         return { ...it, computedBulkPrice: itemBulkPrice };
+    //     });
+
+    //     console.log("💡 Bulk check detail", {
+    //         offerApplied_variation: selectedVariation?.offerApplied,
+    //         offerApplied_group: sameGroupItems.map(i => i.offerApplied),
+    //         variationBulkPrice,
+    //         variationBulkMinQty,
+    //         totalGroupQty,
+    //         requiredQty,
+    //         offerApplied,
+    //         hasBulkOffer,
+    //         eligible,
+    //     });
+
+    //     return {
+    //         eligible,
+    //         requiredQty,
+    //         totalGroupQty,
+    //         variationBulkPrice,
+    //         variationBulkMinQty,
+    //         updatedGroupItems,
+    //         sameGroupItems,
+    //     };
+    // };
+    const computeBulkStatus = ({ product, selectedVariation, selectedAttributes, userCart, quantity, cartItem }) => {
+        const productMinQty = Number(product?.minQuantity || 0);
+        const variationBulkPrice = Number(selectedVariation?.bulkPrice ?? 0);
+        const variationBulkMinQty = Number(selectedVariation?.bulkMinQty ?? productMinQty) || 0;
+        const requiredQty = variationBulkMinQty || productMinQty;
+
+        // 🎯 Flatten attributes except color
+        const flatAttributes = {};
+        Object.entries(selectedAttributes || {}).forEach(([k, v]) => {
+            if (v && v !== "N/A") flatAttributes[k.toLowerCase()] = v;
+        });
+
+        const coreAttributes = Object.entries(flatAttributes)
+            .filter(([key]) => !["color", "colour"].includes(key.toLowerCase()));
+        const coreKey = coreAttributes.map(([k, v]) => `${k}:${v}`).join("|");
+
+        // 🧩 Find same group items
+        const sameGroupItems = (Array.isArray(userCart) ? userCart : []).filter(item => {
+            if (!item) return false;
+            if (item.productId !== product.id) return false;
+            const itemCoreKey = Object.entries(item.attributes || {})
+                .filter(([k]) => !["color", "colour"].includes(k.toLowerCase()))
+                .map(([k, v]) => `${k}:${v}`)
+                .join("|");
+            return itemCoreKey === coreKey;
+        });
+
+        // 🧮 FIXED: replace current item's qty with newQty
+        const totalGroupQty = sameGroupItems.reduce((sum, item) => {
+            if (item.id === cartItem?.id) {
+                return sum + Number(quantity || 0);
+            }
+            return sum + (Number(item.quantity) || 0);
+        }, 0);
+
+        // const hasOfferApplied = sameGroupItems.some(it => it.offerApplied === true);
+        // const validVariationBulk =
+        //     selectedVariation?.bulkPrice != null &&
+        //     selectedVariation?.bulkMinQty != null &&
+        //     selectedVariation?.bulkPrice > 0 &&
+        //     selectedVariation?.bulkMinQty > 0;
+
+        // const hasBulkOffer = hasOfferApplied || validVariationBulk;
+        // const eligible = hasBulkOffer && totalGroupQty >= requiredQty;
+        const hasOfferApplied = sameGroupItems.some(it => it.offerApplied === true);
+
+        // ✅ VALID bulk offer available if price and minQty are > 0
+        const validVariationBulk = variationBulkPrice > 0 && variationBulkMinQty > 0;
+
+        // ✅ Bulk eligibility logic
+        const hasBulkOffer = true; // <— 🔥 force check always
+        const eligible = totalGroupQty >= variationBulkMinQty; // <— 🔥 simplified clean condition
+
+        console.log("💡 Bulk Check (Final)", {
+            totalGroupQty,
+            variationBulkMinQty,
+            variationBulkPrice,
+            validVariationBulk,
+            eligible,
+        });
+
+        console.log("🧩 Bulk Debug =>", {
+            productName: product?.name,
+            sameGroupItems: sameGroupItems.map(i => ({
+                id: i.id,
+                qty: i.quantity,
+                offerApplied: i.offerApplied,
+            })),
+            totalGroupQty,
+            requiredQty,
+            variationBulkPrice,
+            variationBulkMinQty,
+            validVariationBulk,
+            eligible,
+        });
+
+        return {
+            eligible,
+            requiredQty,
+            totalGroupQty,
+            variationBulkPrice,
+            variationBulkMinQty,
+            sameGroupItems,
+        };
+    };
+
+
+
+
 
 
 
@@ -587,19 +1401,65 @@ const ProductDetail = () => {
         // After submission, reset the form
         setReviewForm({ name: "", rating: 0, comment: "" });
     };
+    const bulkStatus = computeBulkStatus({
+        product,
+        selectedVariation,
+        selectedAttributes,
+        userCart,
+        quantity,
+        cartItem,
+    });
+
 
     // Displayed price with bulk logic
-    const displayedPrice = () => {
-        const basePrice = selectedVariation?.price ?? product.price;
-        const bulkPrice = selectedVariation?.bulkPrice ?? product.bulkPrice ?? null;
-        const minQty = selectedVariation?.minQuantity ?? product.minQuantity ?? null;
+    // const displayedPrice = () => {
+    //     const basePrice = selectedVariation?.price ?? product.price;
+    //     const bulkPrice = selectedVariation?.bulkPrice ?? product.bulkPrice ?? null;
+    //     const minQty = selectedVariation?.minQuantity ?? product.minQuantity ?? null;
 
-        if (bulkPrice && minQty && quantity >= minQty) {
-            return { original: basePrice, discounted: bulkPrice };
+    //     if (bulkPrice && minQty && quantity >= minQty) {
+    //         return { original: basePrice, discounted: bulkPrice };
+    //     }
+
+    //     return { original: basePrice };
+    // };
+    const displayedPrice = () => {
+        const basePrice = Number(selectedVariation?.price ?? product.price ?? 0);
+        const bulkPrice = Number(selectedVariation?.bulkPrice ?? product.bulkPrice ?? 0);
+        const minQty = Number(selectedVariation?.minQuantity ?? product.minQuantity ?? 0);
+
+        const bulkStatus = computeBulkStatus({
+            product,
+            selectedVariation,
+            selectedAttributes,
+            userCart,
+            quantity,
+        });
+
+        console.log("✅ bulkStatus:", bulkStatus);
+
+        // ✅ If bulk offer is eligible
+        if (bulkStatus.eligible && bulkPrice) {
+            return {
+                original: basePrice,
+                discounted: bulkPrice, // not `cut`
+                label: `Bulk offer: ₹${bulkPrice} per item (Min ${bulkStatus.requiredQty})`,
+            };
+        }
+
+        // ✅ fallback if manually applied
+        if (selectedVariation?.offerApplied && bulkPrice) {
+            return {
+                original: basePrice,
+                discounted: bulkPrice,
+                label: "Offer Applied",
+            };
         }
 
         return { original: basePrice };
     };
+
+
 
 
     // Check rangeBuyXGetY offer applied
@@ -708,7 +1568,7 @@ const ProductDetail = () => {
                             {(selectedVariation?.currencySymbol ?? product.currencySymbol)}
                             {displayedPrice()}
                         </p> */}
-                        <p className="text-3xl text-gray-700 mb-6 font-semibold">
+                        {/* <p className="text-3xl text-gray-700 mb-6 font-semibold">
                             {(selectedVariation?.currency ?? product.currency) + " "}
 
                             {(() => {
@@ -720,14 +1580,46 @@ const ProductDetail = () => {
                                     </>
                                     : priceObj.original;
                             })()}
+                        </p> */}
+                        <p className="text-3xl text-gray-800 mb-4 font-semibold flex flex-wrap items-center gap-2">
+                            {(selectedVariation?.currency ?? product.currency) + " "}
+                            {(() => {
+                                const priceObj = displayedPrice();
+
+                                return priceObj.discounted ? (
+                                    <>
+                                        {/* Old price (cut) */}
+                                        <span className="line-through text-gray-500 mr-1 text-2xl">
+                                            {priceObj.original}
+                                        </span>
+
+                                        {/* Discounted / Bulk Price */}
+                                        <span className="text-gray-900 text-3xl font-bold">
+                                            {priceObj.discounted}
+                                        </span>
+
+                                        {/* Offer Label */}
+                                        {priceObj.label && (
+                                            <span className="ml-2 text-sm bg-green-100 text-green-700 px-2 py-1 rounded-lg font-medium">
+                                                {priceObj.label}
+                                            </span>
+                                        )}
+                                    </>
+                                ) : (
+                                    <span className="text-gray-900 text-3xl font-bold">
+                                        {priceObj.original}
+                                    </span>
+                                );
+                            })()}
                         </p>
+
 
                         <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                             {selectedVariation?.short || product.short}
                         </p>
 
 
-                        {Object.entries(variationAttributes).map(([attrKey, values]) => {
+                        {/* {Object.entries(variationAttributes).map(([attrKey, values]) => {
                             let sortedValues = [...values];
                             const defaultVal = product?.isDefault?.[attrKey];
                             if (defaultVal && sortedValues.includes(defaultVal)) {
@@ -755,7 +1647,171 @@ const ProductDetail = () => {
                                     </div>
                                 </div>
                             )
+                        })} */}
+                        {/* {Object.entries(variationAttributes).map(([attrKey, values]) => {
+                            const keyLower = attrKey.toLowerCase();
+                            let sortedValues = [...values];
+                            const defaultVal = product?.isDefault?.[attrKey];
+                            if (defaultVal && sortedValues.includes(defaultVal)) {
+                                sortedValues = [defaultVal, ...sortedValues.filter(v => v !== defaultVal)];
+                            }
+
+                            return (
+                                <div key={attrKey} className="mb-6">
+                                    <h3 className="mb-3 text-lg font-semibold text-gray-700 capitalize">
+                                        {attrKey}
+                                    </h3>
+
+                                    <div className="flex gap-3 flex-wrap">
+                                        {sortedValues.map(val => {
+                                            // ✅ Sirf "color" ke liye quantity calculate karna hai
+                                            let attributeQty = 0;
+
+                                            if (keyLower === "color") {
+                                                attributeQty = Array.isArray(userCart)
+                                                    ? userCart.reduce((sum, item) => {
+                                                        const sameProduct = item?.productId === product?.id;
+
+                                                        // color match
+                                                        const colorMatch =
+                                                            item?.attributes?.color?.trim().toLowerCase() ===
+                                                            val.trim().toLowerCase();
+
+                                                        // selected wax match
+                                                        const selectedWax = selectedAttributes["Type of wax"]?.toLowerCase();
+                                                        const itemWax = item?.attributes?.["type of wax"]?.toLowerCase();
+                                                        const waxMatch =
+                                                            !selectedWax || (itemWax && itemWax === selectedWax);
+
+                                                        // ✅ Only count if both product + color + wax match
+                                                        if (sameProduct && colorMatch && waxMatch) {
+                                                            return sum + (Number(item?.quantity) || 0);
+                                                        }
+                                                        return sum;
+                                                    }, 0)
+                                                    : 0;
+                                            }
+
+                                            return (
+                                                <div key={`${attrKey}-${val}`} className="flex flex-col items-center">
+                                                    <span
+                                                        className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium
+    ${keyLower === "color" && attributeQty > 0
+                                                                ? "text-white bg-gray-800 px-2 py-1 rounded-full shadow-md hover:bg-gray-700 transition-all duration-300 scale-105"
+                                                                : "text-gray-400"
+                                                            }`}
+                                                    >
+                                                        {keyLower === "color" && attributeQty > 0 && (
+                                                            <>
+                                                                <ShoppingCart size={14} className="text-white" />
+                                                                <span className="leading-none">{attributeQty}</span>
+                                                            </>
+                                                        )}
+                                                    </span>
+
+                                                    <button
+                                                        onClick={() => handleAttributeSelect(attrKey, val)}
+                                                        className={`px-4 py-2 cursor-pointer rounded-lg text-sm font-semibold transition-all duration-300 transform 
+                                    ${selectedAttributes[attrKey] === val
+                                                                ? "bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 text-white shadow-lg scale-105"
+                                                                : "bg-gray-100 text-gray-800 hover:bg-gray-200 hover:scale-105"
+                                                            }`}
+                                                    >
+                                                        {val}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })} */}
+
+
+
+                        {Object.entries(variationAttributes).map(([attrKey, values]) => {
+                            const keyLower = attrKey.toLowerCase();
+                            let sortedValues = [...values];
+                            const defaultVal = product?.isDefault?.[attrKey];
+                            if (defaultVal && sortedValues.includes(defaultVal)) {
+                                sortedValues = [defaultVal, ...sortedValues.filter(v => v !== defaultVal)];
+                            }
+
+                            return (
+                                <div key={attrKey} className="mb-6">
+                                    <h3 className="mb-3 text-lg font-semibold text-gray-700 capitalize">
+                                        {attrKey}
+                                    </h3>
+
+                                    <div className="flex gap-3 flex-wrap">
+                                        {sortedValues.map(val => {
+                                            // ✅ Sirf "color" ke liye quantity calculate karna hai
+                                            let attributeQty = 0;
+
+                                            if (keyLower === "color") {
+                                                attributeQty = Array.isArray(userCart)
+                                                    ? userCart.reduce((sum, item) => {
+                                                        const sameProduct = item?.productId === product?.id;
+
+                                                        // color match
+                                                        const colorMatch =
+                                                            item?.attributes?.color?.trim().toLowerCase() ===
+                                                            val.trim().toLowerCase();
+
+                                                        // selected wax match
+                                                        const selectedWax =
+                                                            selectedAttributes["Type of wax"]?.toLowerCase();
+                                                        const itemWax =
+                                                            item?.attributes?.["type of wax"]?.toLowerCase();
+                                                        const waxMatch =
+                                                            !selectedWax || (itemWax && itemWax === selectedWax);
+
+                                                        // ✅ Only count if both product + color + wax match
+                                                        if (sameProduct && colorMatch && waxMatch) {
+                                                            return sum + (Number(item?.quantity) || 0);
+                                                        }
+                                                        return sum;
+                                                    }, 0)
+                                                    : 0;
+                                            }
+
+                                            return (
+                                                <div
+                                                    key={`${attrKey}-${val}`}
+                                                    className="relative flex flex-col items-center"
+                                                >
+                                                    {/* 🛒 Quantity badge (fixed height to prevent layout shift) */}
+                                                    <div className="h-5 flex items-center justify-center mb-1">
+                                                        {keyLower === "color" && attributeQty > 0 && (
+                                                            <span
+                                                                className="flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-white bg-gray-800 px-2 py-[2px]
+                    rounded-full shadow-sm hover:bg-gray-700 transition-all duration-200"
+                                                            >
+                                                                <ShoppingCart size={12} className="text-white" />
+                                                                {attributeQty}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => handleAttributeSelect(attrKey, val)}
+                                                        className={`px-4 py-2 cursor-pointer rounded-lg text-sm font-semibold transition-all duration-300 transform
+                  ${selectedAttributes[attrKey] === val
+                                                                ? "bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 text-white shadow-lg scale-105"
+                                                                : "bg-gray-100 text-gray-800 hover:bg-gray-200 hover:scale-105"
+                                                            }`}
+                                                    >
+                                                        {val}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
                         })}
+
+
 
                         {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                             {[...new Map(product.offers.map(o => [o.id, o])).values()].map((offer, index) => (
@@ -813,7 +1869,12 @@ const ProductDetail = () => {
                             })}
                         </div> */}
 
-                        <ProductOffers selectedVariation={selectedVariation} product={product} quantity={quantity} />
+                        <ProductOffers
+                            selectedVariation={selectedVariation}
+                            product={product}
+                            quantity={quantity}
+                            bulkStatus={bulkStatus}
+                        />
                         {/* {(product.offers?.length > 0 || (product.minQuantity && product.bulkPrice)) && (
                             <div className="mt-4 text-sm text-gray-800 space-y-2">
 
@@ -848,7 +1909,7 @@ const ProductDetail = () => {
 
 
                         {/* Quantity & Add to Cart */}
-                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mt-4">
+                        {/* <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mt-4">
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                                 <div className="flex items-center border rounded-lg overflow-hidden">
                                     <button
@@ -871,12 +1932,12 @@ const ProductDetail = () => {
                                 >
                                     Add to Cart
                                 </button>
-                                {/* <button
+                                 <button
                                     onClick={addToCart}
                                     className="px-10 py-4 bg-gray-700 text-white rounded-lg hover:bg-black transition cursor-pointer shadow-lg text-xl"
                                 >
                                     {isInCart ? "Update Cart" : "Add to Cart"}
-                                </button> */}
+                                </button>
 
 
                                 {product.matchedMarketLink && (
@@ -894,6 +1955,91 @@ const ProductDetail = () => {
                                     </a>
                                 )}
                             </div>
+                        </div> */}
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mt-4">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                                {/* 🧮 Quantity Control */}
+                                <div className="flex items-center border rounded-lg overflow-hidden shadow-sm">
+                                    <button
+                                        onClick={decrement}
+                                        className={`px-6 py-3 bg-gray-200 hover:bg-gray-300 transition cursor-pointer text-2xl flex items-center justify-center ${quantity === 1 && isInCart
+                                            ? "text-red-500 hover:bg-red-100"
+                                            : ""
+                                            }`}
+                                    >
+                                        {quantity === 1 && isInCart ? (
+                                            <Trash2 size={22} />
+                                        ) : (
+                                            "-"
+                                        )}
+                                    </button>
+
+                                    <span className="px-8 py-3 text-2xl font-medium text-gray-800">
+                                        {quantity}
+                                    </span>
+
+                                    <button
+                                        onClick={increment}
+                                        className="px-6 py-3 bg-gray-200 hover:bg-gray-300 transition cursor-pointer text-2xl"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+
+                                {/* 🛒 Add to Cart button (only if not already added) */}
+                                {!isInCart && (
+                                    <button
+                                        onClick={handleAdd}
+                                        className="px-10 py-4 bg-gray-700 text-white rounded-lg hover:bg-black transition cursor-pointer shadow-lg text-xl"
+                                    >
+                                        Add to Cart
+                                    </button>
+                                )}
+
+                                {/* 🛍️ Amazon link (if available) */}
+                                {product.matchedMarketLink && (
+                                    <a
+                                        href={product.matchedMarketLink.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-block"
+                                    >
+                                        <img
+                                            src="/image/amazon-button.png"
+                                            alt={`Buy in ${product.matchedMarketLink.countryName}`}
+                                            className="w-40 h-auto hover:scale-105 transition-transform cursor-pointer"
+                                        />
+                                    </a>
+                                )}
+                            </div>
+
+                            {/* ⚠️ Confirm Delete Modal */}
+                            {showConfirm && (
+                                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                                    <div className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full">
+                                        <h3 className="text-lg font-semibold mb-2 text-gray-800">
+                                            Remove from Cart?
+                                        </h3>
+                                        <p className="text-gray-600 mb-4">
+                                            Are you sure you want to remove this item from your cart?
+                                        </p>
+                                        <div className="flex justify-end gap-3">
+                                            <button
+                                                onClick={() => setShowConfirm(false)}
+                                                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={confirmDelete}
+                                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
 

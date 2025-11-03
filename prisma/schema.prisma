@@ -193,6 +193,9 @@ model Cart {
   productName   String
   quantity      Int
   pricePerItem  Float
+  bulkPrice       Float?        // ✅ optional bulk price
+  bulkMinQty      Int?          // ✅ minimum quantity for bulk offer
+  offerApplied    Boolean?      @default(false) // ✅ true if bulk offer applied
   currency      String?
   currencySymbol String
   totalPrice    Float

@@ -32,6 +32,9 @@ export async function POST(req) {
             productName,
             quantity,
             pricePerItem,
+            bulkPrice,
+            bulkMinQty,
+            offerApplied,
             currency,
             currencySymbol,
             totalPrice,
@@ -55,6 +58,9 @@ export async function POST(req) {
                 productName,
                 quantity,
                 pricePerItem,
+                bulkPrice: bulkPrice || null,       // ✅ default null
+                bulkMinQty: bulkMinQty || null,     // ✅ default null
+                offerApplied: offerApplied ?? false, // ✅ default false
                 currency,
                 currencySymbol,
                 totalPrice,
