@@ -5,14 +5,14 @@ const RefundPolicyPage = () => {
         <div className="bg-white font-functionPro text-black px-6 md:px-16 lg:px-32 py-12 leading-relaxed">
             {/* Page Title */}
             <h1 className="text-4xl md:text-5xl font-bold text-center mb-12">
-                Refund Policy
+                Refund & Cancellation Policy
             </h1>
 
             <div className="flex flex-col gap-12">
                 {/* Introduction */}
                 <section>
                     <p className="text-lg">
-                        At <strong>Hecate Wizard Mall</strong>, we aim to provide the best shopping experience to our customers. Please carefully review our refund policy:
+                        At <strong>Hecate Wizard Mall</strong>, we aim to provide the best shopping experience to our customers. Please carefully review our refund & cancellation policy:
                     </p>
                 </section>
 
@@ -20,7 +20,7 @@ const RefundPolicyPage = () => {
                 <section>
                     <h2 className="text-2xl font-semibold mb-2">1. Order Placement</h2>
                     <p className="text-lg">
-                        Once an order is placed, it cannot be refunded, exchanged, or adjusted. We strongly encourage you to review your order before confirming your purchase.
+                        Once an order is placed, it cannot be refunded, exchanged,cancelled, or adjusted. We strongly encourage you to review your order before confirming your purchase.
                     </p>
                 </section>
 

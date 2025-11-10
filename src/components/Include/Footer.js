@@ -52,7 +52,7 @@ const Footer = () => {
                         {[
                             { name: "Privacy Policy", href: "/privacy-policy" },
                             { name: "Terms and Conditions", href: "/terms-and-conditions" },
-                            { name: "Refund Policy", href: "/refund-policy" },
+                            { name: "Refund & Cancellation Policy", href: "/refund-policy" },
                             { name: "Shipping and Return Policy", href: "/shipping-and-return-policy" },
                         ].map((link) => (
                             <li key={link.name}>
