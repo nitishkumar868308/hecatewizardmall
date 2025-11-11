@@ -179,21 +179,40 @@ const ProductOffers = ({
     const offers = Array.isArray(product.offers) ? product.offers : [];
 
     // 🧮 Determine which offers are active
+    // const offersList = [
+    //     ...offers,
+    //     effectiveMinQty && effectiveBulkPrice
+    //         ? {
+    //             id: "bulk-offer",
+    //             description:
+    //                 bulkStatus?.eligible
+    //                     ? `Bulk price applied: ${currency} ${effectiveBulkPrice} each`
+    //                     : `Buy ${effectiveMinQty}+ items to get ${currency} ${effectiveBulkPrice} each`,
+    //             type: ["product"],
+    //             applied: bulkStatus?.eligible,
+    //             discountType: "bulk",
+    //         }
+    //         : null,
+    // ].filter(Boolean);
     const offersList = [
-        ...offers,
+        ...offers.map(o => ({
+            ...o,
+            applied:
+                (o.discountType === "rangeBuyXGetY" && bulkStatus?.rangeEligible) ||
+                (o.discountType === "bulk" && bulkStatus?.eligible),
+        })),
         effectiveMinQty && effectiveBulkPrice
             ? {
                 id: "bulk-offer",
-                description:
-                    bulkStatus?.eligible
-                        ? `Bulk price applied: ${currency} ${effectiveBulkPrice} each`
-                        : `Buy ${effectiveMinQty}+ items to get ${currency} ${effectiveBulkPrice} each`,
-                type: ["product"],
-                applied: bulkStatus?.eligible,
+                description: bulkStatus?.eligible
+                    ? `Bulk price applied: ${currency} ${effectiveBulkPrice} each`
+                    : `Buy ${effectiveMinQty}+ items to get ${currency} ${effectiveBulkPrice} each`,
                 discountType: "bulk",
+                applied: bulkStatus?.eligible,
             }
             : null,
     ].filter(Boolean);
+
 
     if (offersList.length === 0) return null;
 

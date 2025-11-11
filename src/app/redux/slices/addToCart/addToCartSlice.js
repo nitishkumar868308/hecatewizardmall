@@ -75,6 +75,7 @@ const cartSlice = createSlice({
     name: "cart",
     initialState: {
         items: [],
+        refreshFlag: false,
         loading: false,
         error: null,
     },
@@ -86,6 +87,10 @@ const cartSlice = createSlice({
                     ? { ...item, quantity: newQuantity, totalPrice: item.pricePerItem * newQuantity }
                     : item
             );
+        },
+        triggerCartRefresh: (state) => {
+            state.refreshFlag = !state.refreshFlag;
+            console.log("🌀 Refresh flag toggled:", state.refreshFlag);
         },
     },
     extraReducers: (builder) => {
@@ -168,5 +173,6 @@ const cartSlice = createSlice({
     },
 });
 
-export const { updateLocalCartItem } = cartSlice.actions;
+
+export const { updateLocalCartItem, triggerCartRefresh  } = cartSlice.actions;
 export default cartSlice.reducer;
