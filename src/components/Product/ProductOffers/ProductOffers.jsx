@@ -195,12 +195,21 @@ const ProductOffers = ({
     //         : null,
     // ].filter(Boolean);
     const offersList = [
-        ...offers.map(o => ({
-            ...o,
-            applied:
-                (o.discountType === "rangeBuyXGetY" && bulkStatus?.rangeEligible) ||
-                (o.discountType === "bulk" && bulkStatus?.eligible),
-        })),
+        ...offers.map(o => {
+            let applied = false;
+
+            if (o.discountType === "rangeBuyXGetY") {
+                // ✅ Use productOfferApplied or quantity check
+                applied = o.productOfferApplied === true || quantity >= (o.productOffer?.appliedQty || 0);
+            } else if (o.discountType === "bulk") {
+                applied = bulkStatus?.eligible;
+            }
+
+            return {
+                ...o,
+                applied,
+            };
+        }),
         effectiveMinQty && effectiveBulkPrice
             ? {
                 id: "bulk-offer",
@@ -212,6 +221,7 @@ const ProductOffers = ({
             }
             : null,
     ].filter(Boolean);
+
 
 
     if (offersList.length === 0) return null;

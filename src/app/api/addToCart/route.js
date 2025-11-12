@@ -35,6 +35,10 @@ export async function POST(req) {
             bulkPrice,
             bulkMinQty,
             offerApplied,
+            productOfferApplied,
+            productOfferDiscount,
+            productOffer,
+            productOfferId,
             currency,
             currencySymbol,
             totalPrice,
@@ -61,6 +65,10 @@ export async function POST(req) {
                 bulkPrice: bulkPrice || null,       // ✅ default null
                 bulkMinQty: bulkMinQty || null,     // ✅ default null
                 offerApplied: offerApplied ?? false, // ✅ default false
+                productOfferApplied: productOfferApplied ?? false,
+                productOfferDiscount: productOfferDiscount || null,
+                productOffer: productOffer ? JSON.parse(JSON.stringify(productOffer)) : null,
+                productOfferId: productOfferId || null,
                 currency,
                 currencySymbol,
                 totalPrice,

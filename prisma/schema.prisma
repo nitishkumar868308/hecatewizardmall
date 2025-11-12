@@ -196,6 +196,10 @@ model Cart {
   bulkPrice       Float?        // ✅ optional bulk price
   bulkMinQty      Int?          // ✅ minimum quantity for bulk offer
   offerApplied    Boolean?      @default(false) // ✅ true if bulk offer applied
+  productOfferApplied Boolean?  @default(false) // new field for other offers
+  productOfferDiscount Float?   // store discount for range/percentage/buyXGetY
+  productOffer       Json?
+  productOfferId  Int?
   currency      String?
   currencySymbol String
   totalPrice    Float
