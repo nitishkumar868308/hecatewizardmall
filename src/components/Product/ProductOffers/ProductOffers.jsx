@@ -154,17 +154,32 @@ const ProductOffers = ({
     product,
     quantity,
     selectedVariation,
-    bulkStatus, // 👈 pass computed bulkStatus from parent
+    bulkStatus,
+    userCart = [],
 }) => {
     const currency = selectedVariation?.currency || product.currency || "₹";
 
-    // 🧩 Get effective bulk values
-    const effectiveMinQty =
-        selectedVariation?.minQuantity ?? product.minQuantity ?? null;
-    const effectiveBulkPrice =
-        selectedVariation?.bulkPrice ?? product.bulkPrice ?? null;
+    // 🧩 Extract attributes safely (fallback chain)
+    const selectedAttrs =
+        selectedVariation?.attributes ||
+        selectedVariation?.attribute_values ||
+        product?.items?.find((i) => i.variationId === selectedVariation?.id)
+            ?.attributes ||
+        {};
 
-    // 🧠 Range Offer Logic
+    // 🧠 Compare attributes ignoring color (case-insensitive)
+    const isSameAttributes = (attrs1 = {}, attrs2 = {}) => {
+        const keys = new Set([...Object.keys(attrs1), ...Object.keys(attrs2)]);
+        for (const key of keys) {
+            if (key.toLowerCase() === "color") continue; // ✅ ignore color
+            const val1 = (attrs1[key] ?? "").toString().toLowerCase().trim();
+            const val2 = (attrs2[key] ?? "").toString().toLowerCase().trim();
+            if (val1 !== val2) return false;
+        }
+        return true;
+    };
+
+    // 🧠 Range offer message
     const getRangeOfferApplied = (offer) => {
         if (!offer || offer.discountType !== "rangeBuyXGetY") return null;
         const { start, end, free } = offer.discountValue || {};
@@ -175,54 +190,71 @@ const ProductOffers = ({
         return null;
     };
 
-    // ✅ Normalize offers
     const offers = Array.isArray(product.offers) ? product.offers : [];
 
-    // 🧮 Determine which offers are active
-    // const offersList = [
-    //     ...offers,
-    //     effectiveMinQty && effectiveBulkPrice
-    //         ? {
-    //             id: "bulk-offer",
-    //             description:
-    //                 bulkStatus?.eligible
-    //                     ? `Bulk price applied: ${currency} ${effectiveBulkPrice} each`
-    //                     : `Buy ${effectiveMinQty}+ items to get ${currency} ${effectiveBulkPrice} each`,
-    //             type: ["product"],
-    //             applied: bulkStatus?.eligible,
-    //             discountType: "bulk",
-    //         }
-    //         : null,
-    // ].filter(Boolean);
+    // ✅ Detect applied offer ignoring color
+    let appliedItem =
+        userCart.find(
+            (i) =>
+                i.productOfferApplied &&
+                i.variationId === selectedVariation?.id
+        ) ||
+        userCart.find(
+            (i) =>
+                i.productOfferApplied &&
+                i.productId === product?.id &&
+                isSameAttributes(i.attributes || {}, selectedAttrs)
+        );
+
+
+    console.log("🟢 matched appliedItem:", appliedItem);
+    console.log("🎨 selectedAttrs:", selectedAttrs);
+
+    const appliedOfferFromItem = appliedItem?.productOfferId || null;
+    const appliedOfferFlagFromItem = !!appliedItem;
+
+    const appliedOfferId =
+        selectedVariation?.productOfferId ||
+        product?.productOfferId ||
+        appliedOfferFromItem ||
+        null;
+
+    const offerAppliedFlag =
+        selectedVariation?.productOfferApplied ||
+        product?.productOfferApplied ||
+        appliedOfferFlagFromItem ||
+        false;
+
+    // 🧮 Build offers list
     const offersList = [
-        ...offers.map(o => {
+        ...offers.map((o) => {
             let applied = false;
 
             if (o.discountType === "rangeBuyXGetY") {
-                // ✅ Use productOfferApplied or quantity check
-                applied = o.productOfferApplied === true || quantity >= (o.productOffer?.appliedQty || 0);
+                const { start, end } = o.discountValue || {};
+                applied =
+                    (quantity >= start && quantity <= end) ||
+                    (offerAppliedFlag && appliedOfferId === o.id);
             } else if (o.discountType === "bulk") {
                 applied = bulkStatus?.eligible;
             }
 
-            return {
-                ...o,
-                applied,
-            };
+            return { ...o, applied };
         }),
-        effectiveMinQty && effectiveBulkPrice
-            ? {
-                id: "bulk-offer",
-                description: bulkStatus?.eligible
-                    ? `Bulk price applied: ${currency} ${effectiveBulkPrice} each`
-                    : `Buy ${effectiveMinQty}+ items to get ${currency} ${effectiveBulkPrice} each`,
-                discountType: "bulk",
-                applied: bulkStatus?.eligible,
-            }
-            : null,
+
+        // ✅ Bulk price logic
+        selectedVariation?.bulkPrice && {
+            id: "bulk-offer",
+            description: bulkStatus?.eligible
+                ? `Bulk price applied: ${currency} ${selectedVariation?.bulkPrice
+                } each`
+                : `Buy ${selectedVariation?.minQuantity ?? product.minQuantity
+                }+ items to get ${currency} ${selectedVariation?.bulkPrice
+                } each`,
+            discountType: "bulk",
+            applied: bulkStatus?.eligible,
+        },
     ].filter(Boolean);
-
-
 
     if (offersList.length === 0) return null;
 

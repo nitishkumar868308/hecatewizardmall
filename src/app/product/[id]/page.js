@@ -1251,6 +1251,8 @@ const ProductDetail = () => {
     const updateGroupBulkStatus = async (bulkStatus, isBulkEligible, newQty) => {
         const { sameGroupItems, variationBulkPrice, variationBulkMinQty } = bulkStatus;
 
+
+
         const normalizeAttrs = (attrs = {}) => {
             const result = {};
             Object.entries(attrs).forEach(([k, v]) => {
@@ -1283,11 +1285,15 @@ const ProductDetail = () => {
         const groupProductOffer = applyProductOffers(product, groupVariation, newQty, userCart, cartItem.id);
 
         console.log("groupProductOffer", groupProductOffer);
-        
+
         // 🔹 Update each item with offer & bulk logic
         await Promise.all(
             sameGroupItems.map(async (item) => {
                 console.log("\n--- Processing item ---", item);
+
+                const itemVariation = product?.variations?.find(
+                    (v) => v.id === item.variationId
+                );
 
                 const basePrice = Number(item.pricePerItem);
                 let offerApplied = false;
@@ -1326,7 +1332,7 @@ const ProductDetail = () => {
                         (v) => v.id === item.variationId
                     ) || item;
 
-                    const productOffer = applyProductOffers(product, groupVariation, itemQty, userCart);
+                    const productOffer = groupProductOffer;
 
                     const productOfferApplied = productOffer.offerApplied;
                     const productOfferDiscount = productOffer.offerDiscount;
@@ -1338,6 +1344,8 @@ const ProductDetail = () => {
                             ? basePrice * (1 - productOfferDiscount / 100) * itemQty
                             : basePrice * itemQty;
 
+                    const shouldResetOffers = !productOfferApplied;
+
                     await dispatch(
                         updateCart({
                             id: item.id,
@@ -1346,10 +1354,12 @@ const ProductDetail = () => {
                             bulkPrice: null,
                             bulkMinQty: null,
                             totalPrice,
-                            productOfferApplied,
-                            productOfferDiscount,
-                            productOfferId,
-                            productOffer: productOfferMeta, // ✅ Ensure all items updated
+                            productOfferApplied: shouldResetOffers ? false : productOfferApplied,
+                            productOfferDiscount: shouldResetOffers
+                                ? null
+                                : productOfferDiscount,
+                            productOfferId: shouldResetOffers ? null : productOfferId,
+                            productOffer: shouldResetOffers ? null : productOfferMeta,
                         })
                     );
                 }
@@ -1656,6 +1666,11 @@ const ProductDetail = () => {
                             offerApplied: true,
                             bulkPrice: itemBulkPrice,
                             bulkMinQty: requiredQty,
+
+                            productOfferApplied: false,
+                            productOfferDiscount: null,
+                            productOfferId: null,
+                            productOffer: null,
                         };
                     });
 
@@ -1755,10 +1770,14 @@ const ProductDetail = () => {
                 bulkPrice: finalBulkPrice,
                 bulkMinQty: finalBulkMinQty,
                 offerApplied, // bulk-only
-                productOfferApplied, // new field for non-bulk offers
-                productOfferDiscount: offerDiscount || null,
-                productOffer: offerMeta || null, // range/buy offer JSON
-                productOfferId: offerId || null,
+                // productOfferApplied, // new field for non-bulk offers
+                // productOfferDiscount: offerDiscount || null,
+                // productOffer: offerMeta || null, // range/buy offer JSON
+                // productOfferId: offerId || null,
+                productOfferApplied: offerApplied ? false : productOfferApplied,
+                productOfferDiscount: offerApplied ? null : offerDiscount || null,
+                productOffer: offerApplied ? null : offerMeta || null,
+                productOfferId: offerApplied ? null : offerId || null,
                 productId: product.id,
                 variationId: selectedVariation?.id || null,
                 attributes: flatAttributes,
@@ -1779,7 +1798,7 @@ const ProductDetail = () => {
             setLoading(false);
         }
     };
-    
+
     const handleUpdateQuantity = async (cartItemId, newQty, extraFields = {}) => {
         console.log("🛒 Updating cart item", { cartItemId, newQty, ...extraFields });
 
@@ -2323,6 +2342,10 @@ const ProductDetail = () => {
         ?.filter(item => item.productId === product.id)
         ?.reduce((sum, item) => sum + item.quantity, 0) || quantity;
 
+    const openRemove = () => {
+        setShowConfirm(true)
+    }
+
 
     return (
         <>
@@ -2712,6 +2735,7 @@ const ProductDetail = () => {
                             product={product}
                             quantity={quantity}
                             bulkStatus={bulkStatus}
+                            userCart={userCart}
                         />
                         {/* {(product.offers?.length > 0 || (product.minQuantity && product.bulkPrice)) && (
                             <div className="mt-4 text-sm text-gray-800 space-y-2">
@@ -2825,14 +2849,23 @@ const ProductDetail = () => {
                                 </div>
 
                                 {/* 🛒 Add to Cart button (only if not already added) */}
-                                {!isInCart && (
+                                {!isInCart ? (
                                     <button
                                         onClick={handleAdd}
                                         className="px-10 py-4 bg-gray-700 text-white rounded-lg hover:bg-black transition cursor-pointer shadow-lg text-xl"
                                     >
                                         Add to Cart
                                     </button>
+                                ) : (
+                                    ""
+                                    // <button
+                                    //     onClick={openRemove}
+                                    //     className="px-10 py-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition cursor-pointer shadow-lg text-xl"
+                                    // >
+                                    //     Remove
+                                    // </button>
                                 )}
+
 
                                 {/* 🛍️ Amazon link (if available) */}
                                 {product.matchedMarketLink && (
@@ -2881,11 +2914,11 @@ const ProductDetail = () => {
                         </div>
 
 
-                        <p className="text-gray-700 mt-3">
+                        {/* <p className="text-gray-700 mt-3">
                             {existingCartQuantity > 0
                                 ? `Already in your cart: ${existingCartQuantity}`
                                 : ""}
-                        </p>
+                        </p> */}
                         <p className="text-lg text-gray-600 mt-8 leading-relaxed">
                             Tag: {Array.isArray(selectedVariation?.tags)
                                 ? selectedVariation.tags.map(tag => tag.name).join(", ")

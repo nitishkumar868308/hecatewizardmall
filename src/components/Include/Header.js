@@ -68,7 +68,7 @@ const Header = () => {
     const userCartCount = userCartState.length;
     console.log("userCartCount", userCartCount);
     useEffect(() => {
-       dispatch(fetchCart())
+        dispatch(fetchCart())
         dispatch(fetchCategories());
         dispatch(fetchSubcategories());
         dispatch(fetchProducts());
@@ -203,34 +203,34 @@ const Header = () => {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     console.log("baseUrl", baseUrl)
 
-    const handleDelete = async () => {
-        try {
-            console.log("selectedItemId", selectedItemId);
+    // const handleDelete = async () => {
+    //     try {
+    //         console.log("selectedItemId", selectedItemId);
 
-            // agar selectedItemId ek object hai (multiple ke case me)
-            let id;
+    //         // agar selectedItemId ek object hai (multiple ke case me)
+    //         let id;
 
-            if (typeof selectedItemId === "object" && selectedItemId?.itemIds?.length) {
-                id = selectedItemId.itemIds; // multiple delete
-            } else if (typeof selectedItemId === "string") {
-                id = selectedItemId; // single delete
-            }
+    //         if (typeof selectedItemId === "object" && selectedItemId?.itemIds?.length) {
+    //             id = selectedItemId.itemIds; // multiple delete
+    //         } else if (typeof selectedItemId === "string") {
+    //             id = selectedItemId; // single delete
+    //         }
 
-            if (!id || (Array.isArray(id) && id.length === 0)) {
-                toast.error("No items selected to delete");
-                return;
-            }
+    //         if (!id || (Array.isArray(id) && id.length === 0)) {
+    //             toast.error("No items selected to delete");
+    //             return;
+    //         }
 
-            const result = await dispatch(deleteCartItem({ id })).unwrap();
-            console.log("result", result);
+    //         const result = await dispatch(deleteCartItem({ id })).unwrap();
+    //         console.log("result", result);
 
-            toast.success(result.message || "Item(s) deleted successfully");
-            dispatch(fetchCart());
-            setIsConfirmOpen(false);
-        } catch (err) {
-            toast.error(err.message || "Failed to delete item(s)");
-        }
-    };
+    //         toast.success(result.message || "Item(s) deleted successfully");
+    //         dispatch(fetchCart());
+    //         setIsConfirmOpen(false);
+    //     } catch (err) {
+    //         toast.error(err.message || "Failed to delete item(s)");
+    //     }
+    // };
 
 
 
@@ -306,6 +306,120 @@ const Header = () => {
 
 
     // 🧮 Update quantity in cart
+
+    // 🧩 Update all items in the same bulk group
+    // const updateGroupBulkStatus = async (bulkStatus, isBulkEligible, newQty, cartItem, fullProduct) => {
+    //     const { sameGroupItems } = bulkStatus;
+
+    //     await Promise.all(
+    //         sameGroupItems.map(async (item) => {
+    //             // 🔍 Find variation safely (fallbacks included)
+    //             let itemVariation =
+    //                 fullProduct?.variations?.find((v) => v.id === item.variationId) ||
+    //                 fullProduct?.variations?.find(
+    //                     (v) =>
+    //                         v.color?.toLowerCase() === item.attributes?.color?.toLowerCase() &&
+    //                         v.size?.toLowerCase() === item.attributes?.size?.toLowerCase()
+    //                 );
+
+    //             const basePrice = Number(item.pricePerItem);
+    //             const itemBulkPrice = Number(itemVariation?.bulkPrice || 0);
+    //             const itemBulkMinQty = Number(itemVariation?.bulkMinQty || fullProduct?.minQuantity || 0);
+    //             const currentQty = item.id === cartItem.id ? newQty : item.quantity;
+
+    //             console.log("🧾 Variation Check:", {
+    //                 color: item.attributes?.color,
+    //                 size: item.attributes?.size,
+    //                 itemBulkPrice,
+    //                 itemBulkMinQty,
+    //                 totalGroupQty: bulkStatus.totalGroupQty,
+    //             });
+
+    //             // ✅ Variation-based eligibility
+    //             const isItemEligible =
+    //                 itemBulkPrice > 0 &&
+    //                 itemBulkMinQty > 0 &&
+    //                 bulkStatus.totalGroupQty >= itemBulkMinQty;
+
+    //             const payload = {
+    //                 id: item.id,
+    //                 quantity: currentQty,
+    //                 offerApplied: isItemEligible,
+    //                 bulkPrice: isItemEligible ? itemBulkPrice : null,
+    //                 bulkMinQty: isItemEligible ? itemBulkMinQty : null,
+    //                 totalPrice: (isItemEligible ? itemBulkPrice : basePrice) * currentQty,
+    //             };
+
+    //             console.log("🔄 Updating cart item:", payload);
+
+    //             await dispatch(updateCart(payload));
+    //         })
+    //     );
+
+    //     console.log("✅ Bulk group updated in DB:", {
+    //         sameGroupItems: sameGroupItems.map((i) => ({
+    //             color: i.attributes?.color,
+    //             qty: i.quantity,
+    //         })),
+    //     });
+
+    //     await dispatch(fetchCart());
+    // };
+
+    const handleDelete = async () => {
+        try {
+            console.log("selectedItemId", selectedItemId);
+
+            let id;
+
+            if (typeof selectedItemId === "object" && selectedItemId?.itemIds?.length) {
+                id = selectedItemId.itemIds; // multiple delete
+            } else if (typeof selectedItemId === "string") {
+                id = selectedItemId; // single delete
+            }
+
+            if (!id || (Array.isArray(id) && id.length === 0)) {
+                toast.error("No items selected to delete");
+                return;
+            }
+
+            const result = await dispatch(deleteCartItem({ id })).unwrap();
+            console.log("result", result);
+
+            toast.success(result.message || "Item(s) deleted successfully");
+            await dispatch(fetchCart());
+
+            // 🔄 Re-evaluate all offers after delete
+            const freshCart = await dispatch(fetchCart()).unwrap();
+
+            for (const item of freshCart) {
+                const fullProduct = products.find((p) => p.id === item.productId);
+                if (!fullProduct) continue;
+
+                const selectedVariation =
+                    fullProduct.variations?.find((v) => v.id === item.variationId);
+
+                // Recalculate bulk and offers
+                const newBulkStatus = computeBulkStatus({
+                    product: fullProduct,
+                    selectedVariation,
+                    selectedAttributes: item.attributes,
+                    userCart: freshCart,
+                    quantity: item.quantity,
+                    cartItem: item,
+                });
+
+                const isBulkEligible = newBulkStatus.eligible;
+                await updateGroupBulkStatus(newBulkStatus, isBulkEligible, item.quantity, item, fullProduct);
+            }
+
+            setIsConfirmOpen(false);
+        } catch (err) {
+            toast.error(err.message || "Failed to delete item(s)");
+        }
+    };
+
+
     const updateQuantity = async (itemId, delta) => {
         const targetItem = userCartState.find((i) => i.id === itemId);
         if (!targetItem) return;
@@ -358,14 +472,41 @@ const Header = () => {
         });
     };
 
-    // 🧩 Update all items in the same bulk group
     const updateGroupBulkStatus = async (bulkStatus, isBulkEligible, newQty, cartItem, fullProduct) => {
         const { sameGroupItems } = bulkStatus;
 
+        // 🧮 Total group quantity (ignoring color)
+        const totalGroupQty = sameGroupItems.reduce((sum, item) => {
+            const qty = item.id === cartItem.id ? newQty : item.quantity;
+            return sum + qty;
+        }, 0);
+
+        console.log("🧮 Group Total:", totalGroupQty);
+
+        // 🧠 1️⃣ Apply product offer once for the whole group
+        const sampleVariation =
+            fullProduct?.variations?.find((v) => v.id === cartItem.variationId) ||
+            fullProduct?.variations?.find(
+                (v) =>
+                    v.color?.toLowerCase() === cartItem.attributes?.color?.toLowerCase() &&
+                    v.size?.toLowerCase() === cartItem.attributes?.size?.toLowerCase()
+            );
+
+        const { offerApplied, offerMeta, offerId } = applyProductOffers(
+            fullProduct,
+            sampleVariation,
+            newQty,
+            sameGroupItems,
+            cartItem.id
+        );
+
+        // 🧩 Share the same offerMeta with all sameGroupItems
+        const groupOffer = offerApplied ? offerMeta : null;
+        const groupOfferId = offerApplied ? offerId : null;
+
         await Promise.all(
             sameGroupItems.map(async (item) => {
-                // 🔍 Find variation safely (fallbacks included)
-                let itemVariation =
+                const itemVariation =
                     fullProduct?.variations?.find((v) => v.id === item.variationId) ||
                     fullProduct?.variations?.find(
                         (v) =>
@@ -378,46 +519,154 @@ const Header = () => {
                 const itemBulkMinQty = Number(itemVariation?.bulkMinQty || fullProduct?.minQuantity || 0);
                 const currentQty = item.id === cartItem.id ? newQty : item.quantity;
 
-                console.log("🧾 Variation Check:", {
-                    color: item.attributes?.color,
-                    size: item.attributes?.size,
-                    itemBulkPrice,
-                    itemBulkMinQty,
-                    totalGroupQty: bulkStatus.totalGroupQty,
-                });
-
-                // ✅ Variation-based eligibility
-                const isItemEligible =
+                const isItemBulkEligible =
                     itemBulkPrice > 0 &&
                     itemBulkMinQty > 0 &&
                     bulkStatus.totalGroupQty >= itemBulkMinQty;
 
+                let finalTotal = basePrice * currentQty;
+                let offerAppliedFlag = false;
+                let productOfferApplied = false;
+                let productOffer = null;
+
+                // ✅ Use the same shared group offer
+                if (groupOffer && groupOffer.discountType === "rangeBuyXGetY") {
+                    const { start, end, free } = groupOffer.discountValue;
+
+                    if (totalGroupQty >= start && totalGroupQty <= end) {
+                        productOfferApplied = true;
+                        productOffer = groupOffer;
+
+                        // Sort group items by price (ascending)
+                        const sortedByPrice = [...sameGroupItems].sort((a, b) => a.pricePerItem - b.pricePerItem);
+                        const freeItems = sortedByPrice.slice(0, free);
+
+                        const isFree = freeItems.some((f) => f.id === item.id);
+                        finalTotal = isFree ? 0 : basePrice * currentQty;
+
+                        console.log("🎁 Range Offer Applied (shared):", {
+                            itemId: item.id,
+                            isFree,
+                            freeItems: freeItems.map((f) => f.attributes?.color),
+                            totalGroupQty,
+                        });
+                    }
+                } else if (isItemBulkEligible) {
+                    offerAppliedFlag = true;
+                    finalTotal = itemBulkPrice * currentQty;
+                }
+
                 const payload = {
                     id: item.id,
                     quantity: currentQty,
-                    offerApplied: isItemEligible,
-                    bulkPrice: isItemEligible ? itemBulkPrice : null,
-                    bulkMinQty: isItemEligible ? itemBulkMinQty : null,
-                    totalPrice: (isItemEligible ? itemBulkPrice : basePrice) * currentQty,
+                    offerApplied: offerAppliedFlag,
+                    bulkPrice: isItemBulkEligible ? itemBulkPrice : null,
+                    bulkMinQty: isItemBulkEligible ? itemBulkMinQty : null,
+                    totalPrice: finalTotal,
+                    productOfferApplied,
+                    productOffer,
+                    productOfferId: productOfferApplied ? groupOfferId : null, // 🧠 FIXED
                 };
-
-                console.log("🔄 Updating cart item:", payload);
 
                 await dispatch(updateCart(payload));
             })
         );
 
-        console.log("✅ Bulk group updated in DB:", {
-            sameGroupItems: sameGroupItems.map((i) => ({
-                color: i.attributes?.color,
-                qty: i.quantity,
-            })),
-        });
-
+        console.log("✅ Cart updated with unified shared offer logic");
         await dispatch(fetchCart());
     };
 
 
+    const applyProductOffers = (product, selectedVariation, quantity, userCart = [], cartItemId = null) => {
+        let offerApplied = false;
+        let offerDiscount = 0;
+        let offerMeta = null;
+        let offerId = null;
+
+        const productOffers = (product.offers || []).filter(o => o.active);
+        if (!productOffers.length) return { offerApplied, offerDiscount, offerId, offerMeta };
+
+        // 🔹 Normalize attributes ignoring color/colour
+        const getCoreAttrs = (attrs = {}) => {
+            const core = {};
+            for (const [k, v] of Object.entries(attrs)) {
+                if (!["color", "colour"].includes(k.toLowerCase())) {
+                    core[k.toLowerCase().trim()] = String(v).toLowerCase().trim();
+                }
+            }
+            return core;
+        };
+
+        const selectedCore = getCoreAttrs(selectedVariation?.attributes);
+
+        const sameCoreVariation = (item) => {
+            const itemCore = getCoreAttrs(item.attributes);
+            return Object.entries(selectedCore).every(([k, v]) => itemCore[k] && itemCore[k] === v);
+        };
+
+        // 🔹 Compute total group quantity including updated item if cartItemId provided
+        const totalGroupQty = userCart.reduce((sum, item) => {
+            if (item.productId !== product.id) return sum;
+            if (!sameCoreVariation(item)) return sum;
+
+            // ✅ Replace qty for the item being updated
+            if (cartItemId && item.id === cartItemId) return sum + quantity;
+            return sum + item.quantity;
+        }, 0);
+
+        // 🔹 For new add-to-cart item, include quantity
+        const finalGroupQty = cartItemId ? totalGroupQty : totalGroupQty + quantity;
+
+        for (const offer of productOffers) {
+            if (offer.discountType === "percentage") {
+                offerApplied = true;
+                offerDiscount = Number(offer.discountValue.percent);
+                offerId = offer.id;
+                offerMeta = null;
+                break;
+            } else if (offer.discountType === "rangeBuyXGetY") {
+                const { start, end, free } = offer.discountValue;
+                if (finalGroupQty >= start && finalGroupQty <= end) {
+                    offerApplied = true;
+                    offerDiscount = 0;
+                    offerId = offer.id;
+                    const paidQty = finalGroupQty - free;
+                    offerMeta = {
+                        id: offer.id,
+                        name: "Range",
+                        discountType: offer.discountType,
+                        discountValue: { start, end, free },
+                        appliedQty: finalGroupQty,
+                        effectivePaidQty: paidQty,
+                        freeQty: free,
+                        offerValue: `${free} Free on ${start}–${end} range`,
+                    };
+                    break;
+                }
+            } else if (offer.discountType === "buyXGetY") {
+                const { buy, get } = offer.discountValue;
+                if (finalGroupQty >= buy) {
+                    offerApplied = true;
+                    offerDiscount = 0;
+                    offerId = offer.id;
+                    const paidQty = finalGroupQty - get;
+                    offerMeta = {
+                        id: offer.id,
+                        name: "BuyXGetY",
+                        discountType: offer.discountType,
+                        discountValue: { buy, get },
+                        appliedQty: finalGroupQty,
+                        effectivePaidQty: paidQty,
+                        freeQty: get,
+                        offerValue: `${get} Free on buying ${buy}`,
+                    };
+                    break;
+                }
+            }
+        }
+
+        return { offerApplied, offerDiscount, offerId, offerMeta };
+    };
 
     // 🧠 Compute bulk offer eligibility (shared across variations)
     const computeBulkStatus = ({
@@ -554,6 +803,23 @@ const Header = () => {
     //     return JSON.parse(JSON.stringify(acc));
     // }, [JSON.stringify(userCartState)]);
 
+    const getRangePrice = (colorItem) => {
+        if (!colorItem.productOfferApplied || !colorItem.productOffer) {
+            return colorItem.pricePerItem * colorItem.quantity;
+        }
+
+        const totalQty = colorItem.quantity;
+        const { start, end, free } = colorItem.productOffer.discountValue;
+
+        // calculate number of "free sets"
+        const sets = Math.floor(totalQty / (start + free));
+        const freeItems = sets * free;
+        const paidItems = totalQty - freeItems;
+
+        return paidItems * colorItem.pricePerItem;
+    };
+
+
     const groupedCart = useMemo(() => {
         const acc = {};
 
@@ -572,6 +838,8 @@ const Header = () => {
                     currency: item.currency,
                     itemIds: [item.id],
                     colors: [],
+                    productOfferApplied: Boolean(item.productOfferApplied),
+                    productOffer: item.productOffer ?? null,
                 };
             } else {
                 acc[key] = { ...acc[key], itemIds: [...acc[key].itemIds, item.id] };
@@ -594,7 +862,13 @@ const Header = () => {
                 bulkMinQty: item.bulkMinQty == null ? null : Number(item.bulkMinQty),
                 offerApplied: Boolean(item.offerApplied),
                 totalPrice: item.totalPrice == null ? Number(item.pricePerItem || 0) * Number(item.quantity || 0) : Number(item.totalPrice),
+
+                productOfferApplied: Boolean(item.productOfferApplied),
+                productOfferDiscount: item.productOfferDiscount ?? null,
+                productOfferId: item.productOfferId ?? null,
+                productOffer: item.productOffer ?? null,
             };
+            console.log("range offer", item.productOfferApplied, item.productOffer);
 
             if (existing) {
                 acc[key].colors = acc[key].colors.map(c =>
@@ -1361,11 +1635,12 @@ const Header = () => {
                                                                             </div>
                                                                         ))}
                                                                 </div>
-                                                                {isVariationOfferActive && (
+                                                                {isVariationOfferActive || item.productOfferApplied ? (
                                                                     <div className="text-green-600 font-medium text-xs mt-1 flex items-center gap-1">
-                                                                        ✅ Offer Applied
+                                                                        ✅ {item.productOfferApplied ? "Range Offer Applied" : "Bulk Offer Applied"}
                                                                     </div>
-                                                                )}
+                                                                ) : null}
+
                                                             </div>
 
                                                             <button
@@ -1399,7 +1674,15 @@ const Header = () => {
                                                                                 {c.color}: ₹{fmt(bulkPrice)} per item (Min {minQty})
                                                                             </li>
                                                                         );
-                                                                    })}
+                                                                    })}</ul>
+                                                            </div>
+                                                        )}
+                                                        {item.productOfferApplied && (
+                                                            <div className="border border-blue-200 bg-blue-50 rounded-lg p-2 sm:p-3 mb-4 text-blue-800">
+                                                                <div className="font-medium text-sm mb-1">Active Range Offer:</div>
+                                                                <ul className="list-disc list-inside text-xs sm:text-sm">
+                                                                    <li>Buy {item.productOffer.discountValue.start}–{item.productOffer.discountValue.end}, Get {item.productOffer.discountValue.free} Free</li>
+                                                                    <li>Free items: Lowest priced variations 🎁</li>
                                                                 </ul>
                                                             </div>
                                                         )}
@@ -1459,7 +1742,28 @@ const Header = () => {
 
                                                                         {/* Price */}
                                                                         <div className="pl-2 sm:pl-4 text-sm mt-2">
-                                                                            {isBulkActive ? (
+                                                                            {/* {isBulkActive ? (
+                                                                                <>
+                                                                                    <div>
+                                                                                        <span className="line-through text-gray-400">
+                                                                                            ₹{fmt(colorPrice)} × {c.quantity} = ₹{fmt(originalTotal)}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div className="text-green-700 font-semibold">
+                                                                                        ₹{fmt(bulkPrice)} × {c.quantity} = ₹{fmt(discountedTotal)} ✅
+                                                                                    </div>
+                                                                                    <div className="text-xs text-green-600">You saved ₹{fmt(saved)} 🎉</div>
+                                                                                </>
+                                                                            ) : (
+                                                                                <div>
+                                                                                    ₹{fmt(colorPrice)} × {c.quantity} = ₹{fmt(originalTotal)}
+                                                                                </div>
+                                                                            )} */}
+                                                                            {c.productOfferApplied && Number(c.totalPrice) === 0 ? (
+                                                                                <div className="text-green-700 font-semibold">
+                                                                                    🎁 FREE under Range Offer (₹{fmt(colorPrice)} × {c.quantity})
+                                                                                </div>
+                                                                            ) : isBulkActive ? (
                                                                                 <>
                                                                                     <div>
                                                                                         <span className="line-through text-gray-400">
@@ -1476,6 +1780,7 @@ const Header = () => {
                                                                                     ₹{fmt(colorPrice)} × {c.quantity} = ₹{fmt(originalTotal)}
                                                                                 </div>
                                                                             )}
+
                                                                         </div>
 
                                                                         {/* Remove button */}
@@ -1502,7 +1807,20 @@ const Header = () => {
                                                                     (sum, c) => sum + Number(c.pricePerItem) * Number(c.quantity),
                                                                     0
                                                                 );
+                                                                // const totalDiscounted = item.colors.reduce((sum, c) => {
+                                                                //     const matchVar = findColorVariation(fullProduct, c, item);
+                                                                //     const bulkPrice = Number(
+                                                                //         c.bulkPrice ?? matchVar?.bulkPrice ?? baseVariation?.bulkPrice ?? fullProduct?.bulkPrice ?? 0
+                                                                //     );
+                                                                //     const minQty = Number(
+                                                                //         c.bulkMinQty ?? matchVar?.minQuantity ?? baseVariation?.minQuantity ?? fullProduct?.minQuantity ?? 0
+                                                                //     );
+                                                                //     const isColorBulkActive = bulkPrice > 0 && totalVariationQty >= minQty;
+                                                                //     const effectivePrice = isColorBulkActive ? bulkPrice : Number(c.pricePerItem);
+                                                                //     return sum + effectivePrice * Number(c.quantity);
+                                                                // }, 0);
                                                                 const totalDiscounted = item.colors.reduce((sum, c) => {
+                                                                    if (c.productOfferApplied && Number(c.totalPrice) === 0) return sum; // free item
                                                                     const matchVar = findColorVariation(fullProduct, c, item);
                                                                     const bulkPrice = Number(
                                                                         c.bulkPrice ?? matchVar?.bulkPrice ?? baseVariation?.bulkPrice ?? fullProduct?.bulkPrice ?? 0
