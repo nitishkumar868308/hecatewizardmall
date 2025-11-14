@@ -535,7 +535,7 @@ const Header = () => {
 
                     if (totalGroupQty >= start && totalGroupQty <= end) {
                         productOfferApplied = true;
-                        productOffer = groupOffer;
+                        productOffer = offerMeta;
 
                         // Sort group items by price (ascending)
                         const sortedByPrice = [...sameGroupItems].sort((a, b) => a.pricePerItem - b.pricePerItem);
@@ -565,7 +565,7 @@ const Header = () => {
                     totalPrice: finalTotal,
                     productOfferApplied,
                     productOffer,
-                    productOfferId: productOfferApplied ? groupOfferId : null, // 🧠 FIXED
+                    productOfferId: productOfferApplied ? groupOfferId : null,
                 };
 
                 await dispatch(updateCart(payload));
@@ -576,6 +576,56 @@ const Header = () => {
         await dispatch(fetchCart());
     };
 
+    const buildFreePaidItems = (product, freeQty, sameCoreVariation, cart) => {
+        let items = cart
+            .filter(it => {
+                if (it.productId !== product.id) return false;
+                return sameCoreVariation(it); // color ignore + core attribute match
+            })
+            .map(it => ({
+                id: it.id,
+                variationId: it.variationId,
+                attributes: it.attributes,
+                quantity: it.quantity,
+                price: Number(it.pricePerItem || it.price),
+                addedAt: it.addedAt || 0
+            }));
+
+
+        const freeItems = [];
+        const paidItems = [];
+
+        while (freeQty > 0 && items.length > 0) {
+            let minPrice = Math.min(...items.map(i => i.price));
+            let lowestItems = items.filter(i => i.price === minPrice);
+            let selected = lowestItems.reduce((a, b) =>
+                a.addedAt > b.addedAt ? a : b
+            );
+
+            let freeTake = Math.min(selected.quantity, freeQty);
+
+            freeItems.push({
+                ...selected,
+                freeQty: freeTake
+            });
+
+            selected.quantity -= freeTake;
+            freeQty -= freeTake;
+
+            if (selected.quantity === 0) {
+                items = items.filter(i => i.id !== selected.id);
+            }
+        }
+
+        for (const item of items) {
+            paidItems.push({
+                ...item,
+                paidQty: item.quantity
+            });
+        }
+
+        return { freeItems, paidItems };
+    };
 
     const applyProductOffers = (product, selectedVariation, quantity, userCart = [], cartItemId = null) => {
         let offerApplied = false;
@@ -616,54 +666,176 @@ const Header = () => {
 
         // 🔹 For new add-to-cart item, include quantity
         const finalGroupQty = cartItemId ? totalGroupQty : totalGroupQty + quantity;
+        const price = Number(selectedVariation.pricePerItem || selectedVariation.price || 0);
+
+        const updatedCartForFreeCalc = userCart.map(it => ({
+            ...it,
+            attributes: { ...(it.attributes || {}) }
+        }));
+
+        // 👉 If this is a new add-to-cart operation (not update)
+        if (!cartItemId) {
+            updatedCartForFreeCalc.push({
+                id: "__temp__",
+                productId: product.id,
+                variationId: selectedVariation.id,
+                attributes: selectedVariation.attributes,
+                quantity,
+                pricePerItem: selectedVariation.pricePerItem || selectedVariation.price,
+                addedAt: Date.now()
+            });
+        }
+
+        // 👉 If update case:
+        if (cartItemId) {
+            updatedCartForFreeCalc.forEach((it) => {
+                if (it.id === cartItemId) {
+                    it.quantity = quantity;   // now SAFE
+                }
+            });
+        }
 
         for (const offer of productOffers) {
+
+            // 🔥 Offer Check Starts
+
+            // 1️⃣ Percentage
             if (offer.discountType === "percentage") {
                 offerApplied = true;
                 offerDiscount = Number(offer.discountValue.percent);
                 offerId = offer.id;
-                offerMeta = null;
+
+                const totalBefore = finalGroupQty * price;
+                const savings = (totalBefore * offerDiscount) / 100;
+                const totalAfter = totalBefore - savings;
+
+                offerMeta = {
+                    id: offer.id,
+                    name: "Percentage",
+                    discountType: offer.discountType,
+                    discountValue: offer.discountValue,
+                    appliedQty: finalGroupQty,
+                    totalPriceBeforeOffer: totalBefore,
+                    totalPriceAfterOffer: totalAfter,
+                    totalSavings: savings,
+                    freeQuantityValue: 0,
+                    freeItems: [],
+                    paidItems: []
+                };
                 break;
-            } else if (offer.discountType === "rangeBuyXGetY") {
+            }
+
+            // 2️⃣ Range Buy X Get Y
+            if (offer.discountType === "rangeBuyXGetY") {
                 const { start, end, free } = offer.discountValue;
                 if (finalGroupQty >= start && finalGroupQty <= end) {
                     offerApplied = true;
                     offerDiscount = 0;
                     offerId = offer.id;
-                    const paidQty = finalGroupQty - free;
+
+                    const { freeItems, paidItems } =
+                        buildFreePaidItems(product, free, sameCoreVariation, updatedCartForFreeCalc);
+
+
+                    const freeValue = freeItems.reduce((sum, fi) => sum + fi.freeQty * fi.price, 0);
+
                     offerMeta = {
                         id: offer.id,
                         name: "Range",
                         discountType: offer.discountType,
                         discountValue: { start, end, free },
                         appliedQty: finalGroupQty,
-                        effectivePaidQty: paidQty,
                         freeQty: free,
-                        offerValue: `${free} Free on ${start}–${end} range`,
+                        freeItems,
+                        paidItems,
+                        totalPriceBeforeOffer: finalGroupQty * price,
+                        totalPriceAfterOffer: finalGroupQty * price - freeValue,
+                        totalSavings: freeValue,
+                        freeQuantityValue: freeValue
                     };
                     break;
                 }
-            } else if (offer.discountType === "buyXGetY") {
+            }
+
+            // 3️⃣ Buy X Get Y
+            if (offer.discountType === "buyXGetY") {
                 const { buy, get } = offer.discountValue;
                 if (finalGroupQty >= buy) {
                     offerApplied = true;
                     offerDiscount = 0;
                     offerId = offer.id;
-                    const paidQty = finalGroupQty - get;
+
+                    const { freeItems, paidItems } =
+                        buildFreePaidItems(product, free, sameCoreVariation, updatedCartForFreeCalc);
+
+
+                    const freeValue = freeItems.reduce((sum, fi) => sum + fi.freeQty * fi.price, 0);
+
                     offerMeta = {
                         id: offer.id,
                         name: "BuyXGetY",
                         discountType: offer.discountType,
                         discountValue: { buy, get },
                         appliedQty: finalGroupQty,
-                        effectivePaidQty: paidQty,
                         freeQty: get,
-                        offerValue: `${get} Free on buying ${buy}`,
+                        freeItems,
+                        paidItems,
+                        totalPriceBeforeOffer: finalGroupQty * price,
+                        totalPriceAfterOffer: finalGroupQty * price - freeValue,
+                        totalSavings: freeValue,
+                        freeQuantityValue: freeValue
                     };
                     break;
                 }
             }
         }
+        // for (const offer of productOffers) {
+        //     if (offer.discountType === "percentage") {
+        //         offerApplied = true;
+        //         offerDiscount = Number(offer.discountValue.percent);
+        //         offerId = offer.id;
+        //         offerMeta = null;
+        //         break;
+        //     } else if (offer.discountType === "rangeBuyXGetY") {
+        //         const { start, end, free } = offer.discountValue;
+        //         if (finalGroupQty >= start && finalGroupQty <= end) {
+        //             offerApplied = true;
+        //             offerDiscount = 0;
+        //             offerId = offer.id;
+        //             const paidQty = finalGroupQty - free;
+        //             offerMeta = {
+        //                 id: offer.id,
+        //                 name: "Range",
+        //                 discountType: offer.discountType,
+        //                 discountValue: { start, end, free },
+        //                 appliedQty: finalGroupQty,
+        //                 effectivePaidQty: paidQty,
+        //                 freeQty: free,
+        //                 offerValue: `${free} Free on ${start}–${end} range`,
+        //             };
+        //             break;
+        //         }
+        //     } else if (offer.discountType === "buyXGetY") {
+        //         const { buy, get } = offer.discountValue;
+        //         if (finalGroupQty >= buy) {
+        //             offerApplied = true;
+        //             offerDiscount = 0;
+        //             offerId = offer.id;
+        //             const paidQty = finalGroupQty - get;
+        //             offerMeta = {
+        //                 id: offer.id,
+        //                 name: "BuyXGetY",
+        //                 discountType: offer.discountType,
+        //                 discountValue: { buy, get },
+        //                 appliedQty: finalGroupQty,
+        //                 effectivePaidQty: paidQty,
+        //                 freeQty: get,
+        //                 offerValue: `${get} Free on buying ${buy}`,
+        //             };
+        //             break;
+        //         }
+        //     }
+        // }
 
         return { offerApplied, offerDiscount, offerId, offerMeta };
     };
@@ -802,22 +974,6 @@ const Header = () => {
 
     //     return JSON.parse(JSON.stringify(acc));
     // }, [JSON.stringify(userCartState)]);
-
-    const getRangePrice = (colorItem) => {
-        if (!colorItem.productOfferApplied || !colorItem.productOffer) {
-            return colorItem.pricePerItem * colorItem.quantity;
-        }
-
-        const totalQty = colorItem.quantity;
-        const { start, end, free } = colorItem.productOffer.discountValue;
-
-        // calculate number of "free sets"
-        const sets = Math.floor(totalQty / (start + free));
-        const freeItems = sets * free;
-        const paidItems = totalQty - freeItems;
-
-        return paidItems * colorItem.pricePerItem;
-    };
 
 
     const groupedCart = useMemo(() => {
@@ -1722,6 +1878,13 @@ const Header = () => {
                                                                                 <span className="text-sm font-medium text-gray-700">{c.color}</span>
                                                                             </div>
 
+                                                                            {c.productOfferApplied && Number(c.totalPrice) === 0 ? (
+                                                                                <div className="text-green-700 font-semibold">
+                                                                                    🎁 FREE under Range Offer (₹{fmt(c.pricePerItem)} × {c.quantity})
+                                                                                </div>
+                                                                            ) : ""}
+
+
 
                                                                             <div className="flex items-center gap-2">
                                                                                 <button
@@ -1759,7 +1922,7 @@ const Header = () => {
                                                                                     ₹{fmt(colorPrice)} × {c.quantity} = ₹{fmt(originalTotal)}
                                                                                 </div>
                                                                             )} */}
-                                                                            {c.productOfferApplied && Number(c.totalPrice) === 0 ? (
+                                                                            {/* {c.productOfferApplied && Number(c.totalPrice) === 0 ? (
                                                                                 <div className="text-green-700 font-semibold">
                                                                                     🎁 FREE under Range Offer (₹{fmt(colorPrice)} × {c.quantity})
                                                                                 </div>
@@ -1779,7 +1942,91 @@ const Header = () => {
                                                                                 <div>
                                                                                     ₹{fmt(colorPrice)} × {c.quantity} = ₹{fmt(originalTotal)}
                                                                                 </div>
+                                                                            )} */}
+                                                                            {/* RANGE OFFER UI */}
+                                                                            {item.productOfferApplied && item.productOffer?.name === "Range" ? (
+                                                                                // (() => {
+                                                                                //     const offer = item.productOffer;
+
+                                                                                //     const free = offer.freeItems.find(f => f.id === c.itemId);
+                                                                                //     const paid = offer.paidItems.find(p => p.id === c.itemId);
+
+                                                                                //     if (free) {
+                                                                                //         return (
+                                                                                //             <div className="text-green-700 font-semibold">
+                                                                                //                 🎁 FREE under Range Offer (₹{fmt(c.pricePerItem)} × {free.freeQty})
+                                                                                //             </div>
+                                                                                //         );
+                                                                                //     }
+
+                                                                                //     if (paid) {
+                                                                                //         const total = paid.paidQty * c.pricePerItem;
+                                                                                //         return (
+                                                                                //             <div className="text-blue-700 font-semibold">
+                                                                                //                 ₹{fmt(c.pricePerItem)} × {paid.paidQty} = ₹{fmt(total)}
+                                                                                //             </div>
+                                                                                //         );
+                                                                                //     }
+
+                                                                                //     return (
+                                                                                //         <div>
+                                                                                //             ₹{fmt(c.pricePerItem)} × {c.quantity} = ₹{fmt(c.pricePerItem * c.quantity)}
+                                                                                //         </div>
+                                                                                //     );
+                                                                                // })()
+                                                                                (() => {
+                                                                                    const offer = item.productOffer;
+
+                                                                                    const free = offer?.freeItems?.find(f => f.id === c.itemId);
+                                                                                    const paid = offer?.paidItems?.find(p => p.id === c.itemId);
+
+                                                                                    return (
+                                                                                        <div className="flex flex-col">
+
+                                                                                            {/* PAID LINE — always show if paidQty exists */}
+                                                                                            {paid && (
+                                                                                                <div className="text-blue-700 font-semibold">
+                                                                                                    ₹{fmt(c.pricePerItem)} × {paid.paidQty} = ₹{fmt(c.pricePerItem * paid.paidQty)}
+                                                                                                </div>
+                                                                                            )}
+
+                                                                                            {/* FREE LINE — always show if freeQty exists */}
+                                                                                            {free && (
+                                                                                                <div className="text-green-700 font-semibold">
+                                                                                                    🎁 FREE under Range Offer (₹{fmt(c.pricePerItem)} × {free.freeQty})
+                                                                                                </div>
+                                                                                            )}
+
+                                                                                            {/* No offer applied → normal line */}
+                                                                                            {!paid && !free && (
+                                                                                                <div>
+                                                                                                    ₹{fmt(c.pricePerItem)} × {c.quantity} = ₹{fmt(c.pricePerItem * c.quantity)}
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    );
+                                                                                })()
+                                                                            ) : (
+                                                                                /* existing bulk / normal logic */
+                                                                                isBulkActive ? (
+                                                                                    <>
+                                                                                        <div>
+                                                                                            <span className="line-through text-gray-400">
+                                                                                                ₹{fmt(colorPrice)} × {c.quantity} = ₹{fmt(originalTotal)}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div className="text-green-700 font-semibold">
+                                                                                            ₹{fmt(bulkPrice)} × {c.quantity} = ₹{fmt(discountedTotal)} ✅
+                                                                                        </div>
+                                                                                        <div className="text-xs text-green-600">You saved ₹{fmt(saved)} 🎉</div>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <div>
+                                                                                        ₹{fmt(colorPrice)} × {c.quantity} = ₹{fmt(originalTotal)}
+                                                                                    </div>
+                                                                                )
                                                                             )}
+
 
                                                                         </div>
 
@@ -1801,7 +2048,7 @@ const Header = () => {
                                                         </div>
 
                                                         {/* Total */}
-                                                        <div className="text-sm font-bold text-gray-900 text-right mt-4 border-t pt-2">
+                                                        {/* <div className="text-sm font-bold text-gray-900 text-right mt-4 border-t pt-2">
                                                             {(() => {
                                                                 const totalOriginal = item.colors.reduce(
                                                                     (sum, c) => sum + Number(c.pricePerItem) * Number(c.quantity),
@@ -1849,7 +2096,152 @@ const Header = () => {
                                                                     </div>
                                                                 );
                                                             })()}
+                                                        </div> */}
+                                                        {/* <div className="text-sm font-bold text-gray-900 text-right mt-4 border-t pt-2">
+                                                            {(() => {
+                                                                const totalOriginal = item.colors.reduce(
+                                                                    (sum, c) => sum + Number(c.pricePerItem) * Number(c.quantity),
+                                                                    0
+                                                                );
+
+                                                                const offer = item.productOfferApplied ? item.productOffer : null;
+
+                                                                // RANGE OFFER TOTAL (paid only)
+                                                                let totalAfterOffer = 0;
+
+                                                                if (offer && offer.name === "Range") {
+                                                                    totalAfterOffer =
+                                                                        offer.paidItems.reduce((sum, p) => {
+                                                                            const color = item.colors.find(c => c.itemId === p.id);
+                                                                            return sum + (color.pricePerItem * p.paidQty);
+                                                                        }, 0);
+                                                                } else {
+                                                                    // BULK OR NORMAL
+                                                                    totalAfterOffer = item.colors.reduce((sum, c) => {
+                                                                        const matchVar = findColorVariation(fullProduct, c, item);
+                                                                        const bulkPrice = Number(
+                                                                            c.bulkPrice ??
+                                                                            matchVar?.bulkPrice ??
+                                                                            baseVariation?.bulkPrice ??
+                                                                            fullProduct?.bulkPrice ??
+                                                                            0
+                                                                        );
+                                                                        const minQty = Number(
+                                                                            c.bulkMinQty ??
+                                                                            matchVar?.minQuantity ??
+                                                                            baseVariation?.minQuantity ??
+                                                                            fullProduct?.minQuantity ??
+                                                                            0
+                                                                        );
+                                                                        const isBulk = bulkPrice > 0 && totalVariationQty >= minQty;
+                                                                        const effectivePrice = isBulk ? bulkPrice : c.pricePerItem;
+                                                                        return sum + effectivePrice * c.quantity;
+                                                                    }, 0);
+                                                                }
+
+                                                                const isDiscounted = totalAfterOffer < totalOriginal;
+
+                                                                return (
+                                                                    <div>
+                                                                        Total:&nbsp;
+                                                                        {isDiscounted ? (
+                                                                            <>
+                                                                                <span className="line-through text-gray-400 mr-1">
+                                                                                    ₹{fmt(totalOriginal)}
+                                                                                </span>
+                                                                                <span className="text-green-700">₹{fmt(totalAfterOffer)} ✅</span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <span>₹{fmt(totalOriginal)}</span>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                        </div> */}
+                                                        <div className="text-sm font-bold text-gray-900 mt-4 border-t pt-2 flex justify-between items-start">
+
+                                                            {/* LEFT SIDE — TOTAL QUANTITY */}
+                                                            <div className="text-left text-gray-700 font-semibold">
+                                                                Qty:&nbsp;
+                                                                {item.colors.reduce((sum, c) => sum + Number(c.quantity), 0)}
+                                                            </div>
+
+                                                            {/* RIGHT SIDE — TOTAL + SAVINGS */}
+                                                            <div className="text-right">
+                                                                {(() => {
+                                                                    const totalOriginal = item.colors.reduce(
+                                                                        (sum, c) => sum + Number(c.pricePerItem) * Number(c.quantity),
+                                                                        0
+                                                                    );
+
+                                                                    const offer = item.productOfferApplied ? item.productOffer : null;
+
+                                                                    // RANGE OFFER TOTAL (paid only)
+                                                                    let totalAfterOffer = 0;
+
+                                                                    if (offer && offer.paidItems && offer.freeItems) {
+                                                                        totalAfterOffer = offer.paidItems.reduce((sum, p) => {
+                                                                            const color = item.colors.find(c => c.itemId === p.id || c.id === p.id);
+
+                                                                            if (!color) return sum; // prevent crash if color not found
+
+                                                                            return sum + (Number(color.pricePerItem) * Number(p.paidQty));
+                                                                        }, 0);
+                                                                    } else {
+                                                                        // BULK OR NORMAL
+                                                                        totalAfterOffer = item.colors.reduce((sum, c) => {
+                                                                            const matchVar = findColorVariation(fullProduct, c, item);
+                                                                            const bulkPrice = Number(
+                                                                                c.bulkPrice ??
+                                                                                matchVar?.bulkPrice ??
+                                                                                baseVariation?.bulkPrice ??
+                                                                                fullProduct?.bulkPrice ??
+                                                                                0
+                                                                            );
+                                                                            const minQty = Number(
+                                                                                c.bulkMinQty ??
+                                                                                matchVar?.minQuantity ??
+                                                                                baseVariation?.minQuantity ??
+                                                                                fullProduct?.minQuantity ??
+                                                                                0
+                                                                            );
+                                                                            const isBulk = bulkPrice > 0 && totalVariationQty >= minQty;
+                                                                            const effectivePrice = isBulk ? bulkPrice : c.pricePerItem;
+                                                                            return sum + effectivePrice * c.quantity;
+                                                                        }, 0);
+                                                                    }
+
+                                                                    const isDiscounted = totalAfterOffer < totalOriginal;
+                                                                    const savings = totalOriginal - totalAfterOffer;
+
+                                                                    return (
+                                                                        <div className="flex flex-col items-end">
+                                                                            <div>
+                                                                                Total:&nbsp;
+                                                                                {isDiscounted ? (
+                                                                                    <>
+                                                                                        <span className="line-through text-gray-400 mr-1">
+                                                                                            ₹{fmt(totalOriginal)}
+                                                                                        </span>
+                                                                                        <span className="text-green-700">₹{fmt(totalAfterOffer)} ✅</span>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <span>₹{fmt(totalOriginal)}</span>
+                                                                                )}
+                                                                            </div>
+
+                                                                            {/* SAVINGS LINE */}
+                                                                            {isDiscounted && (
+                                                                                <div className="text-xs text-green-600 font-semibold mt-1">
+                                                                                    You Saved: ₹{fmt(savings)}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })()}
+                                                            </div>
                                                         </div>
+
                                                     </div>
                                                 );
                                             })

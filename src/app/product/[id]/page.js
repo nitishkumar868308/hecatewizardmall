@@ -1248,6 +1248,234 @@ const ProductDetail = () => {
     };
 
 
+
+
+    // const applyProductOffers = (product, selectedVariation, quantity, userCart = [], cartItemId = null) => {
+    //     let offerApplied = false;
+    //     let offerDiscount = 0;
+    //     let offerMeta = null;
+    //     let offerId = null;
+
+    //     const productOffers = (product.offers || []).filter(o => o.active);
+    //     if (!productOffers.length) return { offerApplied, offerDiscount, offerId, offerMeta };
+
+    //     // 🔹 Normalize attributes ignoring color/colour
+    //     const getCoreAttrs = (attrs = {}) => {
+    //         const core = {};
+    //         for (const [k, v] of Object.entries(attrs)) {
+    //             if (!["color", "colour"].includes(k.toLowerCase())) {
+    //                 core[k.toLowerCase().trim()] = String(v).toLowerCase().trim();
+    //             }
+    //         }
+    //         return core;
+    //     };
+
+    //     const selectedCore = getCoreAttrs(selectedVariation?.attributes);
+
+    //     const sameCoreVariation = (item) => {
+    //         const itemCore = getCoreAttrs(item.attributes);
+    //         return Object.entries(selectedCore).every(([k, v]) => itemCore[k] && itemCore[k] === v);
+    //     };
+
+    //     // 🔹 Compute total group quantity including updated item if cartItemId provided
+    //     const totalGroupQty = userCart.reduce((sum, item) => {
+    //         if (item.productId !== product.id) return sum;
+    //         if (!sameCoreVariation(item)) return sum;
+
+    //         // ✅ Replace qty for the item being updated
+    //         if (cartItemId && item.id === cartItemId) return sum + quantity;
+    //         return sum + item.quantity;
+    //     }, 0);
+
+    //     // 🔹 For new add-to-cart item, include quantity
+    //     const finalGroupQty = cartItemId ? totalGroupQty : totalGroupQty + quantity;
+    //     const price = Number(selectedVariation.pricePerItem || selectedVariation.price || 0);
+
+    //     for (const offer of productOffers) {
+    //         if (offer.discountType === "percentage") {
+    //             offerApplied = true;
+    //             offerDiscount = Number(offer.discountValue.percent);
+    //             offerId = offer.id;
+
+    //             const totalBefore = finalGroupQty * price;
+    //             const savings = (totalBefore * offerDiscount) / 100;
+    //             const totalAfter = totalBefore - savings;
+
+    //             offerMeta = {
+    //                 id: offer.id,
+    //                 name: "Percentage",
+    //                 discountType: offer.discountType,
+    //                 discountValue: offer.discountValue,
+    //                 appliedQty: finalGroupQty,
+
+    //                 // ⭐ NEW FIELDS
+    //                 totalPriceBeforeOffer: totalBefore,
+    //                 totalPriceAfterOffer: totalAfter,
+    //                 totalSavings: savings,
+    //                 freeQuantityValue: 0,
+    //             };
+    //             break;
+    //         } else if (offer.discountType === "rangeBuyXGetY") {
+    //             const { start, end, free } = offer.discountValue;
+    //             if (finalGroupQty >= start && finalGroupQty <= end) {
+    //                 offerApplied = true;
+    //                 offerDiscount = 0;
+    //                 offerId = offer.id;
+    //                 const paidQty = finalGroupQty - free;
+
+    //                 const totalBefore = finalGroupQty * price;
+    //                 const freeValue = free * price;
+    //                 const totalAfter = totalBefore - freeValue;
+    //                 offerMeta = {
+    //                     id: offer.id,
+    //                     name: "Range",
+    //                     discountType: offer.discountType,
+    //                     discountValue: { start, end, free },
+    //                     appliedQty: finalGroupQty,
+    //                     effectivePaidQty: paidQty,
+    //                     freeQty: free,
+    //                     offerValue: `${free} Free on ${start}–${end} range`,
+    //                     totalPriceBeforeOffer: totalBefore,
+    //                     totalPriceAfterOffer: totalAfter,
+    //                     totalSavings: freeValue,
+    //                     freeQuantityValue: freeValue,
+    //                 };
+    //                 break;
+    //             }
+    //         } else if (offer.discountType === "buyXGetY") {
+    //             const { buy, get } = offer.discountValue;
+    //             if (finalGroupQty >= buy) {
+    //                 offerApplied = true;
+    //                 offerDiscount = 0;
+    //                 offerId = offer.id;
+    //                 const paidQty = finalGroupQty - get;
+
+    //                 const totalBefore = finalGroupQty * price;
+    //                 const freeValue = get * price;
+    //                 const totalAfter = totalBefore - freeValue;
+
+    //                 offerMeta = {
+    //                     id: offer.id,
+    //                     name: "BuyXGetY",
+    //                     discountType: offer.discountType,
+    //                     discountValue: { buy, get },
+    //                     appliedQty: finalGroupQty,
+    //                     effectivePaidQty: paidQty,
+    //                     freeQty: get,
+    //                     offerValue: `${get} Free on buying ${buy}`,
+    //                     totalPriceBeforeOffer: totalBefore,
+    //                     totalPriceAfterOffer: totalAfter,
+    //                     totalSavings: freeValue,
+    //                     freeQuantityValue: freeValue,
+    //                 };
+    //                 break;
+    //             }
+    //         }
+    //     }
+
+    //     return { offerApplied, offerDiscount, offerId, offerMeta };
+    // };
+
+
+
+
+
+
+    // const applyProductOffers = (product, selectedVariation, quantity, userCart = []) => {
+    //     let offerApplied = false;
+    //     let offerDiscount = 0;
+    //     let offerMeta = null; // ✅ for JSON
+    //     let offerId = null;
+
+    //     const productOffers = (product.offers || []).filter(o => o.active);
+    //     if (productOffers.length === 0) return { offerApplied, offerDiscount, offerId, offerMeta };
+
+    //     const getCoreAttrs = (attrs = {}) => {
+    //         const core = {};
+    //         for (const [k, v] of Object.entries(attrs)) {
+    //             if (!["color", "colour"].includes(k.toLowerCase())) {
+    //                 core[k.toLowerCase().trim()] = String(v).toLowerCase().trim();
+    //             }
+    //         }
+    //         return core;
+    //     };
+
+    //     const selectedCore = getCoreAttrs(selectedVariation?.attributes);
+
+    //     const sameCoreVariation = (item) => {
+    //         const itemCore = getCoreAttrs(item.attributes);
+    //         return Object.entries(selectedCore).every(([k, v]) => itemCore[k] && itemCore[k] === v);
+    //     };
+
+    //     const totalGroupQty =
+    //         userCart.reduce((sum, item) => {
+    //             if (item.productId !== product.id) return sum;
+    //             if (sameCoreVariation(item)) {
+    //                 return sum + item.quantity;
+    //             }
+    //             return sum;
+    //         }, 0) + quantity;
+
+    //     for (const offer of productOffers) {
+    //         // Percentage
+    //         if (offer.discountType === "percentage") {
+    //             offerApplied = true;
+    //             offerDiscount = Number(offer.discountValue.percent);
+    //             offerId = offer.id;
+    //             offerMeta = null;
+    //             break;
+    //         }
+
+    //         // Range Buy X Get Y
+    //         else if (offer.discountType === "rangeBuyXGetY") {
+    //             const { start, end, free } = offer.discountValue;
+    //             if (totalGroupQty >= start && totalGroupQty <= end) {
+    //                 offerApplied = true;
+    //                 offerDiscount = 0;
+    //                 offerId = offer.id;
+
+    //                 const paidQty = totalGroupQty - free;
+    //                 offerMeta = {
+    //                     id: offer.id,
+    //                     name: "Range",
+    //                     discountType: offer.discountType,
+    //                     discountValue: { start, end, free },
+    //                     appliedQty: totalGroupQty,
+    //                     effectivePaidQty: paidQty,
+    //                     freeQty: free,
+    //                     offerValue: `${free} Free on ${start}–${end} range`
+    //                 };
+    //                 break;
+    //             }
+    //         }
+
+    //         // Buy X Get Y
+    //         else if (offer.discountType === "buyXGetY") {
+    //             const { buy, get } = offer.discountValue;
+    //             if (totalGroupQty >= buy) {
+    //                 offerApplied = true;
+    //                 offerDiscount = 0;
+    //                 offerId = offer.id;
+
+    //                 const paidQty = totalGroupQty - get;
+    //                 offerMeta = {
+    //                     id: offer.id,
+    //                     name: "BuyXGetY",
+    //                     discountType: offer.discountType,
+    //                     discountValue: { buy, get },
+    //                     appliedQty: totalGroupQty,
+    //                     effectivePaidQty: paidQty,
+    //                     freeQty: get,
+    //                     offerValue: `${get} Free on buying ${buy}`
+    //                 };
+    //                 break;
+    //             }
+    //         }
+    //     }
+
+    //     return { offerApplied, offerDiscount, offerId, offerMeta };
+    // };
+
     const updateGroupBulkStatus = async (bulkStatus, isBulkEligible, newQty) => {
         const { sameGroupItems, variationBulkPrice, variationBulkMinQty } = bulkStatus;
 
@@ -1371,6 +1599,58 @@ const ProductDetail = () => {
         console.log("===== updateGroupBulkStatus END =====");
     };
 
+    const buildFreePaidItems = (freeQty, sameCoreVariation, cart) => {
+        let items = cart
+            .filter(it => {
+                if (it.productId !== product.id) return false;
+                return sameCoreVariation(it); // color ignore + core attribute match
+            })
+            .map(it => ({
+                id: it.id,
+                variationId: it.variationId,
+                attributes: it.attributes,
+                quantity: it.quantity,
+                price: Number(it.pricePerItem || it.price),
+                addedAt: it.addedAt || 0
+            }));
+
+
+        const freeItems = [];
+        const paidItems = [];
+
+        while (freeQty > 0 && items.length > 0) {
+            let minPrice = Math.min(...items.map(i => i.price));
+            let lowestItems = items.filter(i => i.price === minPrice);
+            let selected = lowestItems.reduce((a, b) =>
+                a.addedAt > b.addedAt ? a : b
+            );
+
+            let freeTake = Math.min(selected.quantity, freeQty);
+
+            freeItems.push({
+                ...selected,
+                freeQty: freeTake
+            });
+
+            selected.quantity -= freeTake;
+            freeQty -= freeTake;
+
+            if (selected.quantity === 0) {
+                items = items.filter(i => i.id !== selected.id);
+            }
+        }
+
+        for (const item of items) {
+            paidItems.push({
+                ...item,
+                paidQty: item.quantity
+            });
+        }
+
+        return { freeItems, paidItems };
+    };
+
+
     const applyProductOffers = (product, selectedVariation, quantity, userCart = [], cartItemId = null) => {
         let offerApplied = false;
         let offerDiscount = 0;
@@ -1403,56 +1683,129 @@ const ProductDetail = () => {
             if (item.productId !== product.id) return sum;
             if (!sameCoreVariation(item)) return sum;
 
-            // ✅ Replace qty for the item being updated
             if (cartItemId && item.id === cartItemId) return sum + quantity;
             return sum + item.quantity;
         }, 0);
 
-        // 🔹 For new add-to-cart item, include quantity
         const finalGroupQty = cartItemId ? totalGroupQty : totalGroupQty + quantity;
+        const price = Number(selectedVariation.pricePerItem || selectedVariation.price || 0);
+
+        const updatedCartForFreeCalc = userCart.map(it => ({
+            ...it,
+            attributes: { ...(it.attributes || {}) }
+        }));
+
+        // 👉 If this is a new add-to-cart operation (not update)
+        if (!cartItemId) {
+            updatedCartForFreeCalc.push({
+                id: "__temp__",
+                productId: product.id,
+                variationId: selectedVariation.id,
+                attributes: selectedVariation.attributes,
+                quantity,
+                pricePerItem: selectedVariation.pricePerItem || selectedVariation.price,
+                addedAt: Date.now()
+            });
+        }
+
+        // 👉 If update case:
+        if (cartItemId) {
+            updatedCartForFreeCalc.forEach((it) => {
+                if (it.id === cartItemId) {
+                    it.quantity = quantity;   // now SAFE
+                }
+            });
+        }
 
         for (const offer of productOffers) {
+
+            // 🔥 Offer Check Starts
+
+            // 1️⃣ Percentage
             if (offer.discountType === "percentage") {
                 offerApplied = true;
                 offerDiscount = Number(offer.discountValue.percent);
                 offerId = offer.id;
-                offerMeta = null;
+
+                const totalBefore = finalGroupQty * price;
+                const savings = (totalBefore * offerDiscount) / 100;
+                const totalAfter = totalBefore - savings;
+
+                offerMeta = {
+                    id: offer.id,
+                    name: "Percentage",
+                    discountType: offer.discountType,
+                    discountValue: offer.discountValue,
+                    appliedQty: finalGroupQty,
+                    totalPriceBeforeOffer: totalBefore,
+                    totalPriceAfterOffer: totalAfter,
+                    totalSavings: savings,
+                    freeQuantityValue: 0,
+                    freeItems: [],
+                    paidItems: []
+                };
                 break;
-            } else if (offer.discountType === "rangeBuyXGetY") {
+            }
+
+            // 2️⃣ Range Buy X Get Y
+            if (offer.discountType === "rangeBuyXGetY") {
                 const { start, end, free } = offer.discountValue;
                 if (finalGroupQty >= start && finalGroupQty <= end) {
                     offerApplied = true;
                     offerDiscount = 0;
                     offerId = offer.id;
-                    const paidQty = finalGroupQty - free;
+
+                    const { freeItems, paidItems } =
+                        buildFreePaidItems(free, sameCoreVariation, updatedCartForFreeCalc);
+
+
+                    const freeValue = freeItems.reduce((sum, fi) => sum + fi.freeQty * fi.price, 0);
+
                     offerMeta = {
                         id: offer.id,
                         name: "Range",
                         discountType: offer.discountType,
                         discountValue: { start, end, free },
                         appliedQty: finalGroupQty,
-                        effectivePaidQty: paidQty,
                         freeQty: free,
-                        offerValue: `${free} Free on ${start}–${end} range`,
+                        freeItems,
+                        paidItems,
+                        totalPriceBeforeOffer: finalGroupQty * price,
+                        totalPriceAfterOffer: finalGroupQty * price - freeValue,
+                        totalSavings: freeValue,
+                        freeQuantityValue: freeValue
                     };
                     break;
                 }
-            } else if (offer.discountType === "buyXGetY") {
+            }
+
+            // 3️⃣ Buy X Get Y
+            if (offer.discountType === "buyXGetY") {
                 const { buy, get } = offer.discountValue;
                 if (finalGroupQty >= buy) {
                     offerApplied = true;
                     offerDiscount = 0;
                     offerId = offer.id;
-                    const paidQty = finalGroupQty - get;
+
+                    const { freeItems, paidItems } =
+                        buildFreePaidItems(free, sameCoreVariation, updatedCartForFreeCalc);
+
+
+                    const freeValue = freeItems.reduce((sum, fi) => sum + fi.freeQty * fi.price, 0);
+
                     offerMeta = {
                         id: offer.id,
                         name: "BuyXGetY",
                         discountType: offer.discountType,
                         discountValue: { buy, get },
                         appliedQty: finalGroupQty,
-                        effectivePaidQty: paidQty,
                         freeQty: get,
-                        offerValue: `${get} Free on buying ${buy}`,
+                        freeItems,
+                        paidItems,
+                        totalPriceBeforeOffer: finalGroupQty * price,
+                        totalPriceAfterOffer: finalGroupQty * price - freeValue,
+                        totalSavings: freeValue,
+                        freeQuantityValue: freeValue
                     };
                     break;
                 }
@@ -1461,107 +1814,6 @@ const ProductDetail = () => {
 
         return { offerApplied, offerDiscount, offerId, offerMeta };
     };
-
-
-
-
-
-
-    // const applyProductOffers = (product, selectedVariation, quantity, userCart = []) => {
-    //     let offerApplied = false;
-    //     let offerDiscount = 0;
-    //     let offerMeta = null; // ✅ for JSON
-    //     let offerId = null;
-
-    //     const productOffers = (product.offers || []).filter(o => o.active);
-    //     if (productOffers.length === 0) return { offerApplied, offerDiscount, offerId, offerMeta };
-
-    //     const getCoreAttrs = (attrs = {}) => {
-    //         const core = {};
-    //         for (const [k, v] of Object.entries(attrs)) {
-    //             if (!["color", "colour"].includes(k.toLowerCase())) {
-    //                 core[k.toLowerCase().trim()] = String(v).toLowerCase().trim();
-    //             }
-    //         }
-    //         return core;
-    //     };
-
-    //     const selectedCore = getCoreAttrs(selectedVariation?.attributes);
-
-    //     const sameCoreVariation = (item) => {
-    //         const itemCore = getCoreAttrs(item.attributes);
-    //         return Object.entries(selectedCore).every(([k, v]) => itemCore[k] && itemCore[k] === v);
-    //     };
-
-    //     const totalGroupQty =
-    //         userCart.reduce((sum, item) => {
-    //             if (item.productId !== product.id) return sum;
-    //             if (sameCoreVariation(item)) {
-    //                 return sum + item.quantity;
-    //             }
-    //             return sum;
-    //         }, 0) + quantity;
-
-    //     for (const offer of productOffers) {
-    //         // Percentage
-    //         if (offer.discountType === "percentage") {
-    //             offerApplied = true;
-    //             offerDiscount = Number(offer.discountValue.percent);
-    //             offerId = offer.id;
-    //             offerMeta = null;
-    //             break;
-    //         }
-
-    //         // Range Buy X Get Y
-    //         else if (offer.discountType === "rangeBuyXGetY") {
-    //             const { start, end, free } = offer.discountValue;
-    //             if (totalGroupQty >= start && totalGroupQty <= end) {
-    //                 offerApplied = true;
-    //                 offerDiscount = 0;
-    //                 offerId = offer.id;
-
-    //                 const paidQty = totalGroupQty - free;
-    //                 offerMeta = {
-    //                     id: offer.id,
-    //                     name: "Range",
-    //                     discountType: offer.discountType,
-    //                     discountValue: { start, end, free },
-    //                     appliedQty: totalGroupQty,
-    //                     effectivePaidQty: paidQty,
-    //                     freeQty: free,
-    //                     offerValue: `${free} Free on ${start}–${end} range`
-    //                 };
-    //                 break;
-    //             }
-    //         }
-
-    //         // Buy X Get Y
-    //         else if (offer.discountType === "buyXGetY") {
-    //             const { buy, get } = offer.discountValue;
-    //             if (totalGroupQty >= buy) {
-    //                 offerApplied = true;
-    //                 offerDiscount = 0;
-    //                 offerId = offer.id;
-
-    //                 const paidQty = totalGroupQty - get;
-    //                 offerMeta = {
-    //                     id: offer.id,
-    //                     name: "BuyXGetY",
-    //                     discountType: offer.discountType,
-    //                     discountValue: { buy, get },
-    //                     appliedQty: totalGroupQty,
-    //                     effectivePaidQty: paidQty,
-    //                     freeQty: get,
-    //                     offerValue: `${get} Free on buying ${buy}`
-    //                 };
-    //                 break;
-    //             }
-    //         }
-    //     }
-
-    //     return { offerApplied, offerDiscount, offerId, offerMeta };
-    // };
-
 
 
     const addToCart = async () => {
@@ -1714,6 +1966,7 @@ const ProductDetail = () => {
 
             // ✅ Apply product offer to all same-core items (ignore color differences)
             if (productOfferApplied && offerMeta) {
+                console.log("offerMeta" , offerMeta)
                 const coreAttributes = Object.entries(flatAttributes)
                     .filter(([key]) => !["color", "colour"].includes(key.toLowerCase()))
                     .map(([k, v]) => `${k}:${v}`)
@@ -1776,7 +2029,7 @@ const ProductDetail = () => {
                 // productOfferId: offerId || null,
                 productOfferApplied: offerApplied ? false : productOfferApplied,
                 productOfferDiscount: offerApplied ? null : offerDiscount || null,
-                productOffer: offerApplied ? null : offerMeta || null,
+                productOffer: offerMeta || null,
                 productOfferId: offerApplied ? null : offerId || null,
                 productId: product.id,
                 variationId: selectedVariation?.id || null,
