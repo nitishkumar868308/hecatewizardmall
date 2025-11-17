@@ -1670,8 +1670,12 @@ const ProductDetail = () => {
             }
             return core;
         };
+        console.log("getCoreAttrs", getCoreAttrs)
+        console.log("selectedVariation", selectedVariation);
+        console.log("attributes", selectedVariation?.attributes);
 
         const selectedCore = getCoreAttrs(selectedVariation?.attributes);
+        console.log("selectedCore", selectedCore)
 
         const sameCoreVariation = (item) => {
             const itemCore = getCoreAttrs(item.attributes);
