@@ -737,7 +737,17 @@ const Header = () => {
                         buildFreePaidItems(product, free, sameCoreVariation, updatedCartForFreeCalc);
 
 
+
                     const freeValue = freeItems.reduce((sum, fi) => sum + fi.freeQty * fi.price, 0);
+
+                    const totalBefore = updatedCartForFreeCalc
+                        .filter(it => sameCoreVariation(it))
+                        .reduce(
+                            (sum, it) => sum + it.quantity * Number(it.pricePerItem || it.price),
+                            0
+                        );
+
+                    const totalAfter = totalBefore - freeValue;
 
                     offerMeta = {
                         id: offer.id,
@@ -748,10 +758,14 @@ const Header = () => {
                         freeQty: free,
                         freeItems,
                         paidItems,
-                        totalPriceBeforeOffer: finalGroupQty * price,
-                        totalPriceAfterOffer: finalGroupQty * price - freeValue,
+                        // totalPriceBeforeOffer: finalGroupQty * price,
+                        // totalPriceAfterOffer: finalGroupQty * price - freeValue,
+                        // totalSavings: freeValue,
+                        // freeQuantityValue: freeValue
+                        totalPriceBeforeOffer: totalBefore,
+                        totalPriceAfterOffer: totalAfter,
                         totalSavings: freeValue,
-                        freeQuantityValue: freeValue
+                        freeQuantityValue: freeValue,
                     };
                     break;
                 }

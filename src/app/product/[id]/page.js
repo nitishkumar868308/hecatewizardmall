@@ -1704,7 +1704,8 @@ const ProductDetail = () => {
                 attributes: selectedVariation.attributes,
                 quantity,
                 pricePerItem: selectedVariation.pricePerItem || selectedVariation.price,
-                addedAt: Date.now()
+                addedAt: Date.now(),
+                createdAt: new Date().toISOString(),
             });
         }
 
@@ -1761,6 +1762,16 @@ const ProductDetail = () => {
 
                     const freeValue = freeItems.reduce((sum, fi) => sum + fi.freeQty * fi.price, 0);
 
+                    const totalBefore = updatedCartForFreeCalc
+                        .filter(it => sameCoreVariation(it))
+                        .reduce(
+                            (sum, it) => sum + it.quantity * Number(it.pricePerItem || it.price),
+                            0
+                        );
+
+                    const totalAfter = totalBefore - freeValue;
+
+
                     offerMeta = {
                         id: offer.id,
                         name: "Range",
@@ -1770,10 +1781,15 @@ const ProductDetail = () => {
                         freeQty: free,
                         freeItems,
                         paidItems,
-                        totalPriceBeforeOffer: finalGroupQty * price,
-                        totalPriceAfterOffer: finalGroupQty * price - freeValue,
+                        // totalPriceBeforeOffer: finalGroupQty * price,
+                        // totalPriceAfterOffer: finalGroupQty * price - freeValue,
+                        // totalSavings: freeValue,
+                        // freeQuantityValue: freeValue
+                        totalPriceBeforeOffer: totalBefore,
+                        totalPriceAfterOffer: totalAfter,
                         totalSavings: freeValue,
-                        freeQuantityValue: freeValue
+                        freeQuantityValue: freeValue,
+
                     };
                     break;
                 }
@@ -1793,6 +1809,16 @@ const ProductDetail = () => {
 
                     const freeValue = freeItems.reduce((sum, fi) => sum + fi.freeQty * fi.price, 0);
 
+                    const totalBefore = paidItems.reduce(
+                        (sum, i) => sum + i.quantity * i.price,
+                        0
+                    ) + freeItems.reduce(
+                        (sum, i) => sum + i.quantity * i.price,
+                        0
+                    );
+
+                    const totalAfter = totalBefore - freeValue;
+
                     offerMeta = {
                         id: offer.id,
                         name: "BuyXGetY",
@@ -1802,10 +1828,15 @@ const ProductDetail = () => {
                         freeQty: get,
                         freeItems,
                         paidItems,
-                        totalPriceBeforeOffer: finalGroupQty * price,
-                        totalPriceAfterOffer: finalGroupQty * price - freeValue,
+                        // totalPriceBeforeOffer: finalGroupQty * price,
+                        // totalPriceAfterOffer: finalGroupQty * price - freeValue,
+                        // totalSavings: freeValue,
+                        // freeQuantityValue: freeValue
+                        totalPriceBeforeOffer: totalBefore,
+                        totalPriceAfterOffer: totalAfter,
                         totalSavings: freeValue,
-                        freeQuantityValue: freeValue
+                        freeQuantityValue: freeValue,
+
                     };
                     break;
                 }
@@ -1966,7 +1997,7 @@ const ProductDetail = () => {
 
             // ✅ Apply product offer to all same-core items (ignore color differences)
             if (productOfferApplied && offerMeta) {
-                console.log("offerMeta" , offerMeta)
+                console.log("offerMeta", offerMeta)
                 const coreAttributes = Object.entries(flatAttributes)
                     .filter(([key]) => !["color", "colour"].includes(key.toLowerCase()))
                     .map(([k, v]) => `${k}:${v}`)
