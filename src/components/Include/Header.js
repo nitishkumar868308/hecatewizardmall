@@ -1096,6 +1096,46 @@ const Header = () => {
         return matched;
     };
 
+    const getTotalDisplay = (item, fullProduct) => {
+        if (item.productOfferApplied && item.productOffer?.name === "Range") {
+            const offer = item.productOffer;
+            return {
+                totalOriginal: offer.totalPriceBeforeOffer,
+                totalAfterOffer: offer.totalPriceAfterOffer,
+                savings: offer.totalSavings,
+            };
+        } else {
+            const totalOriginal = item.colors.reduce((sum, c) => sum + Number(c.pricePerItem) * Number(c.quantity), 0);
+            const totalVariationQty = item.colors.reduce((s, c) => s + Number(c.quantity), 0);
+            const totalAfterBulk = item.colors.reduce((sum, c) => {
+                const matchVar = findColorVariation(fullProduct, c, item);
+                const bulkPrice = Number(
+                    c.bulkPrice ??
+                    matchVar?.bulkPrice ??
+                    baseVariation?.bulkPrice ??
+                    fullProduct?.bulkPrice ??
+                    0
+                );
+                const minQty = Number(
+                    c.bulkMinQty ??
+                    matchVar?.minQuantity ??
+                    baseVariation?.minQuantity ??
+                    fullProduct?.minQuantity ??
+                    0
+                );
+                const isBulk = bulkPrice > 0 && totalVariationQty >= minQty;
+                const effectivePrice = isBulk ? bulkPrice : c.pricePerItem;
+                return sum + effectivePrice * c.quantity;
+            }, 0);
+            return {
+                totalOriginal,
+                totalAfterOffer: totalAfterBulk,
+                savings: totalOriginal - totalAfterBulk,
+            };
+        }
+    };
+
+
     useEffect(() => {
         console.log("🟢 groupedCart changed:", JSON.parse(JSON.stringify(groupedCart)));
     }, [groupedCart]);
@@ -2031,9 +2071,6 @@ const Header = () => {
                                                                         );
                                                                     })}
                                                                 </div>
-
-                                                                {/* TOTAL SECTION */}
-
                                                             </div>
                                                         )}
 
@@ -2059,71 +2096,22 @@ const Header = () => {
 
                                                             {/* RIGHT — TOTAL PRICE */}
                                                             <div className="text-right text-sm font-bold text-gray-900">
-
                                                                 {(() => {
-                                                                    const totalOriginal = item.colors.reduce(
-                                                                        (sum, c) => sum + Number(c.pricePerItem) * Number(c.quantity),
-                                                                        0
-                                                                    );
-
-                                                                    const offer = item.productOfferApplied ? item.productOffer : null;
-                                                                    let totalAfterOffer = 0;
-
-                                                                    if (offer && offer.paidItems && offer.freeItems) {
-                                                                        // RANGE OFFER
-                                                                        totalAfterOffer = offer.paidItems.reduce((sum, p) => {
-                                                                            const color = item.colors.find(
-                                                                                c => c.itemId === p.id || c.id === p.id
-                                                                            );
-                                                                            if (!color) return sum;
-                                                                            return sum + Number(color.pricePerItem) * Number(p.paidQty);
-                                                                        }, 0);
-                                                                    } else {
-                                                                        // BULK / NORMAL
-                                                                        totalAfterOffer = item.colors.reduce((sum, c) => {
-                                                                            const matchVar = findColorVariation(fullProduct, c, item);
-                                                                            const bulkPrice = Number(
-                                                                                c.bulkPrice ??
-                                                                                matchVar?.bulkPrice ??
-                                                                                baseVariation?.bulkPrice ??
-                                                                                fullProduct?.bulkPrice ??
-                                                                                0
-                                                                            );
-                                                                            const minQty = Number(
-                                                                                c.bulkMinQty ??
-                                                                                matchVar?.minQuantity ??
-                                                                                baseVariation?.minQuantity ??
-                                                                                fullProduct?.minQuantity ??
-                                                                                0
-                                                                            );
-                                                                            const isBulk = bulkPrice > 0 && totalVariationQty >= minQty;
-                                                                            const effective = isBulk ? bulkPrice : c.pricePerItem;
-                                                                            return sum + effective * c.quantity;
-                                                                        }, 0);
-                                                                    }
-
-                                                                    const isDiscounted = totalAfterOffer < totalOriginal;
-                                                                    const savings = totalOriginal - totalAfterOffer;
-
+                                                                    const { totalOriginal, totalAfterOffer, savings } = getTotalDisplay(item, fullProduct);
                                                                     return (
                                                                         <div className="flex flex-col items-end">
                                                                             <div>
                                                                                 Total:&nbsp;
-                                                                                {isDiscounted ? (
+                                                                                {savings > 0 ? (
                                                                                     <>
-                                                                                        <span className="line-through text-gray-400 mr-1">
-                                                                                            ₹{fmt(totalOriginal)}
-                                                                                        </span>
-                                                                                        <span className="text-green-700">
-                                                                                            ₹{fmt(totalAfterOffer)} ✅
-                                                                                        </span>
+                                                                                        <span className="line-through text-gray-400 mr-1">₹{fmt(totalOriginal)}</span>
+                                                                                        <span className="text-green-700">₹{fmt(totalAfterOffer)} ✅</span>
                                                                                     </>
                                                                                 ) : (
                                                                                     <span>₹{fmt(totalOriginal)}</span>
                                                                                 )}
                                                                             </div>
-
-                                                                            {isDiscounted && (
+                                                                            {savings > 0 && (
                                                                                 <div className="text-xs text-green-600 font-semibold mt-1">
                                                                                     Total Savings: ₹{fmt(savings)}
                                                                                 </div>
@@ -2131,8 +2119,9 @@ const Header = () => {
                                                                         </div>
                                                                     );
                                                                 })()}
-
                                                             </div>
+
+
                                                         </div>
 
                                                     </div>

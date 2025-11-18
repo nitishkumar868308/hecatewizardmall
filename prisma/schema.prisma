@@ -332,3 +332,12 @@ model Orders {
   updatedAt       DateTime @updatedAt
 }
 
+model ShippingPricing {
+  id        String   @id @default(uuid())
+  name      String
+  price     Float
+  description String?
+  active    Boolean  @default(true)
+  deleted   Int      @default(0)
+  createdAt DateTime @default(now())
+}

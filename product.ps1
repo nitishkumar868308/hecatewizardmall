@@ -369,3 +369,180 @@
                                                         </div>
 
                                                     </div>
+
+
+
+
+//Check Out
+  <div className="lg:col-span-2 space-y-6">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-between">
+            Shopping Cart
+            {userCart.length > 0 && (
+              <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="accent-gray-700 w-5 h-5"
+                  checked={selectAll}
+                  onChange={handleSelectAll}
+                />
+                Select All
+              </label>
+            )}
+          </h2>
+
+          {userCart.length === 0 ? (
+            <p className="text-gray-600">Your cart is empty.</p>
+          ) : (
+            userCart.map((cartItem) => {
+              const { buyXGetYOffer, discountOffer } = getCartItemOffer(cartItem);
+              const product = products.find((p) => p.id === cartItem.productId);
+              console.log("productTax", product)
+              const qty = quantities[cartItem.id] || 1;
+              const pricePerItem = Number(cartItem.pricePerItem || cartItem.price);
+              let originalTotal = pricePerItem * qty;
+
+              // --- STEP 1: Apply Discount (Before Tax) ---
+              let discountedTotal = originalTotal;
+              let discountPercent = 0;
+
+              if (discountOffer && discountOffer.discountPercentage?.percent) {
+                discountPercent = Number(discountOffer.discountPercentage.percent) || 0;
+                const discountAmount = (originalTotal * discountPercent) / 100;
+                discountedTotal = originalTotal - discountAmount;
+              }
+
+              // --- STEP 2: Apply Tax on Discounted Amount ---
+              let taxAmount = 0;
+              let taxPercent = 0;
+
+              if (product) {
+                const matchedTax = countryTax.find(
+                  (ct) =>
+                    ct.countryCode === selectedCountry &&
+                    ct.categoryId === product.categoryId &&
+                    ct.type === "General"
+                );
+
+                if (matchedTax) {
+                  taxPercent = matchedTax.generalTax || 0;
+                  taxAmount = (discountedTotal * taxPercent) / 100;
+                }
+              }
+
+              // --- STEP 3: Final Total after Discount + Tax ---
+              const totalWithTax = discountedTotal + taxAmount;
+
+              return (
+                <div
+                  key={cartItem.id}
+                  className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-lg rounded-xl p-4 gap-4 hover:shadow-xl transition-shadow"
+                >
+                  {/* Checkbox */}
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.includes(cartItem.id)}
+                    onChange={() => toggleSelectItem(cartItem.id)}
+                    className="accent-gray-700 w-5 h-5 mt-1 md:mt-0"
+                  />
+
+                  {/* Image + Product info */}
+                  <div className="flex items-start md:items-center gap-4 flex-1">
+                    <img
+                      src={cartItem.image}
+                      alt={cartItem.productName}
+                      className="w-24 h-24 object-cover rounded-lg border"
+                    />
+                    <div className="flex flex-col justify-between flex-1">
+                      <h3 className="font-semibold text-lg text-gray-800">{cartItem.productName}</h3>
+                      <p className="text-gray-500 text-sm">
+                        {Object.entries(cartItem.attributes || {})
+                          .map(([key, val]) => `${key}: ${val}`)
+                          .join(", ")}
+                      </p>
+
+                      {/* Pricing */}
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {/* Original Price */}
+                        {discountPercent > 0 ? (
+                          <>
+                            <span className="text-gray-400 line-through">
+                              {`${cartItem.currency} ${cartItem.currencySymbol}${originalTotal.toFixed(2)}`}
+                            </span>
+
+                            <span className="text-green-700 font-semibold">
+                              {discountPercent}% OFF
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-gray-400 line-through">
+                            {cartItem.currency} {cartItem.currencySymbol}
+                            {originalTotal.toFixed(2)}
+                          </span>
+                        )}
+
+                        {/* Tax Info */}
+                        {taxAmount > 0 && (
+                          <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">
+                            + {taxPercent}% Tax
+                          </span>
+                        )}
+
+                        {/* Buy X Get Y Offer */}
+                        {buyXGetYOffer && (() => {
+                          if (qty === buyXGetYOffer.buy) {
+                            return (
+                              <p className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded">
+                                Offer applied! (Total {qty + buyXGetYOffer.free} items)
+                              </p>
+                            );
+                          }
+
+                          if (qty < buyXGetYOffer.buy) {
+                            return (
+                              <p className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded">
+                                Buy {buyXGetYOffer.buy - qty} more, Get {buyXGetYOffer.free} free
+                              </p>
+                            );
+                          }
+
+                          return null;
+                        })()}
+                      </div>
+
+                      {/* Total After Discount + Tax */}
+                      <p className="text-gray-900 font-bold mt-2 text-lg">
+                        Total: {cartItem.currency} {cartItem.currencySymbol}
+                        {totalWithTax.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Quantity + Remove */}
+                  <div className="flex flex-col items-start md:items-end gap-2 mt-2 md:mt-0">
+                    <div className="flex items-center border rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => handleQuantityChange(cartItem.id, qty - 1)}
+                        className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
+                      >
+                        -
+                      </button>
+                      <span className="px-4 font-medium">{qty}</span>
+                      <button
+                        onClick={() => handleQuantityChange(cartItem.id, qty + 1)}
+                        className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => openRemoveModal(cartItem)}
+                      className="text-red-600 cursor-pointer hover:text-red-800 font-semibold mt-2"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>

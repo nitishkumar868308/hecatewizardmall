@@ -15,8 +15,12 @@ import {
 import { HomeIcon, BuildingOffice2Icon, CubeIcon } from "@heroicons/react/24/outline";
 import { createOrder } from "@/app/redux/slices/order/orderSlice";
 import { load } from "@cashfreepayments/cashfree-js";
+import { updateUser } from "@/app/redux/slices/updateUser/updateUserSlice";
+import ReactSelect from "react-select";
+import { useCountries, getStates, getCities, fetchPincodeData } from "@/lib/CustomHook/useCountries";
 
 const Checkout = () => {
+  const [showConfirm, setShowConfirm] = useState(false);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.me);
   const country = useSelector((state) => state.country);
@@ -38,7 +42,80 @@ const Checkout = () => {
   const [shippingOption, setShippingOption] = useState([]);
   const [selectedShippingOption, setSelectedShippingOption] = useState(null);
   const [selectedCountry, setSelectedCountry] = useState(null);
+  const [expandedAccordion, setExpandedAccordion] = useState(null);
+  const [selectedItemId, setSelectedItemId] = useState(null);
+  const [selectedItemIdForRemove, setSelectedItemIdForRemove] = useState(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [subtotal, setSubtotal] = useState(0);
+  const [userCartState, setUserCartState] = useState([]);
+  const [open, setOpen] = useState(false);
+  const { countries } = useCountries();
+  const [values, setValues] = useState({
+    name: user?.name || "",
+    phone: user?.phone || "",
+    address: user?.address || "",
+    city: user?.city || "",
+    state: user?.state || "",
+    pincode: user?.pincode || "",
+    country: user?.country || "",
+    gender: user?.gender || "",
+    profileImage: null,
+  });
 
+  const requiredFields = [
+    "address",
+    "city",
+    "state",
+    "country",
+    "gender",
+    "phone",
+    "pincode",
+  ];
+
+
+  const isIncomplete = requiredFields.some(
+    (field) => !user?.[field] || user[field].toString().trim() === ""
+  );
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [selectedState, setSelectedState] = useState([]);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+  useEffect(() => {
+    if (!user) dispatch(fetchMe());
+    if (user) {
+      setSelectedCountry(user.country || "");
+      setSelectedState(user.state || "");
+    }
+  }, [user, dispatch]);
+
+  useEffect(() => {
+    if (selectedCountry) {
+      setLoadingStates(true);
+      getStates(selectedCountry)
+        .then((res) => setStates(res))
+        .finally(() => setLoadingStates(false));
+      setCities([]);
+      setSelectedState("");
+    }
+  }, [selectedCountry]);
+
+
+  const userCart = useMemo(() => {
+    return items?.filter(item => String(item.userId) === String(user?.id)) || [];
+  }, [items, user?.id]);
+  console.log("userCart", userCart)
+  useEffect(() => {
+    setUserCartState(prev => {
+      // Only update if different length or different ids
+      const prevIds = prev.map(i => i.id).join(',');
+      const newIds = userCart.map(i => i.id).join(',');
+      if (prevIds !== newIds) {
+        return userCart;
+      }
+      return prev;
+    });
+  }, [userCart]);
   // const [isModalOpen, setIsModalOpen] = useState(false);
 
   // const handleClick = () => {
@@ -149,17 +226,15 @@ const Checkout = () => {
   }, [user, selectedShipping]);
 
 
-  const userCart = useMemo(() => {
-    return items?.filter(item => String(item.userId) === String(user?.id)) || [];
-  }, [items, user?.id]);
-  console.log("userCart", userCart)
 
   useEffect(() => {
-    if (userCart.length > 0 && selectedItems.length === 0) {
-      setSelectedItems(userCart.map(item => item.id));
+    if (userCart.length > 0 && selectedItems.length === 0 && !selectAll) {
+      setSelectedItems(userCart.map((_, i) => i));
       setSelectAll(true);
     }
   }, [userCart]);
+
+
 
   useEffect(() => {
     if (userCart.length > 0) {
@@ -186,41 +261,228 @@ const Checkout = () => {
   const handleQuantityChange = async (id, value) => {
     if (value < 1) return;
 
-    // Update local quantity for instant UI
     setQuantities(prev => ({ ...prev, [id]: value }));
 
-    // Persist change to backend
     try {
       await dispatch(updateCart({ id, quantity: value })).unwrap();
       toast.success("Cart updated");
-      dispatch(fetchCart()); // optional: refresh cart from server
+      dispatch(fetchCart());
     } catch (err) {
       toast.error("Failed to update cart");
     }
   };
 
-  const toggleSelectItem = (id) => {
-    if (selectedItems.includes(id)) {
-      setSelectedItems(selectedItems.filter(itemId => itemId !== id));
-    } else {
-      setSelectedItems([...selectedItems, id]);
-    }
-  };
+  // const toggleSelectItem = (id) => {
+  //   if (selectedItems.includes(id)) {
+  //     setSelectedItems(selectedItems.filter(itemId => itemId !== id));
+  //   } else {
+  //     setSelectedItems([...selectedItems, id]);
+  //   }
+  // };
+
+  // const handleSelectAll = () => {
+  //   if (selectAll) {
+  //     setSelectedItems([]);
+  //     setSelectAll(false);
+  //   } else {
+  //     setSelectedItems(userCart.map(item => item.id));
+  //     setSelectAll(true);
+  //   }
+  // };
 
   const handleSelectAll = () => {
     if (selectAll) {
       setSelectedItems([]);
       setSelectAll(false);
     } else {
-      setSelectedItems(userCart.map(item => item.id));
+      const allIndexes = userCart.map((_, i) => i);   // index list
+      setSelectedItems(allIndexes);
       setSelectAll(true);
     }
   };
+
+
+
+  const toggleSelectItem = (index) => {
+    let updated;
+
+    if (selectedItems.includes(index)) {
+      updated = selectedItems.filter(i => i !== index);
+    } else {
+      updated = [...selectedItems, index];
+    }
+
+    setSelectedItems(updated);
+
+    // Auto update select all
+    const allIndexes = userCart.map((_, i) => i);
+    setSelectAll(updated.length === allIndexes.length);
+  };
+
 
   const openRemoveModal = (item) => {
     setItemToRemove(item);
     setModalOpen(true);
   };
+
+  const groupedCart = useMemo(() => {
+    const acc = {};
+
+    userCart.forEach(item => {
+      // build key based on non-color attributes
+      const key = item.productId + '-' + Object.entries(item.attributes || {})
+        .filter(([k]) => k !== 'color')
+        .map(([k, v]) => `${k}:${v}`).join('|');
+
+      if (!acc[key]) {
+        acc[key] = {
+          productId: item.productId,
+          productName: item.productName,
+          variationId: item.variationId || null,
+          attributes: { ...item.attributes, color: null },
+          currency: item.currency,
+          currencySymbol: item.currencySymbol,
+          itemIds: [item.id],
+          colors: [],
+          productOfferApplied: Boolean(item.productOfferApplied),
+          productOffer: item.productOffer ?? null,
+        };
+      } else {
+        acc[key] = { ...acc[key], itemIds: [...acc[key].itemIds, item.id] };
+      }
+
+      const matchColor = (item.attributes?.color || "").toString();
+      const existing = acc[key].colors.find(
+        c => (c.color || "").toLowerCase().trim() === matchColor.toLowerCase().trim()
+      );
+
+      // normalize numeric fields to Number (avoid string math)
+      const normalized = {
+        color: item.attributes?.color,
+        quantity: Number(item.quantity || 0),
+        pricePerItem: Number(item.pricePerItem || 0),
+        image: item.image,
+        itemId: item.id,
+        variationId: item.variationId || null,
+        // these may be null/undefined — keep as null or Number
+        bulkPrice: item.bulkPrice == null ? null : Number(item.bulkPrice),
+        bulkMinQty: item.bulkMinQty == null ? null : Number(item.bulkMinQty),
+        offerApplied: Boolean(item.offerApplied),
+        totalPrice: item.totalPrice == null ? Number(item.pricePerItem || 0) * Number(item.quantity || 0) : Number(item.totalPrice),
+
+        productOfferApplied: Boolean(item.productOfferApplied),
+        productOfferDiscount: item.productOfferDiscount ?? null,
+        productOfferId: item.productOfferId ?? null,
+        productOffer: item.productOffer ?? null,
+      };
+      console.log("range offer", item.productOfferApplied, item.productOffer);
+
+      if (existing) {
+        acc[key].colors = acc[key].colors.map(c =>
+          (c.color || "").toLowerCase().trim() === matchColor.toLowerCase().trim()
+            ? { ...c, ...normalized }
+            : c
+        );
+      } else {
+        acc[key].colors = [...acc[key].colors, normalized];
+      }
+    });
+
+    // return deep cloned plain object (safe for render)
+    return JSON.parse(JSON.stringify(acc));
+  }, [JSON.stringify(userCart)]);
+
+  const findColorVariation = (fullProduct, c, item) => {
+    if (!fullProduct?.variations?.length) return null;
+
+    // ✅ Extract size properly — prioritize color-level first, then fallback
+    const currentSize =
+      (c.size && c.size.toLowerCase().trim()) ||
+      (item.attributes?.size && item.attributes.size.toLowerCase().trim()) ||
+      null;
+
+    const currentColor =
+      (c.color && c.color.toLowerCase().trim()) ||
+      (item.attributes?.color && item.attributes.color.toLowerCase().trim()) ||
+      null;
+
+    if (!currentColor) return null; // must have color
+
+    // ✅ exact color+size match from variation name
+    const matched = fullProduct.variations.find((v) => {
+      const name = v.variationName?.toLowerCase().trim() || "";
+      const normalized = name.replace(/[\s/,-]+/g, " ").trim();
+
+      const colorMatch = new RegExp(`\\b${currentColor}\\b`).test(normalized);
+      const sizeMatch = currentSize
+        ? new RegExp(`\\b${currentSize}\\b`).test(normalized)
+        : true;
+
+      return colorMatch && sizeMatch;
+    });
+
+    // ✅ Debug log to confirm
+    console.log(
+      `🧩 Matched for ${currentColor}/${currentSize || "no-size"} →`,
+      matched?.variationName,
+      matched?.bulkPrice
+    );
+
+    return matched;
+  };
+
+  const updateVariationQuantity = async (itemId, delta) => {
+    const targetItem = userCartState.find((i) => i.id === itemId);
+    if (!targetItem) return;
+
+    const newQuantity = Math.max(1, targetItem.quantity + delta);
+
+    // ✅ Find the full product data (for price, variation, bulk info)
+    const fullProduct = products.find((p) => p.id === targetItem.productId);
+    if (!fullProduct) return;
+
+    // ✅ Find correct variation (color/size-based)
+    const selectedVariation =
+      fullProduct.variations?.find((v) => v.id === targetItem.variationId) ||
+      findColorVariation(
+        fullProduct,
+        {
+          color: targetItem.attributes?.color,
+          size: targetItem.attributes?.size,
+        },
+        targetItem
+      );
+
+    // ✅ Compute fresh bulk status
+    const newBulkStatus = computeBulkStatus({
+      product: fullProduct,
+      selectedVariation,
+      selectedAttributes: targetItem.attributes,
+      userCart: userCartState,
+      quantity: newQuantity,
+      cartItem: targetItem,
+    });
+
+    const isBulkEligible = newBulkStatus.eligible;
+
+    // ✅ Update all same-group items with their own bulk rules
+    await updateGroupBulkStatus(newBulkStatus, isBulkEligible, newQuantity, targetItem, fullProduct);
+
+    // ✅ Optional UI update
+    setUserCartState((prev) =>
+      prev.map((i) =>
+        i.id === itemId ? { ...i, quantity: newQuantity } : i
+      )
+    );
+
+    console.log("🧮 Cart bulk offer sync:", {
+      itemId,
+      newQuantity,
+      isBulkEligible,
+      groupQty: newBulkStatus.totalGroupQty,
+    });
+  };
+
 
   const confirmRemove = async () => {
     if (!itemToRemove) return;
@@ -316,35 +578,77 @@ const Checkout = () => {
     return { buyXGetYOffer, discountOffer };
   };
 
-  // Subtotal including tax
-  const subtotal = useMemo(() => {
-    return userCart
-      .filter(item => selectedItems.includes(item.id))
-      .reduce((sum, item) => {
-        const qty = quantities[item.id] || 1;
-        const price = Number(item.pricePerItem || item.price);
-        let discountedTotal = price * qty;
+  useEffect(() => {
+    let sum = 0;
 
-        const { discountOffer } = getCartItemOffer(item);
-        if (discountOffer?.discountPercentage?.percent) {
-          discountedTotal -= (discountedTotal * discountOffer.discountPercentage.percent) / 100;
-        }
+    selectedItems.forEach(index => {
+      const item = Object.values(groupedCart)[index];
+      console.log("itemCheckout", item)
+      if (!item) return;
 
-        let taxAmount = 0;
-        const product = products.find(p => p.id === item.productId);
-        if (product) {
-          const matchedTax = countryTax.find(
-            (ct) =>
-              ct.countryCode === selectedCountry &&
-              ct.categoryId === product.categoryId &&
-              ct.type === "General"
+      const fullProduct = products.find(p => p.id === item.productId);
+
+      const baseVariation =
+        fullProduct?.variations?.find(v => v.id === item.variationId) ||
+        fullProduct?.selectedVariation ||
+        null;
+
+      const totalVariationQty = item.colors.reduce(
+        (s, c) => s + Number(c.quantity || 0),
+        0
+      );
+
+      let totalAfterOffer = 0;
+
+      // ==== RANGE OFFER ====
+      if (item.productOfferApplied && item.productOffer?.paidItems) {
+        totalAfterOffer = item.productOffer.paidItems.reduce((sum, p) => {
+          const color = item.colors.find(
+            c =>
+              c.itemId === p.id ||
+              c.id === p.id ||
+              c.variationId === p.variationId
           );
-          if (matchedTax) taxAmount = (discountedTotal * (matchedTax.generalTax || 0)) / 100;
-        }
+          if (!color) return sum;
+          return sum + Number(color.pricePerItem) * Number(p.paidQty);
+        }, 0);
+      }
 
-        return sum + discountedTotal + taxAmount;
-      }, 0);
-  }, [userCart, selectedItems, quantities, products, countryTax, selectedCountry]);
+      // ==== BULK / NORMAL ====
+      else {
+        totalAfterOffer = item.colors.reduce((sum, c) => {
+          const rawPrice = Number(c.pricePerItem);
+
+          const matchVar = fullProduct?.variations?.find(v => v.color === c.color);
+
+          const bulkPrice = Number(
+            c.bulkPrice ??
+            matchVar?.bulkPrice ??
+            baseVariation?.bulkPrice ??
+            fullProduct?.bulkPrice ??
+            0
+          );
+
+          const minQty = Number(
+            c.bulkMinQty ??
+            matchVar?.minQuantity ??
+            baseVariation?.minQuantity ??
+            fullProduct?.minQuantity ??
+            0
+          );
+
+          const isBulk = bulkPrice > 0 && totalVariationQty >= minQty;
+
+          return sum + (isBulk ? bulkPrice : rawPrice) * Number(c.quantity);
+        }, 0);
+      }
+
+      sum += totalAfterOffer;
+    });
+
+    setSubtotal(sum);
+  }, [selectedItems, groupedCart]);
+
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -440,14 +744,501 @@ const Checkout = () => {
   const shipping = selectedShippingOption?.price || 0;
   const grandTotal = subtotal + shipping;
 
-  const currencySymbol = selectedItems.length > 0
-    ? userCart.find(item => selectedItems.includes(item.id))?.currencySymbol || "$"
-    : "$";
+  const firstSelectedItem =
+    selectedItems.length > 0
+      ? Object.values(groupedCart)[selectedItems[0]]
+      : null;
 
-  const currency = selectedItems.length > 0
-    ? userCart.find(item => selectedItems.includes(item.id))?.currency || "INR"
-    : "INR";
+  const currencySymbol = firstSelectedItem?.currencySymbol || "₹";
+  const currency = firstSelectedItem?.currency || "INR";
 
+  const handleDelete = async () => {
+    try {
+      console.log("selectedItemId:", selectedItemId);
+
+      // 🟢 CASE 1 → Multiple delete (array of IDs)
+      if (Array.isArray(selectedItemId) && selectedItemId.length > 0) {
+        for (const id of selectedItemId) {
+          await dispatch(deleteCartItem({ id })).unwrap();
+        }
+      }
+
+      // 🟢 CASE 2 → Single delete (string)
+      else if (typeof selectedItemId === "string") {
+        await dispatch(deleteCartItem({ id: selectedItemId })).unwrap();
+      }
+
+      // ❌ No valid ID found
+      else {
+        toast.error("No items selected to delete");
+        return;
+      }
+
+      // Refresh cart
+      const freshCart = await dispatch(fetchCart()).unwrap();
+
+      toast.success("Item(s) deleted successfully");
+
+      // 🔄 Recalculate offers, bulk, range, free qty
+      for (const item of freshCart) {
+        const fullProduct = products.find((p) => p.id === item.productId);
+        if (!fullProduct) continue;
+
+        const selectedVariation =
+          fullProduct.variations?.find((v) => v.id === item.variationId);
+
+        const newBulkStatus = computeBulkStatus({
+          product: fullProduct,
+          selectedVariation,
+          selectedAttributes: item.attributes,
+          userCart: freshCart,
+          quantity: item.quantity,
+          cartItem: item,
+        });
+
+        await updateGroupBulkStatus(
+          newBulkStatus,
+          newBulkStatus.eligible,
+          item.quantity,
+          item,
+          fullProduct
+        );
+      }
+
+      setShowConfirm(false);
+    } catch (err) {
+      toast.error(err.message || "Failed to delete item(s)");
+    }
+  };
+
+  const updateGroupBulkStatus = async (bulkStatus, isBulkEligible, newQty, cartItem, fullProduct) => {
+    const { sameGroupItems } = bulkStatus;
+
+    // 🧮 Total group quantity (ignoring color)
+    const totalGroupQty = sameGroupItems.reduce((sum, item) => {
+      const qty = item.id === cartItem.id ? newQty : item.quantity;
+      return sum + qty;
+    }, 0);
+
+    console.log("🧮 Group Total:", totalGroupQty);
+
+    // 🧠 1️⃣ Apply product offer once for the whole group
+    const sampleVariation =
+      fullProduct?.variations?.find((v) => v.id === cartItem.variationId) ||
+      fullProduct?.variations?.find(
+        (v) =>
+          v.color?.toLowerCase() === cartItem.attributes?.color?.toLowerCase() &&
+          v.size?.toLowerCase() === cartItem.attributes?.size?.toLowerCase()
+      );
+
+    const { offerApplied, offerMeta, offerId } = applyProductOffers(
+      fullProduct,
+      sampleVariation,
+      newQty,
+      sameGroupItems,
+      cartItem.id
+    );
+
+    // 🧩 Share the same offerMeta with all sameGroupItems
+    const groupOffer = offerApplied ? offerMeta : null;
+    const groupOfferId = offerApplied ? offerId : null;
+
+    await Promise.all(
+      sameGroupItems.map(async (item) => {
+        const itemVariation =
+          fullProduct?.variations?.find((v) => v.id === item.variationId) ||
+          fullProduct?.variations?.find(
+            (v) =>
+              v.color?.toLowerCase() === item.attributes?.color?.toLowerCase() &&
+              v.size?.toLowerCase() === item.attributes?.size?.toLowerCase()
+          );
+
+        const basePrice = Number(item.pricePerItem);
+        const itemBulkPrice = Number(itemVariation?.bulkPrice || 0);
+        const itemBulkMinQty = Number(itemVariation?.bulkMinQty || fullProduct?.minQuantity || 0);
+        const currentQty = item.id === cartItem.id ? newQty : item.quantity;
+
+        const isItemBulkEligible =
+          itemBulkPrice > 0 &&
+          itemBulkMinQty > 0 &&
+          bulkStatus.totalGroupQty >= itemBulkMinQty;
+
+        let finalTotal = basePrice * currentQty;
+        let offerAppliedFlag = false;
+        let productOfferApplied = false;
+        let productOffer = null;
+
+        // ✅ Use the same shared group offer
+        if (groupOffer && groupOffer.discountType === "rangeBuyXGetY") {
+          const { start, end, free } = groupOffer.discountValue;
+
+          if (totalGroupQty >= start && totalGroupQty <= end) {
+            productOfferApplied = true;
+            productOffer = offerMeta;
+
+            // Sort group items by price (ascending)
+            const sortedByPrice = [...sameGroupItems].sort((a, b) => a.pricePerItem - b.pricePerItem);
+            const freeItems = sortedByPrice.slice(0, free);
+
+            const isFree = freeItems.some((f) => f.id === item.id);
+            finalTotal = isFree ? 0 : basePrice * currentQty;
+
+            console.log("🎁 Range Offer Applied (shared):", {
+              itemId: item.id,
+              isFree,
+              freeItems: freeItems.map((f) => f.attributes?.color),
+              totalGroupQty,
+            });
+          }
+        } else if (isItemBulkEligible) {
+          offerAppliedFlag = true;
+          finalTotal = itemBulkPrice * currentQty;
+        }
+
+        const payload = {
+          id: item.id,
+          quantity: currentQty,
+          offerApplied: offerAppliedFlag,
+          bulkPrice: isItemBulkEligible ? itemBulkPrice : null,
+          bulkMinQty: isItemBulkEligible ? itemBulkMinQty : null,
+          totalPrice: finalTotal,
+          productOfferApplied,
+          productOffer,
+          productOfferId: productOfferApplied ? groupOfferId : null,
+        };
+
+        await dispatch(updateCart(payload));
+      })
+    );
+
+    console.log("✅ Cart updated with unified shared offer logic");
+    await dispatch(fetchCart());
+  };
+
+  const buildFreePaidItems = (product, freeQty, sameCoreVariation, cart) => {
+    let items = cart
+      .filter(it => {
+        if (it.productId !== product.id) return false;
+        return sameCoreVariation(it); // color ignore + core attribute match
+      })
+      .map(it => ({
+        id: it.id,
+        variationId: it.variationId,
+        attributes: it.attributes,
+        quantity: it.quantity,
+        price: Number(it.pricePerItem || it.price),
+        addedAt: it.addedAt || 0
+      }));
+
+
+    const freeItems = [];
+    const paidItems = [];
+
+    while (freeQty > 0 && items.length > 0) {
+      let minPrice = Math.min(...items.map(i => i.price));
+      let lowestItems = items.filter(i => i.price === minPrice);
+      let selected = lowestItems.reduce((a, b) =>
+        a.addedAt > b.addedAt ? a : b
+      );
+
+      let freeTake = Math.min(selected.quantity, freeQty);
+
+      freeItems.push({
+        ...selected,
+        freeQty: freeTake
+      });
+
+      selected.quantity -= freeTake;
+      freeQty -= freeTake;
+
+      if (selected.quantity === 0) {
+        items = items.filter(i => i.id !== selected.id);
+      }
+    }
+
+    for (const item of items) {
+      paidItems.push({
+        ...item,
+        paidQty: item.quantity
+      });
+    }
+
+    return { freeItems, paidItems };
+  };
+
+  const applyProductOffers = (product, selectedVariation, quantity, userCart = [], cartItemId = null) => {
+    let offerApplied = false;
+    let offerDiscount = 0;
+    let offerMeta = null;
+    let offerId = null;
+
+    const productOffers = (product.offers || []).filter(o => o.active);
+    if (!productOffers.length) return { offerApplied, offerDiscount, offerId, offerMeta };
+
+    // 🔹 Normalize attributes ignoring color/colour
+    const getCoreAttrs = (attrs = {}) => {
+      const core = {};
+      for (const [k, v] of Object.entries(attrs)) {
+        if (!["color", "colour"].includes(k.toLowerCase())) {
+          core[k.toLowerCase().trim()] = String(v).toLowerCase().trim();
+        }
+      }
+      return core;
+    };
+
+    const selectedCore = getCoreAttrs(selectedVariation?.attributes);
+
+    const sameCoreVariation = (item) => {
+      const itemCore = getCoreAttrs(item.attributes);
+      return Object.entries(selectedCore).every(([k, v]) => itemCore[k] && itemCore[k] === v);
+    };
+
+    // 🔹 Compute total group quantity including updated item if cartItemId provided
+    const totalGroupQty = userCart.reduce((sum, item) => {
+      if (item.productId !== product.id) return sum;
+      if (!sameCoreVariation(item)) return sum;
+
+      // ✅ Replace qty for the item being updated
+      if (cartItemId && item.id === cartItemId) return sum + quantity;
+      return sum + item.quantity;
+    }, 0);
+
+    // 🔹 For new add-to-cart item, include quantity
+    const finalGroupQty = cartItemId ? totalGroupQty : totalGroupQty + quantity;
+    const price = Number(selectedVariation.pricePerItem || selectedVariation.price || 0);
+
+    const updatedCartForFreeCalc = userCart.map(it => ({
+      ...it,
+      attributes: { ...(it.attributes || {}) }
+    }));
+
+    // 👉 If this is a new add-to-cart operation (not update)
+    if (!cartItemId) {
+      updatedCartForFreeCalc.push({
+        id: "__temp__",
+        productId: product.id,
+        variationId: selectedVariation.id,
+        attributes: selectedVariation.attributes,
+        quantity,
+        pricePerItem: selectedVariation.pricePerItem || selectedVariation.price,
+        addedAt: Date.now()
+      });
+    }
+
+    // 👉 If update case:
+    if (cartItemId) {
+      updatedCartForFreeCalc.forEach((it) => {
+        if (it.id === cartItemId) {
+          it.quantity = quantity;   // now SAFE
+        }
+      });
+    }
+
+    for (const offer of productOffers) {
+
+      // 🔥 Offer Check Starts
+
+      // 1️⃣ Percentage
+      if (offer.discountType === "percentage") {
+        offerApplied = true;
+        offerDiscount = Number(offer.discountValue.percent);
+        offerId = offer.id;
+
+        const totalBefore = finalGroupQty * price;
+        const savings = (totalBefore * offerDiscount) / 100;
+        const totalAfter = totalBefore - savings;
+
+        offerMeta = {
+          id: offer.id,
+          name: "Percentage",
+          discountType: offer.discountType,
+          discountValue: offer.discountValue,
+          appliedQty: finalGroupQty,
+          totalPriceBeforeOffer: totalBefore,
+          totalPriceAfterOffer: totalAfter,
+          totalSavings: savings,
+          freeQuantityValue: 0,
+          freeItems: [],
+          paidItems: []
+        };
+        break;
+      }
+
+      // 2️⃣ Range Buy X Get Y
+      if (offer.discountType === "rangeBuyXGetY") {
+        const { start, end, free } = offer.discountValue;
+        if (finalGroupQty >= start && finalGroupQty <= end) {
+          offerApplied = true;
+          offerDiscount = 0;
+          offerId = offer.id;
+
+          const { freeItems, paidItems } =
+            buildFreePaidItems(product, free, sameCoreVariation, updatedCartForFreeCalc);
+
+
+
+          const freeValue = freeItems.reduce((sum, fi) => sum + fi.freeQty * fi.price, 0);
+
+          const totalBefore = updatedCartForFreeCalc
+            .filter(it => sameCoreVariation(it))
+            .reduce(
+              (sum, it) => sum + it.quantity * Number(it.pricePerItem || it.price),
+              0
+            );
+
+          const totalAfter = totalBefore - freeValue;
+
+          offerMeta = {
+            id: offer.id,
+            name: "Range",
+            discountType: offer.discountType,
+            discountValue: { start, end, free },
+            appliedQty: finalGroupQty,
+            freeQty: free,
+            freeItems,
+            paidItems,
+            // totalPriceBeforeOffer: finalGroupQty * price,
+            // totalPriceAfterOffer: finalGroupQty * price - freeValue,
+            // totalSavings: freeValue,
+            // freeQuantityValue: freeValue
+            totalPriceBeforeOffer: totalBefore,
+            totalPriceAfterOffer: totalAfter,
+            totalSavings: freeValue,
+            freeQuantityValue: freeValue,
+          };
+          break;
+        }
+      }
+
+      // 3️⃣ Buy X Get Y
+      if (offer.discountType === "buyXGetY") {
+        const { buy, get } = offer.discountValue;
+        if (finalGroupQty >= buy) {
+          offerApplied = true;
+          offerDiscount = 0;
+          offerId = offer.id;
+
+          const { freeItems, paidItems } =
+            buildFreePaidItems(product, free, sameCoreVariation, updatedCartForFreeCalc);
+
+
+          const freeValue = freeItems.reduce((sum, fi) => sum + fi.freeQty * fi.price, 0);
+
+          offerMeta = {
+            id: offer.id,
+            name: "BuyXGetY",
+            discountType: offer.discountType,
+            discountValue: { buy, get },
+            appliedQty: finalGroupQty,
+            freeQty: get,
+            freeItems,
+            paidItems,
+            totalPriceBeforeOffer: finalGroupQty * price,
+            totalPriceAfterOffer: finalGroupQty * price - freeValue,
+            totalSavings: freeValue,
+            freeQuantityValue: freeValue
+          };
+          break;
+        }
+      }
+    }
+
+    return { offerApplied, offerDiscount, offerId, offerMeta };
+  };
+
+  // 🧠 Compute bulk offer eligibility (shared across variations)
+  const computeBulkStatus = ({
+    product,
+    selectedVariation,
+    selectedAttributes,
+    userCart,
+    quantity,
+    cartItem,
+  }) => {
+    const productMinQty = Number(product?.minQuantity || 0);
+    const variationBulkPrice = Number(selectedVariation?.bulkPrice ?? 0);
+    const variationBulkMinQty =
+      Number(selectedVariation?.bulkMinQty ?? productMinQty) || 0;
+
+    // 🎯 Flatten attributes except color
+    const flatAttributes = {};
+    Object.entries(selectedAttributes || {}).forEach(([k, v]) => {
+      if (v && v !== "N/A") flatAttributes[k.toLowerCase()] = v;
+    });
+
+    const coreAttributes = Object.entries(flatAttributes).filter(
+      ([key]) => !["color", "colour"].includes(key.toLowerCase())
+    );
+    const coreKey = coreAttributes.map(([k, v]) => `${k}:${v}`).join("|");
+
+    // 🧩 Find same group items
+    const sameGroupItems = (Array.isArray(userCart) ? userCart : []).filter((item) => {
+      if (!item) return false;
+      if (item.productId !== product.id) return false;
+      const itemCoreKey = Object.entries(item.attributes || {})
+        .filter(([k]) => !["color", "colour"].includes(k.toLowerCase()))
+        .map(([k, v]) => `${k}:${v}`)
+        .join("|");
+      return itemCoreKey === coreKey;
+    });
+
+    // 🧮 Replace current item's qty with new one
+    const totalGroupQty = sameGroupItems.reduce((sum, item) => {
+      if (item.id === cartItem?.id) {
+        return sum + Number(quantity || 0);
+      }
+      return sum + (Number(item.quantity) || 0);
+    }, 0);
+
+    // ✅ Eligibility only depends on total group qty meeting the *lowest* bulk min qty
+    const allMinQtys = sameGroupItems.map((it) => {
+      const varData = product.variations?.find((v) => v.id === it.variationId);
+      return Number(varData?.bulkMinQty || 0);
+    });
+    const minRequiredQty = Math.min(...allMinQtys.filter((x) => x > 0), variationBulkMinQty);
+
+    const eligible = totalGroupQty >= minRequiredQty;
+
+    console.log("💡 Bulk Check:", {
+      totalGroupQty,
+      minRequiredQty,
+      eligible,
+    });
+
+    return {
+      eligible,
+      totalGroupQty,
+      sameGroupItems,
+    };
+  };
+
+  const handleImageUpload = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Upload failed");
+
+    return Array.isArray(data.urls) ? data.urls[0] : data.urls;
+  };
+
+  // Submit
+  const handleSubmit = async () => {
+    try {
+      let payload = { ...values };
+
+      if (values.profileImage) {
+        const uploadedUrl = await handleImageUpload(values.profileImage);
+        payload.profileImage = uploadedUrl;
+      }
+
+      const response = await dispatch(updateUser(payload)).unwrap();
+      toast.success(response.message || "Profile updated!");
+      setOpen(false);
+    } catch (err) {
+      toast.error(err.message || "Failed to update");
+    }
+  };
 
   return (
     <div className=" bg-gray-50 py-8 px-4">
@@ -468,162 +1259,254 @@ const Checkout = () => {
             )}
           </h2>
 
-          {userCart.length === 0 ? (
+          {Object.values(groupedCart).length === 0 ? (
             <p className="text-gray-600">Your cart is empty.</p>
           ) : (
-            userCart.map((cartItem) => {
-              const { buyXGetYOffer, discountOffer } = getCartItemOffer(cartItem);
-              const product = products.find((p) => p.id === cartItem.productId);
-              console.log("productTax", product)
-              const qty = quantities[cartItem.id] || 1;
-              const pricePerItem = Number(cartItem.pricePerItem || cartItem.price);
-              let originalTotal = pricePerItem * qty;
+            Object.values(groupedCart).map((item, index) => {
+              console.log("checkoutitem", item)
+              const fullProduct = products.find(p => p.id === item.productId);
+              if (!fullProduct) return null;
 
-              // --- STEP 1: Apply Discount (Before Tax) ---
-              let discountedTotal = originalTotal;
-              let discountPercent = 0;
+              const baseVariation =
+                fullProduct?.variations?.find(v => v.id === item.variationId) ||
+                fullProduct?.selectedVariation ||
+                null;
 
-              if (discountOffer && discountOffer.discountPercentage?.percent) {
-                discountPercent = Number(discountOffer.discountPercentage.percent) || 0;
-                const discountAmount = (originalTotal * discountPercent) / 100;
-                discountedTotal = originalTotal - discountAmount;
-              }
+              const totalVariationQty = item.colors.reduce((s, c) => s + Number(c.quantity || 0), 0);
+              const minCandidates = item.colors
+                .map(c => Number(c.bulkMinQty ?? baseVariation?.minQuantity ?? fullProduct?.minQuantity ?? 0))
+                .filter(v => v > 0);
+              const minRequired = minCandidates.length ? Math.min(...minCandidates) : 0;
+              const isVariationOfferActive = minRequired > 0 && totalVariationQty >= minRequired;
 
-              // --- STEP 2: Apply Tax on Discounted Amount ---
-              let taxAmount = 0;
-              let taxPercent = 0;
-
-              if (product) {
-                const matchedTax = countryTax.find(
-                  (ct) =>
-                    ct.countryCode === selectedCountry &&
-                    ct.categoryId === product.categoryId &&
-                    ct.type === "General"
-                );
-
-                if (matchedTax) {
-                  taxPercent = matchedTax.generalTax || 0;
-                  taxAmount = (discountedTotal * taxPercent) / 100;
-                }
-              }
-
-              // --- STEP 3: Final Total after Discount + Tax ---
-              const totalWithTax = discountedTotal + taxAmount;
+              const fmt = n => Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
               return (
-                <div
-                  key={cartItem.id}
-                  className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-lg rounded-xl p-4 gap-4 hover:shadow-xl transition-shadow"
-                >
-                  {/* Checkbox */}
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.includes(cartItem.id)}
-                    onChange={() => toggleSelectItem(cartItem.id)}
-                    className="accent-gray-700 w-5 h-5 mt-1 md:mt-0"
-                  />
-
-                  {/* Image + Product info */}
-                  <div className="flex items-start md:items-center gap-4 flex-1">
-                    <img
-                      src={cartItem.image}
-                      alt={cartItem.productName}
-                      className="w-24 h-24 object-cover rounded-lg border"
+                <div key={index} className="relative flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-5 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow">
+                  {/* LEFT FIXED CHECKBOX */}
+                  <div className="flex items-start pt-1 sm:pt-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.includes(index)}
+                      onChange={() => toggleSelectItem(index)}
+                      className="accent-gray-700 w-5 h-5"
                     />
-                    <div className="flex flex-col justify-between flex-1">
-                      <h3 className="font-semibold text-lg text-gray-800">{cartItem.productName}</h3>
-                      <p className="text-gray-500 text-sm">
-                        {Object.entries(cartItem.attributes || {})
-                          .map(([key, val]) => `${key}: ${val}`)
-                          .join(", ")}
-                      </p>
+                  </div>
 
-                      {/* Pricing */}
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        {/* Original Price */}
-                        {discountPercent > 0 ? (
-                          <>
-                            <span className="text-gray-400 line-through">
-                              {`${cartItem.currency} ${cartItem.currencySymbol}${originalTotal.toFixed(2)}`}
-                            </span>
+                  {/* MAIN CONTENT */}
+                  <div className="flex-1 flex flex-col">
+                    {/* HEADER */}
+                    <div className="flex justify-between items-start">
+                      <div
+                        className="flex-1 cursor-pointer"
+                        onClick={() => setExpandedAccordion(expandedAccordion === index ? null : index)}
+                      >
+                        <h3 className="font-semibold text-gray-900 text-base sm:text-lg">
+                          {item.productName}
+                        </h3>
 
-                            <span className="text-green-700 font-semibold">
-                              {discountPercent}% OFF
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-gray-400 line-through">
-                            {cartItem.currency} {cartItem.currencySymbol}
-                            {originalTotal.toFixed(2)}
-                          </span>
+                        {/* Attributes */}
+                        <div className="mt-1 space-y-0.5 text-xs text-gray-500">
+                          {Object.entries(item.attributes || {})
+                            .filter(([k, v]) => k !== "color" && v)
+                            .map(([k, v], i) => (
+                              <div key={i} className="capitalize">{k}: {v}</div>
+                            ))}
+                        </div>
+
+                        {/* Offer Label */}
+                        {(isVariationOfferActive || item.productOfferApplied) && (
+                          <div className="text-green-600 font-medium text-xs mt-1">
+                            {item.productOfferApplied ? "Range Offer Applied" : "Bulk Offer Applied"}
+                          </div>
                         )}
-
-                        {/* Tax Info */}
-                        {taxAmount > 0 && (
-                          <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">
-                            + {taxPercent}% Tax
-                          </span>
-                        )}
-
-                        {/* Buy X Get Y Offer */}
-                        {buyXGetYOffer && (() => {
-                          if (qty === buyXGetYOffer.buy) {
-                            return (
-                              <p className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded">
-                                Offer applied! (Total {qty + buyXGetYOffer.free} items)
-                              </p>
-                            );
-                          }
-
-                          if (qty < buyXGetYOffer.buy) {
-                            return (
-                              <p className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded">
-                                Buy {buyXGetYOffer.buy - qty} more, Get {buyXGetYOffer.free} free
-                              </p>
-                            );
-                          }
-
-                          return null;
-                        })()}
                       </div>
 
-                      {/* Total After Discount + Tax */}
-                      <p className="text-gray-900 font-bold mt-2 text-lg">
-                        Total: {cartItem.currency} {cartItem.currencySymbol}
-                        {totalWithTax.toFixed(2)}
-                      </p>
+                      <button className="text-xl font-bold select-none text-gray-400 hover:text-gray-600">
+                        {expandedAccordion === index ? "−" : "+"}
+                      </button>
                     </div>
-                  </div>
 
-                  {/* Quantity + Remove */}
-                  <div className="flex flex-col items-start md:items-end gap-2 mt-2 md:mt-0">
-                    <div className="flex items-center border rounded-lg overflow-hidden">
+                    {/* EXPANDED SECTION */}
+                    {expandedAccordion === index && (
+                      <div className="mt-4 space-y-4">
+                        {/* Bulk Offers */}
+                        {isVariationOfferActive && (
+                          <div className="bg-green-50 rounded-lg p-3 text-green-800">
+                            <div className="font-medium text-sm mb-1">Active Bulk Offers:</div>
+                            <ul className="list-disc list-inside text-xs sm:text-sm">
+                              {item.colors.map((c, i) => {
+                                const matchVar = findColorVariation(fullProduct, c, item);
+                                const bulkPrice = Number(c.bulkPrice ?? matchVar?.bulkPrice ?? baseVariation?.bulkPrice ?? fullProduct?.bulkPrice ?? 0);
+                                const minQty = Number(c.bulkMinQty ?? matchVar?.minQuantity ?? baseVariation?.minQuantity ?? fullProduct?.minQuantity ?? 0);
+                                if (!bulkPrice || !minQty) return null;
+                                return (
+                                  <li key={i}>{c.color}: ₹{fmt(bulkPrice)} per item (Min {minQty})</li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Range Offer */}
+                        {item.productOfferApplied && (
+                          <div className="bg-blue-50 rounded-lg p-3 text-blue-800">
+                            <div className="font-medium text-sm mb-1">Active Range Offer:</div>
+                            <ul className="list-disc list-inside text-xs sm:text-sm">
+                              <li>Buy {item.productOffer.discountValue.start}–{item.productOffer.discountValue.end}, Get {item.productOffer.discountValue.free} Free</li>
+                              <li>Free items: Lowest priced variations 🎁</li>
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Variations */}
+                        <div className="space-y-4">
+                          {item.colors.map((c, idx) => {
+                            const matchVar = findColorVariation(fullProduct, c, item);
+                            const colorPrice = Number(c.pricePerItem ?? 0);
+                            const bulkPrice = Number(c.bulkPrice ?? matchVar?.bulkPrice ?? baseVariation?.bulkPrice ?? fullProduct?.bulkPrice ?? 0);
+                            const minQty = Number(c.bulkMinQty ?? matchVar?.minQuantity ?? baseVariation?.minQuantity ?? fullProduct?.minQuantity ?? 0);
+                            const isBulkActive = bulkPrice > 0 && totalVariationQty >= minQty;
+
+                            const originalTotal = colorPrice * Number(c.quantity);
+                            const discountedTotal = isBulkActive ? bulkPrice * Number(c.quantity) : originalTotal;
+                            const saved = isBulkActive ? (colorPrice - bulkPrice) * Number(c.quantity) : 0;
+
+                            const offer = item.productOffer || null;
+
+                            return (
+                              <div key={idx} className="pt-3">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                  <div className="flex items-center gap-2">
+                                    {c.image && <img src={c.image} alt={c.color} className="w-8 h-8 rounded-md object-cover" />}
+                                    <span className="text-sm font-medium text-gray-700">{c.color}</span>
+                                  </div>
+
+                                  {/* Quantity Controls */}
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => updateVariationQuantity(c.itemId, -1)}
+                                      className="px-2 py-1 border rounded-md text-gray-600 hover:bg-gray-100"
+                                    >
+                                      −
+                                    </button>
+                                    <span className="px-2 text-sm">{c.quantity}</span>
+                                    <button
+                                      onClick={() => updateVariationQuantity(c.itemId, 1)}
+                                      className="px-2 py-1 border rounded-md text-gray-600 hover:bg-gray-100"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Price UI */}
+                                <div className="pl-2 sm:pl-4 text-sm mt-2">
+                                  {item.productOfferApplied && item.productOffer?.name === "Range" ? (
+                                    (() => {
+                                      const free = offer?.freeItems?.find(f => f.variationId === c.variationId || f.id === c.variationId || f.variationId === c.id);
+                                      const paid = offer?.paidItems?.find(p => p.variationId === c.variationId || p.id === c.variationId || p.variationId === c.id);
+                                      return (
+                                        <div className="flex flex-col">
+                                          {paid && <div className="text-gray-700 font-semibold">₹{fmt(c.pricePerItem)} × {paid.paidQty} = ₹{fmt(c.pricePerItem * paid.paidQty)}</div>}
+                                          {free && <div className="text-green-700 font-semibold">🎁 {free.freeQty} FREE (Saved ₹{fmt(c.pricePerItem * free.freeQty)})</div>}
+                                          {!paid && !free && <div>₹{fmt(c.pricePerItem)} × {c.quantity} = ₹{fmt(c.pricePerItem * c.quantity)}</div>}
+                                        </div>
+                                      );
+                                    })()
+                                  ) : isBulkActive ? (
+                                    <>
+                                      <div className="text-gray-400 line-through">₹{fmt(colorPrice)} × {c.quantity} = ₹{fmt(originalTotal)}</div>
+                                      <div className="text-green-700 font-semibold">₹{fmt(bulkPrice)} × {c.quantity} = ₹{fmt(discountedTotal)} ✅</div>
+                                      <div className="text-xs text-green-600">You saved ₹{fmt(saved)} 🎉</div>
+                                    </>
+                                  ) : (
+                                    <div>₹{fmt(colorPrice)} × {c.quantity} = ₹{fmt(originalTotal)}</div>
+                                  )}
+                                </div>
+
+                                {/* Remove button */}
+                                <div className="flex justify-end mt-1">
+                                  <button
+                                    onClick={() => { setSelectedItemId(c.itemId); setShowConfirm(true); }}
+                                    className="text-red-500 hover:text-red-700 text-xs"
+                                  >
+                                    ✕ Remove
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* FOOTER (collapsed) */}
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-200 text-sm">
                       <button
-                        onClick={() => handleQuantityChange(cartItem.id, qty - 1)}
-                        className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
+                        onClick={() => { setSelectedItemId(item.itemIds); setShowConfirm(true); }}
+                        className="text-red-500 hover:text-red-700 text-sm"
                       >
-                        -
+                        🗑 Remove
                       </button>
-                      <span className="px-4 font-medium">{qty}</span>
-                      <button
-                        onClick={() => handleQuantityChange(cartItem.id, qty + 1)}
-                        className="px-3 py-1 bg-gray-200 hover:bg-gray-300"
-                      >
-                        +
-                      </button>
+
+                      <div className="text-center text-gray-700 font-semibold text-sm">
+                        Total Qty: {item.colors.reduce((sum, c) => sum + Number(c.quantity), 0)}
+                      </div>
+
+                      <div className="text-right text-sm font-bold text-gray-900">
+                        {(() => {
+                          const totalOriginal = item.colors.reduce((sum, c) => sum + Number(c.pricePerItem) * Number(c.quantity), 0);
+                          const offer = item.productOfferApplied ? item.productOffer : null;
+                          let totalAfterOffer = 0;
+
+                          if (offer && offer.paidItems && offer.freeItems) {
+                            totalAfterOffer = offer.paidItems.reduce((sum, p) => {
+                              const color = item.colors.find(c => c.itemId === p.id || c.id === p.id || c.variationId === p.variationId);
+                              if (!color) return sum;
+                              return sum + Number(color.pricePerItem) * Number(p.paidQty);
+                            }, 0);
+                          } else {
+                            totalAfterOffer = item.colors.reduce((sum, c) => {
+                              const matchVar = findColorVariation(fullProduct, c, item);
+                              const bulkPrice = Number(c.bulkPrice ?? matchVar?.bulkPrice ?? baseVariation?.bulkPrice ?? fullProduct?.bulkPrice ?? 0);
+                              const minQty = Number(c.bulkMinQty ?? matchVar?.minQuantity ?? baseVariation?.minQuantity ?? fullProduct?.minQuantity ?? 0);
+                              const isBulk = bulkPrice > 0 && totalVariationQty >= minQty;
+                              const effective = isBulk ? bulkPrice : c.pricePerItem;
+                              return sum + effective * c.quantity;
+                            }, 0);
+                          }
+
+                          const isDiscounted = totalAfterOffer < totalOriginal;
+                          const savings = totalOriginal - totalAfterOffer;
+
+                          return (
+                            <div className="flex flex-col items-end">
+                              <div>
+                                Total: {isDiscounted ? (
+                                  <>
+                                    <span className="line-through text-gray-400 mr-1">₹{fmt(totalOriginal)}</span>
+                                    <span className="text-green-700">₹{fmt(totalAfterOffer)} ✅</span>
+                                  </>
+                                ) : (
+                                  <span>₹{fmt(totalOriginal)}</span>
+                                )}
+                              </div>
+                              {isDiscounted && <div className="text-xs text-green-600 font-semibold mt-1">Total Savings: ₹{fmt(savings)}</div>}
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
-                    <button
-                      onClick={() => openRemoveModal(cartItem)}
-                      className="text-red-600 cursor-pointer hover:text-red-800 font-semibold mt-2"
-                    >
-                      Remove
-                    </button>
                   </div>
                 </div>
+
               );
+
             })
           )}
         </div>
+
         {/* Right - Order Summary */}
         <div className="bg-white shadow-lg rounded-xl p-6 sticky top-6 max-h-[90vh] overflow-y-auto space-y-6">
           {/* Order Summary */}
@@ -661,19 +1544,72 @@ const Checkout = () => {
 
 
           {/* Billing Address (optional collapse for compactness) */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="text-md font-semibold text-gray-700 mb-1">Billing Address</h4>
+          {/* <div className="bg-gray-50 p-4 rounded-lg">
+          <h4 className="text-md font-semibold text-gray-700 mb-1">Billing Address</h4>
             <div className="text-gray-600 text-sm">
               <div className="font-semibold">{user?.name}</div>
               <div>{user?.phone}</div>
               <div className="truncate">{user?.address || "No billing address"}</div>
+            </div> 
+            <h4 className="text-md font-semibold text-gray-700 mb-1 flex justify-between">
+              Billing Address
+              {isProfileIncomplete && (
+                <button
+                  onClick={() => setIsOpen(true)}
+                  className="text-blue-600 text-sm underline"
+                >
+                  Update
+                </button>
+              )}
+            </h4>
+            <div className="text-gray-600 text-sm">
+              <div className="font-semibold">{user?.name}</div>
+              <div>{user?.phone || "No phone"}</div>
+              <div className="truncate">
+                {user?.address || "No billing address"}
+              </div>
+            </div>
+          </div> */}
+
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between">
+              <h4 className="text-md font-semibold text-gray-700 mb-1">
+                Billing Address
+              </h4>
+
+              {isIncomplete && (
+                <button
+                  className="px-3 py-1 bg-gray-700 text-white rounded-lg hover:bg-gray-900 text-sm cursor-pointer"
+                  onClick={() => setOpen(true)}
+
+                >
+                  Update
+                </button>
+                // <button
+                //   onClick={() => setOpen(true)}
+                //   className="text-blue-600 text-sm underline"
+                // >
+                //   Update
+                // </button>
+              )}
+            </div>
+
+            <div className="text-gray-600 text-sm">
+              <div className="font-semibold">{user?.name}</div>
+              <div>{user?.phone || "No phone"}</div>
+              <div className="truncate">
+                {user?.address || "No billing address"}
+              </div>
             </div>
           </div>
 
+
           <div className="flex justify-between font-bold text-lg">
             <span>Subtotal</span>
-            <span>{currency} {currencySymbol}{subtotal.toFixed(2)}</span>
+            <span>{currency} {currencySymbol}{subtotal.toFixed(2)}
+            </span>
           </div>
+
           <div className="space-y-4">
             <span className="flex justify-between font-bold text-lg">Shipping</span>
             <div className="flex flex-col gap-3">
@@ -767,139 +1703,141 @@ const Checkout = () => {
 
         </div>
 
-      </div>
+      </div >
 
       {/* Remove / Change Address Modal */}
-      {shippingModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6">
-          <div className="bg-white w-full max-w-lg sm:max-w-md rounded-2xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden">
+      {
+        shippingModalOpen && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6">
+            <div className="bg-white w-full max-w-lg sm:max-w-md rounded-2xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden">
 
-            {/* Header */}
-            <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
-                Select Shipping Address
-              </h3>
-              <Link href="/dashboard?addresses">
-                <button className="px-4 py-2 bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-lg text-sm sm:text-base hover:scale-105 transition-transform">
-                  Add New Address
-                </button>
-              </Link>
-            </div>
+              {/* Header */}
+              <div className="flex justify-between items-center p-4 border-b">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
+                  Select Shipping Address
+                </h3>
+                <Link href="/dashboard?addresses">
+                  <button className="px-4 py-2 bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-lg text-sm sm:text-base hover:scale-105 transition-transform">
+                    Add New Address
+                  </button>
+                </Link>
+              </div>
 
-            {/* Addresses List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {shippingOptions?.length > 0 ? (
-                shippingOptions.map((addr) => (
-                  <label
-                    key={addr.id}
-                    className={`block p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${tempShipping === addr.id
-                      ? "border-gray-500 bg-gray-100 shadow"
-                      : "border-gray-200 hover:border-gray-300"
-                      }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* Radio button */}
-                      <input
-                        type="radio"
-                        name="shippingAddress"
-                        value={addr.id}
-                        checked={tempShipping === addr.id}
-                        onChange={() => setTempShipping(addr.id)}
-                        className="mt-1 scale-110 accent-gray-700"
-                      />
+              {/* Addresses List */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {shippingOptions?.length > 0 ? (
+                  shippingOptions.map((addr) => (
+                    <label
+                      key={addr.id}
+                      className={`block p-4 border rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${tempShipping === addr.id
+                        ? "border-gray-500 bg-gray-100 shadow"
+                        : "border-gray-200 hover:border-gray-300"
+                        }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Radio button */}
+                        <input
+                          type="radio"
+                          name="shippingAddress"
+                          value={addr.id}
+                          checked={tempShipping === addr.id}
+                          onChange={() => setTempShipping(addr.id)}
+                          className="mt-1 scale-110 accent-gray-700"
+                        />
 
 
 
-                      <div className="flex-1 flex flex-col">
-                        {/* Type + Default + Edit */}
-                        <div className="flex items-center justify-between gap-2 font-semibold text-gray-800 mb-1 text-sm sm:text-base">
-                          {/* Left: Type + Icon */}
-                          <div className="flex items-center gap-1">
-                            {getTypeIcon(addr)}
-                            {addr.type === "Other" ? `${addr.type} (${addr.customType || ""})` : addr.type}
+                        <div className="flex-1 flex flex-col">
+                          {/* Type + Default + Edit */}
+                          <div className="flex items-center justify-between gap-2 font-semibold text-gray-800 mb-1 text-sm sm:text-base">
+                            {/* Left: Type + Icon */}
+                            <div className="flex items-center gap-1">
+                              {/* {getTypeIcon(addr)}
+                            {addr.type === "Other" ? `${addr.type} (${addr.customType || ""})` : addr.type} */}
+                            </div>
+
+                            {/* Right: Default + Edit */}
+                            <div className="flex items-center gap-2">
+                              {addr.isDefault && (
+                                <div className="flex items-center gap-1">
+                                  <input type="checkbox" checked readOnly className="w-4 h-4 accent-green-600 cursor-default" />
+                                  <span className="text-green-600 text-sm font-semibold">Default</span>
+                                </div>
+                              )}
+
+                              {/* Edit icon */}
+                              {addr.id !== "default_address" && (
+                                <Link href={`/dashboard?addresses=true&editId=${addr.id}`}>
+                                  <button className="text-gray-500 hover:text-gray-800 transition p-1 rounded-full">
+                                    <Edit className="h-4 w-4 cursor-pointer text-gray-500" />
+                                  </button>
+                                </Link>
+                              )}
+
+                            </div>
                           </div>
 
-                          {/* Right: Default + Edit */}
-                          <div className="flex items-center gap-2">
-                            {addr.isDefault && (
-                              <div className="flex items-center gap-1">
-                                <input type="checkbox" checked readOnly className="w-4 h-4 accent-green-600 cursor-default" />
-                                <span className="text-green-600 text-sm font-semibold">Default</span>
-                              </div>
-                            )}
 
-                            {/* Edit icon */}
-                            {addr.id !== "default_address" && (
-                              <Link href={`/dashboard?addresses=true&editId=${addr.id}`}>
-                                <button className="text-gray-500 hover:text-gray-800 transition p-1 rounded-full">
-                                  <Edit className="h-4 w-4 cursor-pointer text-gray-500" />
-                                </button>
-                              </Link>
-                            )}
+                          {/* Name & mobile */}
+                          <div className="flex justify-between items-center">
+                            <div className="font-semibold text-gray-600">{addr.name}</div>
+                            <div className="text-gray-600 text-right text-sm">{addr.mobile}</div>
 
                           </div>
-                        </div>
 
-
-                        {/* Name & mobile */}
-                        <div className="flex justify-between items-center">
-                          <div className="font-semibold text-gray-600">{addr.name}</div>
-                          <div className="text-gray-600 text-right text-sm">{addr.mobile}</div>
-
-                        </div>
-
-                        {/* Full address */}
-                        <div className="text-gray-600 text-sm mt-1 sm:mt-2 whitespace-pre-line">
-                          {addr.address}, {addr.city}, {addr.state}, {addr.country} - {addr.pincode}
+                          {/* Full address */}
+                          <div className="text-gray-600 text-sm mt-1 sm:mt-2 whitespace-pre-line">
+                            {addr.address}, {addr.city}, {addr.state}, {addr.country} - {addr.pincode}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </label>
-                ))
+                    </label>
+                  ))
 
 
-              ) : (
-                <div className="text-center p-6">
-                  <p className="text-gray-600 mb-4">No shipping address found.</p>
-                  <div className="flex flex-col sm:flex-row justify-center gap-3">
-                    <button
-                      onClick={() => setShippingModalOpen(false)}
-                      className="px-5 py-2 bg-gray-200 rounded-lg text-gray-700 hover:bg-gray-300 transition"
-                    >
-                      Cancel
-                    </button>
-                    <Link href="/dashboard?addresses">
-                      <button className="px-5 py-2 bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-lg hover:scale-105 transition-transform">
-                        Add Address
+                ) : (
+                  <div className="text-center p-6">
+                    <p className="text-gray-600 mb-4">No shipping address found.</p>
+                    <div className="flex flex-col sm:flex-row justify-center gap-3">
+                      <button
+                        onClick={() => setShippingModalOpen(false)}
+                        className="px-5 py-2 bg-gray-200 rounded-lg text-gray-700 hover:bg-gray-300 transition"
+                      >
+                        Cancel
                       </button>
-                    </Link>
+                      <Link href="/dashboard?addresses">
+                        <button className="px-5 py-2 bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-lg hover:scale-105 transition-transform">
+                          Add Address
+                        </button>
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            {/* Sticky Buttons */}
-            <div className="flex justify-end gap-3 p-4 border-t bg-white">
-              <button
-                onClick={() => setShippingModalOpen(false)}
-                className="px-5 py-2 bg-gray-200 rounded-lg text-gray-700 hover:bg-gray-300 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedShipping(tempShipping);
-                  setShippingModalOpen(false);
-                }}
-                className="px-5 py-2 bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-lg hover:scale-105 transition-transform"
-              >
-                Confirm
-              </button>
-            </div>
+              {/* Sticky Buttons */}
+              <div className="flex justify-end gap-3 p-4 border-t bg-white">
+                <button
+                  onClick={() => setShippingModalOpen(false)}
+                  className="px-5 py-2 bg-gray-200 rounded-lg text-gray-700 hover:bg-gray-300 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedShipping(tempShipping);
+                    setShippingModalOpen(false);
+                  }}
+                  className="px-5 py-2 bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-lg hover:scale-105 transition-transform"
+                >
+                  Confirm
+                </button>
+              </div>
 
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
 
       {/* Remove Item Modal */}
@@ -927,6 +1865,284 @@ const Checkout = () => {
                 <button
                   onClick={confirmRemove}
                   className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-3xl rounded-2xl shadow-xl p-8 animate-fadeIn relative">
+
+            {/* CLOSE BUTTON */}
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 text-2xl"
+            >
+              ×
+            </button>
+
+            {/* IMAGE SECTION */}
+            <div className="flex flex-col items-center mb-6 space-y-2">
+              <label className="cursor-pointer group flex flex-col items-center">
+
+                {/* Avatar */}
+                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 shadow-md flex items-center justify-center bg-gray-100">
+
+                  {values.profileImage || user?.profileImage ? (
+                    <img
+                      src={
+                        values.profileImage
+                          ? URL.createObjectURL(values.profileImage)
+                          : user?.profileImage
+                      }
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl font-bold text-gray-600">
+                      {user?.name
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase() || "U"}
+                    </span>
+                  )}
+                </div>
+
+                <span className="mt-2 text-sm bg-gray-200 px-3 py-1 rounded-lg group-hover:bg-gray-300 transition cursor-pointer">
+                  Change Photo
+                </span>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) =>
+                    setValues((prev) => ({
+                      ...prev,
+                      profileImage: e.target.files?.[0] || null,
+                    }))
+                  }
+                />
+              </label>
+            </div>
+
+            {/* TITLE */}
+            <h2 className="text-2xl font-bold mb-6 text-center">Update Profile</h2>
+
+            {/* FORM GRID */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-1">
+
+              {/* NAME (READ-ONLY) */}
+              <div className="col-span-1">
+                <label className="text-sm font-medium">Name</label>
+                <input
+                  type="text"
+                  disabled
+                  value={user?.name}
+                  className="w-full border rounded-lg p-3 mt-1 bg-gray-200 text-gray-600 cursor-not-allowed"
+                />
+              </div>
+
+              {/* EMAIL (READ-ONLY) */}
+              <div className="col-span-1">
+                <label className="text-sm font-medium">Email</label>
+                <input
+                  type="email"
+                  disabled
+                  value={user?.email}
+                  className="w-full border rounded-lg p-3 mt-1 bg-gray-200 text-gray-600 cursor-not-allowed"
+                />
+              </div>
+
+              {/* GENDER SELECT */}
+              <div className="col-span-1">
+                <label className="text-sm font-medium">Gender</label>
+                <select
+                  value={values.gender}
+                  onChange={(e) =>
+                    setValues((prev) => ({ ...prev, gender: e.target.value }))
+                  }
+                  className="w-full border rounded-lg p-3 mt-1 bg-gray-50 focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Gender...</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* COUNTRY SELECT */}
+              <div className="col-span-1">
+                <label className="mb-2 font-medium text-gray-700">Country</label>
+                <ReactSelect
+                  options={countries.map((c) => ({
+                    value: c.name,
+                    label: `${c.name} (${c.phoneCode})`,
+                  }))}
+                  value={
+                    selectedCountry
+                      ? { value: selectedCountry, label: selectedCountry }
+                      : null
+                  }
+                  onChange={(option) => {
+                    const countryName = option?.value || "";
+                    setSelectedCountry(countryName);
+                    setValues((prev) => ({
+                      ...prev,
+                      country: countryName,
+                      state: "",
+                      city: "",
+                      pincode: "",
+                    }));
+                    setCities([]);
+
+                    const phoneCode = countries.find(
+                      (c) => c.name === countryName
+                    )?.phoneCode;
+
+                    if (phoneCode && !values.phone.startsWith(phoneCode)) {
+                      setValues((prev) => ({
+                        ...prev,
+                        phone: phoneCode + " ",
+                      }));
+                    }
+                  }}
+                  isClearable
+                  placeholder="Select Country..."
+                />
+              </div>
+
+              {/* PINCODE */}
+              <div className="col-span-1">
+                <label className="mb-2 font-medium text-gray-700">Pincode</label>
+                <input
+                  type="text"
+                  value={values.pincode}
+                  onChange={async (e) => {
+                    const value = e.target.value;
+                    setValues((prev) => ({ ...prev, pincode: value }));
+
+                    if (values.country === "India" && value.length === 6) {
+                      await fetchPincodeData(value, (field, val) =>
+                        setValues((prev) => ({ ...prev, [field]: val }))
+                      );
+                    }
+                  }}
+                  placeholder="Enter Pincode"
+                  className="w-full border rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* ADDRESS */}
+              <div className="col-span-1">
+                <label className="text-sm font-medium">Address</label>
+                <input
+                  type="text"
+                  value={values.address}
+                  onChange={(e) =>
+                    setValues((prev) => ({ ...prev, address: e.target.value }))
+                  }
+                  className="w-full border rounded-lg p-3 mt-1 bg-gray-50 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* STATE */}
+              <div className="col-span-1">
+                <label className="mb-2 font-medium text-gray-700">State</label>
+                <ReactSelect
+                  options={states.map((s) => ({ value: s, label: s }))}
+                  value={
+                    values.state ? { value: values.state, label: values.state } : null
+                  }
+                  onChange={(option) => {
+                    setValues((prev) => ({
+                      ...prev,
+                      state: option?.value || "",
+                      city: "",
+                    }));
+                    setSelectedState(option?.value || "");
+
+                    if (option?.value && selectedCountry) {
+                      setLoadingCities(true);
+                      getCities(selectedCountry, option.value).then((res) => {
+                        setCities(res);
+                        setLoadingCities(false);
+                      });
+                    }
+                  }}
+                  isClearable
+                  isLoading={loadingStates}
+                  placeholder="Select State..."
+                />
+              </div>
+
+              {/* CITY */}
+              <div className="col-span-1">
+                <label className="mb-2 font-medium text-gray-700">City</label>
+                <ReactSelect
+                  options={cities.map((c) => ({ value: c, label: c }))}
+                  value={
+                    values.city ? { value: values.city, label: values.city } : null
+                  }
+                  onChange={(option) =>
+                    setValues((prev) => ({ ...prev, city: option?.value || "" }))
+                  }
+                  isClearable
+                  isLoading={loadingCities}
+                  placeholder="Select City..."
+                />
+              </div>
+            </div>
+
+
+            {/* BUTTONS */}
+            <div className="flex justify-end gap-4 mt-8">
+              <button
+                onClick={() => setOpen(false)}
+                className="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 cursor-pointer font-medium"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSubmit}
+                className="px-5 py-2.5 rounded-lg bg-gray-700 text-white hover:bg-black cursor-pointer font-medium"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+      {
+        showConfirm && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full">
+              <h3 className="text-lg font-semibold mb-2 text-gray-800">
+                Remove from Cart?
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Are you sure you want to remove this item from your cart?
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                 >
                   Remove
                 </button>

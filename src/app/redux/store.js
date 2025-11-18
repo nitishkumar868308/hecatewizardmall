@@ -18,6 +18,8 @@ import countryTaxReducer from "./slices/countryTaxes/countryTaxesSlice";
 import videoStoryReducer from "./slices/videoStory/videoStorySlice"
 import contactMessageReducer from './slices/contact/contactMessageSlice';
 import orderReducer from "./slices/order/orderSlice";
+import shippingPricingReducer from "./slices/shippingPricing/shippingPricingSlice";
+
 
 // import updateUserReducer from './slices/userSlice';
 
@@ -42,6 +44,7 @@ const store = configureStore({
         videoStory: videoStoryReducer,
         contactMessage: contactMessageReducer,
         order: orderReducer,
+        shippingPricing: shippingPricingReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

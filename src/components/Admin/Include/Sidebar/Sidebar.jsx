@@ -194,6 +194,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                 >
                                     External Market
                                 </Link>
+                                <Link
+                                    href="/admin/shippingPricing"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Shipping Pricing
+                                </Link>
                             </div>
                         )}
                     </div>
