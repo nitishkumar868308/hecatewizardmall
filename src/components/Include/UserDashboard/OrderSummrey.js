@@ -65,8 +65,8 @@ const OrderSummary = () => {
                         {/* Items */}
                         {order.items && order.items.length > 0 && (
                             <div className="space-y-3 mb-4">
-                                {order.items.map((item) => (
-                                    <div key={item.id} className="flex items-center space-x-4 border-t pt-3">
+                                {order.items.map((item, index) => (
+                                    <div key={index} className="flex items-center space-x-4 border-t pt-3">
                                         <img
                                             src={item.image}
                                             alt={item.productName}

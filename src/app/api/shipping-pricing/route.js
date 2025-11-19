@@ -36,7 +36,17 @@ export async function GET(req) {
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { name, price, description , active } = body;
+        const {
+            name,
+            price,
+            description,
+            active,
+            country,
+            code,
+            currency,
+            currencySymbol,
+            type,
+        } = body;
 
         // Validation
         if (!name || typeof name !== "string") {
@@ -45,7 +55,6 @@ export async function POST(req) {
                 { status: 400 }
             );
         }
-
         if (price === undefined || typeof price !== "number") {
             return new Response(
                 JSON.stringify({ message: "Price is required and must be a number" }),
@@ -57,8 +66,13 @@ export async function POST(req) {
             data: {
                 name,
                 price,
-                description ,
+                description,
                 active: active ?? true,
+                country: country ?? "",
+                code: code ?? "",
+                currency: currency ?? "",
+                currencySymbol: currencySymbol ?? "",
+                type: type ?? "Road",
             },
         });
 
@@ -86,31 +100,42 @@ export async function POST(req) {
 export async function PUT(req) {
     try {
         const body = await req.json();
-        const { id, name, price,description , active, deleted } = body;
+        const {
+            id,
+            name,
+            price,
+            description,
+            active,
+            deleted,
+            country,
+            code,
+            currency,
+            currencySymbol,
+            type,
+        } = body;
 
         if (!id) {
-            return new Response(
-                JSON.stringify({ message: "ID is required" }),
-                { status: 400 }
-            );
+            return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
         }
 
         const existing = await prisma.shippingPricing.findUnique({ where: { id } });
         if (!existing) {
-            return new Response(
-                JSON.stringify({ message: "Shipping Pricing not found" }),
-                { status: 404 }
-            );
+            return new Response(JSON.stringify({ message: "Shipping Pricing not found" }), { status: 404 });
         }
 
         const updated = await prisma.shippingPricing.update({
             where: { id },
             data: {
                 name: name ?? existing.name,
-                price: price ?? existing.price, 
-                description: description ?? existing.description, 
+                price: price ?? existing.price,
+                description: description ?? existing.description,
                 active: active ?? existing.active,
                 deleted: deleted ?? existing.deleted,
+                country: country ?? existing.country,
+                code: code ?? existing.code,
+                currency: currency ?? existing.currency,
+                currencySymbol: currencySymbol ?? existing.currencySymbol,
+                type: type ?? existing.type,
             },
         });
 
@@ -141,18 +166,12 @@ export async function DELETE(req) {
         const { id } = body;
 
         if (!id) {
-            return new Response(
-                JSON.stringify({ message: "ID is required" }),
-                { status: 400 }
-            );
+            return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
         }
 
         const existing = await prisma.shippingPricing.findUnique({ where: { id } });
         if (!existing) {
-            return new Response(
-                JSON.stringify({ message: "Shipping Pricing not found" }),
-                { status: 404 }
-            );
+            return new Response(JSON.stringify({ message: "Shipping Pricing not found" }), { status: 404 });
         }
 
         const deletedData = await prisma.shippingPricing.update({

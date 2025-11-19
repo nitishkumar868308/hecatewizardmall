@@ -5,22 +5,24 @@ import { useEffect, useState } from "react";
 
 export default function PaymentSuccessPage() {
     const searchParams = useSearchParams();
-    const orderId = searchParams.get("order_id");
-
+    const [orderId, setOrderId] = useState(null);
     const [status, setStatus] = useState("Processing...");
 
+    // Avoid hydration mismatch
     useEffect(() => {
-        if (orderId) {
-            // Optionally, verify payment status from backend here
+        const id = searchParams.get("order_id");
+        setOrderId(id);
+
+        if (id) {
             setStatus("Payment Successful!");
         } else {
             setStatus("No order found.");
         }
-    }, [orderId]);
+    }, [searchParams]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 ">
-            <div className="bg-white shadow-lg rounded-2xl max-w-lg w-full p-10 text-center transform transition-all hover:scale-[1.02] mt-10 mb-10">
+            <div className="bg-white shadow-lg rounded-2xl max-w-lg w-full p-10 text-center mt-10 mb-10">
                 <div className="mb-6">
                     {status === "Payment Successful!" ? (
                         <div className="inline-flex items-center justify-center w-20 h-20 bg-green-600 rounded-full mx-auto">
@@ -52,14 +54,14 @@ export default function PaymentSuccessPage() {
                 )}
 
                 <p className="text-gray-600 mb-8">
-                    Thank you for your payment. You can now close this page or return to the shop.
+                    Thank you for your payment.
                 </p>
 
                 <a
                     href="/dashboard"
                     className="inline-block px-8 py-3 font-semibold text-black bg-gray-200 rounded-full hover:bg-gray-300 transition"
                 >
-                    Go to Home
+                    Go to Orders
                 </a>
             </div>
         </div>

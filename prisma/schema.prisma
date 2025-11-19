@@ -333,11 +333,17 @@ model Orders {
 }
 
 model ShippingPricing {
-  id        String   @id @default(uuid())
-  name      String
-  price     Float
-  description String?
-  active    Boolean  @default(true)
-  deleted   Int      @default(0)
-  createdAt DateTime @default(now())
+  id             String   @id @default(uuid())
+  name           String
+  price          Float
+  description    String?
+  active         Boolean  @default(true)
+  deleted        Int      @default(0)
+  country        String?  // Country name
+  code           String?  // Country code (e.g., USA → US)
+  currency       String?  // Currency code (e.g., USD)
+  currencySymbol String?  // Currency symbol (e.g., $)
+  type           String?  // "Road" or "Air"
+  createdAt      DateTime @default(now())
 }
+

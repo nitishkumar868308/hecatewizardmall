@@ -78,12 +78,12 @@ export const getCities = async (country, state) => {
 };
 
 export const fetchPincodeData = async (pincode, setFieldValue) => {
-    if (pincode.length !== 6) return false; // ignore invalid lengths
+    // if (pincode.length !== 6) return false; // ignore invalid lengths
 
     try {
         const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
         const data = await res.json();
-
+        console.log("API response for pincode", pincode, ":", data);
         if (data[0].Status === "Success" && data[0].PostOffice?.length) {
             const postOffice = data[0].PostOffice[0];
             setFieldValue("city", postOffice.District || "");

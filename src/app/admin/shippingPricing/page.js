@@ -9,7 +9,7 @@ import {
     deleteShippingPricing,
 } from "@/app/redux/slices/shippingPricing/shippingPricingSlice";
 import { useDispatch, useSelector } from "react-redux";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 import Loader from "@/components/Include/Loader";
 
 const ShippingPricing = () => {
@@ -22,67 +22,132 @@ const ShippingPricing = () => {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-    const [newPrice, setNewPrice] = useState("");
-    const [newName, setNewName] = useState("");
-    const [newDescription, setNewDescription] = useState("");
+    const [countries, setCountries] = useState([]);
+    const [filteredCountries, setFilteredCountries] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
 
-    const [editPricing, setEditPricing] = useState({ id: null, name: "", price: "", description: "" });
+    const [currentPricing, setCurrentPricing] = useState({
+        name: "",
+        price: "",
+        description: "",
+        country: "",
+        code: "",
+        currency: "",
+        currencySymbol: "",
+        type: "Air",
+    });
+
     const [deleteId, setDeleteId] = useState(null);
-
     const [loading, setLoading] = useState(false);
 
-    // Fetch Data
+    // Fetch countries
+    useEffect(() => {
+        const fetchCountries = async () => {
+            try {
+                const res = await fetch(
+                    "https://restcountries.com/v3.1/all?fields=cca3,name,currencies"
+                );
+                const data = await res.json();
+                if (!Array.isArray(data)) return;
+
+                const formatted = data.map((c) => {
+                    const currencyKey = c.currencies ? Object.keys(c.currencies)[0] : null;
+                    const currencySymbol =
+                        c.currencies && currencyKey && c.currencies[currencyKey]?.symbol
+                            ? c.currencies[currencyKey].symbol
+                            : "";
+
+                    return {
+                        code: c.cca3,
+                        name: c.name?.common || "",
+                        currency: currencyKey || "",
+                        currencySymbol,
+                    };
+                });
+
+                setCountries(formatted);
+                setFilteredCountries(formatted);
+            } catch (err) {
+                console.error("Failed to fetch countries:", err);
+            }
+        };
+        fetchCountries();
+    }, []);
+
+    // Fetch Shipping Pricings
     useEffect(() => {
         dispatch(fetchShippingPricing());
     }, [dispatch]);
 
-    // Filter list
+    // Filter Shipping Pricing List
     const filtered = shippingPricings.filter((p) =>
         p.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    // Add new shipping pricing
+    // Add Shipping Pricing
     const handleAdd = async () => {
-        if (!newName.trim()) return toast.error("Name cannot be empty");
-        if (!newPrice) return toast.error("Price is required");
+        if (!currentPricing.name.trim()) return toast.error("Name cannot be empty");
+        if (!currentPricing.price) return toast.error("Price is required");
+        if (!currentPricing.country) return toast.error("Country is required");
+        if (!currentPricing.type) return toast.error("Type is required");
 
         setLoading(true);
 
         try {
             await dispatch(
                 createShippingPricing({
-                    name: newName.trim(),
-                    price: Number(newPrice),
-                    description: newDescription,
-                    active: true
+                    name: currentPricing.name.trim(),
+                    price: Number(currentPricing.price),
+                    description: currentPricing.description,
+                    country: currentPricing.country,
+                    code: currentPricing.code,
+                    currency: currentPricing.currency,
+                    currencySymbol: currentPricing.currencySymbol,
+                    type: currentPricing.type,
+                    active: true,
                 })
             ).unwrap();
 
             toast.success("Shipping pricing added");
             setModalOpen(false);
-            setNewName("");
-            setNewPrice("");
-            setNewDescription("");
+            setCurrentPricing({
+                name: "",
+                price: "",
+                description: "",
+                country: "",
+                code: "",
+                currency: "",
+                currencySymbol: "",
+                type: "Air",
+            });
         } catch (err) {
             toast.error(err.message || "Failed to add");
         }
+
         setLoading(false);
     };
 
-    // Edit shipping pricing
+    // Edit Shipping Pricing
     const handleEdit = async () => {
-        if (!editPricing.name.trim()) return toast.error("Name cannot be empty");
-        if (!editPricing.price) return toast.error("Price is required");
+        if (!currentPricing.name.trim()) return toast.error("Name cannot be empty");
+        if (!currentPricing.price) return toast.error("Price is required");
+        if (!currentPricing.country) return toast.error("Country is required");
+        if (!currentPricing.type) return toast.error("Type is required");
 
         setLoading(true);
 
         try {
             await dispatch(
                 updateShippingPricing({
-                    id: editPricing.id,
-                    name: editPricing.name,
-                    price: Number(editPricing.price),
-                    description: editPricing.description
+                    id: currentPricing.id,
+                    name: currentPricing.name,
+                    price: Number(currentPricing.price),
+                    description: currentPricing.description,
+                    country: currentPricing.country,
+                    code: currentPricing.code,
+                    currency: currentPricing.currency,
+                    currencySymbol: currentPricing.currencySymbol,
+                    type: currentPricing.type,
                 })
             ).unwrap();
 
@@ -99,9 +164,7 @@ const ShippingPricing = () => {
     const toggleActive = async (id, current) => {
         setLoading(true);
         try {
-            await dispatch(
-                updateShippingPricing({ id, active: !current })
-            ).unwrap();
+            await dispatch(updateShippingPricing({ id, active: !current })).unwrap();
             toast.success("Status updated");
         } catch (err) {
             toast.error("Failed");
@@ -139,7 +202,19 @@ const ShippingPricing = () => {
                         className="border rounded-lg px-4 py-2 w-full md:w-64"
                     />
                     <button
-                        onClick={() => setModalOpen(true)}
+                        onClick={() => {
+                            setModalOpen(true);
+                            setCurrentPricing({
+                                name: "",
+                                price: "",
+                                description: "",
+                                country: "",
+                                code: "",
+                                currency: "",
+                                currencySymbol: "",
+                                type: "Air",
+                            });
+                        }}
                         className="flex items-center gap-2 bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg shadow cursor-pointer"
                     >
                         <Plus className="w-5 h-5" /> Add
@@ -159,6 +234,12 @@ const ShippingPricing = () => {
                                 Name
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                Country
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                Type
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                 Price
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -174,13 +255,10 @@ const ShippingPricing = () => {
                         {filtered.map((p, idx) => (
                             <tr key={p.id} className="hover:bg-gray-50 border-b">
                                 <td className="px-4 py-4">{idx + 1}</td>
-                                <td className="px-4 py-4 font-medium text-gray-700">
-                                    {p.name}
-                                </td>
-                                <td className="px-4 py-4 font-medium text-gray-700">
-                                    ₹{p.price}
-                                </td>
-
+                                <td className="px-4 py-4 font-medium text-gray-700">{p.name}</td>
+                                <td className="px-4 py-4 font-medium text-gray-700">{p.country}</td>
+                                <td className="px-4 py-4 font-medium text-gray-700">{p.type}</td>
+                                <td className="px-4 py-4 font-medium text-gray-700">₹{p.price}</td>
                                 <td className="px-4 py-4">
                                     <label className="inline-flex items-center cursor-pointer">
                                         <input
@@ -190,33 +268,28 @@ const ShippingPricing = () => {
                                             className="sr-only"
                                         />
                                         <span
-                                            className={`w-12 h-6 flex items-center p-1 rounded-full duration-300 ${p.active ? "bg-green-500" : "bg-gray-300"
-                                                }`}
+                                            className={`w-12 h-6 flex items-center p-1 rounded-full duration-300 ${
+                                                p.active ? "bg-green-500" : "bg-gray-300"
+                                            }`}
                                         >
                                             <span
-                                                className={`bg-white w-4 h-4 rounded-full shadow transform duration-300 ${p.active ? "translate-x-6" : "translate-x-0"
-                                                    }`}
+                                                className={`bg-white w-4 h-4 rounded-full shadow transform duration-300 ${
+                                                    p.active ? "translate-x-6" : "translate-x-0"
+                                                }`}
                                             />
                                         </span>
                                     </label>
                                 </td>
-
                                 <td className="px-4 py-4 flex gap-3">
                                     <button
                                         onClick={() => {
-                                            setEditPricing({
-                                                id: p.id,
-                                                name: p.name,
-                                                price: p.price,
-                                                description: p.description || ""
-                                            });
+                                            setCurrentPricing({ ...p });
                                             setEditModalOpen(true);
                                         }}
                                         className="text-blue-500 hover:text-blue-800 cursor-pointer"
                                     >
                                         <Edit className="w-5 h-5" />
                                     </button>
-
                                     <button
                                         onClick={() => {
                                             setDeleteId(p.id);
@@ -232,10 +305,7 @@ const ShippingPricing = () => {
 
                         {filtered.length === 0 && (
                             <tr>
-                                <td
-                                    colSpan="5"
-                                    className="text-center py-6 text-gray-400 italic"
-                                >
+                                <td colSpan="7" className="text-center py-6 text-gray-400 italic">
                                     No records found
                                 </td>
                             </tr>
@@ -245,109 +315,128 @@ const ShippingPricing = () => {
             </div>
 
             {/* Add Modal */}
-            {modalOpen && (
+            {(modalOpen || editModalOpen) && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
                         <button
-                            onClick={() => setModalOpen(false)}
+                            onClick={() => {
+                                modalOpen ? setModalOpen(false) : setEditModalOpen(false);
+                            }}
                             className="absolute top-4 right-4"
                         >
                             <X className="w-5 h-5 text-gray-500" />
                         </button>
 
-                        <h2 className="text-xl font-bold mb-4 text-center">Add Shipping Pricing</h2>
+                        <h2 className="text-xl font-bold mb-4 text-center">
+                            {modalOpen ? "Add Shipping Pricing" : "Edit Shipping Pricing"}
+                        </h2>
 
+                        {/* Name */}
                         <input
                             type="text"
                             placeholder="Name"
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
+                            value={currentPricing.name}
+                            onChange={(e) =>
+                                setCurrentPricing({ ...currentPricing, name: e.target.value })
+                            }
                             className="border px-4 py-2 w-full rounded mb-3"
                         />
 
+                        {/* Country */}
+                        <div className="flex flex-col relative mb-3">
+                            <input
+                                type="text"
+                                placeholder="Search Country"
+                                value={currentPricing.country}
+                                onChange={(e) => {
+                                    const searchValue = e.target.value.toLowerCase();
+                                    setFilteredCountries(
+                                        countries.filter(
+                                            (c) =>
+                                                c.name.toLowerCase().includes(searchValue) ||
+                                                c.code.toLowerCase().includes(searchValue)
+                                        )
+                                    );
+                                    setShowDropdown(true);
+                                    setCurrentPricing({
+                                        ...currentPricing,
+                                        country: e.target.value,
+                                    });
+                                }}
+                                onFocus={() => setShowDropdown(true)}
+                                className="border px-4 py-2 w-full rounded"
+                            />
+                            {showDropdown && filteredCountries.length > 0 && (
+                                <ul className="absolute top-full left-0 z-10 w-full bg-white border border-gray-200 rounded-md mt-1 shadow max-h-44 overflow-auto">
+                                    {filteredCountries.map((c) => (
+                                        <li
+                                            key={c.code}
+                                            className="px-4 py-2 text-gray-900 hover:bg-gray-100 cursor-pointer transition-colors"
+                                            onClick={() => {
+                                                setCurrentPricing({
+                                                    ...currentPricing,
+                                                    country: c.name,
+                                                    code: c.code,
+                                                    currency: c.currency,
+                                                    currencySymbol: c.currencySymbol,
+                                                });
+                                                setShowDropdown(false);
+                                            }}
+                                        >
+                                            {c.name} <span className="text-gray-500">({c.code})</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        {/* Type */}
+                        <select
+                            value={currentPricing.type}
+                            onChange={(e) =>
+                                setCurrentPricing({ ...currentPricing, type: e.target.value })
+                            }
+                            className="border px-4 py-2 w-full rounded mb-4"
+                        >
+                            <option value="Air">Air</option>
+                            <option value="Road">Road</option>                            
+                        </select>
+
+                        {/* Price */}
                         <input
                             type="number"
                             placeholder="Price"
-                            value={newPrice}
-                            onChange={(e) => setNewPrice(e.target.value)}
+                            value={currentPricing.price}
+                            onChange={(e) =>
+                                setCurrentPricing({ ...currentPricing, price: e.target.value })
+                            }
                             className="border px-4 py-2 w-full rounded mb-4"
                         />
 
+                        {/* Description */}
                         <textarea
                             placeholder="Description"
-                            value={newDescription}
-                            onChange={(e) => setNewDescription(e.target.value)}
+                            value={currentPricing.description}
+                            onChange={(e) =>
+                                setCurrentPricing({ ...currentPricing, description: e.target.value })
+                            }
                             className="border px-4 py-2 w-full rounded mb-4 h-24 resize-none"
                         />
 
                         <div className="flex justify-end gap-2">
                             <button
-                                onClick={() => setModalOpen(false)}
+                                onClick={() =>
+                                    modalOpen ? setModalOpen(false) : setEditModalOpen(false)
+                                }
                                 className="px-4 py-2 rounded border"
                             >
                                 Cancel
                             </button>
                             <button
-                                onClick={handleAdd}
+                                onClick={modalOpen ? handleAdd : handleEdit}
                                 className="px-4 py-2 bg-gray-700 text-white rounded cursor-pointer"
                             >
-                                Add
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Edit Modal */}
-            {editModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
-                        <button
-                            onClick={() => setEditModalOpen(false)}
-                            className="absolute top-4 right-4"
-                        >
-                            <X className="w-5 h-5 text-gray-500" />
-                        </button>
-
-                        <h2 className="text-xl font-bold mb-4 text-center">Edit Shipping Pricing</h2>
-
-                        <input
-                            type="text"
-                            placeholder="Name"
-                            value={editPricing.name}
-                            onChange={(e) => setEditPricing({ ...editPricing, name: e.target.value })}
-                            className="border px-4 py-2 w-full rounded mb-3"
-                        />
-
-                        <input
-                            type="number"
-                            placeholder="Price"
-                            value={editPricing.price}
-                            onChange={(e) => setEditPricing({ ...editPricing, price: e.target.value })}
-                            className="border px-4 py-2 w-full rounded mb-4"
-                        />
-
-                        <textarea
-                            placeholder="Description"
-                            value={editPricing.description}
-                            onChange={(e) =>
-                                setEditPricing({ ...editPricing, description: e.target.value })
-                            }
-                            className="border px-4 py-2 w-full rounded mb-4 h-24"
-                        ></textarea>
-
-                        <div className="flex justify-end gap-2">
-                            <button
-                                onClick={() => setEditModalOpen(false)}
-                                className="px-4 py-2 rounded border"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleEdit}
-                                className="px-4 py-2 bg-gray-700 text-white rounded"
-                            >
-                                Update
+                                {modalOpen ? "Add" : "Update"}
                             </button>
                         </div>
                     </div>

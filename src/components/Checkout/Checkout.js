@@ -18,11 +18,36 @@ import { load } from "@cashfreepayments/cashfree-js";
 import { updateUser } from "@/app/redux/slices/updateUser/updateUserSlice";
 import ReactSelect from "react-select";
 import { useCountries, getStates, getCities, fetchPincodeData } from "@/lib/CustomHook/useCountries";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+import {
+  fetchShippingPricing,
+} from "@/app/redux/slices/shippingPricing/shippingPricingSlice";
+
+const getPhoneYup = (countryCode) =>
+  Yup.string()
+    .required("Phone is required")
+    .test("is-valid-phone", "Enter a valid phone number", (value) => {
+      if (!value) return false;
+      try {
+        const phoneNumber = parsePhoneNumberFromString(value, countryCode);
+        return phoneNumber ? phoneNumber.isValid() : false;
+      } catch {
+        return false;
+      }
+    });
 
 const Checkout = () => {
+
+
   const [showConfirm, setShowConfirm] = useState(false);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.me);
+  // const [selected, setSelected] = useState(
+  //   user?.country?.toLowerCase() === "india" ? "PayU" : ""
+  // );
+  const [selected, setSelected] = useState("");
   const country = useSelector((state) => state.country);
   const { items } = useSelector((state) => state.cart);
   const router = useRouter();
@@ -32,7 +57,6 @@ const Checkout = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [itemToRemove, setItemToRemove] = useState(null);
   const [selectAll, setSelectAll] = useState(false);
-  const [selected, setSelected] = useState("UPI / Wallet");
   const [expanded, setExpanded] = useState("UPI / Wallet");
   const [selectedShipping, setSelectedShipping] = useState(null);
   const [tempShipping, setTempShipping] = useState(null);
@@ -50,16 +74,40 @@ const Checkout = () => {
   const [userCartState, setUserCartState] = useState([]);
   const [open, setOpen] = useState(false);
   const { countries } = useCountries();
-  const [values, setValues] = useState({
+  const initialValues = {
+    id: user?.id || "",
     name: user?.name || "",
+    email: user?.email || "",
     phone: user?.phone || "",
-    address: user?.address || "",
-    city: user?.city || "",
-    state: user?.state || "",
-    pincode: user?.pincode || "",
-    country: user?.country || "",
     gender: user?.gender || "",
+    address: user?.address || "",
+    country: user?.country || "",
+    state: user?.state || "",
+    city: user?.city || "",
+    pincode: user?.pincode || "",
     profileImage: null,
+  };
+
+
+  useEffect(() => {
+    if (!selected) {  // only if user hasn't chosen anything
+      if (user?.country?.toLowerCase() === "india") {
+        setSelected("PayU");
+      } else {
+        setSelected("Cashfree");
+      }
+    }
+  }, [user?.country]);
+
+  const validationSchema = Yup.object().shape({
+    gender: Yup.string().required("Gender is required"),
+    country: Yup.string().required("Country is required"),
+    state: Yup.string().required("State is required"),
+    city: Yup.string().required("City is required"),
+    address: Yup.string().required("Address is required"),
+    phone: getPhoneYup(
+      countries.find((c) => c.name === selectedCountry)?.code
+    ),
   });
 
   const requiredFields = [
@@ -69,13 +117,14 @@ const Checkout = () => {
     "country",
     "gender",
     "phone",
-    "pincode",
   ];
-
+  const { shippingPricings } = useSelector((state) => state.shippingPricing);
+  console.log("shippingPricings", shippingPricings)
 
   const isIncomplete = requiredFields.some(
     (field) => !user?.[field] || user[field].toString().trim() === ""
   );
+
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   const [selectedState, setSelectedState] = useState([]);
@@ -126,6 +175,10 @@ const Checkout = () => {
   //   setIsModalOpen(false);
   // };
 
+  useEffect(() => {
+    dispatch(fetchShippingPricing());
+  }, [dispatch]);
+
   console.log("countryTax", countryTax)
   const [lastCountry, setLastCountry] = useState(null);
 
@@ -138,22 +191,10 @@ const Checkout = () => {
 
 
   const methods = [
-    {
-      name: "Credit / Debit Card",
-      icon: <CreditCard className="w-8 h-8 text-gray-600 mb-2" />,
-      content: "Pay securely using your credit or debit card."
-    },
-    {
-      name: "UPI / Wallet",
-      icon: <Wallet className="w-8 h-8 text-gray-600 mb-2" />,
-      content: "Pay using Google Pay, PhonePe, Paytm, etc."
-    },
-    {
-      name: "Cash on Delivery",
-      icon: <DollarSign className="w-8 h-8 text-gray-600 mb-2" />,
-      content: "Pay with cash when your order arrives."
-    },
+    { name: "PayU", href: "/image/new-payu-logo.svg" },
+    { name: "CashFree", href: "/image/cashfree_logo.svg" },
   ];
+
 
   const getTypeIcon = (addr) => {
     const type = addr?.type?.toLowerCase() || "other"; // default "other"
@@ -176,29 +217,6 @@ const Checkout = () => {
         );
     }
   };
-
-  useEffect(() => {
-    const storedCountry = localStorage.getItem("selectedCountry");
-    if (storedCountry) {
-      setSelectedCountry(storedCountry);
-
-      if (storedCountry === "IND") {
-        const options = [
-          { name: "By Road", price: 100 },
-          { name: "By Air", price: null }
-        ];
-        setShippingOption(options);
-        setSelectedShippingOption(options[0]); // default By Road
-      } else {
-        const options = [
-          { name: "By Air", price: null }
-        ];
-        setShippingOption(options);
-        setSelectedShippingOption(options[0]);
-      }
-    }
-  }, []);
-
 
   useEffect(() => {
     dispatch(fetchCart());
@@ -256,40 +274,6 @@ const Checkout = () => {
     }
   }, [userCart, quantities]);
 
-
-
-  const handleQuantityChange = async (id, value) => {
-    if (value < 1) return;
-
-    setQuantities(prev => ({ ...prev, [id]: value }));
-
-    try {
-      await dispatch(updateCart({ id, quantity: value })).unwrap();
-      toast.success("Cart updated");
-      dispatch(fetchCart());
-    } catch (err) {
-      toast.error("Failed to update cart");
-    }
-  };
-
-  // const toggleSelectItem = (id) => {
-  //   if (selectedItems.includes(id)) {
-  //     setSelectedItems(selectedItems.filter(itemId => itemId !== id));
-  //   } else {
-  //     setSelectedItems([...selectedItems, id]);
-  //   }
-  // };
-
-  // const handleSelectAll = () => {
-  //   if (selectAll) {
-  //     setSelectedItems([]);
-  //     setSelectAll(false);
-  //   } else {
-  //     setSelectedItems(userCart.map(item => item.id));
-  //     setSelectAll(true);
-  //   }
-  // };
-
   const handleSelectAll = () => {
     if (selectAll) {
       setSelectedItems([]);
@@ -300,8 +284,6 @@ const Checkout = () => {
       setSelectAll(true);
     }
   };
-
-
 
   const toggleSelectItem = (index) => {
     let updated;
@@ -319,12 +301,6 @@ const Checkout = () => {
     setSelectAll(updated.length === allIndexes.length);
   };
 
-
-  const openRemoveModal = (item) => {
-    setItemToRemove(item);
-    setModalOpen(true);
-  };
-
   const groupedCart = useMemo(() => {
     const acc = {};
 
@@ -339,7 +315,8 @@ const Checkout = () => {
           productId: item.productId,
           productName: item.productName,
           variationId: item.variationId || null,
-          attributes: { ...item.attributes, color: null },
+          // attributes: { ...item.attributes, color: null },
+          attributes: { ...item.attributes },
           currency: item.currency,
           currencySymbol: item.currencySymbol,
           itemIds: [item.id],
@@ -553,31 +530,6 @@ const Checkout = () => {
     }
   }, [shippingOptions]);
 
-  const getCartItemOffer = (cartItem) => {
-    const product = products.find(p => p.id === cartItem.productId);
-    if (!product) return {};
-
-    // get all offers linked to this product
-    const productOffers = offers.filter(o => product.offerId && o.id === product.offerId);
-
-    const buyXGetYOfferRaw = productOffers.find(o => o.discountType === "buyXGetY");
-    console.log("buyXGetYOfferRaw ", buyXGetYOfferRaw)
-    const discountOfferRaw = productOffers.find(o => o.discountType === "percentage");
-    console.log("discountOfferRaw ", discountOfferRaw)
-
-    // map to consistent format for cart display
-    const buyXGetYOffer = buyXGetYOfferRaw
-      ? { buy: buyXGetYOfferRaw.discountValue.buy, free: buyXGetYOfferRaw.discountValue.free }
-      : null;
-    console.log("buyXGetYOffer ", buyXGetYOffer)
-    const discountOffer = discountOfferRaw
-      ? { discountPercentage: discountOfferRaw.discountValue || 0 }
-      : null;
-    console.log("discountOffer", discountOffer)
-
-    return { buyXGetYOffer, discountOffer };
-  };
-
   useEffect(() => {
     let sum = 0;
 
@@ -653,6 +605,21 @@ const Checkout = () => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
   const handleClick = async () => {
+
+    if (isIncomplete) {
+      toast.error("Please Update Billing Address");
+      return;
+    }
+    if (!selectedShippingOption) {
+      toast.error("Please select a shipping option");
+      return;
+    }
+    if (!selected) {
+      toast.error("Please Generate the Ticket");
+      return;
+    }
+
+
     const orderData = {
       user: {
         id: user?.id,
@@ -669,74 +636,82 @@ const Checkout = () => {
         state: user?.state,
         pincode: user?.pincode,
       },
-      items: userCart
-        .filter(item => selectedItems.includes(item.id))
-        .map(item => {
-          const { buyXGetYOffer } = getCartItemOffer(item);
-          const qty = quantities[item.id] || 1;
-
-          let effectiveQty = qty;
-          let paidQty = qty;
-
-          if (buyXGetYOffer) {
-            if (qty === buyXGetYOffer.buy) {
-              effectiveQty = qty + buyXGetYOffer.free;
-            } else {
-              effectiveQty = qty;
-            }
-            paidQty = qty;
-          }
-
-          const unitPrice = Number(item.pricePerItem || item.price);
-
-          return {
-            id: item.id,
-            productName: item.productName,
-            price: unitPrice,
-            quantity: effectiveQty,
-            paidQty,
-            total: `${item.currencySymbol}${(unitPrice * paidQty).toFixed(2)}`,
-            image: item.image,
-            currency: item.currency,
-            currencySymbol: item.currencySymbol,
-          };
-        }),
-
+      items: Object.values(groupedCart).map((product) => ({
+        productId: product.productId,
+        productName: product.productName,
+        currency: product.currency,
+        currencySymbol: product.currencySymbol,
+        attributes: product.attributes,
+        itemIds: product.itemIds,
+        productOfferApplied: product.productOfferApplied,
+        productOffer: product.productOffer,
+        colors: product.colors.map((c) => ({
+          color: c.color,
+          quantity: c.quantity,
+          pricePerItem: c.pricePerItem,
+          totalPrice: c.totalPrice,
+          variationId: c.variationId,
+          image: c.image,
+          offerApplied: c.offerApplied,
+          productOfferApplied: c.productOfferApplied,
+          productOfferDiscount: c.productOfferDiscount,
+          productOfferId: c.productOfferId,
+          productOffer: c.productOffer,
+        })),
+      })),
 
       subtotal: `${userCart[0]?.currencySymbol || '₹'}${subtotal.toFixed(2)}`,
       shipping: `${userCart[0]?.currencySymbol || '₹'}${shipping}`,
       total: `${userCart[0]?.currencySymbol || '₹'}${grandTotal.toFixed(2)}`,
+      paymentMethod: selected,
     };
+    console.log("orderData", orderData)
     try {
       const data = await dispatch(createOrder(orderData)).unwrap();
 
-      console.log("Cashfree data:", data);
-      if (!data.sessionId) {
-        throw new Error("No session ID returned");
+      // ⭐ PAYU PAYMENT REDIRECT
+      if (data.gateway === "payu") {
+        const form = document.createElement("form");
+        form.action = data.payuURL;
+        form.method = "POST";
+
+        Object.keys(data.params).forEach((key) => {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = data.params[key];
+          form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+        return;
       }
-      const cashfree = await load({ mode: "sandbox" });
-      // cashfree.checkout({
-      //   paymentSessionId: data.sessionId,
-      //   redirectTarget: "_self",
-      //   redirectUrl: `${baseUrl}/payment-processing?order_id=${data.orderNumber}`,
-      // });
-      cashfree.checkout({
-        paymentSessionId: data.sessionId,
-        redirectTarget: "_modal",
-        onComplete: async () => {
-          const res = await fetch(`/api/orders/verify-status?order_id=${data.orderNumber}`);
-          console.log("res", res)
-          const result = await res.json();
-          console.log("result", result)
-          if (result.success) {
-            window.location.href = `/payment-success?order_id=${data.orderNumber}`;
-          } else {
-            window.location.href = `/payment-failed?order_id=${data.orderNumber}`;
-          }
-        },
-      });
+
+      // ⭐ CASHFREE PAYMENT
+      if (data.gateway === "cashfree") {
+        const cashfree = await load({ mode: "sandbox" });
+
+        cashfree.checkout({
+          paymentSessionId: data.sessionId,
+          redirectTarget: "_modal",
+          onComplete: async () => {
+            const res = await fetch(
+              `/api/orders/verify-status?order_id=${data.orderNumber}`
+            );
+            const result = await res.json();
+
+            if (result.success) {
+              window.location.href = `/payment-success?order_id=${data.orderNumber}`;
+            } else {
+              window.location.href = `/payment-failed?order_id=${data.orderNumber}`;
+            }
+          },
+        });
+      }
     } catch (err) {
       console.error("Checkout error:", err);
+      toast.error("Payment failed");
     }
     console.log("Order Data:", orderData);
   };
@@ -1223,23 +1198,44 @@ const Checkout = () => {
   };
 
   // Submit
-  const handleSubmit = async () => {
+  const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      let payload = { ...values };
+      // include all fields and defaults
+      let payload = {
+        id: user?.id || "",
+        name: values.name || "",
+        email: values.email || "",
+        phone: values.phone || "",
+        gender: values.gender || "",
+        address: values.address || "",
+        country: values.country || "",
+        state: values.state || "",
+        city: values.city || "",
+        pincode: values.pincode || "",
+        profileImage: values.profileImage || null,
+      };
 
-      if (values.profileImage) {
+      // upload image if new file is selected
+      if (values.profileImage instanceof File) {
         const uploadedUrl = await handleImageUpload(values.profileImage);
         payload.profileImage = uploadedUrl;
       }
 
+      // dispatch update
       const response = await dispatch(updateUser(payload)).unwrap();
+      console.log("response", response);
       toast.success(response.message || "Profile updated!");
       setOpen(false);
     } catch (err) {
+      console.error(err);
       toast.error(err.message || "Failed to update");
+    } finally {
+      setSubmitting(false);
     }
   };
 
+  const countryCode = selectedCountry || "IND";
+  console.log("countryCode", countryCode)
   return (
     <div className=" bg-gray-50 py-8 px-4">
       <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -1542,35 +1538,6 @@ const Checkout = () => {
             </div>
           </div>
 
-
-          {/* Billing Address (optional collapse for compactness) */}
-          {/* <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="text-md font-semibold text-gray-700 mb-1">Billing Address</h4>
-            <div className="text-gray-600 text-sm">
-              <div className="font-semibold">{user?.name}</div>
-              <div>{user?.phone}</div>
-              <div className="truncate">{user?.address || "No billing address"}</div>
-            </div> 
-            <h4 className="text-md font-semibold text-gray-700 mb-1 flex justify-between">
-              Billing Address
-              {isProfileIncomplete && (
-                <button
-                  onClick={() => setIsOpen(true)}
-                  className="text-blue-600 text-sm underline"
-                >
-                  Update
-                </button>
-              )}
-            </h4>
-            <div className="text-gray-600 text-sm">
-              <div className="font-semibold">{user?.name}</div>
-              <div>{user?.phone || "No phone"}</div>
-              <div className="truncate">
-                {user?.address || "No billing address"}
-              </div>
-            </div>
-          </div> */}
-
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <h4 className="text-md font-semibold text-gray-700 mb-1">
@@ -1585,12 +1552,6 @@ const Checkout = () => {
                 >
                   Update
                 </button>
-                // <button
-                //   onClick={() => setOpen(true)}
-                //   className="text-blue-600 text-sm underline"
-                // >
-                //   Update
-                // </button>
               )}
             </div>
 
@@ -1610,44 +1571,63 @@ const Checkout = () => {
             </span>
           </div>
 
-          <div className="space-y-4">
-            <span className="flex justify-between font-bold text-lg">Shipping</span>
-            <div className="flex flex-col gap-3">
-              {shippingOption.map((option) => {
-                const isSelected = selectedShippingOption?.name === option.name;
-                return (
-                  <button
-                    key={option.name}
-                    onClick={() => setSelectedShippingOption(option)}
-                    className={`flex items-start gap-3 p-4 rounded-lg border transition-all duration-200 text-left
-            ${isSelected
-                        ? "bg-gray-600 text-white border-gray-800 shadow-md"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                      }`}
-                  >
-                    {/* Radio-style Indicator */}
-                    <span className={`w-4 h-4 mt-1 rounded-full border-2 flex-shrink-0
-            ${isSelected ? "bg-white border-white" : "border-gray-400"}`} />
+          {!isIncomplete && (
+            <div className="space-y-4">
+              <span className="flex justify-between font-bold text-lg">Shipping</span>
 
-                    {/* Text Content */}
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold">{option.name}</span>
-                        {option.price && (
-                          <span className="font-medium">{currency} {currencySymbol}{option.price.toFixed(2)}</span>
-                        )}
-                      </div>
-                      {!option.price && (
-                        <p className="mt-1 text-xs text-gray-100">
-                          Rs.200/- per kg will be charged. Actual Shipping Charges will be informed once your order is packed and actual Weight and Volume is measured. Shipping will be done once Shipping charges are paid.
-                        </p>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
+              <div className="flex flex-col gap-3">
+                {shippingPricings
+                  .filter((option) =>
+                    option.country.toLowerCase() === (user?.country || "IND").toLowerCase()
+                  )
+                  .map((option) => {
+                    const isSelected = selectedShippingOption?.id === option.id;
+
+                    return (
+                      <button
+                        key={option.id}
+                        onClick={() => setSelectedShippingOption(option)}
+                        className={`flex items-start gap-3 p-4 rounded-lg border transition-all duration-200 text-left
+                ${isSelected
+                            ? "bg-gray-400 text-black border-gray-800 shadow-md"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                          }`}
+                      >
+                        <span
+                          className={`w-4 h-4 mt-1 rounded-full border-2 flex-shrink-0 ${isSelected ? "bg-white border-white" : "border-gray-400"
+                            }`}
+                        />
+
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center">
+                            <span className="font-semibold">{option.type}</span>
+
+                            {option.price ? (
+                              <span className="font-medium">
+                                {option.currencySymbol}
+                                {option.price.toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="font-medium">Price not available</span>
+                            )}
+                          </div>
+
+                          {option.description && (
+                            <p className="mt-1 text-xs text-gray-800">
+                              {option.description}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
             </div>
-          </div>
+          )}
+
+
+
+
 
           <div className="flex justify-between font-bold text-lg border-t pt-3">
             <span>Total</span>
@@ -1655,45 +1635,50 @@ const Checkout = () => {
           </div>
 
           {/* Payment Method */}
-          {/* <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="text-md font-semibold text-gray-700 mb-4">Payment Method</h4>
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              {methods.map((method) => {
-                const isSelected = selected === method.name;
+          {user?.country?.toLowerCase() === "india" && (
+            <div className="bg-gray-50 p-6 rounded-lg shadow-md space-y-4 max-w-md mx-auto">
+              <h4 className="text-lg font-semibold text-gray-700">Payment</h4>
 
-                return (
-                  <div
-                    key={method.name}
-                    className={`flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full cursor-pointer transition-all duration-300
-            ${isSelected ? "bg-blue-100 border-2 border-blue-500 shadow-lg" : "bg-gray-100 hover:bg-gray-200"}
-          `}
-                    onClick={() => setSelected(method.name)}
-                  >
-                    <div className="text-gray-600 mb-1">
-                      {method.icon}
+              <div className="flex gap-4 justify-between">
+                {methods.map((method) => {
+                  const isSelected = selected === method.name;
+                  return (
+                    <div key={method.name} className="relative flex-1 min-w-0">
+                      <button
+                        onClick={() => setSelected(method.name)}
+                        className={`
+                flex flex-col items-center justify-center w-full h-28 sm:h-32 rounded-xl border transition-all duration-300
+                cursor-pointer p-2
+                ${isSelected
+                            ? "bg-gray-800 text-white border-gray-700 shadow-lg scale-105"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                          }
+              `}
+                      >
+                        <img
+                          src={method.href}
+                          alt={method.name}
+                          className="w-16 h-16 object-contain mb-2 sm:w-20 sm:h-20"
+                        />
+                        <span className="text-sm font-medium">{method.name}</span>
+                      </button>
+
+                      {isSelected && (
+                        <span className="absolute top-1 right-1 text-green-500 font-bold text-lg">✔</span>
+                      )}
                     </div>
-                    <span className="text-xs sm:text-sm text-center text-gray-800 font-medium">
-                      {method.name}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+
+              <div className="text-gray-600 text-sm">
+                Selected Payment: <span className="font-semibold">{selected}</span>
+              </div>
             </div>
-          </div> */}
-          {/* Pay Button */}
-          {/* <button
-            disabled={selectedItems.length === 0}
-            onClick={() => {
-              // Redirect to /paynow with selected payment method
-              router.push(`/paynow?method=${encodeURIComponent(selected)}`);
-            }}
-            className={`w-full py-3 rounded-xl font-semibold transition ${selectedItems.length === 0
-                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                : "bg-gray-600 text-white hover:bg-gray-900 cursor-pointer"
-              }`}
-          >
-            Pay Now
-          </button> */}
+          )}
+
+
+
           <div className="flex justify-center items-center">
             <button onClick={handleClick} className="cursor-pointer bg-gradient-to-r from-gray-800 to-gray-600 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:scale-105 hover:shadow-2xl transition-transform duration-300">
               Place order
@@ -1888,241 +1873,294 @@ const Checkout = () => {
 
             {/* IMAGE SECTION */}
             <div className="flex flex-col items-center mb-6 space-y-2">
-              <label className="cursor-pointer group flex flex-col items-center">
-
-                {/* Avatar */}
-                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 shadow-md flex items-center justify-center bg-gray-100">
-
-                  {values.profileImage || user?.profileImage ? (
-                    <img
-                      src={
-                        values.profileImage
-                          ? URL.createObjectURL(values.profileImage)
-                          : user?.profileImage
-                      }
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-4xl font-bold text-gray-600">
-                      {user?.name
-                        ?.split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .toUpperCase() || "U"}
-                    </span>
-                  )}
-                </div>
-
-                <span className="mt-2 text-sm bg-gray-200 px-3 py-1 rounded-lg group-hover:bg-gray-300 transition cursor-pointer">
-                  Change Photo
-                </span>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) =>
-                    setValues((prev) => ({
-                      ...prev,
-                      profileImage: e.target.files?.[0] || null,
-                    }))
-                  }
-                />
-              </label>
-            </div>
-
-            {/* TITLE */}
-            <h2 className="text-2xl font-bold mb-6 text-center">Update Profile</h2>
-
-            {/* FORM GRID */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-1">
-
-              {/* NAME (READ-ONLY) */}
-              <div className="col-span-1">
-                <label className="text-sm font-medium">Name</label>
-                <input
-                  type="text"
-                  disabled
-                  value={user?.name}
-                  className="w-full border rounded-lg p-3 mt-1 bg-gray-200 text-gray-600 cursor-not-allowed"
-                />
-              </div>
-
-              {/* EMAIL (READ-ONLY) */}
-              <div className="col-span-1">
-                <label className="text-sm font-medium">Email</label>
-                <input
-                  type="email"
-                  disabled
-                  value={user?.email}
-                  className="w-full border rounded-lg p-3 mt-1 bg-gray-200 text-gray-600 cursor-not-allowed"
-                />
-              </div>
-
-              {/* GENDER SELECT */}
-              <div className="col-span-1">
-                <label className="text-sm font-medium">Gender</label>
-                <select
-                  value={values.gender}
-                  onChange={(e) =>
-                    setValues((prev) => ({ ...prev, gender: e.target.value }))
-                  }
-                  className="w-full border rounded-lg p-3 mt-1 bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Gender...</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              {/* COUNTRY SELECT */}
-              <div className="col-span-1">
-                <label className="mb-2 font-medium text-gray-700">Country</label>
-                <ReactSelect
-                  options={countries.map((c) => ({
-                    value: c.name,
-                    label: `${c.name} (${c.phoneCode})`,
-                  }))}
-                  value={
-                    selectedCountry
-                      ? { value: selectedCountry, label: selectedCountry }
-                      : null
-                  }
-                  onChange={(option) => {
-                    const countryName = option?.value || "";
-                    setSelectedCountry(countryName);
-                    setValues((prev) => ({
-                      ...prev,
-                      country: countryName,
-                      state: "",
-                      city: "",
-                      pincode: "",
-                    }));
-                    setCities([]);
-
-                    const phoneCode = countries.find(
-                      (c) => c.name === countryName
-                    )?.phoneCode;
-
-                    if (phoneCode && !values.phone.startsWith(phoneCode)) {
-                      setValues((prev) => ({
-                        ...prev,
-                        phone: phoneCode + " ",
-                      }));
-                    }
-                  }}
-                  isClearable
-                  placeholder="Select Country..."
-                />
-              </div>
-
-              {/* PINCODE */}
-              <div className="col-span-1">
-                <label className="mb-2 font-medium text-gray-700">Pincode</label>
-                <input
-                  type="text"
-                  value={values.pincode}
-                  onChange={async (e) => {
-                    const value = e.target.value;
-                    setValues((prev) => ({ ...prev, pincode: value }));
-
-                    if (values.country === "India" && value.length === 6) {
-                      await fetchPincodeData(value, (field, val) =>
-                        setValues((prev) => ({ ...prev, [field]: val }))
-                      );
-                    }
-                  }}
-                  placeholder="Enter Pincode"
-                  className="w-full border rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* ADDRESS */}
-              <div className="col-span-1">
-                <label className="text-sm font-medium">Address</label>
-                <input
-                  type="text"
-                  value={values.address}
-                  onChange={(e) =>
-                    setValues((prev) => ({ ...prev, address: e.target.value }))
-                  }
-                  className="w-full border rounded-lg p-3 mt-1 bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* STATE */}
-              <div className="col-span-1">
-                <label className="mb-2 font-medium text-gray-700">State</label>
-                <ReactSelect
-                  options={states.map((s) => ({ value: s, label: s }))}
-                  value={
-                    values.state ? { value: values.state, label: values.state } : null
-                  }
-                  onChange={(option) => {
-                    setValues((prev) => ({
-                      ...prev,
-                      state: option?.value || "",
-                      city: "",
-                    }));
-                    setSelectedState(option?.value || "");
-
-                    if (option?.value && selectedCountry) {
-                      setLoadingCities(true);
-                      getCities(selectedCountry, option.value).then((res) => {
-                        setCities(res);
-                        setLoadingCities(false);
-                      });
-                    }
-                  }}
-                  isClearable
-                  isLoading={loadingStates}
-                  placeholder="Select State..."
-                />
-              </div>
-
-              {/* CITY */}
-              <div className="col-span-1">
-                <label className="mb-2 font-medium text-gray-700">City</label>
-                <ReactSelect
-                  options={cities.map((c) => ({ value: c, label: c }))}
-                  value={
-                    values.city ? { value: values.city, label: values.city } : null
-                  }
-                  onChange={(option) =>
-                    setValues((prev) => ({ ...prev, city: option?.value || "" }))
-                  }
-                  isClearable
-                  isLoading={loadingCities}
-                  placeholder="Select City..."
-                />
-              </div>
-            </div>
-
-
-            {/* BUTTONS */}
-            <div className="flex justify-end gap-4 mt-8">
-              <button
-                onClick={() => setOpen(false)}
-                className="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 cursor-pointer font-medium"
+              <Formik
+                initialValues={initialValues}
+                validationSchema={validationSchema}
+                onSubmit={handleSubmit}
               >
-                Cancel
-              </button>
+                {({ values, setFieldValue, isSubmitting }) => (
+                  <Form className="w-full">
+                    <div className="flex flex-col items-center mb-6 space-y-2">
+                      <label className="cursor-pointer group flex flex-col items-center">
 
-              <button
-                onClick={handleSubmit}
-                className="px-5 py-2.5 rounded-lg bg-gray-700 text-white hover:bg-black cursor-pointer font-medium"
-              >
-                Save Changes
-              </button>
+                        {/* Avatar */}
+                        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 shadow-md flex items-center justify-center bg-gray-100">
+                          {values.profileImage || user?.profileImage ? (
+                            <img
+                              src={
+                                values.profileImage
+                                  ? URL.createObjectURL(values.profileImage)
+                                  : user?.profileImage
+                              }
+                              alt="Profile"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-4xl font-bold text-gray-600">
+                              {user?.name
+                                ?.split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase() || "U"}
+                            </span>
+                          )}
+                        </div>
+
+                        <span className="mt-2 text-sm bg-gray-200 px-3 py-1 rounded-lg group-hover:bg-gray-300 transition cursor-pointer">
+                          Change Photo
+                        </span>
+
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) =>
+                            setFieldValue("profileImage", e.target.files?.[0] || null)
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    {/* TITLE */}
+                    <h2 className="text-2xl font-bold mb-6 text-center">Update Profile</h2>
+
+                    {/* FORM GRID */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-1">
+
+                      {/* NAME */}
+                      <div className="col-span-1">
+                        <label className="text-sm font-medium">Name</label>
+                        <input
+                          type="text"
+                          disabled
+                          value={user?.name}
+                          className="w-full border rounded-lg p-3 mt-1 bg-gray-200 text-gray-600 cursor-not-allowed"
+                        />
+                      </div>
+
+                      {/* EMAIL */}
+                      <div className="col-span-1">
+                        <label className="text-sm font-medium">Email</label>
+                        <input
+                          type="email"
+                          disabled
+                          value={user?.email}
+                          className="w-full border rounded-lg p-3 mt-1 bg-gray-200 text-gray-600 cursor-not-allowed"
+                        />
+                      </div>
+
+                      {/* GENDER */}
+                      <div className="col-span-1">
+                        <label className="text-sm font-medium">Gender</label>
+                        <Field
+                          as="select"
+                          name="gender"
+                          className="w-full border rounded-lg p-3 mt-1 bg-gray-50 focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="MALE">Male</option>
+                          <option value="FEMALE">Female</option>
+                          <option value="OTHER">Other</option>
+                        </Field>
+                        <ErrorMessage
+                          name="gender"
+                          component="p"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+
+                      {/* COUNTRY */}
+                      <div className="col-span-1">
+                        <label className="mb-2 font-medium text-gray-700">Country</label>
+                        <ReactSelect
+                          options={countries.map((c) => ({
+                            value: c.name,
+                            label: `${c.name} (${c.phoneCode})`,
+                          }))}
+                          value={
+                            selectedCountry
+                              ? { value: selectedCountry, label: selectedCountry }
+                              : null
+                          }
+                          onChange={(option) => {
+                            const countryName = option?.value || "";
+                            setSelectedCountry(countryName);
+                            setFieldValue("country", countryName);
+                            setFieldValue("state", "");
+                            setFieldValue("city", "");
+                            setFieldValue("pincode", "");
+                            setCities([]);
+
+                            const phoneCode = countries.find(c => c.name === countryName)?.phoneCode;
+                            if (phoneCode && !values.phone.startsWith(phoneCode)) {
+                              setFieldValue("phone", phoneCode + " ");
+                            }
+                          }}
+                          isClearable
+                          placeholder="Select Country..."
+                        />
+                        <ErrorMessage
+                          name="country"
+                          component="p"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+
+                      {/* PINCODE */}
+                      <div className="col-span-1">
+                        <label className="mb-2 font-medium text-gray-700">Pincode</label>
+                        <Field name="pincode">
+                          {({ field }) => (
+                            <input
+                              type="text"
+                              {...field}
+                              placeholder="Enter Pincode"
+                              className="w-full border rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-blue-500"
+                              onChange={async (e) => {
+                                const value = e.target.value;
+                                setFieldValue("pincode", value);
+
+                                if (selectedCountry === "India" && value.length === 6) {
+                                  await fetchPincodeData(value, (fieldName, val) =>
+                                    setFieldValue(fieldName, val)
+                                  );
+                                }
+                              }}
+                            />
+                          )}
+                        </Field>
+                      </div>
+
+                      {/* STATE */}
+                      <div className="col-span-1">
+                        <label className="mb-2 font-medium text-gray-700">State</label>
+                        <ReactSelect
+                          options={states.map(s => ({ value: s, label: s }))}
+                          value={values.state ? { value: values.state, label: values.state } : null}
+                          onChange={(option) => {
+                            const stateVal = option?.value || "";
+                            setSelectedState(stateVal);
+                            setFieldValue("state", stateVal);
+                            setFieldValue("city", "");
+
+                            if (option?.value && selectedCountry) {
+                              setLoadingCities(true);
+                              getCities(selectedCountry, option.value).then(res => {
+                                setCities(res);
+                                setLoadingCities(false);
+                              });
+                            }
+                          }}
+                          isClearable
+                          isLoading={loadingStates}
+                          placeholder="Select State..."
+                        />
+                        <ErrorMessage
+                          name="state"
+                          component="p"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+
+                      {/* CITY */}
+                      <div className="col-span-1">
+                        <label className="mb-2 font-medium text-gray-700">City</label>
+                        <ReactSelect
+                          options={cities.map(c => ({ value: c, label: c }))}
+                          value={values.city ? { value: values.city, label: values.city } : null}
+                          onChange={(option) => setFieldValue("city", option?.value || "")}
+                          isClearable
+                          isLoading={loadingCities}
+                          placeholder="Select City..."
+                        />
+                        <ErrorMessage
+                          name="city"
+                          component="p"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+
+                      {/* PHONE */}
+                      <div className="col-span-1">
+                        <label className="mb-2 font-medium text-gray-700">Phone Number</label>
+                        <Field name="phone">
+                          {({ field, form }) => {
+                            const phoneCode = countries.find(c => c.name === values.country)?.phoneCode || "+";
+                            const numberPart = field.value?.replace(/^\+\d+\s*/, "") || "";
+                            return (
+                              <input
+                                type="tel"
+                                value={`${phoneCode} ${numberPart}`}
+                                placeholder={`${phoneCode} 98765 43210`}
+                                className="w-full border rounded-lg h-10 px-3 bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                onChange={e => {
+                                  const newNumber = e.target.value.replace(/^\+\d+\s*/, "");
+                                  form.setFieldValue("phone", `${phoneCode} ${newNumber}`);
+                                }}
+                                onPaste={e => {
+                                  const pasteData = e.clipboardData.getData("text");
+                                  const newNumber = pasteData.replace(/^\+\d+\s*/, "");
+                                  form.setFieldValue("phone", `${phoneCode} ${newNumber}`);
+                                  e.preventDefault();
+                                }}
+                                onKeyDown={e => {
+                                  if (
+                                    e.target.selectionStart <= phoneCode.length &&
+                                    ["Backspace", "Delete"].includes(e.key)
+                                  ) e.preventDefault();
+                                }}
+                              />
+                            );
+                          }}
+                        </Field>
+                        <ErrorMessage
+                          name="phone"
+                          component="p"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+
+                      {/* ADDRESS */}
+                      <div className="col-span-1 sm:col-span-2">
+                        <label className="text-sm font-medium">Address</label>
+                        <Field
+                          name="address"
+                          placeholder="Enter Address"
+                          className="w-full border rounded-lg p-3 mt-1 bg-gray-50 focus:ring-2 focus:ring-blue-500"
+                        />
+                        <ErrorMessage
+                          name="address"
+                          component="p"
+                          className="text-red-500 text-sm mt-1"
+                        />
+                      </div>
+                    </div>
+
+                    {/* BUTTONS */}
+                    <div className="flex justify-end gap-4 mt-8">
+                      <button
+                        type="button"
+                        onClick={() => setOpen(false)}
+                        className="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 cursor-pointer font-medium"
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="px-5 py-2.5 rounded-lg bg-gray-700 text-white hover:bg-black cursor-pointer font-medium"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </Form>
+                )}
+              </Formik>
             </div>
           </div>
         </div>
       )}
-
-
-
       {
         showConfirm && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

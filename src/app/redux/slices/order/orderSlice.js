@@ -51,7 +51,7 @@ export const createOrder = createAsyncThunk(
     async (orderData, { rejectWithValue }) => {
         try {
             const res = await axios.post("/api/orders", orderData); // Your backend API
-            return res.data; // { orderId, cashfreeToken, ... }
+            return res.data; 
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to create order");
         }
