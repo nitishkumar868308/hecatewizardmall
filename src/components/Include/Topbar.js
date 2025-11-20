@@ -116,20 +116,22 @@ const Topbar = () => {
 
 
 
-
+    const isXpress = pathname.includes("/xpress");
     return (
-        <div className="w-full bg-black text-white">
+        // <div className="w-full bg-black text-white">
+        <div className={`w-full text-white ${isXpress ? "bg-gray-600" : "bg-black"}`}>
             <div className="mx-auto max-w-screen-2xl px-4">
                 <div className="flex items-center justify-between py-2 md:py-3">
                     <div className="w-1/3"></div>
                     <h1 className="font-libreBaskerville tracking-wide text-base sm:text-lg md:text-2xl uppercase text-center w-1/3">
-                        hecate wizard mall
+                    {isXpress ? "xpress hecate wizard mall" : "hecate wizard mall"}                        
                     </h1>
                     <div className="w-1/3 flex justify-end">
                         <select
                             value={country}
                             onChange={handleChange}
-                            className="bg-black border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base"
+                            // className="bg-black border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base"
+                            className={`border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base ${isXpress ? "bg-red-400" : "bg-black"}`}
                         >
                             {countriesprice.map((c) => (
                                 <option key={c.code} value={c.code}>

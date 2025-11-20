@@ -201,8 +201,10 @@ export async function POST(req) {
                         firstname,
                         email,
                         phone,
+                        // surl: `${baseUrl}/api/payu/success`,
+                        // furl: `${baseUrl}/api/payu/success`,
                         surl: `${baseUrl}/api/payu/success`,
-                        furl: `${baseUrl}/api/payu/success`,
+                        furl: `${baseUrl}/api/payu/failure`,
                         hash,
                     },
                 }),
@@ -213,15 +215,16 @@ export async function POST(req) {
         // **************************
         // ⭐ CASHFREE PAYMENT METHOD
         // **************************
+        const customerPhone = body.user?.phone.replace(/\D/g, "").slice(-10);
         if (body.paymentMethod === "CashFree") {
             const customerEmail = body.user?.email || "example@gmail.com";
-            const customerPhoneRaw = body.user?.phone || "+919999999999";
-            const customerPhone = customerPhoneRaw.replace(/\s+/g, "");
+            // const customerPhoneRaw = body.user?.phone || "+919999999999";
+            // const customerPhone = customerPhoneRaw.replace(/\s+/g, "");
 
             const response = await axios.post(
-                "https://sandbox.cashfree.com/pg/orders",
+                "https://api.cashfree.com/pg/orders",
                 {
-                    order_amount: orderRecord.totalAmount,
+                    order_amount: Number(orderRecord.totalAmount),
                     order_currency: "INR",
                     order_id: orderNumber,
                     customer_details: {
@@ -230,8 +233,10 @@ export async function POST(req) {
                         customer_phone: customerPhone,
                     },
                     order_meta: {
-                        notify_url: `${baseUrl}/api/orders/verify`,
+                        notify_url: `${baseUrl}/api/cashfree/verify`,
+                        return_url: `${baseUrl}/payment-success?order_id=${orderNumber}`,
                     },
+
                 },
                 {
                     headers: {
@@ -259,6 +264,7 @@ export async function POST(req) {
                 { status: 200 }
             );
         }
+
 
         return new Response(JSON.stringify({ message: "Payment method missing" }), {
             status: 400,

@@ -192,7 +192,7 @@ const Checkout = () => {
 
   const methods = [
     { name: "PayU", href: "/image/new-payu-logo.svg" },
-    { name: "CashFree", href: "/image/cashfree_logo.svg" },
+    // { name: "CashFree", href: "/image/cashfree_logo.svg" },
   ];
 
 
@@ -689,8 +689,9 @@ const Checkout = () => {
       }
 
       // ⭐ CASHFREE PAYMENT
-      if (data.gateway === "cashfree") {
-        const cashfree = await load({ mode: "sandbox" });
+      if (data.gateway === "CashFree") {
+        // Load Cashfree in PRODUCTION mode
+        const cashfree = await load({ mode: "production" });
 
         cashfree.checkout({
           paymentSessionId: data.sessionId,
@@ -711,7 +712,7 @@ const Checkout = () => {
       }
     } catch (err) {
       console.error("Checkout error:", err);
-      toast.error("Payment failed");
+      toast.error(err?.message || "Payment failed");
     }
     console.log("Order Data:", orderData);
   };

@@ -1,20 +1,41 @@
 import React from "react";
 import { Facebook, Instagram, Twitter, MapPin, Mail, Phone } from "lucide-react";
 import Link from "next/link"
+import { usePathname } from "next/navigation";
 
 const Footer = () => {
+    const pathname = usePathname();
+    const isXpress = pathname.includes("/xpress");
     return (
-        <footer className="bg-[#161619] text-white ">
+        // <footer className="bg-[#161619] text-white ">
+        <footer className={`text-white ${isXpress ? "bg-gray-600" : "bg-[#161619]"}`}>
             <div className="max-w-screen-2xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between gap-8">
 
                 {/* Logo + Description */}
                 <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-3">
-                        <img
+                        {/* <img
                             src="/image/HWM LOGO 1 GREY 100.png"
                             alt="Logo"
                             className="h-24 w-24 object-contain"
-                        />
+                        /> */}
+                        {isXpress ? (
+                            <Link href="/xpress/home">
+                                <img
+                                    src="/image/xpress-logo.avif"
+                                    alt="Logo"
+                                    className="h-20 w-24 object-contain"
+                                />
+                            </Link>
+                        ) : (
+                            <Link href="/">
+                                <img
+                                    src="/image/HWM LOGO 1 GREY 100.png"
+                                    alt="Logo"
+                                    className="h-20 w-24 object-contain"
+                                />
+                            </Link>
+                        )}
                     </div>
                     <p className="text-gray-400 text-sm md:text-base font-functionPro">
                         Your ultimate destination for all things magical and mystical.<br />
@@ -115,9 +136,16 @@ const Footer = () => {
             </div>
 
             {/* Bottom Bar */}
-            <div className="border-t border-gray-700 mt-6 py-4 text-center text-gray-400 text-sm font-functionPro">
-                &copy; {new Date().getFullYear()} Hecate Wizard Mall. All rights reserved.
-            </div>
+            {isXpress ? (
+                <div className="border-t border-gray-700 mt-6 py-4 text-center text-gray-400 text-sm font-functionPro">
+                    &copy; {new Date().getFullYear()} Xpress Hecate Wizard Mall. All rights reserved.
+                </div>
+            ) : (
+                <div className="border-t border-gray-700 mt-6 py-4 text-center text-gray-400 text-sm font-functionPro">
+                    &copy; {new Date().getFullYear()} Hecate Wizard Mall. All rights reserved.
+                </div>
+            )}
+
         </footer>
     );
 };

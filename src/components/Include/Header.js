@@ -1139,20 +1139,42 @@ const Header = () => {
     useEffect(() => {
         console.log("🟢 groupedCart changed:", JSON.parse(JSON.stringify(groupedCart)));
     }, [groupedCart]);
+
+    const isXpress = pathname.includes("/xpress");
     return (
         <>
-            <header className="w-full bg-[#161619] shadow-md md:relative fixed md:static top-0 z-50">
+            {/* <header className="w-full bg-[#161619] shadow-md md:relative fixed md:static top-0 z-50"> */}
+            <header className={`w-full shadow-md md:relative fixed md:static top-0 z-50 ${isXpress ? "bg-gray-700" : "bg-[#161619]"}`}>
                 <div className="max-w-screen-2xl mx-auto flex items-center justify-between px-6 py-3">
 
                     {/* Logo */}
                     <div className="flex items-center gap-2">
-                        <Link href="/">
+                        {/* <Link href="/">
                             <img
                                 src="/image/HWM LOGO 1 GREY 100.png"
                                 alt="Logo"
                                 className="h-20 w-24 object-contain"
                             />
-                        </Link>
+                        </Link> */}
+                        <div className="flex items-center gap-2">
+                            {isXpress ? (
+                                <Link href="/xpress/home">
+                                    <img
+                                        src="/image/xpress-logo.avif"
+                                        alt="Logo"
+                                        className="h-20 w-24 object-contain"
+                                    />
+                                </Link>
+                            ) : (
+                                <Link href="/">
+                                    <img
+                                        src="/image/HWM LOGO 1 GREY 100.png"
+                                        alt="Logo"
+                                        className="h-20 w-24 object-contain"
+                                    />
+                                </Link>
+                            )}
+                        </div>
                     </div>
 
                     {/* Navigation Menu (Desktop) */}
@@ -1202,8 +1224,37 @@ const Header = () => {
 
                     <nav className="hidden md:flex flex-1 justify-center relative">
                         <ul className="flex items-center gap-6">
+                            <div className="flex items-center gap-2">
+                                {isXpress ? (
+                                    <Link href="/">
+                                        <img
+                                            src="/image/HWM LOGO 1 GREY 100.png"
+                                            alt="Logo"
+                                            className="h-14 w-24 object-contain"
+                                        />
+                                    </Link>
+                                ) : (
+                                    <Link href="/xpress/home">
+                                        <img
+                                            src="/image/xpress-logo.avif"
+                                            alt="Logo"
+                                            className="h-14 w-24 object-contain"
+                                        />
+                                    </Link>
+                                )}
+                            </div>
+
                             {menuItems.map((item) => {
-                                const href = item === "Home" ? "/" : `/${item.toLowerCase()}`;
+                                // const href = item === "Home" ? "/" : `/${item.toLowerCase()}`;
+                                const href =
+                                    item === "Home"
+                                        ? isXpress
+                                            ? "/xpress/home"
+                                            : "/"
+                                        : isXpress
+                                            ? `/xpress/${item.toLowerCase()}`
+                                            : `/${item.toLowerCase()}`;
+
                                 const isActive = pathname === href;
 
                                 return (
