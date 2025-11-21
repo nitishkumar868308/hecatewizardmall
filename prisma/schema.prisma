@@ -62,12 +62,14 @@ model Category {
   name          String
   image         String?
   active        Boolean       @default(true)
+  platform      String[]      @default([])  // ["xpress", "website"]
   deleted       Int           @default(0) // 0 = not deleted, 1 = deleted
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   subcategories Subcategory[]
   products  Product[]
   countryTaxes CountryTax[] 
+  states        State[]       @relation("CategoryStates")
 }
 
 model Subcategory {
@@ -77,11 +79,13 @@ model Subcategory {
   category   Category @relation(fields: [categoryId], references: [id])
   image      String?
   active     Boolean  @default(true)
+  platform      String[]      @default([])  // ["xpress", "website"]
   products   Product[]
   offerId     Int?      
   deleted    Int      @default(0) // 0 = not deleted, 1 = deleted
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  states        State[]       @relation("SubcategoryStates")
 }
 
 model Product {
@@ -347,3 +351,12 @@ model ShippingPricing {
   createdAt      DateTime @default(now())
 }
 
+model State {
+  id        Int      @id @default(autoincrement())
+  name      String
+  active    Boolean  @default(true)
+  deleted   Int      @default(0)
+  createdAt DateTime @default(now())
+  categories Category[] @relation("CategoryStates")
+  subcategories Subcategory[]  @relation("SubcategoryStates")
+}

@@ -8,7 +8,7 @@ export async function GET(req) {
         const subcategories = await prisma.subcategory.findMany({
             where: { deleted: 0 },
             orderBy: { createdAt: "desc" },
-            include: { category: true }
+            include: { category: true, states: true, }
         });
         // console.log("subcategories" , subcategories)
 
@@ -28,7 +28,7 @@ export async function GET(req) {
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { name, categoryId, active, image, offerId } = body;
+        const { name, categoryId, active, image, offerId, platform, states } = body;
         // console.log("image" , image)
 
         // Validation
@@ -58,6 +58,13 @@ export async function POST(req) {
                 active: active ?? true,
                 image: image ?? null,
                 offerId: offerId ?? null,
+                platform: platform ?? [],
+                states: {
+                    connect: states?.map((id) => ({ id })) ?? [],
+                },
+            },
+            include: {
+                states: true,
             },
         });
 
@@ -77,7 +84,7 @@ export async function POST(req) {
 export async function PUT(req) {
     try {
         const body = await req.json();
-        const { id, name, categoryId, active, deleted, image, offerId } = body;
+        const { id, name, categoryId, active, deleted, image, offerId, stateIds, platform } = body;
 
         if (!id) {
             return new Response(JSON.stringify({ message: "Subcategory ID is required" }), { status: 400 });
@@ -97,6 +104,8 @@ export async function PUT(req) {
                 deleted: deleted ?? existing.deleted,
                 image: image ?? existing.image,
                 offerId: offerId ?? null,
+                platform: platform ?? existing.platform,
+                stateIds: stateIds ? { set: stateIds } : undefined,
             },
         });
 

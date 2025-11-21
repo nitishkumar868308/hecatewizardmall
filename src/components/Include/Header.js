@@ -27,6 +27,7 @@ import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 
 
 const Header = () => {
+     const pathname = usePathname();
     const [active, setActive] = useState("Home");
     const [expanded, setExpanded] = useState(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -106,18 +107,29 @@ const Header = () => {
         .slice()
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         .map(h => h.name);
-
+    const isXpress = pathname.includes("/xpress");
+    const filteredCategories = categories.filter(cat =>
+        isXpress
+            ? cat.platform?.includes("xpress")
+            : cat.platform?.includes("website")
+    );
+    const categoriesMap = filteredCategories.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        img: cat.image,
+        sub: cat.subcategories?.map(s => s.name) || [],
+    }));
     // Step 1: Map all categories first
-    const categoriesMap = {};
-    categories
-        .filter(cat => cat.active)
-        .forEach(cat => {
-            categoriesMap[cat.id] = {
-                name: cat.name,
-                sub: [], // initially empty
-                img: cat.image || "/default-image.jpg",
-            };
-        });
+    // const categoriesMap = {};
+    // categories
+    //     .filter(cat => cat.active)
+    //     .forEach(cat => {
+    //         categoriesMap[cat.id] = {
+    //             name: cat.name,
+    //             sub: [],
+    //             img: cat.image || "/default-image.jpg",
+    //         };
+    //     });
     console.log("categoriesMap", categoriesMap)
     // Step 2: Fill subcategories
     subcategories
@@ -173,7 +185,7 @@ const Header = () => {
     //         { name: "Fashion", subItems: [{ name: "Men" }, { name: "Women" }], }, { name: "Sports" }, { name: "Music" },],
     // };
     const [activeCat, setActiveCat] = useState(categories[0])
-    const pathname = usePathname();
+   
 
     const handleMenuClick = (item) => {
         const href = item === "Home" ? "/" : `/${item.toLowerCase()}`;
@@ -1140,7 +1152,7 @@ const Header = () => {
         console.log("🟢 groupedCart changed:", JSON.parse(JSON.stringify(groupedCart)));
     }, [groupedCart]);
 
-    const isXpress = pathname.includes("/xpress");
+
     return (
         <>
             {/* <header className="w-full bg-[#161619] shadow-md md:relative fixed md:static top-0 z-50"> */}

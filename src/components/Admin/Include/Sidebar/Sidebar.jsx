@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, Plus, ChevronDown, ChevronUp, LayoutGrid, ShoppingBag, Clapperboard  } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, Plus, ChevronDown, ChevronUp, LayoutGrid, ShoppingBag, Clapperboard } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -8,6 +8,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuOpenProduct, setMenuOpenProduct] = useState(false);
     const [menuOpenTax, setMenuOpenTax] = useState(false);
+    const [manuOpenLocation, setMenuOpenLocation] = useState(false);
 
     return (
         <>
@@ -210,6 +211,34 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     >
                         <Clapperboard className="w-5 h-5" /> Video Story
                     </Link>
+
+                    <div>
+                        <button
+                            onClick={() => setMenuOpenLocation(!manuOpenLocation)}
+                            className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                        >
+                            <span className="flex items-center gap-3">
+                                <LayoutGrid className="w-5 h-5" /> Add Location
+                            </span>
+                            {manuOpenLocation ? (
+                                <ChevronUp className="w-4 h-4" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4" />
+                            )}
+                        </button>
+
+                        {/* Dropdown items */}
+                        {manuOpenLocation && (
+                            <div className="ml-8 mt-2 flex flex-col gap-2">
+                                <Link
+                                    href="/admin/loctaion_State"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Add State
+                                </Link>
+                            </div>
+                        )}
+                    </div>
 
                     <Link
                         href="/admin/settings"

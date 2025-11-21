@@ -19,7 +19,7 @@ import videoStoryReducer from "./slices/videoStory/videoStorySlice"
 import contactMessageReducer from './slices/contact/contactMessageSlice';
 import orderReducer from "./slices/order/orderSlice";
 import shippingPricingReducer from "./slices/shippingPricing/shippingPricingSlice";
-
+import stateReducer from "./slices/state/addStateSlice"
 
 // import updateUserReducer from './slices/userSlice';
 
@@ -45,6 +45,7 @@ const store = configureStore({
         contactMessage: contactMessageReducer,
         order: orderReducer,
         shippingPricing: shippingPricingReducer,
+        states: stateReducer
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

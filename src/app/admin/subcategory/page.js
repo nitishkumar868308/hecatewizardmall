@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import DefaultPageAdmin from "@/components/Admin/Include/DefaultPageAdmin/DefaultPageAdmin";
 import { Plus, Edit, Trash2, X } from "lucide-react";
 import {
@@ -13,6 +13,9 @@ import { useDispatch, useSelector } from "react-redux";
 import toast from 'react-hot-toast';
 import Image from "next/image";
 import { fetchOffers } from '@/app/redux/slices/offer/offerSlice'
+import {
+    fetchStates,
+} from "@/app/redux/slices/state/addStateSlice";
 
 const AddSubcategory = () => {
     const dispatch = useDispatch();
@@ -28,12 +31,43 @@ const AddSubcategory = () => {
     const [deleteSubcategoryId, setDeleteSubcategoryId] = useState(null);
     const [newImage, setNewImage] = useState(null);
     const { offers } = useSelector((state) => state.offers);
-    console.log("offers", offers)
+    const [platform, setPlatform] = useState({
+        xpress: false,
+        website: false,
+    });
+    const [selectedState, setSelectedState] = useState("");
+    const [selectedStates, setSelectedStates] = useState([]);
+    const { states } = useSelector((state) => state.states);
+    console.log("categories", categories)
     useEffect(() => {
         dispatch(fetchSubcategories());
         dispatch(fetchCategories());
         dispatch(fetchOffers())
+        dispatch(fetchStates());
     }, [dispatch]);
+
+    const dropdownRef = useRef(null);
+    const [open, setOpen] = useState(false);
+    const editDropdownRef = useRef(null);
+    const [editStateOpen, setEditStateOpen] = useState(false);
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const toggleState = (id) => {
+        if (selectedStates.includes(id)) {
+            setSelectedStates(selectedStates.filter((s) => s !== id));
+        } else {
+            setSelectedStates([...selectedStates, id]);
+        }
+    };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -57,13 +91,17 @@ const AddSubcategory = () => {
     const handleAddSubcategory = async () => {
         if (!newSubcategory.name.trim() || !newSubcategory.categoryId)
             return toast.error("Name and category are required");
-
+        if (!platform.xpress && !platform.website) {
+            return toast.error("Please select at least one platform");
+        }
         let imageUrl = null;
         if (newImage) {
             imageUrl = await handleImageUpload(newImage);
         }
 
-        console.log("imageUrl", imageUrl)
+        const platformArray = Object.entries(platform)
+            .filter(([key, value]) => value)
+            .map(([key]) => key);
 
         try {
             await dispatch(
@@ -73,11 +111,15 @@ const AddSubcategory = () => {
                     image: imageUrl,
                     active: true,
                     offerId: newSubcategory.offerId ? parseInt(newSubcategory.offerId) : null,
+                    platform: platformArray,         // <-- FIXED
+                    states: selectedStates,          // <-- FIXED
                 })
             ).unwrap();
             toast.success("Subcategory added successfully");
             setNewSubcategory({ name: "", categoryId: "", offerId: "" });
             setNewImage(null);
+            setPlatform({ xpress: false, website: false });
+            setSelectedStates([]);
             setModalOpen(false);
         } catch (err) {
             toast.error(err.message || "Failed to add subcategory");
@@ -87,7 +129,10 @@ const AddSubcategory = () => {
     const handleEditSubcategoryFunc = async () => {
         if (!editSubcategory.name.trim() || !editSubcategory.categoryId)
             return toast.error("Name and category are required");
-
+        if (!editSubcategory.platform.xpress && !editSubcategory.platform.website) {
+            toast.error("Select at least one platform");
+            return;
+        }
         let imageUrl = editSubcategory.image ?? null;
         if (newImage) imageUrl = await handleImageUpload(newImage);
 
@@ -100,6 +145,8 @@ const AddSubcategory = () => {
                     image: imageUrl,
                     active: editSubcategory.active,
                     offerId: editSubcategory.offerId ? parseInt(editSubcategory.offerId) : null,
+                    platform: editSubcategory.platform,
+                    stateIds: editSubcategory.stateIds,
                 })
             ).unwrap();
             toast.success("Subcategory updated successfully");
@@ -137,6 +184,31 @@ const AddSubcategory = () => {
 
     console.log("filteredSubcategories", filteredSubcategories)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+    const openAddModal = () => {
+        setPlatform({ xpress: false, website: false });
+        setNewSubcategory({ name: "", categoryId: "", offerId: "" });
+        setNewImage(null);
+        setSelectedStates([]);
+        setModalOpen(true);
+    };
+
+
+    const openEditModal = (s) => {
+        setEditSubcategory({
+            id: s.id,
+            name: s.name,
+            image: s.image || null,
+            imageFile: null,
+            categoryId: s.categoryId,
+            platform: {
+                xpress: s.platform?.includes("xpress") || false,
+                website: s.platform?.includes("website") || false
+            },
+            stateIds: s.states?.map(st => st.id) || []
+        });
+        setEditModalOpen(true);
+    };
     return (
         <DefaultPageAdmin>
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
@@ -150,7 +222,8 @@ const AddSubcategory = () => {
                         className="border rounded-lg px-4 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-gray-400"
                     />
                     <button
-                        onClick={() => setModalOpen(true)}
+                        // onClick={() => setModalOpen(true)}
+                        onClick={openAddModal}
                         className="flex items-center gap-2 bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg shadow cursor-pointer"
                     >
                         <Plus className="w-5 h-5" /> Add Subcategory
@@ -230,13 +303,14 @@ const AddSubcategory = () => {
                                     <td className="px-6 py-4 ">
                                         <div className="flex gap-3">
                                             <button
-                                                onClick={() => {
-                                                    setEditSubcategory({
-                                                        ...s
-                                                    });
-                                                    setNewImage(null);
-                                                    setEditModalOpen(true);
-                                                }}
+                                                // onClick={() => {
+                                                //     setEditSubcategory({
+                                                //         ...s
+                                                //     });
+                                                //     setNewImage(null);
+                                                //     setEditModalOpen(true);
+                                                // }}
+                                                onClick={() => openEditModal(s)}
                                                 className="text-blue-500 hover:text-blue-700 cursor-pointer"
                                             >
                                                 <Edit className="w-5 h-5" />
@@ -266,65 +340,164 @@ const AddSubcategory = () => {
             {/* Add Modal */}
             {modalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+                    <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
+
+                        {/* Close Button */}
                         <button
                             onClick={() => setModalOpen(false)}
                             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
                         >
                             <X className="w-5 h-5" />
                         </button>
-                        <h2 className="text-xl font-bold mb-4 text-center">Add New Subcategory</h2>
 
-                        <input
-                            type="text"
-                            placeholder="Subcategory Name"
-                            value={newSubcategory.name}
-                            onChange={(e) => setNewSubcategory({ ...newSubcategory, name: e.target.value })}
-                            className="border rounded-lg px-4 py-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        />
+                        <h2 className="text-xl font-bold mb-6 text-center">Add New Subcategory</h2>
 
-                        <select
-                            value={newSubcategory.categoryId}
-                            onChange={(e) => setNewSubcategory({ ...newSubcategory, categoryId: e.target.value })}
-                            className="border rounded-lg px-4 py-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        >
-                            <option value="">Select Category</option>
-                            {categories.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
+                        {/* PLATFORM */}
+                        <div className="mb-6">
+                            <p className="font-semibold mb-3 text-center text-gray-700">
+                                Select Platform
+                            </p>
 
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            className="border rounded-lg px-4 py-2 w-full mb-4"
-                        />
+                            <div className="flex items-center justify-center gap-10">
+                                <label className="flex items-center gap-2 cursor-pointer text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={platform.xpress}
+                                        onChange={(e) =>
+                                            setPlatform({ ...platform, xpress: e.target.checked })
+                                        }
+                                        className="w-4 h-4"
+                                    />
+                                    <span>Xpress</span>
+                                </label>
 
-                        <select
-                            value={newSubcategory.offerId || ""}
-                            onChange={(e) => setNewSubcategory({ ...newSubcategory, offerId: e.target.value })}
-                            className="border rounded-lg px-4 py-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        >
-                            <option value="">Select Offer (Optional)</option>
-                            {offers
-                                .filter((offer) => offer.type.includes("Subcategory") && offer.active)
-                                .map((offer) => (
-                                    <option key={offer.id} value={offer.id}>
-                                        {offer.name} (
-                                        {offer.discountType === "percentage"
-                                            ? `${offer.discountValue.percent}%`
-                                            : offer.discountType === "buyXGetY"
-                                                ? `Buy ${offer.discountValue.buy} Get ${offer.discountValue.free}`
-                                                : "Offer"}
-                                        )
+                                <label className="flex items-center gap-2 cursor-pointer text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={platform.website}
+                                        onChange={(e) =>
+                                            setPlatform({ ...platform, website: e.target.checked })
+                                        }
+                                        className="w-4 h-4"
+                                    />
+                                    <span>Website</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* SUBCATEGORY NAME */}
+                        <div className="mb-4">
+                            <label className="block font-medium text-gray-700 mb-2">Subcategory Name</label>
+                            <input
+                                type="text"
+                                placeholder="Enter subcategory name"
+                                value={newSubcategory.name}
+                                onChange={(e) =>
+                                    setNewSubcategory({ ...newSubcategory, name: e.target.value })
+                                }
+                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-gray-400"
+                            />
+                        </div>
+
+                        {/* CATEGORY SELECT */}
+                        <div className="mb-4">
+                            <label className="block font-medium text-gray-700 mb-2">Select Category</label>
+                            <select
+                                value={newSubcategory.categoryId}
+                                onChange={(e) =>
+                                    setNewSubcategory({ ...newSubcategory, categoryId: e.target.value })
+                                }
+                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-gray-400"
+                            >
+                                <option value="">-- Select Category --</option>
+                                {categories.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.name}
                                     </option>
                                 ))}
-                        </select>
+                            </select>
+                        </div>
 
+                        {/* IMAGE UPLOAD */}
+                        <div className="mb-4">
+                            <label className="block font-medium text-gray-700 mb-2">Upload Image</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                className="border rounded-lg px-4 py-2 w-full"
+                            />
+                        </div>
 
+                        {/* OFFER SELECT */}
+                        {/* <div className="mb-4">
+                            <label className="block font-medium text-gray-700 mb-2">Select Offer (Optional)</label>
+                            <select
+                                value={newSubcategory.offerId || ""}
+                                onChange={(e) =>
+                                    setNewSubcategory({ ...newSubcategory, offerId: e.target.value })
+                                }
+                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-gray-400"
+                            >
+                                <option value="">-- Select Offer --</option>
+                                {offers
+                                    .filter((offer) => offer.type.includes("Subcategory") && offer.active)
+                                    .map((offer) => (
+                                        <option key={offer.id} value={offer.id}>
+                                            {offer.name} (
+                                            {offer.discountType === "percentage"
+                                                ? `${offer.discountValue.percent}%`
+                                                : offer.discountType === "buyXGetY"
+                                                    ? `Buy ${offer.discountValue.buy} Get ${offer.discountValue.free}`
+                                                    : "Offer"}
+                                            )
+                                        </option>
+                                    ))}
+                            </select>
+                        </div> */}
 
-                        <div className="flex justify-end gap-2">
+                        {/* STATE SELECTOR */}
+                        <div className="mb-4 relative" ref={dropdownRef}>
+                            <label className="block font-medium text-gray-700 mb-2">Select States</label>
+
+                            <div
+                                className="border rounded-lg px-4 py-2 w-full cursor-pointer flex justify-between items-center"
+                                onClick={() => setOpen(!open)}
+                            >
+                                <span>
+                                    {selectedStates.length > 0
+                                        ? states
+                                            .filter((s) => selectedStates.includes(s.id))
+                                            .map((s) => s.name)
+                                            .join(", ")
+                                        : "-- Select States --"}
+                                </span>
+                                <span>▾</span>
+                            </div>
+
+                            {open && (
+                                <div className="absolute z-50 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+                                    {states.map((st) => (
+                                        <label
+                                            key={st.id}
+                                            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                value={st.id}
+                                                checked={selectedStates.includes(st.id)}
+                                                onChange={() => toggleState(st.id)}
+                                                className="h-4 w-4"
+                                            />
+                                            {st.name}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ACTION BUTTONS */}
+                        <div className="flex justify-end gap-3 mt-6">
                             <button
                                 onClick={() => setModalOpen(false)}
                                 className="px-4 py-2 rounded-lg border hover:bg-gray-100 cursor-pointer"
@@ -342,6 +515,7 @@ const AddSubcategory = () => {
                 </div>
             )}
 
+
             {/* Edit Modal */}
             {editModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -353,6 +527,31 @@ const AddSubcategory = () => {
                             <X className="w-5 h-5" />
                         </button>
                         <h2 className="text-xl font-bold mb-4 text-center">Edit Subcategory</h2>
+
+                        {/* PLATFORM */}
+                        <div className="mb-6">
+                            <p className="font-semibold mb-3 text-center text-gray-700">Select Platform</p>
+                            <div className="flex items-center justify-center gap-10">
+                                <label className="flex items-center gap-2 cursor-pointer text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={editSubcategory.platform.xpress}
+                                        onChange={(e) => setEditSubcategory(prev => ({ ...prev, platform: { ...prev.platform, xpress: e.target.checked } }))}
+                                        className="w-4 h-4"
+                                    />
+                                    <span>Xpress</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={editSubcategory.platform.website}
+                                        onChange={(e) => setEditSubcategory(prev => ({ ...prev, platform: { ...prev.platform, website: e.target.checked } }))}
+                                        className="w-4 h-4"
+                                    />
+                                    <span>Website</span>
+                                </label>
+                            </div>
+                        </div>
 
                         <input
                             type="text"
@@ -426,6 +625,53 @@ const AddSubcategory = () => {
                                     </option>
                                 ))}
                         </select>
+
+                        {/* Multi-State Dropdown */}
+                        <div className="mb-4 relative" ref={editDropdownRef}>
+                            <label className="block font-medium mb-2 text-gray-700">Select States</label>
+
+                            {/* Selected Values Box */}
+                            <div
+                                className="border rounded-lg px-4 py-2 w-full cursor-pointer flex justify-between items-center"
+                                onClick={() => setEditStateOpen(!editStateOpen)}
+                            >
+                                <span>
+                                    {editSubcategory.stateIds?.length > 0
+                                        ? states
+                                            .filter((s) => editSubcategory.stateIds.includes(s.id))
+                                            .map((s) => s.name)
+                                            .join(", ")
+                                        : "-- Select State --"}
+                                </span>
+                                <span>▾</span>
+                            </div>
+
+                            {/* Dropdown Options */}
+                            {editStateOpen && (
+                                <div className="absolute left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+                                    {states.map((st) => (
+                                        <div key={st.id} className="flex items-center gap-2 p-2 hover:bg-gray-100">
+                                            <input
+                                                type="checkbox"
+                                                value={st.id}
+                                                checked={editSubcategory.stateIds?.includes(st.id)}
+                                                onChange={(e) => {
+                                                    const value = Number(e.target.value);
+                                                    setEditSubcategory((prev) => ({
+                                                        ...prev,
+                                                        stateIds: e.target.checked
+                                                            ? [...prev.stateIds, value]
+                                                            : prev.stateIds.filter((id) => id !== value),
+                                                    }));
+                                                }}
+                                                className="h-4 w-4"
+                                            />
+                                            <span>{st.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
 
                         <div className="flex justify-end gap-2">

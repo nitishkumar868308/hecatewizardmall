@@ -5,8 +5,11 @@ const prisma = new PrismaClient();
 export async function GET(req) {
     try {
         const categories = await prisma.category.findMany({
-            where: { deleted: 0 }, 
+            where: { deleted: 0 },
             orderBy: { createdAt: "desc" },
+            include: {
+                states: true,
+            }
         });
 
         return new Response(
@@ -24,7 +27,7 @@ export async function GET(req) {
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { name, active, image } = body;
+        const { name, active, image, platform, stateIds } = body;
 
         // Validation
         if (!name || typeof name !== "string") {
@@ -40,8 +43,15 @@ export async function POST(req) {
             );
         }
 
+        if (!Array.isArray(platform) || platform.length === 0) {
+            return new Response(JSON.stringify({ message: "Platform must be an array and not empty" }), { status: 400 });
+        }
+
         const category = await prisma.category.create({
-            data: { name, active: active ?? true, image: image ?? null, },
+            data: {
+                name, active: active ?? true, image: image ?? null, platform,
+                states: stateIds ? { connect: stateIds.map(id => ({ id })) } : undefined
+            },
         });
 
         return new Response(
@@ -59,7 +69,7 @@ export async function POST(req) {
 export async function PUT(req) {
     try {
         const body = await req.json();
-        const { id, name, active, deleted, image } = body;
+        const { id, name, active, deleted, image, platform, stateIds } = body;
 
         if (!id) {
             return new Response(JSON.stringify({ message: "Category ID is required" }), { status: 400 });
@@ -77,7 +87,14 @@ export async function PUT(req) {
                 active: active ?? existing.active,
                 deleted: deleted ?? existing.deleted,
                 image: image ?? existing.image,
+                platform: platform ?? existing.platform,
+                ...(stateIds && {
+                    states: {
+                        set: stateIds.map((sid) => ({ id: sid })),
+                    },
+                }),
             },
+            include: { states: true }
         });
 
         return new Response(
