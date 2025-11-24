@@ -9,6 +9,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [menuOpenProduct, setMenuOpenProduct] = useState(false);
     const [menuOpenTax, setMenuOpenTax] = useState(false);
     const [manuOpenLocation, setMenuOpenLocation] = useState(false);
+    const [manuOpenWareHouseLocation, setMenuOpenWareHouseLocation] = useState(false);
 
     return (
         <>
@@ -235,6 +236,34 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                     className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
                                 >
                                     Add State
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+
+                    <div>
+                        <button
+                            onClick={() => setMenuOpenWareHouseLocation(!manuOpenWareHouseLocation)}
+                            className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                        >
+                            <span className="flex items-center gap-3">
+                                <LayoutGrid className="w-5 h-5" /> Ware House
+                            </span>
+                            {manuOpenWareHouseLocation ? (
+                                <ChevronUp className="w-4 h-4" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4" />
+                            )}
+                        </button>
+
+                        {/* Dropdown items */}
+                        {manuOpenWareHouseLocation && (
+                            <div className="ml-8 mt-2 flex flex-col gap-2">
+                                <Link
+                                    href="/admin/warehouse_location"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Add WareHouse Location
                                 </Link>
                             </div>
                         )}
