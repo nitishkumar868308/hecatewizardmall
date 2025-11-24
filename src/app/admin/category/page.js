@@ -351,6 +351,9 @@ const AddCategory = () => {
                                     Name
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Platform
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -384,6 +387,19 @@ const AddCategory = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-medium">
                                         {c.name}
                                     </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-medium">
+                                        <div className="flex gap-2">
+                                            {c.platform?.map((p) => (
+                                                <span
+                                                    key={p}
+                                                    className="px-2 py-1 bg-gray-200 rounded-full text-sm"
+                                                >
+                                                    {p}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </td>
+
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <label className="inline-flex items-center cursor-pointer">
                                             <input
@@ -532,7 +548,7 @@ const AddCategory = () => {
                                         }
                                         className="w-4 h-4"
                                     />
-                                    <span>Xpress</span>
+                                    <span>Hecate QuickGo</span>
                                 </label>
 
                                 <label className="flex items-center gap-2 cursor-pointer text-gray-700">
@@ -544,7 +560,7 @@ const AddCategory = () => {
                                         }
                                         className="w-4 h-4"
                                     />
-                                    <span>Website</span>
+                                    <span>Hecate Wizard Mall</span>
                                 </label>
 
                             </div>
@@ -794,7 +810,7 @@ const AddCategory = () => {
                                         onChange={(e) => setEditCategory(prev => ({ ...prev, platform: { ...prev.platform, xpress: e.target.checked } }))}
                                         className="w-4 h-4"
                                     />
-                                    <span>Xpress</span>
+                                    <span>Hecate QuickGo</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer text-gray-700">
                                     <input
@@ -803,7 +819,7 @@ const AddCategory = () => {
                                         onChange={(e) => setEditCategory(prev => ({ ...prev, platform: { ...prev.platform, website: e.target.checked } }))}
                                         className="w-4 h-4"
                                     />
-                                    <span>Website</span>
+                                    <span>Hecate Wizard Mall</span>
                                 </label>
                             </div>
                         </div>

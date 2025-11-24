@@ -173,7 +173,10 @@ export async function POST(req) {
             marketLinks,
             isDefault,
             minQuantity,
-            bulkPrice
+            bulkPrice,
+            MRP,
+            barCode,
+            fnsku 
         } = body;
         // console.log("isDefault", isDefault)
         if (!name?.trim() || !subcategory || !sku?.trim()) {
@@ -270,6 +273,8 @@ export async function POST(req) {
                 marketLinks: marketLinks?.connect?.length > 0
                     ? { connect: marketLinks.connect.map(link => ({ id: link.id })) }
                     : undefined,
+                barCode: barCode ?? null,
+                MRP: MRP ?? [],
                 variations: variations && Array.isArray(variations) && variations.length > 0
                     ? {
                         create: variations.map(v => ({
@@ -289,6 +294,8 @@ export async function POST(req) {
                             otherCountriesPrice: v.otherCountriesPrice?.toString() ?? otherCountriesPrice?.toString() ?? null,
                             minQuantity: minQuantity?.toString() ?? null,
                             bulkPrice: bulkPrice?.toString() ?? null,
+                            barCode: v.barCode ?? null,
+                            MRP: v.MRP ?? [],
                         }))
                     }
                     : undefined

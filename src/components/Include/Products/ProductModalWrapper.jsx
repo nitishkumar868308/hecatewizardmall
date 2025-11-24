@@ -121,6 +121,8 @@ const ProductModalWrapper = ({
                 : [],
             bulkPrice: details.bulkPrice ?? newProduct.bulkPrice ?? null,
             minQuantity: details.minQuantity ?? newProduct.minQuantity ?? null,
+            barCode: details["fnsku-code"] ?? newProduct["fnsku-code"] ?? null,
+            MRP: details.MRP ?? newProduct.MRP ?? null,
         };
     });
     console.log("variationsData", variationsData)
@@ -212,7 +214,8 @@ const ProductModalWrapper = ({
 
                 category: categoryId ? { connect: { id: categoryId } } : undefined,
                 subcategory: { connect: { id: subcategoryId } },
-
+                barCode: newProduct["fnsku-code"] ?? null,
+                MRP: newProduct.MRP ?? null,
                 variations: variationsData
             };
 
@@ -865,8 +868,12 @@ const ProductModalWrapper = ({
                                     { key: "stock", type: "number", placeholder: "Stock" },
                                     { key: "sku", type: "text", placeholder: "Enter SKU Detail" },
                                     { key: "bulkPricing", type: "custom-bulk", placeholder: "Bulk Price" },
-                                    { key: "images", type: "file", placeholder: "Product Image" },
+                                    // { key: "stateIds", type: "custom-states", placeholder: "Select States" },
+                                    // { key: "hecate-quickgo-stock", type: "number", placeholder: "Hecate QuickGo Stock" },
+                                    { key: "fnsku-code", type: "text", placeholder: "FNSKU" },
+                                    { key: "MRP", type: "number", placeholder: "MRP" },
                                     { key: "description", type: "textarea", placeholder: "Description" },
+                                    { key: "images", type: "file", placeholder: "Product Image" },
                                 ]}
                                 setCurrentData={setCurrentData}
                                 currentData={currentData}

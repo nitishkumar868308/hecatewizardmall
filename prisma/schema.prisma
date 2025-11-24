@@ -120,7 +120,9 @@ model Product {
   tags            Tag[]       @relation("ProductTags") 
   marketLinks MarketLink[] 
   minQuantity     String?   
-  bulkPrice       String?   
+  bulkPrice       String?  
+  barCode            String?
+  MRP             String?      // Add MRP
 }
 
 model ProductVariation {
@@ -145,7 +147,9 @@ model ProductVariation {
 
   tags        Tag[]    @relation("VariationTags")
   minQuantity     String?   
-  bulkPrice       String?  
+  bulkPrice       String?
+  barCode            String?
+  MRP              String?
 }
 
 

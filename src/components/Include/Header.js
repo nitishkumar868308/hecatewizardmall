@@ -27,7 +27,7 @@ import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 
 
 const Header = () => {
-     const pathname = usePathname();
+    const pathname = usePathname();
     const [active, setActive] = useState("Home");
     const [expanded, setExpanded] = useState(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -107,18 +107,55 @@ const Header = () => {
         .slice()
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         .map(h => h.name);
-    const isXpress = pathname.includes("/xpress");
+    const isXpress = pathname.includes("/hecate-quickGo");
     const filteredCategories = categories.filter(cat =>
         isXpress
             ? cat.platform?.includes("xpress")
             : cat.platform?.includes("website")
     );
-    const categoriesMap = filteredCategories.map(cat => ({
-        id: cat.id,
-        name: cat.name,
-        img: cat.image,
-        sub: cat.subcategories?.map(s => s.name) || [],
-    }));
+    const categoriesMap = {};
+
+    filteredCategories.forEach(cat => {
+        categoriesMap[cat.id] = {
+            id: cat.id,
+            name: cat.name,
+            img: cat.image,
+            sub: [],
+        };
+    });
+
+    // subcategories
+    //     .filter(sub => sub.active)
+    //     .forEach(sub => {
+    //         const catId = sub.categoryId || sub.category.id;
+    //         if (categoriesMap[catId]) {
+    //             categoriesMap[catId].sub.push(sub.name);
+    //         }
+    //     });
+    subcategories
+        .filter(sub => sub.active)
+        .filter(sub =>
+            isXpress
+                ? sub.platform?.includes("xpress")
+                : sub.platform?.includes("website")
+        )
+        .forEach(sub => {
+            const catId = sub.categoryId || sub.category.id;
+            if (categoriesMap[catId]) {
+                categoriesMap[catId].sub.push(sub.name);
+            }
+        });
+
+
+    const mappedCategories = Object.values(categoriesMap);
+    console.log("mappedCategories", mappedCategories);
+
+    // const categoriesMap = filteredCategories.map(cat => ({
+    //     id: cat.id,
+    //     name: cat.name,
+    //     img: cat.image,
+    //     sub: cat.subcategories?.map(s => s.name) || [],
+    // }));
     // Step 1: Map all categories first
     // const categoriesMap = {};
     // categories
@@ -130,20 +167,20 @@ const Header = () => {
     //             img: cat.image || "/default-image.jpg",
     //         };
     //     });
-    console.log("categoriesMap", categoriesMap)
-    // Step 2: Fill subcategories
-    subcategories
-        .filter(sub => sub.active)
-        .forEach(sub => {
-            const catId = sub.category.id;
-            if (categoriesMap[catId]) {
-                categoriesMap[catId].sub.push(sub.name);
-            }
-        });
+    // console.log("categoriesMap", categoriesMap)
+    // // Step 2: Fill subcategories
+    // subcategories
+    //     .filter(sub => sub.active)
+    //     .forEach(sub => {
+    //         const catId = sub.category.id;
+    //         if (categoriesMap[catId]) {
+    //             categoriesMap[catId].sub.push(sub.name);
+    //         }
+    //     });
 
-    // Step 3: Convert to array
-    const mappedCategories = Object.values(categoriesMap);
-    console.log("mappedCategories", mappedCategories)
+    // // Step 3: Convert to array
+    // const mappedCategories = Object.values(categoriesMap);
+    // console.log("mappedCategories", mappedCategories)
 
 
 
@@ -185,7 +222,7 @@ const Header = () => {
     //         { name: "Fashion", subItems: [{ name: "Men" }, { name: "Women" }], }, { name: "Sports" }, { name: "Music" },],
     // };
     const [activeCat, setActiveCat] = useState(categories[0])
-   
+
 
     const handleMenuClick = (item) => {
         const href = item === "Home" ? "/" : `/${item.toLowerCase()}`;
@@ -1170,9 +1207,9 @@ const Header = () => {
                         </Link> */}
                         <div className="flex items-center gap-2">
                             {isXpress ? (
-                                <Link href="/xpress/home">
+                                <Link href="/hecate-quickGo/home">
                                     <img
-                                        src="/image/xpress-logo.avif"
+                                        src="/image/Hecate QuickGo Logo.png"
                                         alt="Logo"
                                         className="h-20 w-24 object-contain"
                                     />
@@ -1246,12 +1283,13 @@ const Header = () => {
                                         />
                                     </Link>
                                 ) : (
-                                    <Link href="/xpress/home">
+                                    <Link href="/hecate-quickGo/home">
                                         <img
-                                            src="/image/xpress-logo.avif"
+                                            src="/image/Hecate QuickGo Logo.png"
                                             alt="Logo"
                                             className="h-14 w-24 object-contain"
                                         />
+                                        <h5 className="text-white">Hecate QuickGo</h5>
                                     </Link>
                                 )}
                             </div>
@@ -1261,10 +1299,10 @@ const Header = () => {
                                 const href =
                                     item === "Home"
                                         ? isXpress
-                                            ? "/xpress/home"
+                                            ? "/hecate-quickGo/home"
                                             : "/"
                                         : isXpress
-                                            ? `/xpress/${item.toLowerCase()}`
+                                            ? `/hecate-quickGo/${item.toLowerCase()}`
                                             : `/${item.toLowerCase()}`;
 
                                 const isActive = pathname === href;

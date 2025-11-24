@@ -9,6 +9,9 @@ import {
 } from "@/app/redux/slices/tag/tagSlice";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import {
+    fetchStates,
+} from "@/app/redux/slices/state/addStateSlice";
 
 const ProductForm = ({
     editModalOpen,
@@ -31,12 +34,43 @@ const ProductForm = ({
     console.log("currentData", currentData)
     const [search, setSearch] = useState("");
     const [filteredTags, setFilteredTags] = useState([]);
-
+    const [platform, setPlatform] = useState([]);
+    const { states } = useSelector((state) => state.states);
     useEffect(() => {
+        dispatch(fetchStates())
         dispatch(fetchTags());
     }, [dispatch]);
+    const [selectedState, setSelectedState] = useState("");
+    const [selectedStates, setSelectedStates] = useState([]);
+    const dropdownRef = useRef(null);
+    const [open, setOpen] = useState(false);
+    const editDropdownRef = useRef(null);
+    const [editStateOpen, setEditStateOpen] = useState(false);
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
-
+    const toggleState = (id) => {
+        if (selectedStates.includes(id)) {
+            setSelectedStates(selectedStates.filter((s) => s !== id));
+        } else {
+            setSelectedStates([...selectedStates, id]);
+        }
+    };
+    const handlePlatformChange = (value) => {
+        if (platform.includes(value)) {
+            setPlatform(platform.filter((p) => p !== value));
+        } else {
+            setPlatform([...platform, value]); // add
+        }
+    };
     // useEffect(() => {
     //     if (isEdit && editProductData) {
     //         setCurrentData((prev) => ({
@@ -156,8 +190,37 @@ const ProductForm = ({
         <div className="p-6 bg-white rounded-3xl shadow-lg h-full mx-auto max-h-[90vh] md:max-h-[75vh] overflow-y-auto">
 
             <h3 className="text-2xl font-semibold mb-6 text-gray-800">Product Details</h3>
+            {/* <div className="mb-6">
+                <p className="font-semibold mb-3 text-center text-gray-700">
+                    Select Platform
+                </p>
+
+                <div className="flex items-center justify-center gap-10">
+                    <label className="flex items-center gap-2 cursor-pointer text-gray-700">
+                        <input
+                            type="checkbox"
+                            checked={platform.includes("xpress")}
+                            onChange={() => handlePlatformChange("xpress")}
+                            className="w-4 h-4"
+                        />
+                        <span>Hecate QuickGo</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-gray-700">
+                        <input
+                            type="checkbox"
+                            checked={platform.includes("website")}
+                            onChange={() => handlePlatformChange("website")}
+                            className="w-4 h-4"
+                        />
+                        <span>Hecate Wizard Mall</span>
+                    </label>
+                </div>
+            </div> */}
 
             <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+
 
                 {/* Product Name */}
                 <div className="flex flex-col">
@@ -388,30 +451,7 @@ const ProductForm = ({
                     </div>
                 </div>
 
-
-                {/* Description */}
-                {/* <div className="col-span-1 md:col-span-2 flex flex-col">
-                    <label className="mb-2 font-medium text-gray-700">Description</label>
-                    <textarea
-                        list="descOptions"
-                        placeholder="Description"
-                        value={currentData.description || ""}
-                        onChange={(e) => {
-                            const sanitizedValue = e.target.value.replace(/'/g, "\\'");
-                            setCurrentData({ ...currentData, description: sanitizedValue });
-                        }}
-                        className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-                        rows={4}
-                    />
-
-                    <datalist id="descOptions">
-                        <option value="Gold" />
-                        <option value="Italia" />
-                        <option value="Other" />
-                    </datalist>
-
-                </div> */}
-                <div className="col-span-1 md:col-span-2 flex flex-col">
+                <div className="flex flex-col">
                     <label className="mb-2 font-medium text-gray-700">Description</label>
                     <RichTextEditor
                         value={currentData.description || ""}
@@ -421,60 +461,7 @@ const ProductForm = ({
                     />
                 </div>
 
-                {/* Images */}
-                {/* <div className="col-span-1 md:col-span-2 flex flex-col">
-                    <label className="mb-2 font-medium text-gray-700">Product Images</label>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={(e) => setNewImage(Array.from(e.target.files))}
-                        className="mb-4 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer transition"
-                    />
-                    <div className="flex gap-3 flex-wrap">
-                        {/* {newImage && newImage.length > 0
-                            ? newImage.map((img, idx) => (
-                                <img
-                                    key={idx}
-                                    src={URL.createObjectURL(img)}
-                                    alt={`Preview ${idx}`}
-                                    className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
-                                />
-                            ))
-                            : currentData.images &&
-                            currentData.images.length > 0 &&
-                            currentData.images.map((img, idx) => (
-                                <img
-                                    key={idx}
-                                    src={img}
-                                    alt={`Product ${idx}`}
-                                    className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
-                                />
-                    
-                        {newImage?.length > 0 ? (
-                            newImage.map((img, idx) => (
-                                <img
-                                    key={idx}
-                                    src={URL.createObjectURL(img)}
-                                    alt={`Preview ${idx}`}
-                                    className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
-                                />
-                            ))
-                        ) : (
-                      
-                            currentData.image?.map((img, idx) => (
-                                <img
-                                    key={idx}
-                                    src={img}
-                                    alt={`Product ${idx}`}
-                                    className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
-                                />
-                            ))
-                        )}
-                    </div>
-                </div> */}
-
-                <div className="col-span-1 md:col-span-2 flex flex-col">
+                {/* <div className="flex-1">
                     <label className="mb-2 font-medium text-gray-700">Product Images</label>
                     <input
                         type="file"
@@ -483,10 +470,9 @@ const ProductForm = ({
                         onChange={(e) =>
                             setNewImage((prev = []) => [...prev, ...Array.from(e.target.files)])
                         }
-                        className="mb-4 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer transition"
+                        className=" mb-4 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer transition"
                     />
                     <div className="flex gap-3 flex-wrap">
-                        {/* Preview new images */}
                         {newImage?.map((img, idx) => (
                             <div key={idx} className="relative w-32 h-32">
                                 <img
@@ -504,7 +490,6 @@ const ProductForm = ({
                             </div>
                         ))}
 
-                        {/* Preview existing DB images (Edit mode) */}
                         {currentData?.image?.length > 0 &&
                             currentData.image.map((img, idx) => (
                                 <div key={idx} className="relative w-32 h-32">
@@ -529,7 +514,172 @@ const ProductForm = ({
                             ))}
                     </div>
 
+                </div> */}
+                {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                </div> */}
+                {/* Select States */}
+                {/* <div className="flex flex-col">
+                        <div className="mb-4 relative" ref={dropdownRef}>
+                            <label className="block font-medium text-gray-700 mb-2">Select States</label>
+
+                            <div
+                                className="border rounded-lg px-4 py-2 w-full cursor-pointer flex justify-between items-center"
+                                onClick={() => setOpen(!open)}
+                            >
+                                <span>
+                                    {selectedStates.length > 0
+                                        ? states
+                                            .filter((s) => selectedStates.includes(s.id))
+                                            .map((s) => s.name)
+                                            .join(", ")
+                                        : "-- Select States --"}
+                                </span>
+                                <span>▾</span>
+                            </div>
+
+                            {open && (
+                                <div className="absolute z-50 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+                                    {states.map((st) => (
+                                        <label
+                                            key={st.id}
+                                            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                value={st.id}
+                                                checked={selectedStates.includes(st.id)}
+                                                onChange={() => toggleState(st.id)}
+                                                className="h-4 w-4"
+                                            />
+                                            {st.name}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div> */}
+
+                {/* Hecate QuickGo Stock */}
+                {/* <div className="flex flex-col">
+                        <label className="mb-2 font-medium text-gray-700">Hecate QuickGo Stock</label>
+                        <input
+                            type="number"
+                            placeholder="Hecate QuickGo Stock"
+                            value={currentData["hecate-quickgo-stock"] || ""}
+                            onChange={(e) =>
+                                setCurrentData({
+                                    ...currentData,
+                                    ["hecate-quickgo-stock"]: e.target.value
+                                })
+                            }
+                            className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                        />
+                    </div> */}
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
+                    <div className="flex flex-col">
+                        <label className="mb-2 font-medium text-gray-700">MRP</label>
+                        <input
+                            type="number"
+                            placeholder="MRP"
+                            value={currentData["MRP"] || ""}
+                            onChange={(e) =>
+                                setCurrentData({
+                                    ...currentData,
+                                    ["MRP"]: e.target.value
+                                })
+                            }
+                            className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                        />
+                    </div>
+
+
+                    {/* FNSKU */}
+                    <div className="flex flex-col">
+                        <label className="mb-2 font-medium text-gray-700">FNSKU</label>
+                        <input
+                            type="text"
+                            placeholder="FNSKU"
+                            value={currentData["fnsku-code"] || ""}
+                            onChange={(e) =>
+                                setCurrentData({
+                                    ...currentData,
+                                    ["fnsku-code"]: e.target.value
+                                })
+                            }
+                            className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                        />
+                    </div>
                 </div>
+
+
+                <div className="flex-1">
+                    <label className="block mb-2 font-medium text-gray-700">
+                        Product Images
+                    </label>
+
+                    <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) =>
+                            setNewImage((prev = []) => [...prev, ...Array.from(e.target.files)])
+                        }
+                        className="block mb-4 file:mr-3 file:py-2 file:px-4 file:rounded-full
+                            file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 
+                            hover:file:bg-blue-100 cursor-pointer transition"
+                    />
+
+                    <div className="flex gap-3 flex-wrap mt-2">
+                        {/* Preview new images */}
+                        {newImage?.map((img, idx) => (
+                            <div key={idx} className="relative w-32 h-32">
+                                <img
+                                    src={URL.createObjectURL(img)}
+                                    alt={`Preview ${idx}`}
+                                    className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setNewImage((prev) => prev.filter((_, i) => i !== idx))
+                                    }
+                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full
+                                        w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        ))}
+
+                        {/* Existing DB images */}
+                        {currentData?.image?.length > 0 &&
+                            currentData.image.map((img, idx) => (
+                                <div key={idx} className="relative w-32 h-32">
+                                    <img
+                                        src={img}
+                                        alt={`Product ${idx}`}
+                                        className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setCurrentData((prev) => ({
+                                                ...prev,
+                                                image: prev.image?.filter((_, i) => i !== idx) || [],
+                                            }))
+                                        }
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full
+                                            w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                    </div>
+                </div>
+
+
+
 
 
             </form>

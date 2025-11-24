@@ -243,6 +243,10 @@ import {
 } from "@/app/redux/slices/tag/tagSlice";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import {
+    fetchStates,
+} from "@/app/redux/slices/state/addStateSlice";
+
 
 const VariationsSection = ({
     currentVariations,
@@ -269,7 +273,12 @@ const VariationsSection = ({
     const [search, setSearch] = useState("");
     const [filteredTags, setFilteredTags] = useState([]);
     const [defaultVariationId, setDefaultVariationId] = useState("");
+    const { states } = useSelector((state) => state.states);
     console.log("currentData", currentData)
+
+    useEffect(() => {
+        dispatch(fetchStates())
+    }, [dispatch])
     // ---- Helper: normalize images to array of strings ----
     const normalizeImages = (images) => {
         console.log("images", images)
@@ -511,7 +520,9 @@ const VariationsSection = ({
                                                     />
                                                 </div>
                                             );
-                                        } else if (field.type === "file") {
+                                        }
+
+                                        else if (field.type === "file") {
                                             const imagesArr = normalizeImages(variationDetails[variationKey]?.images);
 
                                             return (
@@ -627,6 +638,179 @@ const VariationsSection = ({
                                             );
                                         }
 
+                                        // --- CUSTOM STATES FIELD ---
+                                        // else if (field.type === "custom-states") {
+                                        //     const selected = variationDetails[variationKey]?.stateIds || [];
+
+                                        //     return (
+                                        //         <div key={field.key} className="relative flex flex-col">
+                                        //             <label className="mb-2 font-medium text-gray-700">{field.placeholder}</label>
+
+                                        //             <div
+                                        //                 onClick={() =>
+                                        //                     handleVariationChange(
+                                        //                         variationKey,
+                                        //                         "__stateDropdownOpen",
+                                        //                         !variationDetails[variationKey]?.__stateDropdownOpen
+                                        //                     )
+                                        //                 }
+                                        //                 className="border rounded-lg px-4 py-2 w-full cursor-pointer flex justify-between items-center bg-white"
+                                        //             >
+                                        //                 <span>
+                                        //                     {selected.length > 0
+                                        //                         ? states
+                                        //                             .filter((s) => selected.includes(s.id))
+                                        //                             .map((s) => s.name)
+                                        //                             .join(", ")
+                                        //                         : "-- Select States --"}
+                                        //                 </span>
+                                        //                 <span>▾</span>
+                                        //             </div>
+
+                                        //             {/* Dropdown */}
+                                        //             {/* {variationDetails[variationKey]?.__stateDropdownOpen && (
+                                        //                 <div className="absolute z-50 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+                                        //                     {states.map((st) => (
+                                        //                         <label
+                                        //                             key={st.id}
+                                        //                             className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100"
+                                        //                         >
+                                        //                             <input
+                                        //                                 type="checkbox"
+                                        //                                 checked={selected.includes(st.id)}
+                                        //                                 onChange={() => {
+                                        //                                     let updated;
+
+                                        //                                     if (selected.includes(st.id)) {
+                                        //                                         updated = selected.filter((id) => id !== st.id);
+                                        //                                     } else {
+                                        //                                         updated = [...selected, st.id];
+                                        //                                     }
+
+                                        //                                     handleVariationChange(variationKey, "stateIds", updated);
+                                        //                                 }}
+                                        //                             />
+                                        //                             {st.name}
+                                        //                         </label>
+                                        //                     ))}
+                                        //                 </div>
+                                        //             )} */}
+                                        //             {variationDetails[variationKey]?.__stateDropdownOpen && (
+                                        //                 <div className="
+                                        //                     absolute 
+                                        //                     top-full 
+                                        //                     translate-y-1
+                                        //                     z-50 
+                                        //                     w-full 
+                                        //                     bg-white 
+                                        //                     border 
+                                        //                     rounded-lg 
+                                        //                     shadow-lg 
+                                        //                     max-h-60 
+                                        //                     overflow-auto
+                                        //                 ">
+                                        //                     {states.map((st) => (
+                                        //                         <label
+                                        //                             key={st.id}
+                                        //                             className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100"
+                                        //                         >
+                                        //                             <input
+                                        //                                 type="checkbox"
+                                        //                                 checked={selected.includes(st.id)}
+                                        //                                 onChange={() => {
+                                        //                                     let updated;
+
+                                        //                                     if (selected.includes(st.id)) {
+                                        //                                         updated = selected.filter((id) => id !== st.id);
+                                        //                                     } else {
+                                        //                                         updated = [...selected, st.id];
+                                        //                                     }
+
+                                        //                                     handleVariationChange(variationKey, "stateIds", updated);
+                                        //                                 }}
+                                        //                             />
+                                        //                             {st.name}
+                                        //                         </label>
+                                        //                     ))}
+                                        //                 </div>
+                                        //             )}
+
+                                        //         </div>
+                                        //     );
+                                        // }
+
+                                        // --- Hecate QuickGo Stock ---
+                                        //                         else if (field.key === "hecate-quickgo-stock") {
+                                        //                             return (
+                                        //                                 <div key={field.key} className="flex flex-col">
+                                        //                                     <label className="mb-2 font-medium text-gray-700">{field.placeholder}</label>
+
+                                        //                                     <input
+                                        //                                         type="number"
+                                        //                                         value={variationDetails[variationKey]?.["hecate-quickgo-stock"] || ""}
+                                        //                                         placeholder={field.placeholder}
+                                        //                                         onChange={(e) =>
+                                        //                                             handleVariationChange(
+                                        //                                                 variationKey,
+                                        //                                                 "hecate-quickgo-stock",
+                                        //                                                 e.target.value
+                                        //                                             )
+                                        //                                         }
+                                        //                                         className="w-full border border-gray-300 rounded-2xl px-4 py-3 
+                                        // focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                                        //                                     />
+                                        //                                 </div>
+                                        //                             );
+                                        //                         }
+
+                                        //MRP
+                                        // Combine MRP and FNSKU in one row
+                                        else if (field.key === "MRP") {
+                                            // Find FNSKU field
+                                            const fnskuField = productFields.find(f => f.key === "fnsku-code");
+
+                                            return (
+                                                <div key="mrp-fnsku" className="flex gap-6">
+                                                    {/* MRP */}
+                                                    <div className="flex-1 flex flex-col">
+                                                        <label className="mb-2 font-medium text-gray-700">{field.placeholder}</label>
+                                                        <input
+                                                            type="number"
+                                                            value={variationDetails[variationKey]?.["MRP"] || ""}
+                                                            placeholder={field.placeholder}
+                                                            onChange={(e) =>
+                                                                handleVariationChange(variationKey, "MRP", e.target.value)
+                                                            }
+                                                            className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                                                        />
+                                                    </div>
+
+                                                    {/* FNSKU */}
+                                                    {fnskuField && (
+                                                        <div className="flex-1 flex flex-col">
+                                                            <label className="mb-2 font-medium text-gray-700">{fnskuField.placeholder}</label>
+                                                            <input
+                                                                type="text"
+                                                                value={variationDetails[variationKey]?.["fnsku-code"] || ""}
+                                                                placeholder={fnskuField.placeholder}
+                                                                onChange={(e) =>
+                                                                    handleVariationChange(variationKey, "fnsku-code", e.target.value)
+                                                                }
+                                                                className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
+
+                                        // Skip FNSKU field separately
+                                        else if (field.key === "fnsku-code") {
+                                            return null;
+                                        }
+
+
+
                                         else if (field.key === "tags") {
                                             const currentTags = variationDetails[variationKey]?.tags || [];
 
@@ -728,6 +912,7 @@ const VariationsSection = ({
 
                                             );
                                         }
+
                                     })}
                                 </motion.div>
                             )}

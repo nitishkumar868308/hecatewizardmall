@@ -85,6 +85,8 @@ export async function PUT(req) {
     try {
         const body = await req.json();
         const { id, name, categoryId, active, deleted, image, offerId, stateIds, platform } = body;
+        console.log("platform", platform)
+        console.log("stateIds", stateIds)
 
         if (!id) {
             return new Response(JSON.stringify({ message: "Subcategory ID is required" }), { status: 400 });
@@ -105,10 +107,16 @@ export async function PUT(req) {
                 image: image ?? existing.image,
                 offerId: offerId ?? null,
                 platform: platform ?? existing.platform,
-                stateIds: stateIds ? { set: stateIds } : undefined,
+                states: {
+                    set: stateIds.map((sid) => ({ id: sid })),
+                },
+                //states: stateIds ? { set: stateIds.map(id => ({ id })) } : undefined,
+            },
+            include: {
+                states: true,   // 👈 ADD THIS
             },
         });
-
+        console.log("updatedSubcategory", updatedSubcategory)
         return new Response(
             JSON.stringify({ message: "Subcategory updated successfully", data: updatedSubcategory }),
             { status: 200 }

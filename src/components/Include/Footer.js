@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const Footer = () => {
     const pathname = usePathname();
-    const isXpress = pathname.includes("/xpress");
+    const isXpress = pathname.includes("/hecate-quickGo");
     return (
         // <footer className="bg-[#161619] text-white ">
         <footer className={`text-white ${isXpress ? "bg-gray-600" : "bg-[#161619]"}`}>
@@ -20,9 +20,9 @@ const Footer = () => {
                             className="h-24 w-24 object-contain"
                         /> */}
                         {isXpress ? (
-                            <Link href="/xpress/home">
+                            <Link href="/hecate-quickGo/home">
                                 <img
-                                    src="/image/xpress-logo.avif"
+                                    src="/image/Hecate QuickGo Logo.png"
                                     alt="Logo"
                                     className="h-20 w-24 object-contain"
                                 />
@@ -138,7 +138,7 @@ const Footer = () => {
             {/* Bottom Bar */}
             {isXpress ? (
                 <div className="border-t border-gray-700 mt-6 py-4 text-center text-gray-400 text-sm font-functionPro">
-                    &copy; {new Date().getFullYear()} Xpress Hecate Wizard Mall. All rights reserved.
+                    &copy; {new Date().getFullYear()} Hecate QuickGo. All rights reserved.
                 </div>
             ) : (
                 <div className="border-t border-gray-700 mt-6 py-4 text-center text-gray-400 text-sm font-functionPro">

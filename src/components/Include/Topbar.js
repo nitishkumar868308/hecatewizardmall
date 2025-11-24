@@ -116,7 +116,7 @@ const Topbar = () => {
 
 
 
-    const isXpress = pathname.includes("/xpress");
+    const isXpress = pathname.includes("/hecate-quickGo");
     return (
         // <div className="w-full bg-black text-white">
         <div className={`w-full text-white ${isXpress ? "bg-gray-600" : "bg-black"}`}>
@@ -124,7 +124,7 @@ const Topbar = () => {
                 <div className="flex items-center justify-between py-2 md:py-3">
                     <div className="w-1/3"></div>
                     <h1 className="font-libreBaskerville tracking-wide text-base sm:text-lg md:text-2xl uppercase text-center w-1/3">
-                    {isXpress ? "xpress hecate wizard mall" : "hecate wizard mall"}                        
+                    {isXpress ? "Hecate QuickGo" : "hecate wizard mall"}                        
                     </h1>
                     <div className="w-1/3 flex justify-end">
                         <select
