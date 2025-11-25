@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, Plus, ChevronDown, ChevronUp, LayoutGrid, ShoppingBag, Clapperboard } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -107,7 +107,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                         >
                             <span className="flex items-center gap-3">
-                                <LayoutGrid className="w-5 h-5" /> Tax
+                                <FileText className="w-5 h-5" /> Tax
                             </span>
                             {menuOpenTax ? (
                                 <ChevronUp className="w-4 h-4" />
@@ -148,7 +148,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                         >
                             <span className="flex items-center gap-3">
-                                <LayoutGrid className="w-5 h-5" /> Products
+                                <Package className="w-5 h-5" /> Products
                             </span>
                             {menuOpenProduct ? (
                                 <ChevronUp className="w-4 h-4" />
@@ -219,7 +219,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                         >
                             <span className="flex items-center gap-3">
-                                <LayoutGrid className="w-5 h-5" /> Add Location
+                                <MapPin className="w-5 h-5" /> Add Location
                             </span>
                             {manuOpenLocation ? (
                                 <ChevronUp className="w-4 h-4" />
@@ -247,7 +247,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                         >
                             <span className="flex items-center gap-3">
-                                <LayoutGrid className="w-5 h-5" /> Ware House
+                                <Archive className="w-5 h-5" /> Ware House
                             </span>
                             {manuOpenWareHouseLocation ? (
                                 <ChevronUp className="w-4 h-4" />
@@ -264,6 +264,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                     className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
                                 >
                                     Add WareHouse Location
+                                </Link>
+                                <Link
+                                    href="/admin/send_to_warehouse"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Send to Warehouse
                                 </Link>
                             </div>
                         )}
