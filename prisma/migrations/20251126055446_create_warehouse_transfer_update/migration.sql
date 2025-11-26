@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "public"."WarehouseTransfer" ALTER COLUMN "price" SET DATA TYPE TEXT,
+ALTER COLUMN "MRP" SET DATA TYPE TEXT;

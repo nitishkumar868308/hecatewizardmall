@@ -5,6 +5,11 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchAllProducts } from "@/app/redux/slices/products/productSlice";
 import { fetchWarehouses } from "@/app/redux/slices/warehouse/wareHouseSlice";
 import { X, Plus, Trash2 } from "lucide-react";
+import { fetchTransfers, createTransfer, deleteTransfer, updateTransfer } from "@/app/redux/slices/transferWarehouse/transferWarehouseSlice";
+import toast from 'react-hot-toast';
+import PendingTabSendToWarehouse from "@/components/Admin/PendingTabSendToWarehouse/PendingTabSendToWarehouse";
+import DispatchTabToWarehouse from "@/components/Admin/dispatchTabToWarehouse/dispatchTabToWarehouse";
+import { createDispatch, fetchDispatches, updateDispatch, deleteDispatch } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
 
 const SendToWarehousePage = () => {
     const dispatch = useDispatch();
@@ -18,8 +23,14 @@ const SendToWarehousePage = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [modalEntries, setModalEntries] = useState([]);
     const [selectedVariation, setSelectedVariation] = useState(null);
+    const { transfers } = useSelector((state) => state.transferWarehouse);
+    const { dispatches } = useSelector((state) => state.dispatchWarehouse);
+    const [matchedTransferEntries, setMatchedTransferEntries] = useState([]);
+    console.log("dispatches", dispatches)
 
     useEffect(() => {
+        dispatch(fetchDispatches())
+        dispatch(fetchTransfers())
         dispatch(fetchAllProducts());
         dispatch(fetchWarehouses());
     }, [dispatch]);
@@ -72,16 +83,61 @@ const SendToWarehousePage = () => {
 
 
 
-    const handleOpenModal = (product, variation = null) => {
+    // const handleOpenModal = (product, variation = null) => {
+    //     setSelectedProduct(product);
+    //     setSelectedVariation(variation); // NEW
+
+    //     const currentFNSKU = variation ? variation.barCode : product.barCode;
+
+    //     const matchedTransfer = transfers.find(
+    //         (t) => t.FNSKU === currentFNSKU
+    //     );
+
+    //     if (matchedTransfer && matchedTransfer.entries?.length > 0) {
+    //         // agar transfer entries milti hain
+    //         const formattedEntries = matchedTransfer.entries.map((e) => ({
+    //             warehouseId: e.warehouseId,
+    //             units: e.units,
+    //         }));
+
+    //         setModalEntries(formattedEntries);
+    //     } else {
+    //         // default empty entry
+    //         setModalEntries([
+    //             { warehouseId: "", units: "" }
+    //         ]);
+    //     }
+
+    //     setModalOpen(true);
+    // };
+    const handleOpenModal = (product, variation) => {
         setSelectedProduct(product);
-        setSelectedVariation(variation); // NEW
-
-        setModalEntries([
-            { warehouseId: "", units: "" },
-        ]);
-
+        setSelectedVariation(variation);
         setModalOpen(true);
+
+        const currentFNSKU = variation ? variation.barCode : product.barCode;
+
+        const matched = transfers.find(t => t.FNSKU === currentFNSKU);
+
+        if (matched && matched.entries?.length > 0) {
+            console.log("matched", matched);
+
+            // entries me parent status ko add karo
+            const pendingEntries = matched.status === "pending"
+                ? matched.entries.map(e => ({ ...e, status: matched.status }))
+                : [];
+
+            console.log("pendingEntries", pendingEntries);
+            setMatchedTransferEntries(pendingEntries);
+
+            // modal entry blank
+            setModalEntries([{ warehouseId: "", units: "" }]);
+        } else {
+            setMatchedTransferEntries([]);
+            setModalEntries([{ warehouseId: "", units: "" }]);
+        }
     };
+
 
 
     const addMoreField = () => {
@@ -94,14 +150,62 @@ const SendToWarehousePage = () => {
         setModalEntries(copy);
     };
 
-    const handleConfirmSend = () => {
-        console.log("FINAL SEND:", {
+    const handleConfirmSend = async () => {
+        console.log("modalEntries", modalEntries)
+        for (let entry of modalEntries) {
+            if (!entry.warehouseId || entry.warehouseId.trim() === "") {
+                return toast.error("Please select warehouse for all entries!");
+            }
+            if (!entry.units || entry.units.trim() === "") {
+                return toast.error("Please enter units for all entries!");
+            }
+        }
+        const payload = {
             productId: selectedProduct.id,
-            entries: modalEntries,
-        });
+            productName: selectedProduct.name,
 
-        setModalOpen(false);
+            variationId: selectedVariation ? selectedVariation.id : null,
+            variationName: selectedVariation ? selectedVariation.variationName : null,
+
+            price: selectedVariation
+                ? selectedVariation.price
+                : selectedProduct.price,
+
+            MRP: selectedVariation
+                ? selectedVariation.MRP
+                : selectedProduct.MRP,
+
+            FNSKU: selectedVariation
+                ? selectedVariation.barCode
+                : selectedProduct.barCode,
+
+            image: selectedVariation
+                ? selectedVariation.image?.[0] || null
+                : selectedProduct.image?.[0] || null,
+
+            entries: modalEntries.map((entry) => ({
+                warehouseId: entry.warehouseId,
+                units: entry.units,
+            })),
+        };
+
+        // ✅ Dispatch the async thunk and store the result
+        const result = await dispatch(createTransfer(payload));
+
+        // Check if the request was successful
+        if (createTransfer.fulfilled.match(result)) {
+            const apiMessage = result.payload?.message || "Product successfully sent";
+            toast.success(apiMessage);
+            setModalOpen(false);
+        } else {
+            const apiError = result.payload?.message || result.error?.message || "Failed to send product";
+            toast.error(apiError);
+        }
+
+        console.log("FINAL SEND:", payload);
     };
+
+
 
     const removeEntry = (index) => {
         setModalEntries(prev => prev.filter((_, i) => i !== index));
@@ -132,6 +236,15 @@ const SendToWarehousePage = () => {
                         Pending
                     </button>
                     <button
+                        onClick={() => setMainTab("dispatch")}
+                        className={`pb-2 cursor-pointer ${mainTab === "dispatch"
+                            ? "border-b-2 border-black font-semibold "
+                            : ""
+                            }`}
+                    >
+                        Dispatch
+                    </button>
+                    <button
                         onClick={() => setMainTab("completed")}
                         className={`pb-2 cursor-pointer ${mainTab === "completed"
                             ? "border-b-2 border-black font-semibold "
@@ -142,165 +255,156 @@ const SendToWarehousePage = () => {
                     </button>
                 </div>
 
-                {/* Search Input */}
-                <input
-                    type="text"
-                    placeholder="Search Product or Variation"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-4 py-2 w-full"
-                />
-
-                {search === "" && (
-                    <p className="text-center text-gray-500 py-10">Start searching...</p>
-                )}
-
-                {search !== "" && (
+                {/* ------------------------ NEW TAB ------------------------ */}
+                {mainTab === "new" && (
                     <>
-                        {/* INNER TABS: PRODUCTS | VARIATIONS */}
-                        <div className="flex gap-4 mt-4">
-                            <button
-                                onClick={() => {
-                                    setActiveTab("products");
-                                    setUserChangedTab(true);
-                                }}
-                                className={`px-4 py-2 border-b-2 cursor-pointer ${activeTab === "products" ? "border-black font-semibold" : "border-transparent"
-                                    }`}
-                            >
-                                Products
-                            </button>
+                        {/* Search Input */}
+                        < input
+                            type="text"
+                            placeholder="Search Product or Variation"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-4 py-2 w-full"
+                        />
 
-                            <button
-                                onClick={() => {
-                                    setActiveTab("variations");
-                                    setUserChangedTab(true);
-                                }}
-                                className={`px-4 py-2 border-b-2 cursor-pointer ${activeTab === "variations" ? "border-black font-semibold" : "border-transparent"
-                                    }`}
-                            >
-                                Variations
-                            </button>
-                        </div>
-
-                        {/* ------------------------------ PRODUCT TABLE ------------------------------ */}
-                        {activeTab === "products" && productResults.length > 0 && (
-                            <div className="mt-4">
-                                <div className="overflow-x-auto rounded-lg">
-                                    <table className="min-w-full">
-                                        <thead className="bg-gray-100">
-                                            <tr>
-                                                <th className="p-2">S.No</th>
-                                                <th className="p-2">Image</th>
-                                                <th className="p-2">Product</th>
-                                                <th className="p-2">SKU / FNSKU</th>
-                                                <th className="p-2">Price</th>
-                                                <th className="p-2">Action</th>
-                                            </tr>
-                                        </thead>
-
-                                        <tbody>
-                                            {productResults.map((p, i) => (
-                                                <tr key={p.id} className="hover:bg-gray-50">
-                                                    <td className="p-2 text-center">{i + 1}</td>
-
-                                                    <td className="p-2 text-center">
-                                                        <img
-                                                            src={p.image?.[0]}
-                                                            className="w-16 h-16 rounded object-cover mx-auto"
-                                                        />
-                                                    </td>
-
-                                                    <td className="p-2 text-center">{p.name}</td>
-
-                                                    <td className="p-2 text-center">
-                                                        {p.sku} / {p.barCode}
-                                                    </td>
-
-                                                    <td className="p-2 text-center">{p.price}</td>
-
-                                                    <td className="p-2 text-center">
-                                                        <button
-                                                            onClick={() => handleOpenModal(p)}
-                                                            className="px-3 py-1 bg-black text-white rounded cursor-pointer"
-                                                        >
-                                                            Ready to Send
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                        {search === "" && (
+                            <p className="text-center text-gray-500 py-10">Start searching...</p>
                         )}
 
-                        {/* ------------------------------ VARIATION TABLE ------------------------------ */}
-                        {activeTab === "variations" && variationResults.length > 0 && (
-                            <div className="mt-4">
-                                <div className="overflow-x-auto rounded-lg">
-                                    <table className="min-w-full">
-                                        <thead className="bg-gray-100">
-                                            <tr>
-                                                <th className="p-2">S.No</th>
-                                                <th className="p-2">Image</th>
-                                                <th className="p-2">Variation</th>
-                                                <th className="p-2">SKU / FNSKU</th>
-                                                <th className="p-2">Price</th>
-                                                <th className="p-2">Parent Product</th>
-                                                <th className="p-2">Action</th>
-                                            </tr>
-                                        </thead>
+                        {search !== "" && (
+                            <>
+                                {/* INNER TABS: PRODUCTS | VARIATIONS */}
+                                <div className="flex gap-4 mt-4">
+                                    <button
+                                        onClick={() => {
+                                            setActiveTab("products");
+                                            setUserChangedTab(true);
+                                        }}
+                                        className={`px-4 py-2 border-b-2 cursor-pointer ${activeTab === "products" ? "border-black font-semibold" : "border-transparent"
+                                            }`}
+                                    >
+                                        Products
+                                    </button>
 
-                                        <tbody>
-                                            {variationResults.map((item, i) => (
-                                                <tr key={item.variation.id} className="hover:bg-gray-50">
-                                                    <td className="p-2 text-center">{i + 1}</td>
-
-                                                    <td className="p-2 text-center">
-                                                        <img
-                                                            src={item.variation.image?.[0]}
-                                                            className="w-16 h-16 rounded object-cover mx-auto"
-                                                        />
-                                                    </td>
-
-                                                    <td className="p-2 text-center">
-                                                        {item.variation.variationName}
-                                                    </td>
-
-                                                    <td className="p-2 text-center">
-                                                        {item.variation.sku} / {item.variation.barCode}
-                                                    </td>
-
-                                                    <td className="p-2 text-center">
-                                                        {item.variation.price}
-                                                    </td>
-
-                                                    <td className="p-2 text-center">
-                                                        {item.parent.name}
-                                                    </td>
-
-                                                    <td className="p-2 text-center">
-                                                        <button
-                                                            onClick={() => handleOpenModal(item.parent, item.variation)}
-                                                            className="px-3 py-1 bg-black text-white rounded cursor-pointer"
-                                                        >
-                                                            Ready to Send
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <button
+                                        onClick={() => {
+                                            setActiveTab("variations");
+                                            setUserChangedTab(true);
+                                        }}
+                                        className={`px-4 py-2 border-b-2 cursor-pointer ${activeTab === "variations" ? "border-black font-semibold" : "border-transparent"
+                                            }`}
+                                    >
+                                        Variations
+                                    </button>
                                 </div>
-                            </div>
+
+                                {/* ------------------------------ PRODUCT TABLE ------------------------------ */}
+                                {activeTab === "products" && (
+                                    <>
+                                        {productResults.length > 0 ? (
+                                            <div className="mt-4">
+                                                <div className="overflow-x-auto rounded-lg">
+                                                    <table className="min-w-full">
+                                                        <thead className="bg-gray-100">
+                                                            <tr>
+                                                                <th className="p-2">S.No</th>
+                                                                <th className="p-2">Image</th>
+                                                                <th className="p-2">Product</th>
+                                                                <th className="p-2">SKU / FNSKU</th>
+                                                                <th className="p-2">Price</th>
+                                                                <th className="p-2">Action</th>
+                                                            </tr>
+                                                        </thead>
+
+                                                        <tbody>
+                                                            {productResults.map((p, i) => (
+                                                                <tr key={p.id} className="hover:bg-gray-50">
+                                                                    <td className="p-2 text-center">{i + 1}</td>
+                                                                    <td className="p-2 text-center">
+                                                                        <img src={p.image?.[0]} className="w-16 h-16 rounded object-cover mx-auto" />
+                                                                    </td>
+                                                                    <td className="p-2 text-center">{p.name}</td>
+                                                                    <td className="p-2 text-center">{p.sku} / {p.barCode}</td>
+                                                                    <td className="p-2 text-center">{p.price}</td>
+                                                                    <td className="p-2 text-center">
+                                                                        <button
+                                                                            onClick={() => handleOpenModal(p)}
+                                                                            className="px-3 py-1 bg-black text-white rounded cursor-pointer"
+                                                                        >
+                                                                            Ready to Send
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-center text-gray-500 py-10">No products found</p>
+                                        )}
+                                    </>
+                                )}
+
+
+                                {/* ------------------------------ VARIATION TABLE ------------------------------ */}
+                                {activeTab === "variations" && (
+                                    <>
+                                        {variationResults.length > 0 ? (
+                                            <div className="mt-4">
+                                                <div className="overflow-x-auto rounded-lg">
+                                                    <table className="min-w-full">
+                                                        <thead className="bg-gray-100">
+                                                            <tr>
+                                                                <th className="p-2">S.No</th>
+                                                                <th className="p-2">Image</th>
+                                                                <th className="p-2">Variation</th>
+                                                                <th className="p-2">SKU / FNSKU</th>
+                                                                <th className="p-2">Price</th>
+                                                                <th className="p-2">Parent Product</th>
+                                                                <th className="p-2">Action</th>
+                                                            </tr>
+                                                        </thead>
+
+                                                        <tbody>
+                                                            {variationResults.map((item, i) => (
+                                                                <tr key={item.variation.id} className="hover:bg-gray-50">
+                                                                    <td className="p-2 text-center">{i + 1}</td>
+                                                                    <td className="p-2 text-center">
+                                                                        <img src={item.variation.image?.[0]} className="w-16 h-16 rounded object-cover mx-auto" />
+                                                                    </td>
+                                                                    <td className="p-2 text-center">{item.variation.variationName}</td>
+                                                                    <td className="p-2 text-center">{item.variation.sku} / {item.variation.barCode}</td>
+                                                                    <td className="p-2 text-center">{item.variation.price}</td>
+                                                                    <td className="p-2 text-center">{item.parent.name}</td>
+                                                                    <td className="p-2 text-center">
+                                                                        <button
+                                                                            onClick={() => handleOpenModal(item.parent, item.variation)}
+                                                                            className="px-3 py-1 bg-black text-white rounded cursor-pointer"
+                                                                        >
+                                                                            Ready to Send
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-center text-gray-500 py-10">No variations found</p>
+                                        )}
+                                    </>
+                                )}
+
+                            </>
                         )}
                     </>
                 )}
-
                 {/* ------------------------------ MODAL ------------------------------ */}
                 {modalOpen && selectedProduct && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-                        <div className="bg-white rounded-lg p-6 w-full max-w-4xl relative">
+                        <div className="bg-white rounded-lg p-6 w-full max-w-7xl relative">
                             <button
                                 className="absolute top-2 right-2 cursor-pointer"
                                 onClick={() => setModalOpen(false)}
@@ -308,12 +412,11 @@ const SendToWarehousePage = () => {
                                 <X className="w-6 h-6" />
                             </button>
 
-                            {/* ----- HEADER TITLE ----- */}
+                            {/* HEADER */}
                             <h2 className="text-xl font-semibold mb-1">
                                 {selectedProduct.name}
                             </h2>
 
-                            {/* Sub-title only when variation is selected */}
                             {selectedVariation && (
                                 <p className="text-sm text-gray-600 mb-4">
                                     Variation Name: <b>{selectedVariation.variationName}</b>
@@ -330,16 +433,50 @@ const SendToWarehousePage = () => {
                                     <p>
                                         <b>Price:</b> {selectedVariation ? selectedVariation.price : selectedProduct.price}
                                     </p>
-
                                     <p>
                                         <b>MRP:</b> {selectedVariation ? selectedVariation.MRP : selectedProduct.MRP}
                                     </p>
-
                                     <p>
                                         <b>FNSKU:</b> {selectedVariation ? selectedVariation.barCode : selectedProduct.barCode}
                                     </p>
                                 </div>
                             </div>
+                            {/* PREVIOUS TRANSFER SUMMARY */}
+                            {matchedTransferEntries?.filter(item => item.status === "pending").length > 0 && (
+                                <div className="mb-4 p-4 border rounded-lg bg-gray-100">
+                                    <h3 className="font-semibold text-lg mb-3">Previous Transfer Summary</h3>
+                                    <div className="space-y-3">
+                                        {matchedTransferEntries
+                                            .filter(item => item.status === "pending")
+                                            .map((item, i) => {
+                                                const warehouseInfo = warehouses.find(w => String(w.id) === String(item.warehouseId));
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        className="p-3 bg-white rounded border shadow-sm flex justify-between items-center"
+                                                    >
+                                                        <div>
+                                                            <p className="text-sm text-gray-800">
+                                                                <b>Warehouse:</b>{" "}
+                                                                {warehouseInfo
+                                                                    ? `${warehouseInfo.code} - ${warehouseInfo.name} (${warehouseInfo.state})`
+                                                                    : `ID: ${item.warehouseId}`}
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm text-gray-800">
+                                                                <b>Units Sent:</b> {item.units}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                    </div>
+                                </div>
+                            )}
+
+
+
 
                             <h3 className="font-semibold mt-4 mb-2">Send Units</h3>
 
@@ -357,11 +494,21 @@ const SendToWarehousePage = () => {
                                             className="border px-2 py-1 w-full rounded"
                                         >
                                             <option value="">Select Warehouse</option>
-                                            {warehouses.map((w) => (
-                                                <option key={w.id} value={w.id}>
-                                                    {w.name}
-                                                </option>
-                                            ))}
+                                            {warehouses.filter(
+                                                w => !matchedTransferEntries?.some(m => String(m.warehouseId) === String(w.id))
+                                            ).length > 0 ? (
+                                                warehouses
+                                                    .filter(
+                                                        w => !matchedTransferEntries?.some(m => String(m.warehouseId) === String(w.id))
+                                                    )
+                                                    .map((w) => (
+                                                        <option key={w.id} value={w.id}>
+                                                            {w.code} - {w.name} ({w.state})
+                                                        </option>
+                                                    ))
+                                            ) : (
+                                                <option value="" disabled>No warehouse available</option>
+                                            )}
                                         </select>
                                     </div>
 
@@ -378,29 +525,27 @@ const SendToWarehousePage = () => {
                                         />
                                     </div>
 
-                                    {/* STATIC FIELD — Variation units in this warehouse */}
+                                    {/* STATIC FIELD */}
                                     <div>
                                         <label className="text-sm font-medium">Variation Units</label>
                                         <input
                                             type="text"
-                                            value={"120"}   // STATIC FOR NOW
+                                            value={"120"}
                                             disabled
                                             className="border px-2 py-1 w-full rounded bg-gray-100 text-gray-600"
                                         />
                                     </div>
 
-                                    {/* STATIC FIELD — Total units in this warehouse */}
                                     <div>
                                         <label className="text-sm font-medium">Warehouse Units</label>
                                         <input
                                             type="text"
-                                            value={"850"}   // STATIC FOR NOW
+                                            value={"850"}
                                             disabled
                                             className="border px-2 py-1 w-full rounded bg-gray-100 text-gray-600"
                                         />
                                     </div>
 
-                                    {/* Delete Button */}
                                     <div className="flex justify-center">
                                         <button
                                             onClick={() => removeEntry(index)}
@@ -409,7 +554,6 @@ const SendToWarehousePage = () => {
                                             <Trash2 className="w-6 h-6" />
                                         </button>
                                     </div>
-
                                 </div>
                             ))}
 
@@ -430,8 +574,17 @@ const SendToWarehousePage = () => {
                     </div>
                 )}
 
+
+
+                {mainTab === "pending" && (
+                    <PendingTabSendToWarehouse fetchTransfers={fetchTransfers} transfers={transfers} warehouses={warehouses} deleteTransfer={deleteTransfer} updateTransfer={updateTransfer} createDispatch={createDispatch} />
+                )}
+
+                {mainTab === "dispatch" && (
+                    <DispatchTabToWarehouse  fetchDispatches={fetchDispatches} dispatches={dispatches} warehouses={warehouses} deleteDispatch={deleteDispatch} updateDispatch={updateDispatch}  />
+                )}
             </div>
-        </DefaultPageAdmin>
+        </DefaultPageAdmin >
     );
 };
 

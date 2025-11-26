@@ -21,6 +21,8 @@ import orderReducer from "./slices/order/orderSlice";
 import shippingPricingReducer from "./slices/shippingPricing/shippingPricingSlice";
 import stateReducer from "./slices/state/addStateSlice";
 import warehousesReducer from './slices/warehouse/wareHouseSlice';
+import transferWarehouseReducer from './slices/transferWarehouse/transferWarehouseSlice';
+import dispatchWarehouseReducer from './slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice';
 
 // import updateUserReducer from './slices/userSlice';
 
@@ -47,7 +49,9 @@ const store = configureStore({
         order: orderReducer,
         shippingPricing: shippingPricingReducer,
         states: stateReducer,
-        warehouses: warehousesReducer
+        warehouses: warehousesReducer,
+        transferWarehouse: transferWarehouseReducer,
+        dispatchWarehouse: dispatchWarehouseReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

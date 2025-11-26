@@ -379,3 +379,40 @@ model WareHouse {
   updatedAt DateTime @updatedAt
 }
 
+model WarehouseTransfer {
+  id             Int       @id @default(autoincrement())
+  productId      String
+  variationId    String?
+  productName    String
+  variationName  String?
+  price          String
+  MRP            String
+  FNSKU          String
+  entries        Json
+  image          String?
+
+  status         String    @default("pending")
+  active         Boolean   @default(true)
+  deleted        Boolean   @default(false)
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+
+model WarehouseDispatch {
+  id        Int      @id @default(autoincrement())
+  entries   Json     // yahan sab transfers ka array JSON ke form me
+  totalUnits Int
+  totalFNSKU Int
+  status    String   @default("pending")
+  active    Boolean  @default(true)
+  deleted   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+
+
+
