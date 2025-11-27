@@ -129,10 +129,12 @@ const ProductForm = ({
                         name: editProductData.primaryOffer.name,
                     }
                     : null,
+                "fnsku-code": editProductData["fnsku-code"] || editProductData.fnsku || ""
             });
         }
     }, [editModalOpen, isEdit]);
 
+    console.log("editProductData", editProductData);
 
     // Add tag to product
     const addTag = (tagName) => {

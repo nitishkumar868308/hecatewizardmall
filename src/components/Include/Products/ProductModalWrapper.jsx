@@ -553,6 +553,8 @@ const ProductModalWrapper = ({
                 short: existingVar?.short ?? currentData.short,
                 // short: currentData.short,
                 stock: existingVar?.stock ?? currentData.stock,
+                "fnsku-code": existingVar?.barCode ?? currentData.barCode,
+                MRP: existingVar?.MRP ?? currentData.MRP,
                 name: currentData.name,
                 //description: currentData.description,
                 description: existingVar?.description ?? currentData.description,
@@ -658,6 +660,8 @@ const ProductModalWrapper = ({
                     description: v.description,
                     images: v.image ? [v.image] : [],
                     name: editProductData.name,
+                    "fnsku-code": v.barCode,
+                    MRP: v.MRP,
                     tags: (v.tags || []).map((t) =>
                         typeof t === "string" ? { id: t, name: t } : { id: t.id, name: t.name }
                     ),
@@ -708,6 +712,8 @@ const ProductModalWrapper = ({
                     description: v.description,
                     images: v.image ? [v.image] : [],
                     name: editProductData.name,
+                    "fnsku-code": v.barCode,
+                    MRP: v.MRP,
                     tags: (v.tags || []).map((t) =>
                         typeof t === "string" ? { id: t, name: t } : { id: t.id, name: t.name }
                     ),

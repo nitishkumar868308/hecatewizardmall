@@ -113,6 +113,7 @@ const PendingTabSendToWarehouse = ({
         toast.success(successMessage);
 
         // Refresh transfers list
+        setSelectedWarehouse("")
         dispatch(fetchTransfers());
 
       } else {
