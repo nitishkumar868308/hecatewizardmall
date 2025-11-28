@@ -1193,7 +1193,7 @@ const Header = () => {
     return (
         <>
             {/* <header className="w-full bg-[#161619] shadow-md md:relative fixed md:static top-0 z-50"> */}
-            <header className={`w-full shadow-md md:relative fixed md:static top-0 z-50 ${isXpress ? "bg-gray-700" : "bg-[#161619]"}`}>
+            <header className={`w-full shadow-md md:relative fixed md:static top-0 z-50 ${isXpress ? "bg-[#886e48]" : "bg-[#161619]"}`}>
                 <div className="max-w-screen-2xl mx-auto flex items-center justify-between px-6 py-3">
 
                     {/* Logo */}
@@ -1209,9 +1209,9 @@ const Header = () => {
                             {isXpress ? (
                                 <Link href="/hecate-quickGo/home">
                                     <img
-                                        src="/image/Hecate QuickGo Logo.png"
+                                        src="/image/hecate quickgo logo transpreant new.png"
                                         alt="Logo"
-                                        className="h-20 w-24 object-contain"
+                                        className="h-24 w-24 object-contain"
                                     />
                                 </Link>
                             ) : (
@@ -1219,7 +1219,7 @@ const Header = () => {
                                     <img
                                         src="/image/HWM LOGO 1 GREY 100.png"
                                         alt="Logo"
-                                        className="h-20 w-24 object-contain"
+                                        className="h-24 w-24 object-contain"
                                     />
                                 </Link>
                             )}
@@ -1271,6 +1271,7 @@ const Header = () => {
                         </ul>
                     </nav> */}
 
+
                     <nav className="hidden md:flex flex-1 justify-center relative">
                         <ul className="flex items-center gap-6">
                             <div className="flex items-center gap-2">
@@ -1279,17 +1280,17 @@ const Header = () => {
                                         <img
                                             src="/image/HWM LOGO 1 GREY 100.png"
                                             alt="Logo"
-                                            className="h-14 w-24 object-contain"
+                                            className="h-20 w-24 object-contain"
                                         />
                                     </Link>
                                 ) : (
                                     <Link href="/hecate-quickGo/home">
                                         <img
-                                            src="/image/Hecate QuickGo Logo.png"
+                                            src="/image/hecate quickgo logo transpreant new.png"
                                             alt="Logo"
-                                            className="h-14 w-24 object-contain"
+                                            className="h-20 w-24 object-contain"
                                         />
-                                        <h5 className="text-white">Hecate QuickGo</h5>
+                                        {/* <h5 className="text-white">Hecate QuickGo</h5> */}
                                     </Link>
                                 )}
                             </div>
@@ -1316,8 +1317,15 @@ const Header = () => {
                                     >
                                         <Link
                                             href={href}
-                                            className={`font-functionPro px-4 py-2 rounded-lg font-medium transition cursor-pointer ${isActive ? "bg-white text-[#161619]" : "text-white hover:bg-gray-700"
+                                            className={`font-functionPro px-4 py-2 rounded-lg font-medium transition cursor-pointer ${isXpress
+                                                    ? isActive
+                                                        ? "bg-black text-[#ead493]"
+                                                        : "text-[#ead493] hover:bg-black"
+                                                    : isActive
+                                                        ? "bg-white text-[#161619]"
+                                                        : "text-white hover:bg-gray-700"
                                                 }`}
+
                                         >
                                             {item}
                                         </Link>

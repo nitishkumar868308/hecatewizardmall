@@ -8,7 +8,7 @@ const Footer = () => {
     const isXpress = pathname.includes("/hecate-quickGo");
     return (
         // <footer className="bg-[#161619] text-white ">
-        <footer className={`text-white ${isXpress ? "bg-gray-600" : "bg-[#161619]"}`}>
+        <footer className={`text-white ${isXpress ? "bg-[#886e48]" : "bg-[#161619]"}`}>
             <div className="max-w-screen-2xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between gap-8">
 
                 {/* Logo + Description */}
