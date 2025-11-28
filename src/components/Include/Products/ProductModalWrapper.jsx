@@ -275,6 +275,8 @@ const ProductModalWrapper = ({
             tags: v.tags?.map(tag => ({ id: Number(tag.id) })) || [],
             bulkPrice: v.bulkPrice,
             minQuantity: v.minQuantity,
+            barCode: v["fnsku-code"] || v.barCode || null,
+            MRP: v.MRP ?? null,
         }));
         console.log("formattedVariations", formattedVariations)
 
@@ -298,6 +300,8 @@ const ProductModalWrapper = ({
 
         const productData = {
             name: editProductData.name,
+            barCode: editProductData["fnsku-code"] ?? null,
+            MRP: editProductData.MRP ?? null,
             short: editProductData.short,
             description: editProductData.description,
             price: editProductData.price,
@@ -351,7 +355,11 @@ const ProductModalWrapper = ({
         try {
             const res = await dispatch(updateProduct({ id: editProductData.id, data: productData })).unwrap();
             toast.success("Product updated successfully!");
-            setEditProductData(res);
+            // setEditProductData(res);
+            setEditProductData({
+                ...res,
+                "fnsku-code": res.barCode || ""
+            });
             setNewImage([]);
             // setModalOpen(false);
         } catch (err) {

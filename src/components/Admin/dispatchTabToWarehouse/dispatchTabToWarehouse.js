@@ -49,11 +49,11 @@ const generateBarcodeDataURL = async (fnsku) => {
 
 const styles = StyleSheet.create({
     page: {
-        width: 595,     // A4 width
-        height: 842,    // A4 height
-        paddingTop: 10,
-        paddingLeft: 10,
-        paddingRight: 10,
+        width: 595,
+        height: 842,
+        paddingTop: 15,
+        paddingLeft: 11,
+        paddingRight: 11,
         flexDirection: "row",
         flexWrap: "wrap",
         justifyContent: "flex-start",
@@ -69,24 +69,30 @@ const styles = StyleSheet.create({
     label: {
         width: 180,
         height: 128,
-        border: "1px solid #444",
-        padding: 6,
-        marginRight: 6,
-        marginBottom: 4,
+        //border: "1px solid #444",
+        padding: 8,
+        marginRight: 5,
+        marginBottom: 3,
         flexDirection: "column",
         justifyContent: "flex-start",
         alignItems: "center",
     },
 
     productName: { fontWeight: 'bold', fontSize: 11, textAlign: 'center' },
-    variation: { fontSize: 9, color: '#555', textAlign: 'center' },
+    variation: {
+        fontSize: 9,
+        color: '#555',
+        textAlign: 'center',
+        lineHeight: 1.2,
+        maxWidth: 170,   // wrap hone ke liye width fix karo
+    },
     mrp: { fontSize: 9, marginTop: 2 },
     barcode: { marginTop: 2, width: 130, height: 40 },
     fnsku: {
-        marginTop: 2,   // reduce extra space
+        marginTop: 2,
         fontSize: 10,
         textAlign: "center",
-        lineHeight: 1.0,  // tight line height
+        lineHeight: 1.0,
     }
 });
 

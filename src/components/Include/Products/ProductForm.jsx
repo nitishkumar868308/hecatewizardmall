@@ -129,10 +129,11 @@ const ProductForm = ({
                         name: editProductData.primaryOffer.name,
                     }
                     : null,
-                "fnsku-code": editProductData["fnsku-code"] || editProductData.fnsku || ""
+                "fnsku-code": editProductData.barCode || ""
             });
         }
     }, [editModalOpen, isEdit]);
+
 
     console.log("editProductData", editProductData);
 

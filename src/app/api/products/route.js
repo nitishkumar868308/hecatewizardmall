@@ -176,7 +176,7 @@ export async function POST(req) {
             bulkPrice,
             MRP,
             barCode,
-            fnsku 
+            fnsku
         } = body;
         // console.log("isDefault", isDefault)
         if (!name?.trim() || !subcategory || !sku?.trim()) {
@@ -513,7 +513,9 @@ export async function PUT(req) {
             marketLinks,
             isDefault,
             minQuantity,
-            bulkPrice
+            bulkPrice,
+            barCode,
+            MRP,
         } = data;
 
         // console.log("===== Backend received product data =====");
@@ -564,6 +566,8 @@ export async function PUT(req) {
                             : undefined,
                         minQuantity: v.minQuantity != null ? v.minQuantity.toString() : null,
                         bulkPrice: v.bulkPrice != null ? v.bulkPrice.toString() : null,
+                        barCode: v.barCode ?? null,
+                        MRP: v.MRP ?? [],
                     }
                 };
             });
@@ -590,6 +594,8 @@ export async function PUT(req) {
                     : undefined,
                 minQuantity: v.minQuantity != null ? v.minQuantity.toString() : null,
                 bulkPrice: v.bulkPrice != null ? v.bulkPrice.toString() : null,
+                barCode: v.barCode ?? null,
+                MRP: v.MRP ?? [],
             }));
 
         // PUT handler ke andar, variationsUpdate aur variationsCreate ke baad:
@@ -658,6 +664,8 @@ export async function PUT(req) {
                 image: image.length ? image : existing.image,
                 category: categoryId ? { connect: { id: categoryId } } : undefined,
                 subcategory: subcategoryId ? { connect: { id: subcategoryId } } : undefined,
+                barCode: barCode ?? null,
+                MRP: MRP ?? [],
                 // offers: Array.isArray(offers) && offers.length
                 //     ? { set: [], connect: offers.map(o => ({ id: Number(o.id) })) }
                 //     : undefined,
