@@ -65,6 +65,7 @@
 
 "use client";
 import React from "react";
+import Image from "next/image"
 
 const Page = () => {
     const images = [
@@ -94,7 +95,7 @@ const Page = () => {
         "/image/CORD CUTTING OIL EDIT.png",
     ];
 
-    
+
 
     return (
         <>
@@ -113,10 +114,12 @@ const Page = () => {
                         {/* LEFT — BIG IMAGE */}
                         <div className="col-span-1">
                             <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
-                                <img
+                                <Image
                                     src="/image/CANDLES SHOP NEW 2.png"
-                                    className="w-full h-full object-cover"
                                     alt="Big"
+                                    fill
+                                    className="object-cover"
+                                    priority
                                 />
                             </div>
                         </div>
@@ -128,10 +131,16 @@ const Page = () => {
                                     key={i}
                                     className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer"
                                 >
-                                    <img
+                                    {/* <img
                                         src={img}
                                         className="w-full h-full object-cover"
                                         alt={`img-${i}`}
+                                    /> */}
+                                    <Image
+                                        src={img}
+                                        alt={`img-${i}`}
+                                        fill
+                                        className="object-cover"
                                     />
                                 </div>
                             ))}
