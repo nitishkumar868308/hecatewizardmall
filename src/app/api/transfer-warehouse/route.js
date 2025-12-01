@@ -138,7 +138,7 @@ export async function PUT(req) {
     try {
         const body = await req.json();
         const {
-            id, // required to know which transfer to update
+            id,
             productId,
             productName,
             variationId,

@@ -53,6 +53,19 @@ export const deleteDispatch = createAsyncThunk(
     }
 );
 
+export const finalizeDispatch = createAsyncThunk(
+    "dispatch/finalizeDispatch",
+    async (payload, { rejectWithValue }) => {
+        try {
+            const response = await axios.patch("/api/dispatchUnitsWareHouse", payload);
+            return response.data.data;
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to finalize dispatch");
+        }
+    }
+);
+
+
 const dispatchSlice = createSlice({
     name: "dispatch",
     initialState: {
@@ -125,6 +138,14 @@ const dispatchSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload || action.error.message;
             });
+
+        builder
+            .addCase(finalizeDispatch.pending, (state) => { state.loading = true; state.error = null; })
+            .addCase(finalizeDispatch.fulfilled, (state, action) => {
+                state.loading = false;
+                state.dispatches = state.dispatches.map(d => d.id === action.payload.id ? action.payload : d);
+            })
+            .addCase(finalizeDispatch.rejected, (state, action) => { state.loading = false; state.error = action.payload || action.error.message; });
     },
 });
 

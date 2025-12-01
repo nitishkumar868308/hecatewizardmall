@@ -24,6 +24,7 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 import {
   fetchShippingPricing,
 } from "@/app/redux/slices/shippingPricing/shippingPricingSlice";
+import { usePathname } from "next/navigation";
 
 const getPhoneYup = (countryCode) =>
   Yup.string()
@@ -39,8 +40,7 @@ const getPhoneYup = (countryCode) =>
     });
 
 const Checkout = () => {
-
-
+  const pathname = usePathname();
   const [showConfirm, setShowConfirm] = useState(false);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.me);
@@ -604,6 +604,8 @@ const Checkout = () => {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
+   const isXpress = pathname.includes("/hecate-quickGo");
+
   const handleClick = async () => {
 
     if (isIncomplete) {
@@ -664,6 +666,7 @@ const Checkout = () => {
       shipping: `${userCart[0]?.currencySymbol || '₹'}${shipping}`,
       total: `${userCart[0]?.currencySymbol || '₹'}${grandTotal.toFixed(2)}`,
       paymentMethod: selected,
+      isXpress
     };
     console.log("orderData", orderData)
     try {

@@ -338,6 +338,7 @@ model Orders {
   deleted         Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  orderBy         String? 
 }
 
 model ShippingPricing {
@@ -402,7 +403,7 @@ model WarehouseTransfer {
 
 model WarehouseDispatch {
   id        Int      @id @default(autoincrement())
-  entries   Json     // yahan sab transfers ka array JSON ke form me
+  entries   Json      
   totalUnits Int
   totalFNSKU Int
   status    String   @default("pending")
@@ -410,9 +411,26 @@ model WarehouseDispatch {
   deleted   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  dimensions       Json?   
+  trackingId       String?  
+  trackingLink     String? 
+  shippingId       String? 
 }
 
-
-
+model DelhiWarehouseStock {
+  id             Int       @id @default(autoincrement())
+  dispatchId     Int?      // optional, sirf reference ke liye
+  productsSnapshot Json    // poora product details snapshot
+  dimensions       Json?   
+  shippingId     String
+  trackingId     String?
+  trackingLink   String?
+  status         String    @default("accepted") // always accepted
+  active    Boolean  @default(true)
+  deleted   Boolean  @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
 
 

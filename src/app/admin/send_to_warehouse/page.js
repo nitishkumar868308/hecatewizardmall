@@ -9,7 +9,8 @@ import { fetchTransfers, createTransfer, deleteTransfer, updateTransfer } from "
 import toast from 'react-hot-toast';
 import PendingTabSendToWarehouse from "@/components/Admin/PendingTabSendToWarehouse/PendingTabSendToWarehouse";
 import DispatchTabToWarehouse from "@/components/Admin/dispatchTabToWarehouse/dispatchTabToWarehouse";
-import { createDispatch, fetchDispatches, updateDispatch, deleteDispatch } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
+import { createDispatch, fetchDispatches, updateDispatch, deleteDispatch, finalizeDispatch } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
+import CompletedTab from "@/components/Admin/CompletedTab/CompletedTab";
 
 const SendToWarehousePage = () => {
     const dispatch = useDispatch();
@@ -150,8 +151,64 @@ const SendToWarehousePage = () => {
         setModalEntries(copy);
     };
 
+    // const handleConfirmSend = async () => {
+    //     console.log("modalEntries", modalEntries)
+    //     for (let entry of modalEntries) {
+    //         if (!entry.warehouseId || entry.warehouseId.trim() === "") {
+    //             return toast.error("Please select warehouse for all entries!");
+    //         }
+    //         if (!entry.units || entry.units.trim() === "") {
+    //             return toast.error("Please enter units for all entries!");
+    //         }
+    //     }
+    //     const payload = {
+    //         productId: selectedProduct.id,
+    //         productName: selectedProduct.name,
+
+    //         variationId: selectedVariation ? selectedVariation.id : null,
+    //         variationName: selectedVariation ? selectedVariation.variationName : null,
+
+    //         price: selectedVariation
+    //             ? selectedVariation.price
+    //             : selectedProduct.price,
+
+    //         MRP: selectedVariation
+    //             ? selectedVariation.MRP
+    //             : selectedProduct.MRP,
+
+    //         FNSKU: selectedVariation
+    //             ? selectedVariation.barCode
+    //             : selectedProduct.barCode,
+
+    //         image: selectedVariation
+    //             ? selectedVariation.image?.[0] || null
+    //             : selectedProduct.image?.[0] || null,
+
+    //         entries: modalEntries.map((entry) => ({
+    //             warehouseId: entry.warehouseId,
+    //             units: entry.units,
+    //         })),
+    //     };
+
+    //     // ✅ Dispatch the async thunk and store the result
+    //     const result = await dispatch(createTransfer(payload));
+
+    //     // Check if the request was successful
+    //     if (createTransfer.fulfilled.match(result)) {
+    //         const apiMessage = result.payload?.message || "Product successfully sent";
+    //         toast.success(apiMessage);
+    //         setModalOpen(false);
+    //     } else {
+    //         const apiError = result.payload?.message || result.error?.message || "Failed to send product";
+    //         toast.error(apiError);
+    //     }
+
+    //     console.log("FINAL SEND:", payload);
+    // };
+
     const handleConfirmSend = async () => {
-        console.log("modalEntries", modalEntries)
+        console.log("modalEntries", modalEntries);
+
         for (let entry of modalEntries) {
             if (!entry.warehouseId || entry.warehouseId.trim() === "") {
                 return toast.error("Please select warehouse for all entries!");
@@ -160,51 +217,33 @@ const SendToWarehousePage = () => {
                 return toast.error("Please enter units for all entries!");
             }
         }
-        const payload = {
+
+        // ✅ Split each warehouse entry into a separate transfer
+        const payloads = modalEntries.map((entry) => ({
             productId: selectedProduct.id,
             productName: selectedProduct.name,
-
             variationId: selectedVariation ? selectedVariation.id : null,
             variationName: selectedVariation ? selectedVariation.variationName : null,
+            price: selectedVariation ? selectedVariation.price : selectedProduct.price,
+            MRP: selectedVariation ? selectedVariation.MRP : selectedProduct.MRP,
+            FNSKU: selectedVariation ? selectedVariation.barCode : selectedProduct.barCode,
+            image: selectedVariation ? selectedVariation.image?.[0] || null : selectedProduct.image?.[0] || null,
+            entries: [{ warehouseId: entry.warehouseId, units: entry.units }], // ✅ Only 1 warehouse per record
+            status: "pending"
+        }));
 
-            price: selectedVariation
-                ? selectedVariation.price
-                : selectedProduct.price,
-
-            MRP: selectedVariation
-                ? selectedVariation.MRP
-                : selectedProduct.MRP,
-
-            FNSKU: selectedVariation
-                ? selectedVariation.barCode
-                : selectedProduct.barCode,
-
-            image: selectedVariation
-                ? selectedVariation.image?.[0] || null
-                : selectedProduct.image?.[0] || null,
-
-            entries: modalEntries.map((entry) => ({
-                warehouseId: entry.warehouseId,
-                units: entry.units,
-            })),
-        };
-
-        // ✅ Dispatch the async thunk and store the result
-        const result = await dispatch(createTransfer(payload));
-
-        // Check if the request was successful
-        if (createTransfer.fulfilled.match(result)) {
-            const apiMessage = result.payload?.message || "Product successfully sent";
-            toast.success(apiMessage);
-            setModalOpen(false);
-        } else {
-            const apiError = result.payload?.message || result.error?.message || "Failed to send product";
-            toast.error(apiError);
+        // Send all payloads one by one
+        for (const payload of payloads) {
+            const result = await dispatch(createTransfer(payload));
+            if (createTransfer.fulfilled.match(result)) {
+                toast.success(result.payload?.message || "Product sent to warehouse");
+            } else {
+                toast.error(result.payload?.message || result.error?.message || "Failed to send product");
+            }
         }
 
-        console.log("FINAL SEND:", payload);
+        setModalOpen(false);
     };
-
 
 
     const removeEntry = (index) => {
@@ -581,7 +620,11 @@ const SendToWarehousePage = () => {
                 )}
 
                 {mainTab === "dispatch" && (
-                    <DispatchTabToWarehouse  fetchDispatches={fetchDispatches} dispatches={dispatches} warehouses={warehouses} deleteDispatch={deleteDispatch} updateDispatch={updateDispatch}  />
+                    <DispatchTabToWarehouse fetchDispatches={fetchDispatches} dispatches={dispatches} warehouses={warehouses} deleteDispatch={deleteDispatch} updateDispatch={updateDispatch} finalizeDispatch={finalizeDispatch} />
+                )}
+
+                {mainTab === "completed" && (
+                    <CompletedTab fetchDispatches={fetchDispatches} dispatches={dispatches} warehouses={warehouses} deleteDispatch={deleteDispatch} updateDispatch={updateDispatch} finalizeDispatch={finalizeDispatch} />
                 )}
             </div>
         </DefaultPageAdmin >

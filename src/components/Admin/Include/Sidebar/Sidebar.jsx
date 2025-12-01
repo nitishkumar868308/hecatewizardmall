@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -142,6 +142,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                         <Users className="w-5 h-5" /> Users
                     </Link>
 
+                    <Link
+                        href="/admin/orders"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                    >
+                        <ShoppingCart className="w-5 h-5" /> Orders
+                    </Link>
+
                     <div>
                         <button
                             onClick={() => setMenuOpenProduct(!menuOpenProduct)}
@@ -274,6 +281,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             </div>
                         )}
                     </div>
+
+                    <Link
+                        href="/admin/delhi_store"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                    >
+                        <Warehouse  className="w-5 h-5" /> Delhi Store
+                    </Link>
 
                     <Link
                         href="/admin/settings"

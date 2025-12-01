@@ -110,7 +110,7 @@ const Warehouse = () => {
             {/* Table */}
             <div className="overflow-x-auto">
                 <div className="min-w-full bg-white shadow-lg rounded-lg">
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table className="min-w-full divide-y divide-gray-200 table-auto">
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
@@ -123,16 +123,42 @@ const Warehouse = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
+
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredWarehouses.map((w, idx) => (
                                 <tr key={w.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-4 py-4 whitespace-nowrap text-gray-600 font-medium">{idx + 1}.</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-medium">{w.name}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-800">{w.state}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-800">{w.address}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-800">{w.code}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-800">{w.pincode}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-800">{w.contact}</td>
+
+                                    {/* S.No (no wrap required) */}
+                                    <td className="px-4 py-4 whitespace-nowrap text-gray-600 font-medium">
+                                        {idx + 1}.
+                                    </td>
+
+                                    {/* Wrap allowed */}
+                                    <td className="px-6 py-4 whitespace-normal break-words text-gray-800 font-medium">
+                                        {w.name}
+                                    </td>
+
+                                    <td className="px-6 py-4 whitespace-normal break-words text-gray-800">
+                                        {w.state}
+                                    </td>
+
+                                    <td className="px-6 py-4 whitespace-normal break-words text-gray-800">
+                                        {w.address}
+                                    </td>
+
+                                    <td className="px-6 py-4 whitespace-normal break-words text-gray-800">
+                                        {w.code}
+                                    </td>
+
+                                    <td className="px-6 py-4 whitespace-normal break-words text-gray-800">
+                                        {w.pincode}
+                                    </td>
+
+                                    <td className="px-6 py-4 whitespace-normal break-words text-gray-800">
+                                        {w.contact}
+                                    </td>
+
+                                    {/* Actions (no wrap) */}
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex gap-3">
                                             <button
@@ -140,26 +166,29 @@ const Warehouse = () => {
                                                     setEditWarehouse(w);
                                                     setEditModalOpen(true);
                                                 }}
-                                                className="text-blue-500 hover:text-blue-700 cursor-pointer"
+                                                className="text-blue-500 hover:text-blue-700"
                                             >
                                                 <Edit className="w-5 h-5" />
                                             </button>
+
                                             <button
                                                 onClick={() => {
                                                     setDeleteWarehouseId(w.id);
                                                     setDeleteModalOpen(true);
                                                 }}
-                                                className="text-red-500 hover:text-red-700 cursor-pointer"
+                                                className="text-red-500 hover:text-red-700"
                                             >
                                                 <Trash2 className="w-5 h-5" />
                                             </button>
                                         </div>
                                     </td>
+
                                 </tr>
                             ))}
+
                             {filteredWarehouses.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} className="text-center py-6 text-gray-400 italic">
+                                    <td colSpan={8} className="text-center py-6 text-gray-400 italic">
                                         No warehouses found
                                     </td>
                                 </tr>
@@ -168,6 +197,7 @@ const Warehouse = () => {
                     </table>
                 </div>
             </div>
+
 
             {/* Add Modal */}
             {/* {modalOpen && (
@@ -243,7 +273,7 @@ const Warehouse = () => {
 
             {modalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
+                    <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
                         <button
                             onClick={() => setModalOpen(false)}
                             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
@@ -299,7 +329,7 @@ const Warehouse = () => {
                             />
                         </div>
 
-                        <div className="mb-4">
+                        {/* <div className="mb-4">
                             <label className="block mb-1 font-medium text-gray-700">Pincode</label>
                             <input
                                 type="text"
@@ -307,13 +337,30 @@ const Warehouse = () => {
                                 onChange={(e) => setNewWarehouse({ ...newWarehouse, pincode: e.target.value })}
                                 className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                             />
+                        </div> */}
+                        <div className="mb-4">
+                            <label className="block mb-1 font-medium text-gray-700">
+                                Pincodes (comma separated)
+                            </label>
+
+                            <textarea
+                                value={newWarehouse.pincode}
+                                onChange={(e) => setNewWarehouse({ ...newWarehouse, pincode: e.target.value })}
+                                placeholder="560001, 560002, 560003 ..."
+                                className="border rounded-lg px-4 py-2 w-full h-32 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                            />
+
+                            <p className="text-xs text-gray-500 mt-1">
+                                Enter multiple pincodes separated by comma.
+                            </p>
                         </div>
+
 
                         <div className="mb-4">
                             <label className="block mb-1 font-medium text-gray-700">Contact Number</label>
                             <input
                                 type="text"
-                                 value={newWarehouse.contact || ""} 
+                                value={newWarehouse.contact || ""}
                                 onChange={(e) => setNewWarehouse({ ...newWarehouse, contact: e.target.value })}
                                 className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                             />
@@ -403,7 +450,7 @@ const Warehouse = () => {
             )} */}
             {editModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
+                    <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
                         <button
                             onClick={() => setEditModalOpen(false)}
                             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
@@ -459,7 +506,7 @@ const Warehouse = () => {
                             />
                         </div>
 
-                        <div className="mb-4">
+                        {/* <div className="mb-4">
                             <label className="block mb-1 font-medium text-gray-700">Pincode</label>
                             <input
                                 type="text"
@@ -467,7 +514,30 @@ const Warehouse = () => {
                                 onChange={(e) => setEditWarehouse({ ...editWarehouse, pincode: e.target.value })}
                                 className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                             />
+                        </div> */}
+                        <div className="mb-4">
+                            <label className="block mb-1 font-medium text-gray-700">
+                                Pincodes (comma separated)
+                            </label>
+
+                            <textarea
+                                value={editWarehouse.pincode}
+                                onChange={(e) =>
+                                    setEditWarehouse({
+                                        ...editWarehouse,
+                                        pincode: e.target.value,
+                                    })
+                                }
+                                placeholder="560001, 560002, 560003 ..."
+                                className="border rounded-lg px-4 py-2 w-full h-32 
+                   focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                            />
+
+                            <p className="text-xs text-gray-500 mt-1">
+                                Enter multiple pincodes separated by comma or new line.
+                            </p>
                         </div>
+
 
                         <div className="mb-4">
                             <label className="block mb-1 font-medium text-gray-700">Contact Number</label>

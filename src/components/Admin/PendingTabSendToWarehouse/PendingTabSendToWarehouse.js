@@ -72,27 +72,92 @@ const PendingTabSendToWarehouse = ({
   }, 0);
 
 
+  // const handleDispatch = async (transfers) => {
+  //   try {
+  //     if (!transfers || transfers.length === 0) return;
+
+  //     // Calculate total units
+  //     const totalUnits = transfers.reduce((acc, t) => {
+  //       if (t.entries && Array.isArray(t.entries)) {
+  //         const sumUnits = t.entries.reduce((uAcc, e) => uAcc + parseInt(e.units || 0), 0);
+  //         return acc + sumUnits;
+  //       }
+  //       return acc;
+  //     }, 0);
+
+  //     // Total FNSKU is just the number of transfers
+  //     const totalFNSKU = transfers.length;
+
+  //     // Prepare the payload for backend
+  //     const payload = {
+  //       totalUnits,
+  //       totalFNSKU,
+  //       transfers: transfers.map(t => ({
+  //         productId: t.productId,
+  //         productName: t.productName,
+  //         variationId: t.variationId,
+  //         variationName: t.variationName,
+  //         price: t.price,
+  //         MRP: t.MRP,
+  //         FNSKU: t.FNSKU,
+  //         entries: t.entries.filter(
+  //           e => e.warehouseId.toString() === selectedWarehouse
+  //         ),
+  //         image: t.image,
+  //         status: "dispatched"
+  //       }))
+  //     };
+  //     console.log("payload", payload)
+
+  //     const result = await dispatch(createDispatch(payload))
+  //     if (createDispatch.fulfilled.match(result)) {
+  //       const successMessage = result.payload?.message || "Products dispatched successfully";
+  //       toast.success(successMessage);
+
+  //       // Refresh transfers list
+  //       setSelectedWarehouse("")
+  //       dispatch(fetchTransfers());
+
+  //     } else {
+  //       const errorMessage = result.payload?.message || result.error?.message || "Dispatch failed";
+  //       toast.error(errorMessage);
+  //     }
+
+  //   } catch (error) {
+  //     console.error("Dispatch error:", error);
+  //     alert("Something went wrong while dispatching");
+  //   }
+  // };
   const handleDispatch = async (transfers) => {
     try {
       if (!transfers || transfers.length === 0) return;
 
+      // Filter entries for selected warehouse only
+      const filteredTransfers = transfers.map(t => ({
+        ...t,
+        entries: t.entries.filter(e => e.warehouseId.toString() === selectedWarehouse)
+      })).filter(t => t.entries.length > 0); // remove if no entries for selected warehouse
+
+      if (filteredTransfers.length === 0) {
+        toast.error("No transfers found for selected warehouse");
+        return;
+      }
+
       // Calculate total units
-      const totalUnits = transfers.reduce((acc, t) => {
-        if (t.entries && Array.isArray(t.entries)) {
-          const sumUnits = t.entries.reduce((uAcc, e) => uAcc + parseInt(e.units || 0), 0);
-          return acc + sumUnits;
-        }
-        return acc;
+      const totalUnits = filteredTransfers.reduce((acc, t) => {
+        const sumUnits = t.entries.reduce((uAcc, e) => uAcc + parseInt(e.units || 0), 0);
+        return acc + sumUnits;
       }, 0);
 
-      // Total FNSKU is just the number of transfers
-      const totalFNSKU = transfers.length;
+      // Total FNSKU is number of distinct FNSKU for this warehouse
+      const totalFNSKU = filteredTransfers.length;
 
-      // Prepare the payload for backend
+      // Prepare payload
       const payload = {
         totalUnits,
         totalFNSKU,
-        transfers: transfers.map(t => ({
+        transfers: filteredTransfers.map(t => ({
+          id: t.id, // Important! Backend needs this to update only this record
           productId: t.productId,
           productName: t.productName,
           variationId: t.variationId,
@@ -105,20 +170,16 @@ const PendingTabSendToWarehouse = ({
           status: "dispatched"
         }))
       };
-      console.log("payload" , payload)
 
-      const result = await dispatch(createDispatch(payload))
+      console.log("Dispatch Payload:", payload);
+
+      const result = await dispatch(createDispatch(payload));
       if (createDispatch.fulfilled.match(result)) {
-        const successMessage = result.payload?.message || "Products dispatched successfully";
-        toast.success(successMessage);
-
-        // Refresh transfers list
-        setSelectedWarehouse("")
+        toast.success(result.payload?.message || "Products dispatched successfully");
+        setSelectedWarehouse("");
         dispatch(fetchTransfers());
-
       } else {
-        const errorMessage = result.payload?.message || result.error?.message || "Dispatch failed";
-        toast.error(errorMessage);
+        toast.error(result.payload?.message || result.error?.message || "Dispatch failed");
       }
 
     } catch (error) {

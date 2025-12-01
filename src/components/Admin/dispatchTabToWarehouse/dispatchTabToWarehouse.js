@@ -145,6 +145,7 @@ const dispatchTabToWarehouse = ({
     warehouses,
     deleteDispatch,
     updateDispatch,
+    finalizeDispatch
 }) => {
     const dispatch = useDispatch();
     const [modalData, setModalData] = useState(null);
@@ -185,6 +186,44 @@ const dispatchTabToWarehouse = ({
         setFormModalOpen(true);
     };
 
+    // useEffect(() => {
+    //     if (formModalOpen && currentDispatch) {
+    //         // Populate boxes form with dimensions from DB
+    //         setDispatchFormData(
+    //             currentDispatch.dimensions?.length
+    //                 ? currentDispatch.dimensions
+    //                 : [{ boxes: 1, weight: 0, length: 0, breadth: 0, height: 0 }]
+    //         );
+
+    //         setTrackingId(currentDispatch.trackingId || "");
+    //         setTrackingLink(currentDispatch.trackingLink || "");
+    //     }
+    // }, [formModalOpen, currentDispatch]);
+    useEffect(() => {
+        if (formModalOpen && currentDispatch) {
+
+            // Ye condition ensure karega ke sirf dispatched par hi data load ho
+            if (currentDispatch.status === "dispatched") {
+
+                setDispatchFormData(
+                    currentDispatch.dimensions?.length
+                        ? currentDispatch.dimensions
+                        : [{ boxes: 1, weight: 0, length: 0, breadth: 0, height: 0 }]
+                );
+
+                setTrackingId(currentDispatch.trackingId || "");
+                setTrackingLink(currentDispatch.trackingLink || "");
+            } else {
+                // Agar dispatched nahi hai, form ko reset rakho
+                setDispatchFormData([{ boxes: 1, weight: 0, length: 0, breadth: 0, height: 0 }]);
+                setTrackingId("");
+                setTrackingLink("");
+            }
+        }
+    }, [formModalOpen, currentDispatch]);
+
+
+
     const addMoreBoxes = () => {
         let newRow = { boxes: 1, weight: 0, length: 0, breadth: 0, height: 0 };
         if (dispatchFormData.length > 0) {
@@ -215,17 +254,121 @@ const dispatchTabToWarehouse = ({
         setDispatchFormData(prev => prev.filter((_, i) => i !== idx));
     };
 
-    const saveDispatch = (dispatchFormData, trackingId, trackingLink) => {
-        const finalData = {
-            boxes: dispatchFormData,
-            trackingId,
-            trackingLink
-        };
+    const saveDispatchDraft = async (dispatchId, dispatchFormData, trackingId, trackingLink, shippingId) => {
+        try {
+            const finalData = {
+                dispatchId,
+                dimensions: dispatchFormData,
+                trackingId,
+                trackingLink,
+                shippingId: shippingId ?? null
+            };
 
-        console.log("Final dispatch data:", finalData);
+            // Redux asyncThunk call
+            const result = await dispatch(updateDispatch(finalData));
+            if (updateDispatch.fulfilled.match(result)) {
+                toast.success(result.payload?.message || "Draft updated successfully");
+            } else {
+                toast.error(result.payload?.message || result.error?.message || "Update failed");
+            }
+
+            console.log("Final dispatch Draft data:", finalData);
+        } catch (error) {
+            console.error("Error saving dispatch draft:", error);
+        }
     };
 
-    console.log("dispatchFormData", dispatchFormData)
+
+    const saveDispatchFinal = async (
+        dispatchId,
+        currentDispatch,  // poora product snapshot
+        dimensions,
+        trackingId,
+        trackingLink,
+        shippingId,
+    ) => {
+        try {
+            // Enrich each entry with warehouse details
+            const enrichedEntries = currentDispatch.entries.map(item => {
+                const warehouseId = Number(item.entries[0]?.warehouseId); // string to number
+                const warehouse = warehouses.find(w => w.id === warehouseId);
+                return {
+                    ...item,
+                    warehouse: warehouse ? { id: warehouse.id, state: warehouse.state, code: warehouse.code } : null
+                };
+            });
+
+            console.log("enrichedEntries", enrichedEntries);
+
+
+            // Filter only those entries whose warehouse state matches (example: Delhi)
+            const filteredEntries = enrichedEntries.filter(item => item.warehouse?.state?.toLowerCase() === "delhi");
+            console.log("filteredEntries", filteredEntries)
+            const warehouseState = filteredEntries.length > 0 ? filteredEntries[0].warehouse.state : null;
+            const finalData = {
+                dispatchId,
+                productsSnapshot: currentDispatch,
+                dimensions: dispatchFormData || dimensions,
+                trackingId,
+                trackingLink,
+                shippingId: shippingId ?? null,
+                warehouseState
+            };
+
+            console.log("Final dispatch data sent:", finalData);
+
+            const result = await dispatch(finalizeDispatch(finalData));
+
+            if (finalizeDispatch.fulfilled.match(result)) {
+                toast.success(result.payload?.message || "Dispatch finalized successfully");
+                setFormModalOpen("")
+            } else {
+                toast.error(result.payload?.message || result.error?.message || "Update failed");
+            }
+
+
+        } catch (error) {
+            console.error("Error finalizing dispatch:", error);
+        }
+    };
+
+    // const saveDispatchFinal = async (
+    //     dispatchId,
+    //     currentDispatch, // poora product detail snapshot
+    //     dimensions,
+    //     trackingId,
+    //     trackingLink,
+    //     shippingId,
+    //     warehouseState // jaise "Delhi" ya koi aur
+    // ) => {
+    //     try {
+    //         const finalData = {
+    //             dispatchId,
+    //             productsSnapshot: currentDispatch,      // Redux/Backend me poora product detail
+    //             dimensions: dispatchFormData || dimensions,
+    //             trackingId,
+    //             trackingLink,
+    //             shippingId: shippingId ?? null,
+    //             warehouseState,        // Delhi check ke liye
+    //         };
+    //         console.log("finalData" , finalData)
+    //         // Redux asyncThunk call
+    //         // const result = await dispatch(finalizeDispatch(finalData));
+
+    //         // if (finalizeDispatch.fulfilled.match(result)) {
+    //         //     toast.success(result.payload?.message || "Dispatch finalized successfully");
+    //         // } else {
+    //         //     toast.error(result.payload?.message || result.error?.message || "Update failed");
+    //         // }
+
+    //         console.log("Final dispatch data sent:", finalData);
+    //     } catch (error) {
+    //         console.error("Error finalizing dispatch:", error);
+    //     }
+    // };
+
+
+    console.log("dispatches", dispatches)
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
@@ -233,94 +376,96 @@ const dispatchTabToWarehouse = ({
                 Dispatch to Warehouse
             </h1>
 
-            {dispatches.length === 0 ? (
+            {dispatches.filter(d => d.status === "dispatched").length === 0 ? (
                 <div className="flex items-center justify-center h-64">
                     <p className="text-gray-400 text-lg">No dispatches available</p>
                 </div>
             ) : (
                 <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                    {dispatches.map((d) => (
-                        <div
-                            key={d.id}
-                            className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 flex flex-col hover:shadow-lg transition"
-                        >
-                            {/* Header + Warehouses */}
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
-                                <div>
-                                    <h2 className="text-lg font-semibold text-gray-800">Dispatch #{d.id}</h2>
-                                    <p className="text-gray-500 text-sm">
-                                        FNSKU: <span className="font-medium">{d.totalFNSKU}</span> | Units: <span className="font-medium">{d.totalUnits}</span>
-                                    </p>
-                                </div>
-                                <div className="py-1 sm:max-w-[250px]">
-                                    {/* Date/Time on top */}
-                                    <h1 className="text-sm font-medium mb-1">Created At : {new Date(d.createdAt).toLocaleString()}</h1>
-
-                                    {/* Warehouses below */}
-                                    <div className="flex flex-wrap gap-1">
-                                        {Array.from(new Set(d.entries.map(e => e.entries[0].warehouseId))).map((wid) => {
-                                            const warehouse = warehouses.find(w => w.id.toString() === wid.toString());
-                                            if (!warehouse) return null;
-                                            return (
-                                                <div
-                                                    key={wid}
-                                                    className="bg-green-50 border border-green-200 rounded-lg px-2 py-1 text-xs font-medium "
-                                                    title={`${warehouse.code} - ${warehouse.name}, ${warehouse.state}, ${warehouse.address}`}
-                                                >
-                                                    Sent To: {warehouse.code} - {warehouse.address}
-                                                </div>
-                                            );
-                                        })}
+                    {dispatches
+                        .filter(d => d.status === "dispatched")
+                        .map((d) => (
+                            <div
+                                key={d.id}
+                                className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 flex flex-col hover:shadow-lg transition"
+                            >
+                                {/* Header + Warehouses */}
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
+                                    <div>
+                                        <h2 className="text-lg font-semibold text-gray-800">Dispatch #{d.id}</h2>
+                                        <p className="text-gray-500 text-sm">
+                                            FNSKU: <span className="font-medium">{d.totalFNSKU}</span> | Units: <span className="font-medium">{d.totalUnits}</span>
+                                        </p>
                                     </div>
+                                    <div className="py-1 sm:max-w-[250px]">
+                                        {/* Date/Time on top */}
+                                        <h1 className="text-sm font-medium mb-1">Created At : {new Date(d.createdAt).toLocaleString()}</h1>
+
+                                        {/* Warehouses below */}
+                                        <div className="flex flex-wrap gap-1">
+                                            {Array.from(new Set(d.entries.map(e => e.entries[0].warehouseId))).map((wid) => {
+                                                const warehouse = warehouses.find(w => w.id.toString() === wid.toString());
+                                                if (!warehouse) return null;
+                                                return (
+                                                    <div
+                                                        key={wid}
+                                                        className="bg-green-50 border border-green-200 rounded-lg px-2 py-1 text-xs font-medium "
+                                                        title={`${warehouse.code} - ${warehouse.name}, ${warehouse.state}, ${warehouse.address}`}
+                                                    >
+                                                        Sent To: {warehouse.code} - {warehouse.address}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
                                 </div>
 
-                            </div>
-
-                            {/* Products Table */}
-                            <div className="overflow-x-auto mb-3">
-                                <table className="w-full text-left text-xs border border-gray-100 rounded-lg">
-                                    <thead className="bg-gray-100">
-                                        <tr>
-                                            <th className="p-1">Product</th>
-                                            <th className="p-1">FNSKU</th>
-                                            <th className="p-1">Units</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {d.entries.map((item, idx) => (
-                                            <tr key={idx} className="border-b last:border-0 hover:bg-gray-50 transition">
-                                                <td className="p-1 flex items-center gap-1">
-                                                    <img src={item.image} alt={item.productName} className="w-10 h-10 object-cover rounded" />
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium">{item.productName}</span>
-                                                        {item.variationName && <span className="text-gray-400 text-[10px]">{item.variationName}</span>}
-                                                    </div>
-                                                </td>
-                                                <td className="p-1">{item.FNSKU}</td>
-                                                <td className="p-1 font-semibold">{item.entries[0].units}</td>
+                                {/* Products Table */}
+                                <div className="overflow-x-auto mb-3">
+                                    <table className="w-full text-left text-xs border border-gray-100 rounded-lg">
+                                        <thead className="bg-gray-100">
+                                            <tr>
+                                                <th className="p-1">Product</th>
+                                                <th className="p-1">FNSKU</th>
+                                                <th className="p-1">Units</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody>
+                                            {d.entries.map((item, idx) => (
+                                                <tr key={idx} className="border-b last:border-0 hover:bg-gray-50 transition">
+                                                    <td className="p-1 flex items-center gap-1">
+                                                        <img src={item.image} alt={item.productName} className="w-10 h-10 object-cover rounded" />
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium">{item.productName}</span>
+                                                            {item.variationName && <span className="text-gray-400 text-[10px]">{item.variationName}</span>}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-1">{item.FNSKU}</td>
+                                                    <td className="p-1 font-semibold">{item.entries[0].units}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
 
-                            {/* Actions */}
-                            <div className="flex gap-2 justify-end mt-auto">
-                                <button
-                                    onClick={() => setModalData(d)}
-                                    className="flex items-center gap-1 px-3 py-1 bg-gray-700 text-white rounded-xl hover:bg-gray-800 text-xs cursor-pointer"
-                                >
-                                    <Eye size={14} /> View
-                                </button>
-                                <button
-                                    onClick={() => handleDispatchClick(d)}
-                                    className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-xl hover:bg-green-700 text-xs cursor-pointer"
-                                >
-                                    <Truck size={14} /> Dispatch
-                                </button>
+                                {/* Actions */}
+                                <div className="flex gap-2 justify-end mt-auto">
+                                    <button
+                                        onClick={() => setModalData(d)}
+                                        className="flex items-center gap-1 px-3 py-1 bg-gray-700 text-white rounded-xl hover:bg-gray-800 text-xs cursor-pointer"
+                                    >
+                                        <Eye size={14} /> View
+                                    </button>
+                                    <button
+                                        onClick={() => handleDispatchClick(d)}
+                                        className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-xl hover:bg-green-700 text-xs cursor-pointer"
+                                    >
+                                        <Truck size={14} /> Dispatch
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
                 </div>
             )}
 
@@ -497,8 +642,14 @@ const dispatchTabToWarehouse = ({
                         {/* Total Summary Below */}
                         <div className="bg-gray-100 p-4 rounded mb-4 flex flex-col sm:flex-row gap-4 font-semibold text-gray-800">
                             <div>Total Boxes: {dispatchFormData.reduce((sum, row) => sum + (row.boxes || 0), 0)}</div>
-                            <div>Total Weight: {dispatchFormData.reduce((sum, row) => sum + ((row.weight || 0) * (row.boxes || 0)), 0)} kg</div>
-                            <div>Total Volume: {dispatchFormData.reduce((sum, row) => sum + ((row.boxes || 0) * parseFloat(calcVolume(row))), 0).toFixed(2)} kg</div>
+                            <div>
+                                Total Weight: {dispatchFormData.reduce((sum, row) => sum + (row.weight || 0), 0)} kg
+                            </div>
+
+                            <div>
+                                Total Volume: {dispatchFormData.reduce((sum, row) => sum + parseFloat(calcVolume(row)), 0).toFixed(2)} kg
+                            </div>
+
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -538,7 +689,7 @@ const dispatchTabToWarehouse = ({
 
                             <button
                                 className="px-5 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition shadow-md font-semibold"
-                                onClick={() => saveDispatch(dispatchFormData, trackingId, trackingLink)}
+                                onClick={() => saveDispatchDraft(currentDispatch.id, dispatchFormData, trackingId, trackingLink)}
                             >
                                 Save Draft
                             </button>
@@ -547,16 +698,7 @@ const dispatchTabToWarehouse = ({
 
                             <button
                                 className="px-5 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition cursor-pointer"
-                                onClick={() => {
-                                    const finalData = {
-                                        boxes: dispatchFormData,
-                                        trackingId,
-                                        trackingLink
-                                    };
-                                    console.log("Final dispatch form data:", finalData);
-                                    toast.success("Dispatch data ready!");
-                                    setFormModalOpen(false);
-                                }}
+                                onClick={() => saveDispatchFinal(currentDispatch.id, currentDispatch, dispatchFormData, trackingId, trackingLink)}
                             >
                                 Submit
                             </button>

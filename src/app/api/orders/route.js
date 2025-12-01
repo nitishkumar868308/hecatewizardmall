@@ -156,6 +156,7 @@ export async function POST(req) {
                 paymentMethod: body.paymentMethod,
                 status: "PENDING",
                 paymentStatus: "PENDING",
+                 orderBy: body.isXpress ? "hecate-quickGo" : "website",
             },
         });
 
@@ -273,6 +274,38 @@ export async function POST(req) {
         console.error(error);
         return new Response(
             JSON.stringify({ message: "Server Error", error: error.message }),
+            { status: 500 }
+        );
+    }
+}
+
+
+export async function GET() {
+    try {
+        const Orders = await prisma.orders.findMany({
+            where: {
+                active: true,
+                deleted: 0
+            },
+            orderBy: {
+                id: "desc"
+            }
+        });
+
+        return new Response(
+            JSON.stringify({
+                message: "Orders list fetched successfully",
+                data: Orders
+            }),
+            { status: 200 }
+        );
+
+    } catch (error) {
+        return new Response(
+            JSON.stringify({
+                message: "Failed to fetch Orders List",
+                error: error.message
+            }),
             { status: 500 }
         );
     }

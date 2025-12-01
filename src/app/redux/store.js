@@ -23,6 +23,7 @@ import stateReducer from "./slices/state/addStateSlice";
 import warehousesReducer from './slices/warehouse/wareHouseSlice';
 import transferWarehouseReducer from './slices/transferWarehouse/transferWarehouseSlice';
 import dispatchWarehouseReducer from './slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice';
+import delhiStoreReducer from './slices/delhiStore/delhiStoreSlice';
 
 // import updateUserReducer from './slices/userSlice';
 
@@ -52,6 +53,7 @@ const store = configureStore({
         warehouses: warehousesReducer,
         transferWarehouse: transferWarehouseReducer,
         dispatchWarehouse: dispatchWarehouseReducer,
+        delhiStore: delhiStoreReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });
