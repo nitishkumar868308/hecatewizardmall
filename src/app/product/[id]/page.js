@@ -53,7 +53,7 @@ const ProductDetail = () => {
     const { user } = useSelector((state) => state.me);
     const { items } = useSelector((state) => state.cart);
     const country = useSelector((state) => state.country);
-    console.log("items", items)
+    console.log("products", products)
 
     useEffect(() => {
         const prod = products.find((p) => p.id == id);
@@ -2072,6 +2072,7 @@ const ProductDetail = () => {
                 userId: user.id,
                 image: mainImage || "No Image",
                 selectedCountry,
+                barCode
             };
 
             console.log("🛒 NEW CART ITEM:", cartItem);

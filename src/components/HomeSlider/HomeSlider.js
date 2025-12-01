@@ -12,17 +12,17 @@ import "swiper/css/navigation";
 
 const HomeSlider = () => {
     const pathname = usePathname();
-    const isXpress = pathname.includes("/xpress");
+    const isXpress = pathname.includes("/hecate-quickGo");
     const slides = isXpress
         ? [
-            { id: 1, image: "/image/xpress.jpeg", text: "Welcome to Our Website" },
-            { id: 2, image: "/image/xpress1.jpeg", text: "Explore Our Services" },
-            { id: 3, image: "/image/xpress2.jpeg", text: "Innovative Solutions" },
-            { id: 4, image: "/image/xpress4.jpeg", text: "Grow With Us" },
-            { id: 5, image: "/image/5.jpeg", text: "Your Success, Our Goal" },
-            { id: 6, image: "/image/6.jpeg", text: "Quality & Excellence" },
-            { id: 7, image: "/image/7.jpeg", text: "Join Our Community" },
-            { id: 8, image: "/image/9.jpeg", text: "Start Your Journey" },
+            { id: 1, image: "/image/Banner_Quick_Go1.png", },
+            // { id: 2, image: "/image/xpress1.jpeg", text: "Explore Our Services" },
+            // { id: 3, image: "/image/xpress2.jpeg", text: "Innovative Solutions" },
+            // { id: 4, image: "/image/xpress4.jpeg", text: "Grow With Us" },
+            // { id: 5, image: "/image/5.jpeg", text: "Your Success, Our Goal" },
+            // { id: 6, image: "/image/6.jpeg", text: "Quality & Excellence" },
+            // { id: 7, image: "/image/7.jpeg", text: "Join Our Community" },
+            // { id: 8, image: "/image/9.jpeg", text: "Start Your Journey" },
         ]
         : [
             { id: 1, image: "/image/banner1.jpg", text: "Welcome to Our Website" },

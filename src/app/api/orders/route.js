@@ -156,7 +156,7 @@ export async function POST(req) {
                 paymentMethod: body.paymentMethod,
                 status: "PENDING",
                 paymentStatus: "PENDING",
-                 orderBy: body.isXpress ? "hecate-quickGo" : "website",
+                orderBy: body.isXpress ? "hecate-quickGo" : "website",
             },
         });
 
@@ -306,6 +306,78 @@ export async function GET() {
                 message: "Failed to fetch Orders List",
                 error: error.message
             }),
+            { status: 500 }
+        );
+    }
+}
+
+export async function PUT(req) {
+    try {
+        const body = await req.json();
+        const orderId = body.id;
+
+        if (!orderId) {
+            return new Response(JSON.stringify({ message: "Order ID is required" }), {
+                status: 400,
+            });
+        }
+
+        // Check if order exists
+        const existingOrder = await prisma.orders.findUnique({
+            where: { id: orderId },
+        });
+
+        if (!existingOrder) {
+            return new Response(JSON.stringify({ message: "Order not found" }), {
+                status: 404,
+            });
+        }
+
+        // Update order
+        const updatedOrder = await prisma.orders.update({
+            where: { id: orderId },
+            data: {
+                userId: body.user?.id || existingOrder.userId,
+
+                shippingName: body.shippingAddress?.name || existingOrder.shippingName,
+                shippingPhone: body.shippingAddress?.mobile || existingOrder.shippingPhone,
+                shippingAddress: body.shippingAddress?.address || existingOrder.shippingAddress,
+                shippingCity: body.shippingAddress?.city || existingOrder.shippingCity,
+                shippingState: body.shippingAddress?.state || existingOrder.shippingState,
+                shippingPincode: body.shippingAddress?.pincode || existingOrder.shippingPincode,
+
+                billingName: body.billingAddress?.name || existingOrder.billingName,
+                billingPhone: body.billingAddress?.phone || existingOrder.billingPhone,
+                billingAddress: body.billingAddress?.address || existingOrder.billingAddress,
+                billingCity: body.billingAddress?.city || existingOrder.billingCity,
+                billingState: body.billingAddress?.state || existingOrder.billingState,
+                billingPincode: body.billingAddress?.pincode || existingOrder.billingPincode,
+
+                items: body.items || existingOrder.items,
+
+                subtotal: body.subtotal !== undefined ? parseFloat(body.subtotal.replace(/[^0-9.]/g, "")) : existingOrder.subtotal,
+                shippingCharges: body.shipping !== undefined ? parseFloat(body.shipping.replace(/[^0-9.]/g, "")) : existingOrder.shippingCharges,
+                discountAmount: body.discount !== undefined ? body.discount : existingOrder.discountAmount,
+                taxAmount: body.tax !== undefined ? body.tax : existingOrder.taxAmount,
+                totalAmount: body.total !== undefined ? parseFloat(body.total.replace(/[^0-9.]/g, "")) : existingOrder.totalAmount,
+
+                paymentMethod: body.paymentMethod || existingOrder.paymentMethod,
+                status: body.status || existingOrder.status,
+                paymentStatus: body.paymentStatus || existingOrder.paymentStatus,
+                orderBy: body.orderBy || existingOrder.orderBy,
+                active: body.active !== undefined ? body.active : existingOrder.active,
+                deleted: body.deleted !== undefined ? body.deleted : existingOrder.deleted,
+            },
+        });
+
+        return new Response(
+            JSON.stringify({ message: "Order updated successfully", data: updatedOrder }),
+            { status: 200 }
+        );
+    } catch (error) {
+        console.error(error);
+        return new Response(
+            JSON.stringify({ message: "Server Error", error: error.message }),
             { status: 500 }
         );
     }
