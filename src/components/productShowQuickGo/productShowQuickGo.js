@@ -113,34 +113,48 @@ const Page = () => {
 
                         {/* LEFT — BIG IMAGE */}
                         <div className="col-span-1">
-                            <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
+                            {/* <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
+                                <img src="/image/CANDLES SHOP NEW 2.png" className="w-full h-full object-cover" alt="Big" />
+                            </div> */}
+                            <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
                                 <Image
                                     src="/image/CANDLES SHOP NEW 2.png"
                                     alt="Big"
                                     fill
                                     className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, 50vw"
                                     priority
                                 />
                             </div>
                         </div>
 
                         {/* RIGHT — GRID IMAGES */}
-                        <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {/* <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {images.map((img, i) => (
                                 <div
                                     key={i}
                                     className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer"
                                 >
-                                    {/* <img
+                                    <img
                                         src={img}
                                         className="w-full h-full object-cover"
                                         alt={`img-${i}`}
-                                    /> */}
+                                    />
+                                </div>
+                            ))}
+                        </div> */}
+                        <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            {images.map((img, i) => (
+                                <div
+                                    key={i}
+                                    className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
+                                >
                                     <Image
                                         src={img}
                                         alt={`img-${i}`}
                                         fill
                                         className="object-cover"
+                                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                                     />
                                 </div>
                             ))}
@@ -169,7 +183,7 @@ const Page = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
 
                         {/* LEFT — BIG IMAGE */}
-                        <div className="col-span-1">
+                        {/* <div className="col-span-1">
                             <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
                                 <img
                                     src="/image/HERBSSHO.jpeg"
@@ -177,10 +191,32 @@ const Page = () => {
                                     alt="Big"
                                 />
                             </div>
+                        </div> */}
+                        <div className="col-span-1">
+                            {/* <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                                <Image
+                                    src="/image/HERBSSHO.jpeg"
+                                    alt="Big"
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                    priority
+                                />
+                            </div> */}
+                            <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                                <Image
+                                    src="/image/HERBSSHO.jpeg"
+                                    alt="Big"
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                    priority
+                                />
+                            </div>
                         </div>
 
                         {/* RIGHT — GRID IMAGES */}
-                        <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {/* <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {productsHerbs.map((img, i) => (
                                 <div
                                     key={i}
@@ -190,6 +226,22 @@ const Page = () => {
                                         src={img}
                                         className="w-full h-full object-cover"
                                         alt={`img-${i}`}
+                                    />
+                                </div>
+                            ))}
+                        </div> */}
+                        <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            {productsHerbs.map((img, i) => (
+                                <div
+                                    key={i}
+                                    className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
+                                >
+                                    <Image
+                                        src={img}
+                                        alt={`img-${i}`}
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                                     />
                                 </div>
                             ))}
@@ -218,7 +270,7 @@ const Page = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
 
                         {/* LEFT — BIG IMAGE */}
-                        <div className="col-span-1">
+                        {/* <div className="col-span-1">
                             <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
                                 <img
                                     src="/image/OILSSHOP.jpeg"
@@ -226,10 +278,22 @@ const Page = () => {
                                     alt="Big"
                                 />
                             </div>
+                        </div> */}
+                        <div className="col-span-1">
+                            <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                                <Image
+                                    src="/image/OILSSHOP.jpeg"
+                                    alt="Big"
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                    priority
+                                />
+                            </div>
                         </div>
 
                         {/* RIGHT — GRID IMAGES */}
-                        <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {/* <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {productsOils.map((img, i) => (
                                 <div
                                     key={i}
@@ -239,6 +303,22 @@ const Page = () => {
                                         src={img}
                                         className="w-full h-full object-cover"
                                         alt={`img-${i}`}
+                                    />
+                                </div>
+                            ))}
+                        </div> */}
+                        <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            {productsOils.map((img, i) => (
+                                <div
+                                    key={i}
+                                    className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
+                                >
+                                    <Image
+                                        src={img}
+                                        alt={`img-${i}`}
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                                     />
                                 </div>
                             ))}
