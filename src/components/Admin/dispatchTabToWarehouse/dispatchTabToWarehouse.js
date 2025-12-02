@@ -1,3 +1,4 @@
+"use client"
 import React, { useState, useEffect } from "react";
 import { Eye, Truck } from "lucide-react";
 import { useDispatch } from "react-redux";
@@ -6,46 +7,6 @@ import Barcode from "react-barcode";
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import BWIPJS from "bwip-js";
 import JsBarcode from "jsbarcode";
-
-// const styles = StyleSheet.create({
-//     page: {
-//         padding: 10,
-//         flexDirection: "row",
-//         flexWrap: "wrap",
-//     },
-
-//     label: {
-//         width: 180,  // 63.5mm
-//         height: 132, // 46.6mm
-//         border: "1px solid #999",
-//         padding: 4,
-//         margin: 4,
-//         display: "flex",
-//         flexDirection: "column",
-//         justifyContent: "space-between",
-//         alignItems: "center"
-//     },
-//     productName: { fontWeight: 'bold', fontSize: 14, textAlign: 'center' },
-//     variation: { fontSize: 10, color: '#555', textAlign: 'center' },
-//     mrp: { fontSize: 12, marginTop: 5 },
-//     barcode: { marginTop: 5, width: '100%', height: 50 },
-//     labelsContainer: { display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-// });
-
-const generateBarcodeDataURL = async (fnsku) => {
-    try {
-        return await BWIPJS.toBuffer({
-            bcid: 'code128',
-            text: fnsku,
-            scale: 2,
-            height: 50,
-            includetext: false,
-        }).then(buffer => `data:image/png;base64,${buffer.toString('base64')}`);
-    } catch (err) {
-        console.error(err);
-        return null;
-    }
-};
 
 const styles = StyleSheet.create({
     page: {
@@ -139,7 +100,7 @@ const LabelsPDF = ({ entries, barcodes }) => {
 
 
 
-const dispatchTabToWarehouse = ({
+const DispatchTabToWarehouse = ({
     fetchDispatches,
     dispatches,
     warehouses,
@@ -827,4 +788,4 @@ const dispatchTabToWarehouse = ({
     );
 };
 
-export default dispatchTabToWarehouse;
+export default DispatchTabToWarehouse;

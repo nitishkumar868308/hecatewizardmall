@@ -1,3 +1,4 @@
+"use client"
 import React, { useState } from "react";
 import { Edit, Trash2, Eye, Truck, Check } from "lucide-react";
 import { useDispatch } from "react-redux";
