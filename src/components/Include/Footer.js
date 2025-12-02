@@ -8,7 +8,7 @@ const Footer = () => {
     const isXpress = pathname.includes("/hecate-quickGo");
     return (
         // <footer className="bg-[#161619] text-white ">
-        <footer className={`text-white ${isXpress ? "bg-[#886e48]" : "bg-[#161619]"}`}>
+        <footer className={`text-white ${isXpress ? "bg-[#082D3F]" : "bg-[#161619]"}`}>
             <div className="max-w-screen-2xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between gap-8">
 
                 {/* Logo + Description */}
@@ -22,9 +22,9 @@ const Footer = () => {
                         {isXpress ? (
                             <Link href="/hecate-quickGo/home">
                                 <img
-                                    src="/image/Hecate QuickGo Logo.png"
+                                    src="/image/quickgo logo.png"
                                     alt="Logo"
-                                    className="h-20 w-24 object-contain"
+                                    className="h-24 w-24 object-contain"
                                 />
                             </Link>
                         ) : (
@@ -32,12 +32,12 @@ const Footer = () => {
                                 <img
                                     src="/image/HWM LOGO 1 GREY 100.png"
                                     alt="Logo"
-                                    className="h-20 w-24 object-contain"
+                                    className="h-24 w-24 object-contain"
                                 />
                             </Link>
                         )}
                     </div>
-                    <p className="text-gray-400 text-sm md:text-base font-functionPro">
+                    <p className="text-gray-100 text-sm md:text-base font-functionPro">
                         Your ultimate destination for all things magical and mystical.<br />
                         Explore our collection and find everything you need to bring your spells and rituals to life.
                     </p>

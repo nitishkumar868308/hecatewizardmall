@@ -15,8 +15,9 @@ const HomeSlider = () => {
     const isXpress = pathname.includes("/hecate-quickGo");
     const slides = isXpress
         ? [
-            { id: 1, image: "/image/Banner_Quick_Go1.png", },
-            // { id: 2, image: "/image/xpress1.jpeg", text: "Explore Our Services" },
+            // { id: 1, image: "/image/banner_quickgo3.png", },
+            { id: 2, image: "/image/SAME DAY (1).png", },
+            // { id: 3, image: "/image/SAME DAY.png",},
             // { id: 3, image: "/image/xpress2.jpeg", text: "Innovative Solutions" },
             // { id: 4, image: "/image/xpress4.jpeg", text: "Grow With Us" },
             // { id: 5, image: "/image/5.jpeg", text: "Your Success, Our Goal" },
@@ -37,6 +38,33 @@ const HomeSlider = () => {
 
 
     return (
+        // <div className="w-full">
+        //     <Swiper
+        //         modules={[Autoplay, Pagination, Navigation]}
+        //         spaceBetween={0}
+        //         slidesPerView={1}
+        //         loop={true}
+        //         autoplay={{ delay: 3000, disableOnInteraction: false }}
+        //     >
+        //         {slides.map((slide) => (
+        //             <SwiperSlide key={slide.id}>
+        //                 <div className="relative w-full h-[300px] md:h-[500px] lg:h-[800px]  md:mt-0">
+        //                     <Image
+        //                         src={slide.image}
+        //                         alt={`Slide ${slide.id}`}
+        //                         fill
+        //                         className="object-cover"
+        //                     />
+        //                     <div className="absolute inset-0 flex items-center justify-center px-4 md:px-8">
+        //                         <h2 className="text-white text-2xl md:text-4xl lg:text-6xl drop-shadow-lg text-center">
+        //                             {slide.text}
+        //                         </h2>
+        //                     </div>
+        //                 </div>
+        //             </SwiperSlide>
+        //         ))}
+        //     </Swiper>
+        // </div>
         <div className="w-full">
             <Swiper
                 modules={[Autoplay, Pagination, Navigation]}
@@ -47,12 +75,12 @@ const HomeSlider = () => {
             >
                 {slides.map((slide) => (
                     <SwiperSlide key={slide.id}>
-                        <div className="relative w-full h-[300px] md:h-[500px] lg:h-[800px]  md:mt-0">
+                        <div className="relative w-full h-[50vh] md:h-[60vh] lg:h-[80vh]">
                             <Image
                                 src={slide.image}
                                 alt={`Slide ${slide.id}`}
                                 fill
-                                className="object-cover"
+                                className="object-contain md:object-cover"
                             />
                             <div className="absolute inset-0 flex items-center justify-center px-4 md:px-8">
                                 <h2 className="text-white text-2xl md:text-4xl lg:text-6xl drop-shadow-lg text-center">

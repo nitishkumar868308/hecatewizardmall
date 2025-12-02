@@ -1193,7 +1193,7 @@ const Header = () => {
     return (
         <>
             {/* <header className="w-full bg-[#161619] shadow-md md:relative fixed md:static top-0 z-50"> */}
-            <header className={`w-full shadow-md md:relative fixed md:static top-0 z-50 ${isXpress ? "bg-[#886e48]" : "bg-[#161619]"}`}>
+            <header className={`w-full shadow-md md:relative fixed md:static top-0 z-50 ${isXpress ? "bg-[#264757]" : "bg-[#161619]"}`}>
                 <div className="max-w-screen-2xl mx-auto flex items-center justify-between px-6 py-3">
 
                     {/* Logo */}
@@ -1209,11 +1209,12 @@ const Header = () => {
                             {isXpress ? (
                                 <Link href="/hecate-quickGo/home">
                                     <img
-                                        src="/image/hecate quickgo logo transpreant new.png"
+                                        src="/image/quickgo logo.png"
                                         alt="Logo"
                                         className="h-24 w-24 object-contain"
                                     />
                                 </Link>
+
                             ) : (
                                 <Link href="/">
                                     <img
@@ -1286,7 +1287,7 @@ const Header = () => {
                                 ) : (
                                     <Link href="/hecate-quickGo/home">
                                         <img
-                                            src="/image/hecate quickgo logo transpreant new.png"
+                                            src="/image/quickgo logo.png"
                                             alt="Logo"
                                             className="h-20 w-24 object-contain"
                                         />
@@ -1318,12 +1319,12 @@ const Header = () => {
                                         <Link
                                             href={href}
                                             className={`font-functionPro px-4 py-2 rounded-lg font-medium transition cursor-pointer ${isXpress
-                                                    ? isActive
-                                                        ? "bg-black text-[#ead493]"
-                                                        : "text-[#ead493] hover:bg-black"
-                                                    : isActive
-                                                        ? "bg-white text-[#161619]"
-                                                        : "text-white hover:bg-gray-700"
+                                                ? isActive
+                                                    ? "bg-black text-[#ffff]"
+                                                    : "text-[#ffff] hover:bg-black"
+                                                : isActive
+                                                    ? "bg-white text-[#161619]"
+                                                    : "text-white hover:bg-gray-700"
                                                 }`}
 
                                         >

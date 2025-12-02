@@ -23,7 +23,7 @@ const Topbar = () => {
     const { items } = useSelector((state) => state.cart);
     const { user } = useSelector((state) => state.me);
     const { products } = useSelector((state) => state.products);
-      const { states } = useSelector((state) => state.states);
+    const { states } = useSelector((state) => state.states);
     console.log("states", states)
     const userCart = useMemo(() => {
         return items?.filter(item => String(item.userId) === String(user?.id)) || [];
@@ -124,15 +124,16 @@ const Topbar = () => {
     const isXpress = pathname.includes("/hecate-quickGo");
     return (
         // <div className="w-full bg-black text-white">
-        <div className={`w-full text-white ${isXpress ? "bg-[#baa274]" : "bg-black"}`}>
+        <div className={`w-full text-white ${isXpress ? "bg-[#082D3F]" : "bg-black"}`}>
             <div className="mx-auto max-w-screen-2xl px-4">
                 <div className="flex items-center justify-between py-2 md:py-3">
                     <div className="w-1/3"></div>
                     <h1 className="font-libreBaskerville tracking-wide text-base sm:text-lg md:text-2xl uppercase text-center w-1/3">
                         {isXpress ? (
-                            <>
-                                Hecate <span style={{ color: "#584d3a" }}>QuickGo</span>
-                            </>
+                            // <>
+                            //     Hecate <span style={{ color: "#584d3a" }}>QuickGo</span>
+                            // </>
+                            "Hecate QuickGo"
                         ) : (
                             "hecate wizard mall"
                         )}
@@ -143,7 +144,7 @@ const Topbar = () => {
                             value={country}
                             onChange={handleChange}
                             // className="bg-black border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base"
-                            className={`border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base ${isXpress ? "bg-[#baa274]" : "bg-black"}`}
+                            className={`border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base ${isXpress ? "bg-[#082D3F]" : "bg-black"}`}
                         >
                             {countriesprice.map((c) => (
                                 <option key={c.code} value={c.code}>

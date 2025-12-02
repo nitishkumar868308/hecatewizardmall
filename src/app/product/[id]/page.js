@@ -1856,7 +1856,7 @@ const ProductDetail = () => {
             toast.error("Please login to add items to your cart.");
             return;
         }
-
+        const barCode = product.barCode || null;
         // 🔹 Determine selected country
         let selectedCountryCode = localStorage.getItem("selectedCountry");
         if (!selectedCountryCode) {
