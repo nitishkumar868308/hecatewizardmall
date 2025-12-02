@@ -1291,7 +1291,6 @@ const Header = () => {
                                             alt="Logo"
                                             className="h-20 w-24 object-contain"
                                         />
-                                        {/* <h5 className="text-white">Hecate QuickGo</h5> */}
                                     </Link>
                                 )}
                             </div>
@@ -1451,6 +1450,26 @@ const Header = () => {
                             })}
                         </ul>
                     </nav> */}
+
+                    <div className=" sm:hidden flex items-end gap-2">
+                        {isXpress ? (
+                            <Link href="/">
+                                <img
+                                    src="/image/HWM LOGO 1 GREY 100.png"
+                                    alt="Logo"
+                                    className="h-16 w-16 object-contain"
+                                />
+                            </Link>
+                        ) : (
+                            <Link href="/hecate-quickGo/home">
+                                <img
+                                    src="/image/quickgo logo.png"
+                                    alt="Logo"
+                                    className="h-16 w-16 object-contain"
+                                />
+                            </Link>
+                        )}
+                    </div>
 
                     {/* Icons */}
                     <div className="font-functionPro flex items-center gap-4 md:gap-6">
@@ -2372,9 +2391,14 @@ const Header = () => {
                                     </div> */}
                                     <div className="flex items-center gap-3 cursor-pointer group">
 
-                                        <div className="text-white text-sm sm:text-base md:text-lg font-medium">
+                                        {/* <div className="text-white text-sm sm:text-base md:text-lg font-medium">
+                                            Welcome,
+                                        </div> */}
+                                        <div className="hidden sm:block text-white text-sm font-medium sm:text-base md:text-lg">
                                             Welcome,
                                         </div>
+
+
 
 
                                         <div className="relative h-14 w-14 rounded-full overflow-hidden border-2 border-white bg-gray-500 flex items-center justify-center">
@@ -2444,6 +2468,9 @@ const Header = () => {
                         </button>
                     </div>
                 </div >
+
+
+
 
                 {/* Mobile Menu */}
                 {
