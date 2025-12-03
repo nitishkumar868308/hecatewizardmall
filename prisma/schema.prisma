@@ -379,6 +379,9 @@ model WareHouse {
   deleted   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  fulfillmentWarehouseId Int?
+  fulfillmentWarehouse    WareHouse?   @relation("WarehouseSelfRelation", fields: [fulfillmentWarehouseId], references: [id])
+  fulfilledWarehouses     WareHouse[]  @relation("WarehouseSelfRelation")
 }
 
 model WarehouseTransfer {

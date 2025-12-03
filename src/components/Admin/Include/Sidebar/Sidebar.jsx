@@ -10,6 +10,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [menuOpenTax, setMenuOpenTax] = useState(false);
     const [manuOpenLocation, setMenuOpenLocation] = useState(false);
     const [manuOpenWareHouseLocation, setMenuOpenWareHouseLocation] = useState(false);
+    const [manuOpenWareHouseFullfillment, setMenuOpenWareHouseFullfillment] = useState(false);
 
     return (
         <>
@@ -282,12 +283,46 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                         )}
                     </div>
 
-                    <Link
+                    <div>
+                        <button
+                            onClick={() => setMenuOpenWareHouseFullfillment(!manuOpenWareHouseFullfillment)}
+                            className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                        >
+                            <span className="flex items-center gap-3">
+                                <Archive className="w-5 h-5" />FullFillment Center
+                            </span>
+                            {manuOpenWareHouseFullfillment ? (
+                                <ChevronUp className="w-4 h-4" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4" />
+                            )}
+                        </button>
+
+                        {/* Dropdown items */}
+                        {manuOpenWareHouseFullfillment && (
+                            <div className="ml-8 mt-2 flex flex-col gap-2">
+                                <Link
+                                    href="/admin/delhi_store"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Delhi FullFillment Center
+                                </Link>
+                                <Link
+                                    href="/admin/send_to_warehouse"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Banglore FullFillment Center
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* <Link
                         href="/admin/delhi_store"
                         className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                     >
-                        <Warehouse  className="w-5 h-5" /> Delhi Store
-                    </Link>
+                        <Warehouse className="w-5 h-5" /> Delhi Store
+                    </Link> */}
 
                     <Link
                         href="/admin/settings"

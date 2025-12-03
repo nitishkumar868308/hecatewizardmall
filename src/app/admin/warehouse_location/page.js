@@ -23,7 +23,9 @@ const Warehouse = () => {
         address: "",
         code: "",
         pincode: "",
-        contact: ""
+        contact: "",
+        fulfillmentType: "same",
+        fulfillmentWarehouseId: null,
     });
 
     const [editWarehouse, setEditWarehouse] = useState({
@@ -33,7 +35,9 @@ const Warehouse = () => {
         address: "",
         code: "",
         pincode: "",
-        contact: ""
+        contact: "",
+        fulfillmentType: "same",
+        fulfillmentWarehouseId: null,
     });
 
     const [deleteWarehouseId, setDeleteWarehouseId] = useState(null);
@@ -44,15 +48,37 @@ const Warehouse = () => {
     }, [dispatch]);
 
     const handleAddWarehouse = () => {
-        const { name, state, address, code, pincode, contact } = newWarehouse;
+        const { name, state, address, code, pincode, contact, fulfillmentType, fulfillmentWarehouseId } = newWarehouse;
         if (!name || !state || !address || !code || !pincode || !contact) {
             return toast.error("Please fill all fields");
         }
 
-        dispatch(createWarehouse(newWarehouse))
+        const payload = {
+            name,
+            state,
+            address,
+            code,
+            pincode,
+            contact,
+            active: true,
+            fulfillmentType: fulfillmentType || "same", // ensure backend gets a value
+            fulfillmentWarehouseId: fulfillmentType === "other"
+                ? fulfillmentWarehouseId
+                    ? Number(fulfillmentWarehouseId)
+                    : null
+                : null,
+        };
+
+        console.log("payload", payload)
+
+
+        dispatch(createWarehouse(payload))
             .unwrap()
             .then(() => {
-                setNewWarehouse({ name: "", state: "", address: "", code: "", pincode: "" });
+                setNewWarehouse({
+                    name: "", state: "", address: "", code: "", pincode: "", contact: "", fulfillmentType: "same",
+                    fulfillmentWarehouseId: null,
+                });
                 setModalOpen(false);
             })
             .catch((err) => console.error("Failed to create warehouse:", err));
@@ -61,7 +87,15 @@ const Warehouse = () => {
     const handleUpdateWarehouse = () => {
         if (!editWarehouse?.id) return;
 
-        dispatch(updateWarehouse(editWarehouse))
+        const payload = {
+            ...editWarehouse,
+            fulfillmentWarehouseId:
+                editWarehouse.fulfillmentType === "same"
+                    ? editWarehouse.id
+                    : Number(editWarehouse.fulfillmentWarehouseId),
+        };
+
+        dispatch(updateWarehouse(payload))
             .unwrap()
             .then(() => setEditModalOpen(false))
             .catch((err) => console.error("Failed to update warehouse:", err));
@@ -84,6 +118,22 @@ const Warehouse = () => {
         setNewWarehouse({ name: "", state: "", address: "", code: "", pincode: "" });
         setModalOpen(true);
     };
+
+    console.log("warehouses", warehouses)
+
+    function openEditModal(w) {
+        const isSame = Number(w.fulfillmentWarehouseId) === Number(w.id);
+
+        setEditWarehouse({
+            ...w,
+            fulfillmentType: isSame ? "same" : "other",
+            fulfillmentWarehouseId: Number(w.fulfillmentWarehouseId)
+        });
+
+        setEditModalOpen(true);
+    }
+
+
 
     return (
         <DefaultPageAdmin>
@@ -120,6 +170,7 @@ const Warehouse = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pincode</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Full Fill Center</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -158,14 +209,24 @@ const Warehouse = () => {
                                         {w.contact}
                                     </td>
 
+                                    <td className="px-6 py-4 whitespace-normal break-words text-gray-800">
+                                        {(() => {
+                                            if (!w.fulfillmentWarehouseId) return "—";
+
+                                            const fw = warehouses.find(
+                                                (wh) => wh.id === w.fulfillmentWarehouseId
+                                            );
+
+                                            return fw ? `${fw.name} (${fw.code})` : "Not Found";
+                                        })()}
+                                    </td>
+
+
                                     {/* Actions (no wrap) */}
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex gap-3">
                                             <button
-                                                onClick={() => {
-                                                    setEditWarehouse(w);
-                                                    setEditModalOpen(true);
-                                                }}
+                                                onClick={() => openEditModal(w)}
                                                 className="text-blue-500 hover:text-blue-700"
                                             >
                                                 <Edit className="w-5 h-5" />
@@ -273,107 +334,150 @@ const Warehouse = () => {
 
             {modalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6 relative max-h-[90vh] overflow-y-auto">
                         <button
                             onClick={() => setModalOpen(false)}
                             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
                         >
                             <X className="w-5 h-5" />
                         </button>
+
                         <h2 className="text-xl font-bold mb-4 text-center">Add New Warehouse</h2>
 
-                        {/* Warehouse Form with labels */}
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">Warehouse Name</label>
-                            <input
-                                type="text"
-                                value={newWarehouse.name}
-                                onChange={(e) => setNewWarehouse({ ...newWarehouse, name: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
+                        {/* GRID ROW — 2 FIELDS */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            {/* Warehouse Name */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">Warehouse Name</label>
+                                <input
+                                    type="text"
+                                    value={newWarehouse.name}
+                                    onChange={(e) => setNewWarehouse({ ...newWarehouse, name: e.target.value })}
+                                    className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                />
+                            </div>
+
+                            {/* State */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">State</label>
+                                <select
+                                    value={newWarehouse.state}
+                                    onChange={(e) => setNewWarehouse({ ...newWarehouse, state: e.target.value })}
+                                    className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                >
+                                    <option value="">Select State</option>
+                                    {states.map((s) => (
+                                        <option key={s.id} value={s.name}>
+                                            {s.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Address */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">Address</label>
+                                <input
+                                    type="text"
+                                    value={newWarehouse.address}
+                                    onChange={(e) => setNewWarehouse({ ...newWarehouse, address: e.target.value })}
+                                    className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                />
+                            </div>
+
+                            {/* Code */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">Code</label>
+                                <input
+                                    type="text"
+                                    value={newWarehouse.code}
+                                    onChange={(e) => setNewWarehouse({ ...newWarehouse, code: e.target.value })}
+                                    className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                />
+                            </div>
+
+                            {/* Pincode */}
+                            <div className="md:col-span-2">
+                                <label className="block mb-1 font-medium text-gray-700">
+                                    Pincodes (comma separated)
+                                </label>
+
+                                <textarea
+                                    value={newWarehouse.pincode}
+                                    onChange={(e) => setNewWarehouse({ ...newWarehouse, pincode: e.target.value })}
+                                    placeholder="560001, 560002, 560003 ..."
+                                    className="border rounded-lg px-4 py-2 w-full h-32 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                                />
+
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Enter multiple pincodes separated by comma.
+                                </p>
+                            </div>
+
+                            {/* Contact */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">Contact Number</label>
+                                <input
+                                    type="text"
+                                    value={newWarehouse.contact || ""}
+                                    onChange={(e) => setNewWarehouse({ ...newWarehouse, contact: e.target.value })}
+                                    className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                />
+                            </div>
+
+                            {/* Fulfillment Center Type */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">Fulfillment Center</label>
+                                <select
+                                    value={newWarehouse.fulfillmentType || "same"} // fallback
+                                    onChange={(e) =>
+                                        setNewWarehouse({ ...newWarehouse, fulfillmentType: e.target.value })
+                                    }
+                                    className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                >
+                                    <option value="same">Same as Warehouse</option>
+                                    <option value="other">Other Warehouse</option>
+                                </select>
+
+                            </div>
+
+                            {/* If user selects "other" → show list of warehouses */}
+                            {newWarehouse.fulfillmentType === "other" && (
+                                <div className="md:col-span-2">
+                                    <label className="block mb-1 font-medium text-gray-700">Select Fulfillment Warehouse</label>
+                                    <select
+                                        value={newWarehouse.fulfillmentWarehouseId ?? ""}
+                                        onChange={(e) =>
+                                            setNewWarehouse({
+                                                ...newWarehouse,
+                                                fulfillmentWarehouseId: e.target.value ? Number(e.target.value) : null,
+                                            })
+                                        }
+                                        className="border rounded-lg px-4 py-2 w-full"
+                                    >
+                                        <option value="">Select Warehouse</option>
+                                        {warehouses.map((wh) => (
+                                            <option key={wh.id} value={wh.id}>
+                                                {wh.name} - {wh.code} - {wh.state}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                </div>
+                            )}
+
                         </div>
 
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">State</label>
-                            <select
-                                value={newWarehouse.state}
-                                onChange={(e) => setNewWarehouse({ ...newWarehouse, state: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            >
-                                <option value="">Select State</option>
-                                {states.map((s) => (
-                                    <option key={s.id} value={s.name}>
-                                        {s.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">Address</label>
-                            <input
-                                type="text"
-                                value={newWarehouse.address}
-                                onChange={(e) => setNewWarehouse({ ...newWarehouse, address: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">Code</label>
-                            <input
-                                type="text"
-                                value={newWarehouse.code}
-                                onChange={(e) => setNewWarehouse({ ...newWarehouse, code: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
-                        </div>
-
-                        {/* <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">Pincode</label>
-                            <input
-                                type="text"
-                                value={newWarehouse.pincode}
-                                onChange={(e) => setNewWarehouse({ ...newWarehouse, pincode: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
-                        </div> */}
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">
-                                Pincodes (comma separated)
-                            </label>
-
-                            <textarea
-                                value={newWarehouse.pincode}
-                                onChange={(e) => setNewWarehouse({ ...newWarehouse, pincode: e.target.value })}
-                                placeholder="560001, 560002, 560003 ..."
-                                className="border rounded-lg px-4 py-2 w-full h-32 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                            />
-
-                            <p className="text-xs text-gray-500 mt-1">
-                                Enter multiple pincodes separated by comma.
-                            </p>
-                        </div>
-
-
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">Contact Number</label>
-                            <input
-                                type="text"
-                                value={newWarehouse.contact || ""}
-                                onChange={(e) => setNewWarehouse({ ...newWarehouse, contact: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
-                        </div>
-
-
-                        <div className="flex justify-end gap-2">
+                        {/* Buttons */}
+                        <div className="flex justify-end gap-2 mt-4">
                             <button
                                 onClick={() => setModalOpen(false)}
                                 className="px-4 py-2 rounded-lg border hover:bg-gray-100 cursor-pointer"
                             >
                                 Cancel
                             </button>
+
                             <button
                                 onClick={handleAddWarehouse}
                                 className="px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-800 cursor-pointer"
@@ -384,6 +488,7 @@ const Warehouse = () => {
                     </div>
                 </div>
             )}
+
 
 
             {/* Edit Modal */}
@@ -450,107 +555,169 @@ const Warehouse = () => {
             )} */}
             {editModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6 relative max-h-[90vh] overflow-y-auto">
+
+                        {/* Close */}
                         <button
                             onClick={() => setEditModalOpen(false)}
                             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
                         >
                             <X className="w-5 h-5" />
                         </button>
+
                         <h2 className="text-xl font-bold mb-4 text-center">Edit Warehouse</h2>
 
-                        {/* Edit Warehouse Form with labels */}
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">Warehouse Name</label>
-                            <input
-                                type="text"
-                                value={editWarehouse.name}
-                                onChange={(e) => setEditWarehouse({ ...editWarehouse, name: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
+                        {/* 2 COLUMN GRID */}
+                        <div className="grid grid-cols-2 gap-4">
+
+                            {/* Name */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">Warehouse Name</label>
+                                <input
+                                    type="text"
+                                    value={editWarehouse.name}
+                                    onChange={(e) => setEditWarehouse({ ...editWarehouse, name: e.target.value })}
+                                    className="border rounded-lg px-4 py-2 w-full"
+                                />
+                            </div>
+
+                            {/* State */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">State</label>
+                                <select
+                                    value={editWarehouse.state}
+                                    onChange={(e) => setEditWarehouse({ ...editWarehouse, state: e.target.value })}
+                                    className="border rounded-lg px-4 py-2 w-full"
+                                >
+                                    <option value="">Select State</option>
+                                    {states.map((s) => (
+                                        <option key={s.id} value={s.name}>
+                                            {s.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Address */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">Address</label>
+                                <input
+                                    type="text"
+                                    value={editWarehouse.address}
+                                    onChange={(e) => setEditWarehouse({ ...editWarehouse, address: e.target.value })}
+                                    className="border rounded-lg px-4 py-2 w-full"
+                                />
+                            </div>
+
+                            {/* Code */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">Code</label>
+                                <input
+                                    type="text"
+                                    value={editWarehouse.code}
+                                    onChange={(e) => setEditWarehouse({ ...editWarehouse, code: e.target.value })}
+                                    className="border rounded-lg px-4 py-2 w-full"
+                                />
+                            </div>
+
+                            {/* Pincode - wide (full row) */}
+                            <div className="col-span-2">
+                                <label className="block mb-1 font-medium text-gray-700">
+                                    Pincodes (comma separated)
+                                </label>
+                                <textarea
+                                    value={editWarehouse.pincode}
+                                    onChange={(e) =>
+                                        setEditWarehouse({
+                                            ...editWarehouse,
+                                            pincode: e.target.value,
+                                        })
+                                    }
+                                    placeholder="560001, 560002..."
+                                    className="border rounded-lg px-4 py-2 w-full h-24 resize-none"
+                                />
+                            </div>
+
+                            {/* Contact */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">Contact Number</label>
+                                <input
+                                    type="text"
+                                    value={editWarehouse.contact}
+                                    onChange={(e) => setEditWarehouse({ ...editWarehouse, contact: e.target.value })}
+                                    className="border rounded-lg px-4 py-2 w-full"
+                                />
+                            </div>
+
+                            {/* Fulfillment Type Selector */}
+                            <div>
+                                <label className="block mb-1 font-medium text-gray-700">Fulfillment Center</label>
+                                <select
+                                    value={editWarehouse.fulfillmentType}
+                                    onChange={(e) => {
+                                        const type = e.target.value;
+                                        setEditWarehouse({
+                                            ...editWarehouse,
+                                            fulfillmentType: type,
+                                            fulfillmentWarehouseId:
+                                                type === "same" ? editWarehouse.id : editWarehouse.fulfillmentWarehouseId
+                                        });
+                                    }}
+                                    className="border rounded-lg px-4 py-2 w-full"
+                                >
+                                    <option value="same">Same as Warehouse</option>
+                                    <option value="other">Other Warehouse</option>
+                                </select>
+
+
+
+                                {/* Small text below selector */}
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {editWarehouse.fulfillmentType === "same" &&
+                                        "Fulfillment: Same as this warehouse"}
+                                    {editWarehouse.fulfillmentType === "other" &&
+                                        editWarehouse.fulfillmentWarehouseId &&
+                                        (() => {
+                                            const fw = warehouses.find(
+                                                (wh) => wh.id === editWarehouse.fulfillmentWarehouseId
+                                            );
+                                            return fw
+                                                ? `Fulfillment Warehouse: ${fw.name} (${fw.code})`
+                                                : "Fulfillment Warehouse: Not selected";
+                                        })()}
+                                </p>
+                            </div>
+
+                            {/* Other Warehouse Selector - 2 column full width */}
+                            {editWarehouse.fulfillmentType === "other" && (
+                                <div className="col-span-2">
+                                    <label className="block mb-1 font-medium text-gray-700">
+                                        Select Fulfillment Warehouse
+                                    </label>
+                                    <select
+                                        value={editWarehouse.fulfillmentWarehouseId ?? ""}
+                                        onChange={(e) =>
+                                            setEditWarehouse({
+                                                ...editWarehouse,
+                                                fulfillmentWarehouseId: Number(e.target.value),
+                                            })
+                                        }
+                                        className="border rounded-lg px-4 py-2 w-full"
+                                    >
+                                        <option value="">Select Warehouse</option>
+                                        {warehouses.map((wh) => (
+                                            <option key={wh.id} value={wh.id}>
+                                                {wh.name} - {wh.code} ({wh.state})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
                         </div>
 
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">State</label>
-                            <select
-                                value={editWarehouse.state}
-                                onChange={(e) => setEditWarehouse({ ...editWarehouse, state: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            >
-                                <option value="">Select State</option>
-                                {states.map((s) => (
-                                    <option key={s.id} value={s.name}>
-                                        {s.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">Address</label>
-                            <input
-                                type="text"
-                                value={editWarehouse.address}
-                                onChange={(e) => setEditWarehouse({ ...editWarehouse, address: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">Code</label>
-                            <input
-                                type="text"
-                                value={editWarehouse.code}
-                                onChange={(e) => setEditWarehouse({ ...editWarehouse, code: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
-                        </div>
-
-                        {/* <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">Pincode</label>
-                            <input
-                                type="text"
-                                value={editWarehouse.pincode}
-                                onChange={(e) => setEditWarehouse({ ...editWarehouse, pincode: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
-                        </div> */}
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">
-                                Pincodes (comma separated)
-                            </label>
-
-                            <textarea
-                                value={editWarehouse.pincode}
-                                onChange={(e) =>
-                                    setEditWarehouse({
-                                        ...editWarehouse,
-                                        pincode: e.target.value,
-                                    })
-                                }
-                                placeholder="560001, 560002, 560003 ..."
-                                className="border rounded-lg px-4 py-2 w-full h-32 
-                   focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                            />
-
-                            <p className="text-xs text-gray-500 mt-1">
-                                Enter multiple pincodes separated by comma or new line.
-                            </p>
-                        </div>
-
-
-                        <div className="mb-4">
-                            <label className="block mb-1 font-medium text-gray-700">Contact Number</label>
-                            <input
-                                type="text"
-                                value={editWarehouse.contact}
-                                onChange={(e) => setEditWarehouse({ ...editWarehouse, contact: e.target.value })}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
-                        </div>
-
-
-                        <div className="flex justify-end gap-2">
+                        {/* Footer */}
+                        <div className="flex justify-end gap-2 mt-6">
                             <button
                                 onClick={() => setEditModalOpen(false)}
                                 className="px-4 py-2 rounded-lg border hover:bg-gray-100 cursor-pointer"
@@ -564,9 +731,11 @@ const Warehouse = () => {
                                 Update
                             </button>
                         </div>
+
                     </div>
                 </div>
             )}
+
 
 
             {/* Delete Modal */}
