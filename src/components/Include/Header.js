@@ -1948,6 +1948,7 @@ const Header = () => {
                                                     fullProduct?.variations?.find(v => v.id === item.variationId) ||
                                                     fullProduct?.selectedVariation ||
                                                     null;
+                                                    console.log("baseVariation" , baseVariation)
 
                                                 const totalVariationQty = item.colors.reduce((s, c) => s + Number(c.quantity || 0), 0);
                                                 const minCandidates = item.colors
