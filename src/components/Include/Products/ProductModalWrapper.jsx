@@ -344,6 +344,7 @@ const ProductModalWrapper = ({
             size: editProductData.sizes,
             color: editProductData.colors,
             sku: editProductData.sku,
+            platform: editProductData.platform || [],
             tags: productTags || [],
             marketLinks: (editProductData.marketLinks || []).length > 0
                 ? { connect: editProductData.marketLinks.map(link => ({ id: link.id })) }

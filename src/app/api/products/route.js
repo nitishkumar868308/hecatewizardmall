@@ -519,6 +519,7 @@ export async function PUT(req) {
             bulkPrice,
             barCode,
             MRP,
+            platform
         } = data;
 
         // console.log("===== Backend received product data =====");
@@ -670,6 +671,7 @@ export async function PUT(req) {
                 subcategory: subcategoryId ? { connect: { id: subcategoryId } } : undefined,
                 barCode: barCode ?? null,
                 MRP: MRP ?? null,
+                platform: platform ?? [],
                 // offers: Array.isArray(offers) && offers.length
                 //     ? { set: [], connect: offers.map(o => ({ id: Number(o.id) })) }
                 //     : undefined,
