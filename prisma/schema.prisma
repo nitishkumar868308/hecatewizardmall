@@ -123,6 +123,7 @@ model Product {
   bulkPrice       String?  
   barCode            String?
   MRP             String?      // Add MRP
+  platform      String[]      @default([])  // ["xpress", "website"]
 }
 
 model ProductVariation {

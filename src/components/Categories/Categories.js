@@ -1312,11 +1312,12 @@ import { fetchFastProducts } from "@/app/redux/slices/products/productSlice";
 import { fetchSubcategories } from "@/app/redux/slices/subcategory/subcategorySlice";
 import { fetchCategories } from "@/app/redux/slices/addCategory/addCategorySlice";
 import { fetchTags } from "@/app/redux/slices/tag/tagSlice";
-
+import { usePathname } from "next/navigation";
 
 const sortOptions = ["Price: Low to High", "Price: High to Low"];
 
 const Categories = () => {
+    const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
     const dispatch = useDispatch();
@@ -1337,6 +1338,7 @@ const Categories = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const productsPerPage = 6;
     const [selectedAlphabet, setSelectedAlphabet] = useState(null);
+    const isXpress = pathname.includes("/hecate-quickGo");
     useEffect(() => {
         setPriceRange(highestPrice);
     }, [highestPrice]);
@@ -1383,6 +1385,26 @@ const Categories = () => {
     //     .sort((a, b) =>
     //         sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
     //     );
+    // const baseFiltered = products
+    //     .filter((p) => {
+    //         const matchCategory =
+    //             selectedCategory === "All" || p.categoryId === selectedCategory;
+    //         const matchSubcategory =
+    //             selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory;
+    //         const matchTag =
+    //             selectedTag === "All" ||
+    //             (Array.isArray(p.tags)
+    //                 ? p.tags.some(
+    //                     (t) => (String(t?.name || t || "")).toLowerCase() === selectedTag.toLowerCase()
+    //                 )
+    //                 : false);
+
+
+    //         return p.active && matchCategory && matchSubcategory && matchTag && p.price <= priceRange;
+    //     })
+    //     .sort((a, b) =>
+    //         sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
+    //     );
     const baseFiltered = products
         .filter((p) => {
             const matchCategory =
@@ -1397,12 +1419,15 @@ const Categories = () => {
                     )
                     : false);
 
+            // Platform filter
+            const matchPlatform = isXpress ? p.platform.includes("xpress") : p.platform.includes("website");
 
-            return p.active && matchCategory && matchSubcategory && matchTag && p.price <= priceRange;
+            return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && p.price <= priceRange;
         })
         .sort((a, b) =>
             sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
         );
+
 
 
     // Determine if we should show subcategory cards instead of products

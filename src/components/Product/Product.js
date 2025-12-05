@@ -226,6 +226,8 @@ import { motion } from "framer-motion";
 import { HandRaisedIcon } from '@heroicons/react/24/outline';
 import { fetchFastProducts } from "@/app/redux/slices/products/productSlice";
 import { useSelector, useDispatch } from "react-redux";
+import { usePathname } from "next/navigation";
+
 
 function useInView(threshold = 0.2) {
     const ref = useRef(null);
@@ -247,6 +249,7 @@ function useInView(threshold = 0.2) {
 }
 
 const ProductSlider = ({ showSection = "both" }) => {
+    const pathname = usePathname();
     const [showDemo, setShowDemo] = useState(true);
     const router = useRouter();
     const { ref, inView } = useInView(0.2);
@@ -256,7 +259,10 @@ const ProductSlider = ({ showSection = "both" }) => {
     useEffect(() => {
         dispatch(fetchFastProducts());
     }, [dispatch]);
-
+    const isXpress = pathname.includes("/hecate-quickGo");
+    const filteredProducts = fastProducts.filter(p =>
+        p.active && (isXpress ? p.platform.includes("xpress") : p.platform.includes("website"))
+    );
     useEffect(() => {
         if (inView) {
             setShowDemo(true);
@@ -381,8 +387,10 @@ const ProductSlider = ({ showSection = "both" }) => {
     );
 
     const newArrivals = [...fastProducts]
+        .filter(p => p.active && (isXpress ? p.platform.includes("xpress") : p.platform.includes("website")))
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 8);
+
 
     return (
         <>
@@ -402,7 +410,8 @@ const ProductSlider = ({ showSection = "both" }) => {
                             </motion.div>
                         </div>
                     )}
-                    {renderSlider(fastProducts.filter(p => p.active))}
+                    {renderSlider(filteredProducts)}
+
                 </div>
             )}
 

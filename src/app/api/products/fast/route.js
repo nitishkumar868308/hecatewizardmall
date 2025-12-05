@@ -87,7 +87,7 @@ export async function GET(req) {
                 deleted: 0,
                 active: true,
                 NOT: {
-                    image: { equals: [] }  // image array empty na ho
+                    image: { equals: [] }
                 }
             },
             skip,
@@ -99,6 +99,7 @@ export async function GET(req) {
                 image: true,
                 active: true,
                 createdAt: true,
+                platform : true
             },
         });
 

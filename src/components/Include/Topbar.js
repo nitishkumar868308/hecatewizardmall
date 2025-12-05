@@ -24,6 +24,7 @@ const Topbar = () => {
     const { user } = useSelector((state) => state.me);
     const { products } = useSelector((state) => state.products);
     const { states } = useSelector((state) => state.states);
+    const [selectedState, setSelectedState] = useState("");
     console.log("states", states)
     const userCart = useMemo(() => {
         return items?.filter(item => String(item.userId) === String(user?.id)) || [];
@@ -37,6 +38,13 @@ const Topbar = () => {
         dispatch(fetchCountryPricing());
 
     }, [dispatch]);
+    useEffect(() => {
+        const savedState = localStorage.getItem("selectedState");
+        if (savedState) {
+            setSelectedState(savedState);
+        }
+    }, []);
+
 
     useEffect(() => {
         // On mount, check localStorage first
@@ -140,7 +148,41 @@ const Topbar = () => {
 
                     </h1>
                     <div className="w-1/3 flex justify-end">
-                        <select
+                        <div className="w-1/3 flex justify-end">
+                            {/* Xpress → Show States */}
+                            {isXpress ? (
+                                <select
+                                    className="border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base bg-[#082D3F]"
+                                    value={selectedState}
+                                    onChange={(e) => {
+                                        setSelectedState(e.target.value);
+                                        localStorage.setItem("selectedState", e.target.value);
+                                    }}
+                                >
+                                    {states.map((s) => (
+                                        <option key={s.id} value={s.name}>
+                                            {s.name}
+                                        </option>
+                                    ))}
+                                </select>
+
+                            ) : (
+                                /* Normal Website → Show Countries */
+                                <select
+                                    value={country}
+                                    onChange={handleChange}
+                                    className="border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base bg-black"
+                                >
+                                    {countriesprice.map((c) => (
+                                        <option key={c.code} value={c.code}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+
+                        {/* <select
                             value={country}
                             onChange={handleChange}
                             // className="bg-black border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base"
@@ -151,7 +193,7 @@ const Topbar = () => {
                                     {c.name}
                                 </option>
                             ))}
-                        </select>
+                        </select> */}
                         {/* {pathname !== "/checkout" && (
                             <select
                                 value={country}

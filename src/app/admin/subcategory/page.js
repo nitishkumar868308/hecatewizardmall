@@ -496,7 +496,7 @@ const AddSubcategory = () => {
                             </div>
 
                             {open && (
-                                <div className="absolute z-50 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+                                <div className="absolute z-50 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-30 overflow-auto">
                                     {states.map((st) => (
                                         <label
                                             key={st.id}

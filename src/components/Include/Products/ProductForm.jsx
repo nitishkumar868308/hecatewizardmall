@@ -64,13 +64,22 @@ const ProductForm = ({
             setSelectedStates([...selectedStates, id]);
         }
     };
+    const safePlatform = currentData.platform || [];
+
     const handlePlatformChange = (value) => {
-        if (platform.includes(value)) {
-            setPlatform(platform.filter((p) => p !== value));
-        } else {
-            setPlatform([...platform, value]); // add
-        }
+        const currentPlatform = currentData.platform || [];
+
+        const updated = currentPlatform.includes(value)
+            ? currentPlatform.filter((p) => p !== value)
+            : [...currentPlatform, value];
+
+        setCurrentData({
+            ...currentData,
+            platform: updated,
+        });
     };
+
+
     // useEffect(() => {
     //     if (isEdit && editProductData) {
     //         setCurrentData((prev) => ({
@@ -193,7 +202,7 @@ const ProductForm = ({
         <div className="p-6 bg-white rounded-3xl shadow-lg h-full mx-auto max-h-[90vh] md:max-h-[75vh] overflow-y-auto">
 
             <h3 className="text-2xl font-semibold mb-6 text-gray-800">Product Details</h3>
-            {/* <div className="mb-6">
+            <div className="mb-6">
                 <p className="font-semibold mb-3 text-center text-gray-700">
                     Select Platform
                 </p>
@@ -202,7 +211,7 @@ const ProductForm = ({
                     <label className="flex items-center gap-2 cursor-pointer text-gray-700">
                         <input
                             type="checkbox"
-                            checked={platform.includes("xpress")}
+                            checked={safePlatform.includes("xpress")}
                             onChange={() => handlePlatformChange("xpress")}
                             className="w-4 h-4"
                         />
@@ -212,14 +221,14 @@ const ProductForm = ({
                     <label className="flex items-center gap-2 cursor-pointer text-gray-700">
                         <input
                             type="checkbox"
-                            checked={platform.includes("website")}
+                            checked={safePlatform.includes("website")}
                             onChange={() => handlePlatformChange("website")}
                             className="w-4 h-4"
                         />
                         <span>Hecate Wizard Mall</span>
                     </label>
                 </div>
-            </div> */}
+            </div>
 
             <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
 

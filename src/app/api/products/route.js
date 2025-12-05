@@ -176,12 +176,13 @@ export async function POST(req) {
             bulkPrice,
             MRP,
             barCode,
-            fnsku
+            platform
         } = body;
         // console.log("isDefault", isDefault)
-        if (!name?.trim() || !subcategory || !sku?.trim()) {
+        if (!name?.trim() || !subcategory || !sku?.trim() || !Array.isArray(platform) ||
+            platform.length === 0) {
             return new Response(
-                JSON.stringify({ message: "Name, Subcategory, and SKU are required" }),
+                JSON.stringify({ message: "Name, Subcategory, SKU and Platform are required" }),
                 { status: 400 }
             );
         }
@@ -274,7 +275,8 @@ export async function POST(req) {
                     ? { connect: marketLinks.connect.map(link => ({ id: link.id })) }
                     : undefined,
                 barCode: barCode ?? null,
-                MRP: MRP ?? [],
+                MRP: MRP ?? null,
+                platform: platform ?? [],
                 variations: variations && Array.isArray(variations) && variations.length > 0
                     ? {
                         create: variations.map(v => ({
@@ -295,7 +297,8 @@ export async function POST(req) {
                             minQuantity: minQuantity?.toString() ?? null,
                             bulkPrice: bulkPrice?.toString() ?? null,
                             barCode: v.barCode ?? null,
-                            MRP: v.MRP ?? [],
+                            MRP: v.MRP ?? null
+
                         }))
                     }
                     : undefined
@@ -567,7 +570,8 @@ export async function PUT(req) {
                         minQuantity: v.minQuantity != null ? v.minQuantity.toString() : null,
                         bulkPrice: v.bulkPrice != null ? v.bulkPrice.toString() : null,
                         barCode: v.barCode ?? null,
-                        MRP: v.MRP ?? [],
+                        MRP: v.MRP ?? null
+
                     }
                 };
             });
@@ -595,7 +599,7 @@ export async function PUT(req) {
                 minQuantity: v.minQuantity != null ? v.minQuantity.toString() : null,
                 bulkPrice: v.bulkPrice != null ? v.bulkPrice.toString() : null,
                 barCode: v.barCode ?? null,
-                MRP: v.MRP ?? [],
+                MRP: v.MRP ?? null
             }));
 
         // PUT handler ke andar, variationsUpdate aur variationsCreate ke baad:
@@ -665,7 +669,7 @@ export async function PUT(req) {
                 category: categoryId ? { connect: { id: categoryId } } : undefined,
                 subcategory: subcategoryId ? { connect: { id: subcategoryId } } : undefined,
                 barCode: barCode ?? null,
-                MRP: MRP ?? [],
+                MRP: MRP ?? null,
                 // offers: Array.isArray(offers) && offers.length
                 //     ? { set: [], connect: offers.map(o => ({ id: Number(o.id) })) }
                 //     : undefined,

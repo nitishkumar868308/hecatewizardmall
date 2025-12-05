@@ -216,6 +216,7 @@ const ProductModalWrapper = ({
                 subcategory: { connect: { id: subcategoryId } },
                 barCode: newProduct["fnsku-code"] ?? null,
                 MRP: newProduct.MRP ?? null,
+                platform: newProduct.platform || [],
                 variations: variationsData
             };
 
@@ -234,6 +235,7 @@ const ProductModalWrapper = ({
                 colors: null,
                 active: true,
                 image: null,
+                platform: "",
             });
             setSelectedAttributes({});
             setActiveSection("product");

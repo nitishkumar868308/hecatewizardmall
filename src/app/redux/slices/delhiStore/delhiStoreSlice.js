@@ -14,10 +14,28 @@ export const fetchDelhiStore = createAsyncThunk(
     }
 );
 
+// Update Delhi Store Item
+export const updateDelhiStore = createAsyncThunk(
+    "delhiStore/updateDelhiStore",
+    async (payload, { rejectWithValue }) => {
+        try {
+            const response = await axios.put("/api/delhiStore", payload); // send payload as-is
+            return response.data.data;
+        } catch (err) {
+            return rejectWithValue(
+                err.response?.data?.message || "Failed to update Delhi Store"
+            );
+        }
+    }
+);
+
+
+
+
 const delhiStoreSlice = createSlice({
     name: "delhiStore",
     initialState: {
-        store: [], // <-- changed from dispatches to store
+        store: [],
         loading: false,
         error: null,
     },
@@ -41,7 +59,24 @@ const delhiStoreSlice = createSlice({
             .addCase(fetchDelhiStore.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload || action.error.message;
+            })
+
+            .addCase(updateDelhiStore.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(updateDelhiStore.fulfilled, (state, action) => {
+                state.loading = false;
+
+                // Replace updated item in store list
+                state.store = state.store.map((item) =>
+                    item.id === action.payload.id ? action.payload : item
+                );
+            })
+            .addCase(updateDelhiStore.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || action.error.message;
             });
+
     },
 });
 

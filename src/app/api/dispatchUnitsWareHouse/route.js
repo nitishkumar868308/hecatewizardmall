@@ -119,7 +119,7 @@ export async function PUT(req) {
                 shippingId: shippingId || undefined
             }
         });
-        console.log("updatedDraft" , updatedDraft)
+        console.log("updatedDraft", updatedDraft)
 
         return new Response(
             JSON.stringify({
@@ -142,19 +142,83 @@ export async function PUT(req) {
 }
 
 
+// export async function PATCH(req) {
+//     try {
+//         const body = await req.json();
+//         const { dispatchId, dimensions, productsSnapshot, trackingId, trackingLink, warehouseState } = body;
+//         console.log("warehouseState", warehouseState)
+//         if (!dispatchId)
+//             return new Response(JSON.stringify({ message: "Dispatch ID is required" }), { status: 400 });
+
+//         const existing = await prisma.WarehouseDispatch.findUnique({ where: { id: dispatchId } });
+//         if (!existing)
+//             return new Response(JSON.stringify({ message: "Dispatch not found" }), { status: 404 });
+
+//         if (existing.status === "completed")
+//             return new Response(JSON.stringify({ message: "Dispatch already completed" }), { status: 400 });
+
+//         const shippingId = existing.shippingId || `SHIP-${Date.now()}`;
+
+//         // Update main dispatch
+//         const updatedDispatch = await prisma.WarehouseDispatch.update({
+//             where: { id: dispatchId },
+//             data: {
+//                 dimensions: dimensions || existing.dimensions,
+//                 trackingId: trackingId || existing.trackingId,
+//                 trackingLink: trackingLink || existing.trackingLink,
+//                 shippingId,
+//                 status: "completed",
+//             },
+//         });
+
+//         // Get dispatch warehouse first
+//         const dispatchWarehouse = await prisma.Warehouse.findUnique({
+//             where: { id: existing.warehouseId },
+//         });
+//         console.log("dispatchWarehouse" , dispatchWarehouse)
+
+//         // Get fulfillment warehouse
+//         const fulfillmentWarehouse = await prisma.Warehouse.findUnique({
+//             where: { id: dispatchWarehouse?.fulfillmentWarehouseId },
+//         });
+//         console.log("fulfillmentWarehouse" , fulfillmentWarehouse)
+
+//         // Check if fulfillment warehouse state is Delhi
+//         if (fulfillmentWarehouse?.state?.toLowerCase() === "delhi") {
+//             await prisma.DelhiWarehouseStock.create({
+//                 data: {
+//                     dispatchId,
+//                     productsSnapshot,
+//                     dimensions,
+//                     shippingId,
+//                     trackingId,
+//                     trackingLink,
+//                     status: "accepted",
+//                 },
+//             });
+//         }
+
+
+//         return new Response(JSON.stringify({ message: "Dispatch finalized successfully", data: updatedDispatch }), { status: 200 });
+
+//     } catch (error) {
+//         console.error("Final dispatch error:", error);
+//         return new Response(JSON.stringify({ message: "Failed to finalize dispatch", error: error.message }), { status: 500 });
+//     }
+// }
 export async function PATCH(req) {
     try {
         const body = await req.json();
-        const { dispatchId, dimensions, productsSnapshot, trackingId, trackingLink, warehouseState } = body;
-        console.log("warehouseState" , warehouseState)
-        if (!dispatchId) 
+        const { dispatchId, dimensions, productsSnapshot, trackingId, trackingLink } = body;
+
+        if (!dispatchId)
             return new Response(JSON.stringify({ message: "Dispatch ID is required" }), { status: 400 });
 
         const existing = await prisma.WarehouseDispatch.findUnique({ where: { id: dispatchId } });
-        if (!existing) 
+        if (!existing)
             return new Response(JSON.stringify({ message: "Dispatch not found" }), { status: 404 });
 
-        if (existing.status === "completed") 
+        if (existing.status === "completed")
             return new Response(JSON.stringify({ message: "Dispatch already completed" }), { status: 400 });
 
         const shippingId = existing.shippingId || `SHIP-${Date.now()}`;
@@ -171,20 +235,38 @@ export async function PATCH(req) {
             },
         });
 
-        // Delhi warehouse inventory
-        if (warehouseState?.toLowerCase() === "delhi") {
-            await prisma.DelhiWarehouseStock.create({
-                data: {
-                    dispatchId,
-                    productsSnapshot,
-                    dimensions,
-                    shippingId,
-                    trackingId,
-                    trackingLink,
-                    status: "accepted",
-                },
-            });
+        // Get warehouseIds from productsSnapshot
+        const warehouseIds = productsSnapshot?.entries?.flatMap((p) =>
+            p.entries?.map((entry) => parseInt(entry.warehouseId)) || []
+        ) || [];
+        console.log("warehouseIds" , warehouseIds)
+
+        for (const whId of warehouseIds) {
+            // 🔹 Use correct Prisma model name
+            const dispatchWarehouse = await prisma.WareHouse.findUnique({ where: { id: whId } });
+            console.log("dispatchWarehouse", dispatchWarehouse);
+
+            const fulfillmentWarehouse = dispatchWarehouse?.fulfillmentWarehouseId
+                ? await prisma.WareHouse.findUnique({ where: { id: dispatchWarehouse.fulfillmentWarehouseId } })
+                : null;
+            console.log("fulfillmentWarehouse", fulfillmentWarehouse);
+
+            if (fulfillmentWarehouse?.state?.toLowerCase() === "delhi") {
+                await prisma.DelhiWarehouseStock.create({
+                    data: {
+                        dispatchId,
+                        productsSnapshot,
+                        dimensions,
+                        shippingId,
+                        trackingId,
+                        trackingLink,
+                        status: "accepted",
+                    },
+                });
+            }
         }
+
+
 
         return new Response(JSON.stringify({ message: "Dispatch finalized successfully", data: updatedDispatch }), { status: 200 });
 
