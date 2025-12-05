@@ -1161,14 +1161,14 @@ const Header = () => {
                 const bulkPrice = Number(
                     c.bulkPrice ??
                     matchVar?.bulkPrice ??
-                    baseVariation?.bulkPrice ??
+                    //baseVariation?.bulkPrice ??
                     fullProduct?.bulkPrice ??
                     0
                 );
                 const minQty = Number(
                     c.bulkMinQty ??
                     matchVar?.minQuantity ??
-                    baseVariation?.minQuantity ??
+                    //baseVariation?.minQuantity ??
                     fullProduct?.minQuantity ??
                     0
                 );

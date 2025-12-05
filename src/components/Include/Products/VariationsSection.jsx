@@ -376,19 +376,19 @@ const VariationsSection = ({
 
     const removeVariationInternal = (variationKey) => {
         // Remove from variations
-        setCurrentVariations((prev) =>
-            prev.filter((v) => JSON.stringify(v) !== variationKey)
+        setCurrentVariations(prev =>
+            prev.filter(v => JSON.stringify(v) !== variationKey)
         );
 
         // Remove variation details
-        setVariationDetails((prev) => {
+        setVariationDetails(prev => {
             const copy = { ...prev };
             delete copy[variationKey];
             return copy;
         });
 
-        // Reset default if it was the removed variation
-        setCurrentData((prev) => {
+        // Reset default if removed
+        setCurrentData(prev => {
             const defaultKeyStr = JSON.stringify(prev?.isDefault);
             if (defaultKeyStr === variationKey) {
                 setDefaultVariationId("");
@@ -396,26 +396,8 @@ const VariationsSection = ({
             }
             return prev;
         });
-
-        // --- Remove ONLY this variation's attributes ---
-        // setSelectedAttributes((prev) => {
-        //     const copy = { ...prev };
-        //     const variationObj = JSON.parse(variationKey); // e.g., { Color: "red1", size: "m" }
-        //     console.log("variationObj" , variationObj)
-        //     Object.keys(variationObj).forEach((attrKey) => {
-        //         if (copy[attrKey]) {
-        //             // remove only the value that matches this variation
-        //             copy[attrKey] = {
-        //                 ...copy[attrKey],
-        //                 values: copy[attrKey].values.filter(v => v !== variationObj[attrKey])
-        //             };
-        //         }
-        //     });
-
-        //     return copy;
-        // });
-
     };
+
 
     return (
         <div className="h-full mx-auto max-h-[90vh] md:max-h-[75vh] overflow-y-auto space-y-5 p-2 sm:p-4">
