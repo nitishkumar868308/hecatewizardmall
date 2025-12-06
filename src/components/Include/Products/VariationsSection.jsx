@@ -246,6 +246,7 @@ import toast from "react-hot-toast";
 import {
     fetchStates,
 } from "@/app/redux/slices/state/addStateSlice";
+import { deleteVariation } from "@/app/redux/slices/variationDelete/variationDeleteSlice";
 
 
 const VariationsSection = ({
@@ -398,6 +399,30 @@ const VariationsSection = ({
         });
     };
 
+    const handleRemoveVariation = (variationId) => {
+        if (!variationId) {
+            toast.error("Variation ID not found!");
+            return;
+        }
+
+        dispatch(deleteVariation(variationId))
+            .unwrap()
+            .then(() => {
+                toast.success("Variation deleted successfully");
+
+                // FIND correct variationKey using ID
+                const keyToRemove = Object.keys(variationDetails).find(
+                    (key) => variationDetails[key]?.id === variationId
+                );
+
+                if (keyToRemove) {
+                    removeVariationInternal(keyToRemove);
+                }
+            })
+            .catch(() => toast.error("Failed to delete variation"));
+    };
+
+
 
     return (
         <div className="h-full mx-auto max-h-[90vh] md:max-h-[75vh] overflow-y-auto space-y-5 p-2 sm:p-4">
@@ -446,7 +471,7 @@ const VariationsSection = ({
                                 <span className="text-xl font-bold text-gray-700">
                                     {expandedVariations[variationKey] ? "−" : "+"}
                                 </span>
-                                <button
+                                {/* <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         removeVariationInternal(variationKey);
@@ -454,7 +479,18 @@ const VariationsSection = ({
                                     className="text-gray-600 cursor-pointer hover:text-red-800 font-semibold text-sm px-3 py-1 rounded-lg bg-red-50 hover:bg-red-100 transition"
                                 >
                                     Remove
+                                </button> */}
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // prevent expand toggle
+                                        handleRemoveVariation(variationDetails[variationKey]?.id);
+                                    }}
+                                    className="text-gray-600 cursor-pointer hover:text-red-800 font-semibold text-sm px-3 py-1 rounded-lg bg-red-50 hover:bg-red-100 transition"
+                                >
+                                    Remove
                                 </button>
+
                             </div>
                         </div>
                         {/* Expanded Section */}

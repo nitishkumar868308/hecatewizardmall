@@ -614,7 +614,7 @@ export async function PUT(req) {
         // Delete hone wale = jo DB mein hain but frontend se missing hain
         const variationsToDelete = existingVariationIds.filter(id => !incomingVariationIds.includes(id));
 
-        // console.log("variationsToDelete", variationsToDelete);
+        console.log("variationsToDelete", variationsToDelete);
 
         // console.log("variationsCreate JSON:", JSON.stringify(variationsCreate, null, 2));
 
@@ -705,7 +705,7 @@ export async function PUT(req) {
                 variations: {
                     update: variationsUpdate,
                     create: variationsCreate,
-                    delete: variationsToDelete.map(id => ({ id })),
+                    // delete: variationsToDelete.map(id => ({ id })),
                 },
             },
             include: {
