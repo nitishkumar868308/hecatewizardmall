@@ -1,5 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import OrderChat from "../Common/OrderChat";
+import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function OrderDetail({
     selectedOrder,
@@ -10,6 +13,14 @@ export default function OrderDetail({
 }) {
 
     const [status, setStatus] = useState(selectedOrder?.status || "");
+    const dispatch = useDispatch();
+    const { user } = useSelector((state) => state.me);
+    console.log("user", user)
+
+    useEffect(() => {
+        dispatch(fetchMe());
+    }, [dispatch]);
+
 
     if (!isOpen || !selectedOrder) return null;
 
@@ -17,13 +28,22 @@ export default function OrderDetail({
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex">
 
             {/* LEFT CHAT PANEL */}
-            {/* <div className="w-80 bg-white border-r shadow-xl flex flex-col">
+            <div className="w-80 bg-white border-r shadow-xl flex flex-col">
 
                 <div className="border-b px-4 py-3 font-semibold text-lg bg-gray-50">
                     Chat / Messages
                 </div>
+                <OrderChat
+                    orderId={selectedOrder.id}
+                    currentUser={user?.name}
+                    currentUserRole={user?.role} // ADMIN ya CUSTOMER
+                    receiver={user?.role === "ADMIN" ? selectedOrder.shippingName : "Admin"}
+                    receiverRole={user?.role === "ADMIN" ? "CUSTOMER" : "ADMIN"}
+                />
 
-                <div className="flex-1 p-4 space-y-3 overflow-y-auto">
+
+
+                {/* <div className="flex-1 p-4 space-y-3 overflow-y-auto">
 
                     <div className="text-center text-gray-400 text-sm">
                         No messages yet...
@@ -40,7 +60,7 @@ export default function OrderDetail({
                     <button className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm">
                         Send
                     </button>
-                </div>
+                </div> */}
 
                 <div className="border-t px-4 py-3 font-semibold text-lg bg-gray-50">
                     Notes / Info
@@ -51,7 +71,7 @@ export default function OrderDetail({
                     placeholder="Add notes here..."
                 ></textarea>
 
-            </div> */}
+            </div>
             <div className="flex-1 bg-white overflow-y-auto p-8 relative">
 
                 {/* Close Button */}

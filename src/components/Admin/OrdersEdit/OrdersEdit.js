@@ -143,7 +143,7 @@ export default function EditOrderModal({ order, isOpen, onClose, onUpdateStatus 
                                         <td className="p-3 text-center">
                                             <img src={c.image} alt="item" className="w-16 h-16 object-cover rounded-md mx-auto" />
                                         </td>
-                                        <td className="p-3">{item.productName}</td>
+                                        <td className="p-3 text-center">{item.productName}</td>
                                         <td className="p-3 text-center">{c.quantity}</td>
                                         <td className="p-3 text-center">₹{c.pricePerItem}</td>
                                         <td className="p-3 text-center font-bold">₹{c.totalPrice}</td>
@@ -181,6 +181,7 @@ export default function EditOrderModal({ order, isOpen, onClose, onUpdateStatus 
                             className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="PENDING">Pending</option>
+                            <option value="FAILED">FAILED</option>
                             <option value="PROCESSING">Processing</option>
                             <option value="COMPLETED">Completed</option>
                             <option value="CANCELLED">Cancelled</option>

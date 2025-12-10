@@ -12,6 +12,7 @@ const statusStyles = {
     SHIPPED: "text-indigo-700 bg-indigo-100",
     DELIVERED: "text-green-700 bg-green-100",
     CANCELLED: "text-red-700 bg-red-100",
+    FAILED: "text-red-700 bg-red-100",
 };
 
 
@@ -69,6 +70,11 @@ const OrderSummary = () => {
                             <p className="text-gray-500 text-sm mb-3 sm:mb-0">
                                 Order Date :  {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}
                             </p>
+
+                            <p className="text-gray-500 text-sm mb-3 sm:mb-0">
+                                Order From: {order.orderBy === "website" ? "Hecate Wizard Mall ( Website )" : "Hecate QuickGo"}
+                            </p>
+
 
                             {/* View Button */}
                             <button

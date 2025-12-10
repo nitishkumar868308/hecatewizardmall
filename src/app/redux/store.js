@@ -25,6 +25,7 @@ import transferWarehouseReducer from './slices/transferWarehouse/transferWarehou
 import dispatchWarehouseReducer from './slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice';
 import delhiStoreReducer from './slices/delhiStore/delhiStoreSlice';
 import variationReducer from './slices/variationDelete/variationDeleteSlice';
+import chatReducer from './slices/chat/chatSlice';
 
 
 // import updateUserReducer from './slices/userSlice';
@@ -57,6 +58,7 @@ const store = configureStore({
         dispatchWarehouse: dispatchWarehouseReducer,
         delhiStore: delhiStoreReducer,
         variation: variationReducer,
+        chat: chatReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

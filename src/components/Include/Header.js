@@ -1222,6 +1222,14 @@ const Header = () => {
         : tabs.sort((a, b) => (a.id === "website" ? -1 : 1)); // Website first
 
 
+    const dashboardLink = !user
+        ? "/login"
+        : user?.role === "ADMIN"
+            ? "/admin/dashboard"
+            : isXpress
+                ? "/hecate-quickGo/dashboard"
+                : "/dashboard";
+
     return (
         <>
             {/* <header className="w-full bg-[#161619] shadow-md md:relative fixed md:static top-0 z-50"> */}
@@ -1893,7 +1901,7 @@ const Header = () => {
 
 
                                     {/* Checkout Button */}
-                                    {
+                                    {/* {
                                         userCartCount > 0 && (
                                             <div className="mt-4">
                                                 <button
@@ -1907,7 +1915,28 @@ const Header = () => {
                                                 </button>
                                             </div>
                                         )
+                                    } */}
+                                    {
+                                        userCartCount > 0 && (
+                                            <div className="mt-4">
+                                                <button
+                                                    onClick={() => {
+                                                        setIsOpen(false);
+
+                                                        const isXpress = pathname.includes("/hecate-quickGo");
+
+                                                        router.push(
+                                                            isXpress ? "/hecate-quickGo/checkout" : "/checkout"
+                                                        );
+                                                    }}
+                                                    className="w-full bg-gray-800 text-white py-3 rounded-lg text-lg font-semibold hover:bg-gray-900 transition-colors cursor-pointer"
+                                                >
+                                                    Checkout
+                                                </button>
+                                            </div>
+                                        )
                                     }
+
                                 </div>
                             </div>
                         )
@@ -2059,7 +2088,7 @@ const Header = () => {
                                                 maxWidth: "90vw",
                                             }}
                                         >
-                                            <Link
+                                            {/* <Link
                                                 href={
                                                     user.role === "USER"
                                                         ? "/dashboard"
@@ -2073,7 +2102,17 @@ const Header = () => {
                                                     <LayoutDashboard className="h-4 w-4" />
                                                     Dashboard
                                                 </button>
+                                            </Link> */}
+                                            <Link href={dashboardLink}>
+                                                <button
+                                                    className="flex items-center gap-2 px-4 py-2 w-full hover:bg-gray-100 cursor-pointer"
+                                                    onClick={() => setDropdownOpen(false)}
+                                                >
+                                                    <LayoutDashboard className="h-4 w-4" />
+                                                    Dashboard
+                                                </button>
                                             </Link>
+
 
                                             <button
                                                 className="flex items-center gap-2 px-4 py-2 w-full hover:bg-gray-100 text-red-500 cursor-pointer"

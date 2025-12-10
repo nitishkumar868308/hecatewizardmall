@@ -1,5 +1,9 @@
 "use client";
-import { useState } from "react";
+import Image from "next/image";
+import { useState, useEffect } from "react";
+import OrderChat from "@/components/Common/OrderChat";
+import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function OrderDetail({
     selectedOrder,
@@ -8,11 +12,21 @@ export default function OrderDetail({
     handleUpdateDetail,
     generateInvoiceNumber
 }) {
-
+    console.log("selectedOrder.userId", selectedOrder.userId)
+    const dispatch = useDispatch();
     const [status, setStatus] = useState(selectedOrder?.status || "");
+    const { user } = useSelector((state) => state.me);
+    console.log("user", user)
+
+    useEffect(() => {
+        dispatch(fetchMe());
+    }, [dispatch]);
 
     if (!isOpen || !selectedOrder) return null;
-
+    const orderByLabelMap = {
+        "hecate-quickgo": "Hecate QuickGo",
+        "website": "Hecate Wizard Mall",
+    };
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex">
 
@@ -23,9 +37,21 @@ export default function OrderDetail({
                 <div className="border-b px-4 py-3 font-semibold text-lg bg-gray-50">
                     Chat / Messages
                 </div>
+                <OrderChat
+                    orderId={selectedOrder.id}
+                    currentUser={user?.id}        // <- id bhejna
+                    currentUserRole={user?.role}
+                    receiverId={user?.role === "ADMIN" ? selectedOrder.userId : 1} // <--- customer id
+                    receiverRole={user?.role === "ADMIN" ? "CUSTOMER" : "ADMIN"}
+                />
+
+
+
+
+
 
                 {/* Chat Messages */}
-                <div className="flex-1 p-4 space-y-3 overflow-y-auto">
+                {/* <div className="flex-1 p-4 space-y-3 overflow-y-auto">
 
                     <div className="text-center text-gray-400 text-sm">
                         No messages yet...
@@ -33,7 +59,7 @@ export default function OrderDetail({
 
                 </div>
 
-                {/* Chat Input */}
+      
                 <div className="border-t bg-gray-50 p-2 flex gap-2">
                     <input
                         type="text"
@@ -43,7 +69,7 @@ export default function OrderDetail({
                     <button className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm">
                         Send
                     </button>
-                </div>
+                </div> */}
 
                 {/* Notes */}
                 <div className="border-t px-4 py-3 font-semibold text-lg bg-gray-50">
@@ -87,6 +113,11 @@ export default function OrderDetail({
                             Order Number: {selectedOrder.orderNumber}
                         </p>
                     </div>
+
+
+                    <span className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium">
+                        Order By: {orderByLabelMap[selectedOrder.orderBy.toLowerCase()] || selectedOrder.orderBy}
+                    </span>
 
                     <span className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium">
                         Order Status: {selectedOrder.status}
@@ -168,12 +199,18 @@ export default function OrderDetail({
                                     >
                                         <td className="p-2 text-center">{idx + 1}</td>
 
-                                        <td className="p-2 text-center">
-                                            <img
-                                                src={c.image}
-                                                className="w-12 h-12 rounded-lg object-cover shadow"
-                                            />
+                                        <td className="p-2">
+                                            <div className="relative w-20 h-20 mx-auto">
+                                                <Image
+                                                    src={c.image}
+                                                    fill
+                                                    className="rounded-lg object-cover shadow"
+                                                    alt="image"
+                                                />
+                                            </div>
+
                                         </td>
+
 
                                         <td className="p-2 font-medium text-center">
                                             {item.productName}

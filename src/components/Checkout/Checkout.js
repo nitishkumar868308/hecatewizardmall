@@ -94,7 +94,7 @@ const Checkout = () => {
       if (user?.country?.toLowerCase() === "india") {
         setSelected("PayU");
       } else {
-        setSelected("Cashfree");
+        setSelected("PayU");
       }
     }
   }, [user?.country]);
@@ -124,7 +124,6 @@ const Checkout = () => {
   const isIncomplete = requiredFields.some(
     (field) => !user?.[field] || user[field].toString().trim() === ""
   );
-
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   const [selectedState, setSelectedState] = useState([]);
@@ -301,10 +300,21 @@ const Checkout = () => {
     setSelectAll(updated.length === allIndexes.length);
   };
 
+  const isXpress = pathname.includes("/hecate-quickGo");
+
+  // Step 1: Filter cart based on purchasePlatform
+  const filteredCart = useMemo(() => {
+    return userCart.filter(item =>
+      isXpress
+        ? item.purchasePlatform === "xpress"
+        : item.purchasePlatform === "website"
+    );
+  }, [userCart, isXpress]);
+
   const groupedCart = useMemo(() => {
     const acc = {};
 
-    userCart.forEach(item => {
+    filteredCart.forEach(item => {
       // build key based on non-color attributes
       const key = item.productId + '-' + Object.entries(item.attributes || {})
         .filter(([k]) => k !== 'color')
@@ -323,6 +333,7 @@ const Checkout = () => {
           colors: [],
           productOfferApplied: Boolean(item.productOfferApplied),
           productOffer: item.productOffer ?? null,
+          purchasePlatform: item.purchasePlatform,
         };
       } else {
         acc[key] = { ...acc[key], itemIds: [...acc[key].itemIds, item.id] };
@@ -351,6 +362,7 @@ const Checkout = () => {
         productOfferDiscount: item.productOfferDiscount ?? null,
         productOfferId: item.productOfferId ?? null,
         productOffer: item.productOffer ?? null,
+        purchasePlatform: item.purchasePlatform,
       };
       console.log("range offer", item.productOfferApplied, item.productOffer);
 
@@ -515,6 +527,22 @@ const Checkout = () => {
   }, [user?.addresses, user?.address, user?.isDefault, user?.name, user?.phone, user?.city, user?.state, user?.pincode]);
 
 
+  const xpressShippingOption = [{
+    id: "xpress-99",
+    type: "Xpress Shipping",
+    price: 99,
+    currencySymbol: "₹",
+    description: "Fast delivery for Xpress orders",
+    country: user?.country || "IND"
+  }];
+
+  const finalShippingOptions = isXpress
+    ? xpressShippingOption
+    : shippingPricings.filter(
+      (option) =>
+        option.country.toLowerCase() === (user?.country || "IND").toLowerCase()
+    );
+
   useEffect(() => {
     if (shippingOptions.length > 0) {
       const defaultAddr = shippingOptions.find(addr => addr.isDefault);
@@ -604,7 +632,7 @@ const Checkout = () => {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-   const isXpress = pathname.includes("/hecate-quickGo");
+
 
   const handleClick = async () => {
 
@@ -612,10 +640,23 @@ const Checkout = () => {
       toast.error("Please Update Billing Address");
       return;
     }
-    if (!selectedShippingOption) {
+    if (!isXpress && !selectedShippingOption) {
       toast.error("Please select a shipping option");
       return;
     }
+    // ⭐ Xpress Only - Total units must be 10 or more
+    if (isXpress) {
+      const totalUnits = Object.values(groupedCart).reduce((acc, product) => {
+        const unitCount = product.colors.reduce((sum, c) => sum + c.quantity, 0);
+        return acc + unitCount;
+      }, 0);
+
+      if (totalUnits < 10) {
+        toast.error("You must order at least 10 units for Delivery.");
+        return;
+      }
+    }
+
     if (!selected) {
       toast.error("Please Generate the Ticket");
       return;
@@ -686,6 +727,12 @@ const Checkout = () => {
           form.appendChild(input);
         });
 
+        const inputOrderBy = document.createElement("input");
+        inputOrderBy.type = "hidden";
+        inputOrderBy.name = "orderBy";
+        inputOrderBy.value = isXpress ? "hecate-quickGo" : "website";
+        form.appendChild(inputOrderBy);
+
         document.body.appendChild(form);
         form.submit();
         return;
@@ -720,8 +767,14 @@ const Checkout = () => {
     console.log("Order Data:", orderData);
   };
 
-  const shipping = selectedShippingOption?.price || 0;
+  // const shipping = selectedShippingOption?.price || 0;
+  // const grandTotal = subtotal + shipping;
+  const shipping = isXpress
+    ? 99
+    : (selectedShippingOption?.price || 0);
+
   const grandTotal = subtotal + shipping;
+
 
   const firstSelectedItem =
     selectedItems.length > 0
@@ -1505,6 +1558,29 @@ const Checkout = () => {
 
             })
           )}
+          <div className="mt-6 p-4 sm:p-6 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg max-w-3xl mx-auto text-gray-800">
+            {isXpress ? (
+              <>
+                <h2 className="font-semibold text-lg mb-2">Delivery Info</h2>
+                <p className="text-sm sm:text-base">
+                  Your parcel will be delivered{" "}
+                  <span className="font-bold text-gray-900">today</span> if you place the order before{" "}
+                  <span className="font-bold text-gray-900">3 PM</span>.
+                  If you place the order after 3 PM, it will be delivered{" "}
+                  <span className="font-bold text-gray-900">tomorrow</span>.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="font-semibold text-lg mb-2">Delivery Info</h2>
+                <p className="text-sm sm:text-base">
+                  Standard delivery within <span className="font-bold text-gray-900">4–5 days</span>.
+                </p>
+              </>
+            )}
+          </div>
+
+
         </div>
 
         {/* Right - Order Summary */}
@@ -1574,17 +1650,25 @@ const Checkout = () => {
             <span>{currency} {currencySymbol}{subtotal.toFixed(2)}
             </span>
           </div>
-
           {!isIncomplete && (
             <div className="space-y-4">
               <span className="flex justify-between font-bold text-lg">Shipping</span>
 
-              <div className="flex flex-col gap-3">
-                {shippingPricings
-                  .filter((option) =>
-                    option.country.toLowerCase() === (user?.country || "IND").toLowerCase()
-                  )
-                  .map((option) => {
+              {/* Xpress mode → Static 99 shipping */}
+              {isXpress ? (
+                <div className="p-4 bg-gray-200 border border-gray-400 rounded-lg">
+                  <div className="flex justify-between">
+                    <span className="font-semibold">Hecate QuickGo Shipping</span>
+                    <span className="font-medium">₹99.00</span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-800">
+                    Fast delivery for Hecate QuickGo orders
+                  </p>
+                </div>
+              ) : (
+                /* Normal Mode → Show shipping options */
+                <div className="flex flex-col gap-3">
+                  {finalShippingOptions.map((option) => {
                     const isSelected = selectedShippingOption?.id === option.id;
 
                     return (
@@ -1601,11 +1685,9 @@ const Checkout = () => {
                           className={`w-4 h-4 mt-1 rounded-full border-2 flex-shrink-0 ${isSelected ? "bg-white border-white" : "border-gray-400"
                             }`}
                         />
-
                         <div className="flex-1">
                           <div className="flex justify-between items-center">
                             <span className="font-semibold">{option.type}</span>
-
                             {option.price ? (
                               <span className="font-medium">
                                 {option.currencySymbol}
@@ -1625,9 +1707,11 @@ const Checkout = () => {
                       </button>
                     );
                   })}
-              </div>
+                </div>
+              )}
             </div>
           )}
+
 
 
 
@@ -1639,7 +1723,7 @@ const Checkout = () => {
           </div>
 
           {/* Payment Method */}
-          {user?.country?.toLowerCase() === "india" && (
+          {(isXpress || user?.country?.toLowerCase() === "india") && (
             <div className="bg-gray-50 p-6 rounded-lg shadow-md space-y-4 max-w-md mx-auto">
               <h4 className="text-lg font-semibold text-gray-700">Payment</h4>
 

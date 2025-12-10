@@ -39,12 +39,15 @@ const Page = () => {
 
             const matchesSource =
                 filterSource === "ALL" ||
-                (filterSource === "WEBSITE" && !order.orderBy) ||
-                (filterSource === "HECATE" && order.orderBy === "HECATE");
+                (filterSource === "WEBSITE" && order.orderBy.toLowerCase() === "website") ||
+                (filterSource === "HECATE" && order.orderBy.toLowerCase() === "hecate-quickgo");
+
+
 
             return matchesSearch && matchesSource;
         });
     }, [orders, searchQuery, filterSource]);
+    console.log("filteredOrders", filteredOrders)
 
     const generateInvoiceNumber = (orderId, createdAt) => {
         const year = new Date(createdAt).getFullYear();
@@ -123,6 +126,7 @@ const Page = () => {
                                     <th className="p-4 text-center">User</th>
                                     <th className="p-4 text-center">Total</th>
                                     <th className="p-4 text-center">Order Status</th>
+                                    <th className="p-4 text-center">Order By</th>
                                     <th className="p-4 text-center">Action</th>
                                 </tr>
                             </thead>
@@ -185,6 +189,16 @@ const Page = () => {
                                                 {order.status}
                                             </span>
                                         </td>
+
+                                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                                            <div className="flex justify-center">
+                                                <span className="px-3 py-1 bg-black text-white rounded-full text-md font-semibold shadow-sm">
+                                                    {order.orderBy}
+                                                </span>
+                                            </div>
+                                        </td>
+
+
 
                                         {/* Action */}
                                         <td className="p-4">

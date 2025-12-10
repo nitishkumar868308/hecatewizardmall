@@ -351,6 +351,7 @@ const SendToWarehousePage = () => {
                                                                 <th className="p-2">Product</th>
                                                                 <th className="p-2">SKU / FNSKU</th>
                                                                 <th className="p-2">Price</th>
+                                                                <th className="p-2">Platform</th>
                                                                 <th className="p-2">Action</th>
                                                             </tr>
                                                         </thead>
@@ -365,6 +366,64 @@ const SendToWarehousePage = () => {
                                                                     <td className="p-2 text-center">{p.name}</td>
                                                                     <td className="p-2 text-center">{p.sku} / {p.barCode}</td>
                                                                     <td className="p-2 text-center">{p.price}</td>
+                                                                    <td className="p-2 text-center">
+                                                                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                                                                            {(() => {
+                                                                                if (!p.platform) return "";
+
+                                                                                let platforms = [];
+
+                                                                                // Case 1: Array
+                                                                                if (Array.isArray(p.platform)) {
+                                                                                    platforms = p.platform;
+                                                                                }
+                                                                                // Case 2: String
+                                                                                else if (typeof p.platform === "string") {
+                                                                                    platforms = p.platform
+                                                                                        .replace("xpress", "xpress,")
+                                                                                        .replace("website", "website,")
+                                                                                        .split(",")
+                                                                                        .filter(Boolean);
+                                                                                }
+                                                                                // Case 3: unexpected type
+                                                                                else {
+                                                                                    return (
+                                                                                        <span className="px-3 py-1 bg-gray-300 text-gray-700 rounded-full text-xs">
+                                                                                            {String(p.platform)}
+                                                                                        </span>
+                                                                                    );
+                                                                                }
+
+                                                                                return platforms.map((item, index) => {
+                                                                                    const label =
+                                                                                        item === "xpress"
+                                                                                            ? "Hecate QuickGo"
+                                                                                            : item === "website"
+                                                                                                ? "Hecate Wizard Mall"
+                                                                                                : item;
+
+                                                                                    const color =
+                                                                                        item === "xpress"
+                                                                                            ? "bg-[#082D3F] text-white border border-blue-300"
+                                                                                            : item === "website"
+                                                                                                ? "bg-black text-white border border-green-300"
+                                                                                                : "bg-gray-200 text-gray-700";
+
+                                                                                    return (
+                                                                                        <span
+                                                                                            key={index}
+                                                                                            className={`px-3 py-1 rounded-full text-xs font-medium ${color}`}
+                                                                                        >
+                                                                                            {label}
+                                                                                        </span>
+                                                                                    );
+                                                                                });
+                                                                            })()}
+                                                                        </div>
+                                                                    </td>
+
+
+
                                                                     <td className="p-2 text-center">
                                                                         <button
                                                                             onClick={() => handleOpenModal(p)}
