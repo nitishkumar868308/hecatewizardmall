@@ -1673,7 +1673,14 @@ const Categories = () => {
                                 <div
                                     key={product.id}
                                     className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition transform hover:scale-105"
-                                    onClick={() => router.push(`/product/${product.id}`)}
+                                    // onClick={() => router.push(`/product/${product.id}`)}
+                                    onClick={() => {
+                                        if (isXpress) {
+                                            router.push(`/hecate-quickGo/product/${product.id}`);
+                                        } else {
+                                            router.push(`/product/${product.id}`);
+                                        }
+                                    }}
                                 >
                                     <div className="h-72 relative mb-4 rounded overflow-hidden">
                                         {Array.isArray(product.image) && product.image[0] ? (
@@ -1793,9 +1800,33 @@ const Categories = () => {
                                         {letter}
 
                                         {/* Tooltip (only on button hover now) */}
-                                        <div className="absolute left-10 opacity-0 group-hover:opacity-100 bg-gray-700 text-white text-xs px-2 py-1 rounded-md transition-opacity duration-300 whitespace-nowrap">
+                                        <div
+                                            className="
+                                                    absolute
+                                                    left-1/2
+                                                    -translate-x-1/2
+                                                    bottom-full     /* ❗ Tooltip element ke UPPAR show hoga */
+                                                    mb-4            /* ❗ Extra gap → alphabet clear dikhai dega */
+                                                    opacity-0
+                                                    group-hover:opacity-100
+                                                    bg-gray-700
+                                                    text-white
+                                                    text-xs
+                                                    px-2
+                                                    py-1
+                                                    rounded-md
+                                                    transition-opacity
+                                                    duration-300
+                                                    whitespace-nowrap
+                                                    max-w-[200px]
+                                                    text-center
+                                                    overflow-hidden
+                                                    text-ellipsis
+                                                "
+                                        >
                                             {isSelected ? "Click again to deselect" : "Click to select"}
                                         </div>
+
                                     </button>
                                 </div>
                             );

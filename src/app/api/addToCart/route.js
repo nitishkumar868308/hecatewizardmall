@@ -46,7 +46,8 @@ export async function POST(req) {
             userId,
             image,
             selectedCountry,
-            barCode
+            barCode,
+            purchasePlatform 
         } = body;
 
         if (!productId || !productName) {
@@ -78,7 +79,8 @@ export async function POST(req) {
                 image,
                 selectedCountry: selectedCountry || null,
                 is_buy: false,
-                barCode: barCode || null
+                barCode: barCode || null,
+                purchasePlatform 
             },
         });
 

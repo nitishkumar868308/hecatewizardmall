@@ -700,3 +700,215 @@ const ProductForm = ({
 };
 
 export default ProductForm;
+
+
+
+
+
+
+
+
+
+
+
+
+<div className="flex-1 overflow-y-auto space-y-5 pr-2">
+    {userCartCount > 0 ? (
+
+
+        platformItems.map((item, index) => {
+            const fullProduct = products.find(p => p.id === item.productId);
+            if (!fullProduct) return null;
+
+            const baseVariation =
+                fullProduct?.variations?.find(v => v.id === item.variationId) ||
+                fullProduct?.selectedVariation ||
+                null;
+            console.log("baseVariation", baseVariation);
+
+            const totalVariationQty = item.colors.reduce((s, c) => s + Number(c.quantity || 0), 0);
+            const minCandidates = item.colors
+                .map(c => Number(c.bulkMinQty || baseVariation?.minQuantity || fullProduct?.minQuantity || 0))
+                .filter(v => v > 0);
+            const minRequired = minCandidates.length ? Math.min(...minCandidates) : 0;
+            const isVariationOfferActive = minRequired > 0 && totalVariationQty >= minRequired;
+
+            const fmt = n => Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+            return (
+                <div
+                    key={index}
+                    className="relative border rounded-2xl bg-white shadow-md hover:shadow-lg transition-shadow p-4 sm:p-5"
+                >
+                    {/* HEADER (always visible) */}
+                    <div
+                        className="flex justify-between items-start cursor-pointer"
+                        onClick={() => setExpanded(expanded === index ? null : index)}
+                    >
+                        <div>
+                            <h3 className="font-semibold text-gray-800 text-base sm:text-lg">
+                                {item.productName}
+                            </h3>
+
+                            {/* Attributes */}
+                            <div className="mt-1 space-y-0.5">
+                                {Object.entries(item.attributes || {})
+                                    .filter(([k, v]) => k !== "color" && v !== null && v !== "")
+                                    .map(([k, v], i) => (
+                                        <div key={i} className="text-xs text-gray-500 capitalize">
+                                            {k}: {v}
+                                        </div>
+                                    ))}
+                            </div>
+
+                            {/* Offer Label */}
+                            {(isVariationOfferActive || item.productOfferApplied) && (
+                                <div className="text-green-600 font-medium text-xs mt-1">
+                                    {item.productOfferApplied ? "Range Offer Applied" : "Bulk Offer Applied"}
+                                </div>
+                            )}
+                        </div>
+
+                        <button className="text-xl font-bold select-none">
+                            {expanded === index ? "−" : "+"}
+                        </button>
+                    </div>
+
+                    {/* EXPANDED SECTION */}
+                    {expanded === index && (
+                        <div className="mt-4 border-t pt-4">
+                            {/* ⭐⭐⭐ YOUR FULL ORIGINAL UI STARTS HERE ⭐⭐⭐ */}
+                            {/* Offer Box */}
+                            {isVariationOfferActive && (
+                                <div className="border border-green-200 bg-green-50 rounded-lg p-2 sm:p-3 mb-4 text-green-800">
+                                    <div className="font-medium text-sm mb-1">Active Bulk Offers:</div>
+                                    <ul className="list-disc list-inside text-xs sm:text-sm space-y-0.5">
+                                        {item.colors.map((c, i) => {
+                                            const matchVar = findColorVariation(fullProduct, c, item);
+                                            const bulkPrice = Number(
+                                                c.bulkPrice ?? matchVar?.bulkPrice ?? baseVariation?.bulkPrice ?? fullProduct?.bulkPrice ?? null
+                                            );
+                                            const minQty = Number(
+                                                c.bulkMinQty ?? matchVar?.minQuantity ?? baseVariation?.minQuantity ?? fullProduct?.minQuantity ?? 0
+                                            );
+                                            if (!bulkPrice || !minQty) return null;
+                                            return (
+                                                <li key={i}>
+                                                    {c.color}: ₹{fmt(bulkPrice)} per item (Min {minQty})
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {item.productOfferApplied && (
+                                <div className="border border-blue-200 bg-blue-50 rounded-lg p-2 sm:p-3 mb-4 text-blue-800">
+                                    <div className="font-medium text-sm mb-1">Active Range Offer:</div>
+                                    <ul className="list-disc list-inside text-xs sm:text-sm">
+                                        <li>
+                                            Buy {item.productOffer.discountValue.start}–{item.productOffer.discountValue.end}, Get {item.productOffer.discountValue.free} Free
+                                        </li>
+                                        <li>Free items: Lowest priced variations 🎁</li>
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Variations */}
+                            <div className="space-y-4">
+                                {item.colors.map((c, idx) => {
+                                    const matchVar = findColorVariation(fullProduct, c, item);
+                                    const colorPrice = Number(c.pricePerItem ?? 0);
+                                    const bulkPrice = Number(
+                                        c.bulkPrice ?? matchVar?.bulkPrice ?? baseVariation?.bulkPrice ?? fullProduct?.bulkPrice ?? 0
+                                    );
+                                    const minQty = Number(
+                                        c.bulkMinQty ?? matchVar?.minQuantity ?? baseVariation?.minQuantity ?? fullProduct?.minQuantity ?? 0
+                                    );
+                                    const isBulkActive = bulkPrice > 0 && totalVariationQty >= minQty;
+
+                                    const originalTotal = colorPrice * Number(c.quantity);
+                                    const discountedTotal = isBulkActive ? bulkPrice * Number(c.quantity) : originalTotal;
+                                    const saved = isBulkActive ? (colorPrice - bulkPrice) * Number(c.quantity) : 0;
+
+                                    return (
+                                        <div key={idx} className="border-t border-gray-100 pt-3">
+                                            {/* Variation UI */}
+                                            {/* ... copy all your existing variation UI here exactly ... */}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* FOOTER (collapsed state only) */}
+                    <div className="flex justify-between items-center mt-4 border-t pt-3">
+                        {/* LEFT — REMOVE BUTTON */}
+                        <button
+                            onClick={() => {
+                                setSelectedItemId(item);
+                                setIsConfirmOpen(true);
+                            }}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                            🗑 Remove
+                        </button>
+
+                        {/* CENTER — TOTAL QTY */}
+                        <div className="text-center text-gray-700 font-semibold text-sm">
+                            Total Qty:&nbsp;{item.colors.reduce((sum, c) => sum + Number(c.quantity), 0)}
+                        </div>
+
+                        {/* RIGHT — TOTAL PRICE */}
+                        <div className="text-right text-sm font-bold text-gray-900">
+                            {(() => {
+                                const { totalOriginal, totalAfterOffer, savings } = getTotalDisplay(item, fullProduct);
+                                return (
+                                    <div className="flex flex-col items-end">
+                                        <div>
+                                            Total:&nbsp;
+                                            {savings > 0 ? (
+                                                <>
+                                                    <span className="line-through text-gray-400 mr-1">₹{fmt(totalOriginal)}</span>
+                                                    <span className="text-green-700">₹{fmt(totalAfterOffer)} ✅</span>
+                                                </>
+                                            ) : (
+                                                <span>₹{fmt(totalOriginal)}</span>
+                                            )}
+                                        </div>
+                                        {savings > 0 && (
+                                            <div className="text-xs text-green-600 font-semibold mt-1">
+                                                Total Savings: ₹{fmt(savings)}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                </div>
+            );
+        })
+
+    ) : (
+        <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
+    )}
+</div >
+
+{/* Checkout Button */ }
+{
+    userCartCount > 0 && (
+        <div className="mt-4">
+            <button
+                onClick={() => {
+                    setIsOpen(false);
+                    router.push(`/checkout`);
+                }}
+                className="w-full bg-gray-800 text-white py-3 rounded-lg text-lg font-semibold hover:bg-gray-900 transition-colors cursor-pointer"
+            >
+                Checkout
+            </button>
+        </div>
+    )
+}

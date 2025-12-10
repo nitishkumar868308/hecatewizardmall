@@ -40,6 +40,9 @@ const Header = () => {
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.me);
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [websiteExpandedId, setWebsiteExpandedId] = useState(null);
+    const [xpressExpandedId, setXpressExpandedId] = useState(null);
+
     const { headers } = useSelector((state) => state.headers);
     const { categories, loading, error } = useSelector((state) => state.category);
     const { subcategories } = useSelector((state) => state.subcategory);
@@ -108,6 +111,12 @@ const Header = () => {
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         .map(h => h.name);
     const isXpress = pathname.includes("/hecate-quickGo");
+    const [activeTab, setActiveTab] = useState(isXpress ? "xpress" : "website");
+    useEffect(() => {
+        if (isOpen) {
+            setActiveTab(isXpress ? "xpress" : "website");
+        }
+    }, [isOpen, isXpress]);
     const filteredCategories = categories.filter(cat =>
         isXpress
             ? cat.platform?.includes("xpress")
@@ -1051,6 +1060,7 @@ const Header = () => {
 
             if (!acc[key]) {
                 acc[key] = {
+                    platform: item.purchasePlatform,
                     productId: item.productId,
                     productName: item.productName,
                     variationId: item.variationId || null,
@@ -1188,6 +1198,28 @@ const Header = () => {
     useEffect(() => {
         console.log("🟢 groupedCart changed:", JSON.parse(JSON.stringify(groupedCart)));
     }, [groupedCart]);
+
+    const displayedItems = Object.entries(groupedCart)
+        .filter(([key, item]) =>
+            activeTab === "website"
+                ? item.platform === "website"
+                : item.platform === "xpress"
+        )
+        .map(([key, item]) => ({ ...item, uid: key }));
+
+    console.log("displayedItems", displayedItems)
+    const expandedId = activeTab === "website" ? websiteExpandedId : xpressExpandedId;
+    const setExpandedId = activeTab === "website" ? setWebsiteExpandedId : setXpressExpandedId;
+    // Get counts for each platform
+    const websiteCount = Object.values(groupedCart).filter(item => item.platform === "website").length;
+    const xpressCount = Object.values(groupedCart).filter(item => item.platform === "xpress").length;
+    const tabs = [
+        { id: "website", label: "Website Items", count: websiteCount },
+        { id: "xpress", label: "Xpress Items", count: xpressCount },
+    ];
+    const orderedTabs = pathname.includes("/hecate-quickGo")
+        ? tabs.sort((a, b) => (a.id === "xpress" ? -1 : 1)) // Xpress first
+        : tabs.sort((a, b) => (a.id === "website" ? -1 : 1)); // Website first
 
 
     return (
@@ -1354,7 +1386,7 @@ const Header = () => {
                                                                         <li key={sub}>
                                                                             <Link
                                                                                 href={`/categories?category=${encodeURIComponent(cat.name)}&&subcategory=${encodeURIComponent(sub)}`}
-                                                                                className="text-gray-300 hover:text-white transition font-functionPro"
+                                                                                className="text-gray-300 hover:text-white transition font-functionPro text-sm"
                                                                             >
                                                                                 {sub}
                                                                             </Link>
@@ -1500,447 +1532,42 @@ const Header = () => {
                                     className="ml-auto w-130 h-full bg-white shadow-2xl p-6 flex flex-col transform transition-transform duration-300 ease-in-out z-50"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <button
-                                        className="self-end w-8 h-8 cursor-pointer flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-900 hover:text-white shadow-md transition-colors duration-200"
-                                        onClick={() => setIsOpen(false)}
-                                    >
-                                        ✕
-                                    </button>
-
-                                    <h2 className="text-2xl font-bold text-center mt-4 mb-6">Your Cart</h2>
-
-                                    {/* <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                                        {userCartCount > 0 ? (
-                                            Object.values(groupedCart).map((item, index) => {
-                                                const fullProduct = products.find(p => p.id === item.productId);
-                                                const totalQuantity = item.colors.reduce((sum, c) => sum + c.quantity, 0);
-
-                                                return (
-                                                    <div key={index} className="relative flex flex-col gap-4 p-3 border rounded-lg shadow-sm hover:shadow-md transition bg-gray-50">
-
-                                                      
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedItemId(item); // poora grouped item pass karo
-                                                                setIsConfirmOpen(true);
-                                                            }}
-                                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-                                                            title="Remove item"
-                                                        >
-                                                            <Trash className="w-5 h-5" />
-                                                        </button>
-
-                                                 
-                                                        <div className="flex items-center gap-3 cursor-pointer">
-                                                            <Link href={`/product/${item.productId}`} onClick={() => setIsOpen(false)}>
-                                                                <img src={item.colors[0].image || "/placeholder.png"} alt={item.productName} className="w-16 h-16 object-cover rounded-md border" />
-                                                                <h3 className="text-sm font-semibold text-gray-800 line-clamp-1">{item.productName}</h3>
-                                                            </Link>
-                                                        </div>
-
-                                                        {Object.entries(item.attributes).filter(([k]) => k !== 'color').map(([k, v]) => (
-                                                            <p key={k} className="text-xs text-gray-500">{k}: {v}</p>
-                                                        ))}
-
-                                                    
-                                                        {item.colors.map((c, idx) => (
-                                                            <div key={idx} className="flex items-center justify-between gap-2 mt-1">
-                                                                <span className="text-xs text-gray-500">{c.color}</span>
-                                                                <div className="flex items-center gap-1">
-                                                                    <button onClick={() => updateColorQuantity(item.productId, c.color, -1)} className="w-6 h-6 bg-gray-200 rounded hover:bg-gray-300">-</button>
-                                                                    <span className="px-2 text-sm">{c.quantity}</span>
-                                                                    <button onClick={() => updateColorQuantity(item.productId, c.color, 1)} className="w-6 h-6 bg-gray-200 rounded hover:bg-gray-300">+</button>
-                                                                </div>
-                                                                <span className="text-sm font-medium text-gray-700">{item.currency} {(c.pricePerItem * c.quantity).toFixed(2)}</span>
-                                                                <button
-                                                                    onClick={() => removeColorFromCart(item.productId, c.color)}
-                                                                    className="text-red-500 hover:text-red-700 ml-2"
-                                                                >
-                                                                    ✕
-                                                                </button>
-
-                                                            </div>
-                                                        ))}
-
-                                               
-                                                        {fullProduct && (
-                                                            <div className="mt-1 text-xs text-green-700 space-y-1">
-                                                                {Array.isArray(fullProduct.offers) &&
-                                                                    fullProduct.offers
-                                                                        .filter((offer) => {
-                                                                            if (offer.discountType === "rangeBuyXGetY") {
-                                                                                const { start, end } = offer.discountValue || {};
-                                                                                return totalQuantity >= start && totalQuantity <= end;
-                                                                            }
-                                                                            if (offer.discountType === "bulk") {
-                                                                                return totalQuantity >= fullProduct.minQuantity;
-                                                                            }
-                                                                            return offer.applied;
-                                                                        })
-                                                                        .map((offer, idx) => {
-                                                                            const rangeMsg =
-                                                                                offer.discountType === "rangeBuyXGetY"
-                                                                                    ? `Pay ${totalQuantity - (offer.discountValue?.free || 0)}, get ${offer.discountValue?.free} free ✅`
-                                                                                    : offer.description;
-                                                                            return (
-                                                                                <div key={idx} className="flex justify-between items-center">
-                                                                                    <span className="font-medium">{rangeMsg}</span>
-                                                                                </div>
-                                                                            );
-                                                                        })}
-                                                            </div>
-                                                        )}
-
-                                                  
-                                                        <div className="text-sm font-bold text-gray-900 whitespace-nowrap self-end mt-2">
-                                                            {item.currency} {item.colors.reduce((sum, c) => sum + c.pricePerItem * c.quantity, 0).toFixed(2)}
-                                                        </div>
-                                                    </div>
-                                                )
-                                            })
-                                        ) : (
-                                            <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
-                                        )}
-                                    </div> */}
-
-                                    {/* <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-                                        {userCartCount > 0 ? (
-                                            Object.values(groupedCart).map((item, index) => {
-                                                console.log("groupedCart", groupedCart)
-                                                const fullProduct = products.find(p => p.id === item.productId);
-                                                console.log("fullProduct", fullProduct.variations)
-                                                const totalQuantity = item.colors.reduce((sum, c) => sum + c.quantity, 0);
-                                                console.log("item", item)
-                                                return (
-                                                    <div
-                                                        key={index}
-                                                        className="relative p-3 border rounded-lg shadow-sm bg-white hover:shadow-md transition-all duration-200"
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="flex gap-4">
+                                            <div className="flex flex-wrap md:flex-nowrap gap-2 md:gap-4 bg-gray-100 p-1 rounded-full w-fit mx-auto md:mx-0 relative cursor-pointer">
+                                                {orderedTabs.map(tab => (
+                                                    <button
+                                                        key={tab.id}
+                                                        onClick={() => setActiveTab(tab.id)}
+                                                        className={`relative px-5 py-2 text-sm md:text-base rounded-full  font-medium transition-all duration-300
+                                                                ${activeTab === tab.id
+                                                                ? "bg-white shadow-lg text-gray-900 "
+                                                                : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"}
+                                                                `}
                                                     >
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedItemId(item);
-                                                                setIsConfirmOpen(true);
-                                                            }}
-                                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-                                                            title="Remove item"
-                                                        >
-                                                            <Trash className="w-5 h-5" />
-                                                        </button>
-
-                                                        <div className="mb-2">
-                                                            <Link
-                                                                href={`/product/${item.productId}`}
-                                                                onClick={() => setIsOpen(false)}
-                                                            >
-                                                                <h3 className="text-base font-semibold text-gray-900 hover:text-blue-600 line-clamp-1">
-                                                                    {item.productName}
-                                                                </h3>
-                                                            </Link>
-                                                        </div>
-
-                                                        {fullProduct && (
-                                                            <div className="mt-2 text-xs text-green-700 space-y-1">
-                                                                {(() => {
-                                                                    // 🟢 Step 1: Determine correct bulk data (variation > product)
-                                                                    // 🟢 Try to resolve variation from different sources
-                                                                    const variationId =
-                                                                        fullProduct.selectedVariation?.id ||
-                                                                        fullProduct.selectedVariationId ||
-                                                                        fullProduct.variationId ||
-                                                                        item?.variationId; // ✅ for cart page case
-
-                                                                    console.log("🟢 variationId used:", variationId);
-
-                                                                    const variationData = fullProduct.variations?.find(v => v.id === variationId);
-
-                                                                    console.log("🟢 Found variationData:", variationData);
-
-                                                                    const bulkPrice = variationData?.bulkPrice ?? fullProduct.bulkPrice;
-                                                                    const minQuantity = variationData?.minQuantity ?? fullProduct.minQuantity;
-
-                                                                    // 🟢 Step 2: Merge normal offers + applicable bulk offer
-                                                                    const offersList = [
-                                                                        ...(Array.isArray(fullProduct.offers) ? fullProduct.offers : []),
-                                                                        bulkPrice && minQuantity
-                                                                            ? {
-                                                                                id: "bulk-offer",
-                                                                                discountType: "bulk",
-                                                                                applied: totalQuantity >= minQuantity,
-                                                                                description: `Buy ${minQuantity}+ items at ₹${bulkPrice} each`,
-                                                                            }
-                                                                            : null,
-                                                                    ].filter(Boolean);
-
-                                                                    // 🟢 Step 3: Filter only applied offers
-                                                                    const appliedOffers = offersList.filter((offer) => {
-                                                                        if (offer.discountType === "rangeBuyXGetY") {
-                                                                            const { start, end } = offer.discountValue || {};
-                                                                            return totalQuantity >= start && totalQuantity <= end;
-                                                                        }
-                                                                        if (offer.discountType === "bulk") {
-                                                                            return totalQuantity >= minQuantity;
-                                                                        }
-                                                                        return offer.applied;
-                                                                    });
-
-                                                                    // 🟢 Step 4: If no offers applied, show nothing
-                                                                    if (appliedOffers.length === 0) return null;
-
-                                                                    // 🟢 Step 5: Display applied offers
-                                                                    return (
-                                                                        <div className="border border-green-200 bg-green-50 rounded-md p-2 text-green-800">
-                                                                            <div className="font-semibold text-sm flex items-center gap-1">
-                                                                                ✅ Offer Applied
-                                                                            </div>
-
-                                                                            <ul className="mt-1 list-disc list-inside space-y-1 text-xs">
-                                                                                {appliedOffers.map((offer, idx) => {
-                                                                                    let message = offer.description || "";
-
-                                                                                    if (offer.discountType === "rangeBuyXGetY") {
-                                                                                        const { free } = offer.discountValue || {};
-                                                                                        message = `Buy ${totalQuantity - free}, get ${free} free`;
-                                                                                    }
-
-                                                                                    if (offer.discountType === "bulk") {
-                                                                                        message = `Bulk offer: ₹${bulkPrice} per item (Min ${minQuantity})`;
-                                                                                    }
-
-                                                                                    return <li key={idx}>{message}</li>;
-                                                                                })}
-                                                                            </ul>
-                                                                        </div>
-                                                                    );
-                                                                })()}
-                                                            </div>
+                                                        {tab.label}
+                                                        {tab.count > 0 && (
+                                                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                                                {tab.count}
+                                                            </span>
                                                         )}
-
-
-                                                        <div className="flex flex-wrap gap-x-3 text-xs text-gray-500 mb-2">
-                                                            {Object.entries(item.attributes)
-                                                                .filter(([k]) => k !== "color")
-                                                                .map(([k, v]) => (
-                                                                    <span key={k}>
-                                                                        <span className="capitalize">{k}:</span> {v}
-                                                                    </span>
-                                                                ))}
-                                                        </div>
-                                                        <div className="flex flex-col gap-2">
-                                                            {(() => {
-                                                                const totalQuantity = item.colors.reduce((sum, c) => sum + c.quantity, 0);
-
-                                                                // Identify offers
-                                                                const rangeOffer = Array.isArray(fullProduct?.offers)
-                                                                    ? fullProduct.offers.find(o =>
-                                                                        o.discountType === "rangeBuyXGetY" &&
-                                                                        totalQuantity >= o.discountValue?.start &&
-                                                                        totalQuantity <= o.discountValue?.end
-                                                                    )
-                                                                    : null;
-
-                                                                const bulkOffer =
-                                                                    fullProduct?.minQuantity &&
-                                                                    fullProduct?.bulkPrice &&
-                                                                    totalQuantity >= fullProduct.minQuantity;
-
-                                                                // Determine applied offer
-                                                                let appliedOffer = null;
-                                                                if (rangeOffer) appliedOffer = "range";
-                                                                if (bulkOffer && (!rangeOffer || fullProduct.bulkPrice * totalQuantity < item.colors.reduce((s, c) => s + c.pricePerItem * c.quantity, 0)))
-                                                                    appliedOffer = "bulk";
-
-                                                                // For range offer (get free), find payable qty
-                                                                const freeQty = rangeOffer?.discountValue?.free || 0;
-
-                                                                // Flatten color items sorted by price descending
-                                                                const sortedItems = [...item.colors]
-                                                                    .sort((a, b) => b.pricePerItem - a.pricePerItem)
-                                                                    .flatMap(c => Array(c.quantity).fill(c));
-
-                                                                // Mark free items (for Buy X Get Y)
-                                                                const paidItems = sortedItems.slice(0, Math.max(totalQuantity - freeQty, 0));
-                                                                const freeItems = sortedItems.slice(totalQuantity - freeQty);
-
-                                                                return item.colors.map((c, idx) => {
-                                                                    // Count how many of this color are free
-                                                                    const freeCount = freeItems.filter(f => f.color === c.color).length;
-
-                                                                    // Determine new price if offer applied
-                                                                    let displayPrice = c.pricePerItem;
-                                                                    let isDiscounted = false;
-
-                                                                    if (appliedOffer === "bulk") {
-                                                                        displayPrice = fullProduct.bulkPrice;
-                                                                        isDiscounted = true;
-                                                                    } else if (appliedOffer === "range" && freeCount > 0) {
-                                                                        isDiscounted = true; // show visual difference
-                                                                    }
-
-                                                                    const totalPrice = (displayPrice * c.quantity).toFixed(2);
-                                                                    const originalTotal = (c.pricePerItem * c.quantity).toFixed(2);
-
-                                                                    return (
-                                                                        <div
-                                                                            key={idx}
-                                                                            className="flex flex-col gap-1 border-t pt-2"
-                                                                        >
-                                                                            <div className="flex items-center justify-between">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <img
-                                                                                        src={c.image || "/placeholder.png"}
-                                                                                        alt={c.color}
-                                                                                        className="w-10 h-10 object-cover rounded-md border"
-                                                                                    />
-                                                                                    <span className="text-sm font-medium text-gray-700">{c.color}</span>
-                                                                                    {freeCount > 0 && (
-                                                                                        <span className="text-xs text-green-600 font-medium">
-                                                                                            +{freeCount} free
-                                                                                        </span>
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="flex items-center gap-2 mt-1">
-                                                                                    <button
-                                                                                        className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
-                                                                                        onClick={() => updateQuantity(c.itemId, -1)}
-                                                                                    >
-                                                                                        -
-                                                                                    </button>
-                                                                                    <span className="px-2 text-sm">{c.quantity}</span>
-                                                                                    <button
-                                                                                        className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
-                                                                                        onClick={() => updateQuantity(c.itemId, 1)}
-                                                                                    >
-                                                                                        +
-                                                                                    </button>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {(() => {
-                                                                                const originalTotal = (c.pricePerItem * c.quantity).toFixed(2);
-                                                                                let finalPrice = c.pricePerItem;
-                                                                                let totalDiscounted = originalTotal;
-                                                                                let savedAmount = 0;
-
-                                                                                if (appliedOffer === "bulk") {
-                                                                                    finalPrice = fullProduct.bulkPrice;
-                                                                                    totalDiscounted = (finalPrice * c.quantity).toFixed(2);
-                                                                                    savedAmount = (c.pricePerItem - fullProduct.bulkPrice) * c.quantity;
-                                                                                } else if (appliedOffer === "range" && freeCount > 0) {
-                                                                                    savedAmount = (c.pricePerItem * freeCount);
-                                                                                }
-
-                                                                                const showDiscount = savedAmount > 0;
-
-                                                                                return (
-                                                                                    <div className="pl-12 text-sm text-gray-800">
-                                                                                        {showDiscount ? (
-                                                                                            <>
-                                                                                                <div>
-                                                                                                    <span className="line-through text-gray-400">
-                                                                                                        ₹{c.pricePerItem} × {c.quantity} = ₹{originalTotal}
-                                                                                                    </span>
-                                                                                                </div>
-                                                                                                <div className="text-green-700 font-semibold">
-                                                                                                    ₹{finalPrice} × {c.quantity} = ₹{totalDiscounted} ✅
-                                                                                                </div>
-                                                                                                <div className="text-xs text-green-600">
-                                                                                                    You saved ₹{savedAmount.toFixed(2)} 🎉
-                                                                                                </div>
-                                                                                            </>
-                                                                                        ) : (
-                                                                                            <div>
-                                                                                                ₹{c.pricePerItem} × {c.quantity} = ₹{originalTotal}
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </div>
-                                                                                );
-                                                                            })()}
-
-                                                                            <div className="flex justify-end">
-                                                                                <button
-                                                                                    onClick={() => {
-                                                                                        setSelectedItemId(item.itemIds[idx]);
-                                                                                        setIsConfirmOpen(true);
-                                                                                    }}
-                                                                                    className="text-red-500 hover:text-red-700 text-xs mt-1"
-                                                                                    title="Remove item"
-                                                                                >
-                                                                                    ✕ Remove
-                                                                                </button>
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-
-                                                                });
-                                                            })()}
-                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
 
 
 
 
-                                                      <div className="text-sm font-bold text-gray-900 text-right mt-3 border-t pt-2">
-                                                            Total: {item.currency}{" "}
-                                                            {item.colors
-                                                                .reduce((sum, c) => sum + c.pricePerItem * c.quantity, 0)
-                                                                .toFixed(2)}
-                                                        </div>
-                                                        <div className="text-sm font-bold text-gray-900 text-right mt-3 border-t pt-2">
-                                                            {(() => {
-                                                                const totalOriginal = item.colors
-                                                                    .reduce((sum, c) => sum + c.pricePerItem * c.quantity, 0);
+                                        </div>
+                                        <button onClick={() => setIsOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-900 text-gray-800 hover:text-white cursor-pointer">✕</button>
+                                    </div>
 
-                                                                let totalDiscounted = totalOriginal;
 
-                                                                // 🟢 Apply Bulk Price if applicable
-                                                                if (fullProduct?.minQuantity && fullProduct?.bulkPrice && totalQuantity >= fullProduct.minQuantity) {
-                                                                    totalDiscounted = fullProduct.bulkPrice * totalQuantity;
-                                                                }
 
-                                                                // 🟢 Apply Range Offer if applicable
-                                                                if (Array.isArray(fullProduct?.offers)) {
-                                                                    fullProduct.offers.forEach((offer) => {
-                                                                        if (offer.discountType === "rangeBuyXGetY") {
-                                                                            const { start, end, free } = offer.discountValue || {};
-                                                                            if (totalQuantity >= start && totalQuantity <= end) {
-                                                                                const payable = totalQuantity - (free || 0);
-                                                                                totalDiscounted = fullProduct.price * payable;
-                                                                            }
-                                                                        }
-                                                                    });
-                                                                }
-
-                                                                const isDiscounted = totalDiscounted < totalOriginal;
-
-                                                                return (
-                                                                    <div>
-                                                                        <span>Total: {item.currency} </span>
-                                                                        {isDiscounted ? (
-                                                                            <>
-                                                                                <span className="line-through text-gray-400 mr-2">
-                                                                                    {totalOriginal.toFixed(2)}
-                                                                                </span>
-                                                                                <span className="text-green-700">
-                                                                                    {totalDiscounted.toFixed(2)} ✅
-                                                                                </span>
-                                                                            </>
-                                                                        ) : (
-                                                                            <span>{totalOriginal.toFixed(2)}</span>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            })()}
-                                                        </div>
-
-                                                    </div>
-                                                );
-                                            })
-                                        ) : (
-                                            <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
-                                        )}
-                                    </div> */}
                                     <div className="flex-1 overflow-y-auto space-y-5 pr-2">
-                                        {userCartCount > 0 ? (
-                                            Object.values(groupedCart).map((item, index) => {
+                                        {displayedItems.length > 0 ? (
+
+                                            displayedItems.map((item, index) => {
                                                 const fullProduct = products.find(p => p.id === item.productId);
                                                 if (!fullProduct) return null;
 
@@ -1948,7 +1575,7 @@ const Header = () => {
                                                     fullProduct?.variations?.find(v => v.id === item.variationId) ||
                                                     fullProduct?.selectedVariation ||
                                                     null;
-                                                    console.log("baseVariation" , baseVariation)
+                                                console.log("baseVariation", baseVariation)
 
                                                 const totalVariationQty = item.colors.reduce((s, c) => s + Number(c.quantity || 0), 0);
                                                 const minCandidates = item.colors
@@ -1959,6 +1586,8 @@ const Header = () => {
 
                                                 const fmt = n => Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
+
+
                                                 return (
                                                     <div
                                                         key={index}
@@ -1968,7 +1597,9 @@ const Header = () => {
                                                         {/* HEADER (always visible) */}
                                                         <div
                                                             className="flex justify-between items-start cursor-pointer"
-                                                            onClick={() => setExpanded(expanded === index ? null : index)}
+                                                            onClick={() => setExpandedId(expandedId === item.uid ? null : item.uid)}
+
+
                                                         >
                                                             <div>
                                                                 <h3 className="font-semibold text-gray-800 text-base sm:text-lg">
@@ -1997,12 +1628,12 @@ const Header = () => {
                                                             </div>
 
                                                             <button className="text-xl font-bold select-none">
-                                                                {expanded === index ? "−" : "+"}
+                                                                {expandedId === item.uid ? "−" : "+"}
                                                             </button>
                                                         </div>
 
                                                         {/* EXPANDED SECTION */}
-                                                        {expanded === index && (
+                                                        {expandedId === item.uid && (
                                                             <div className="mt-4 border-t pt-4">
 
                                                                 {/* ⭐⭐⭐ YOUR FULL ORIGINAL UI STARTS HERE ⭐⭐⭐ */}
@@ -2250,15 +1881,11 @@ const Header = () => {
                                                                     );
                                                                 })()}
                                                             </div>
-
-
                                                         </div>
-
                                                     </div>
-
-
                                                 );
                                             })
+
                                         ) : (
                                             <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
                                         )}
@@ -2266,22 +1893,25 @@ const Header = () => {
 
 
                                     {/* Checkout Button */}
-                                    {userCartCount > 0 && (
-                                        <div className="mt-4">
-                                            <button
-                                                onClick={() => {
-                                                    setIsOpen(false);
-                                                    router.push(`/checkout`);
-                                                }}
-                                                className="w-full bg-gray-800 text-white py-3 rounded-lg text-lg font-semibold hover:bg-gray-900 transition-colors cursor-pointer"
-                                            >
-                                                Checkout
-                                            </button>
-                                        </div>
-                                    )}
+                                    {
+                                        userCartCount > 0 && (
+                                            <div className="mt-4">
+                                                <button
+                                                    onClick={() => {
+                                                        setIsOpen(false);
+                                                        router.push(`/checkout`);
+                                                    }}
+                                                    className="w-full bg-gray-800 text-white py-3 rounded-lg text-lg font-semibold hover:bg-gray-900 transition-colors cursor-pointer"
+                                                >
+                                                    Checkout
+                                                </button>
+                                            </div>
+                                        )
+                                    }
                                 </div>
                             </div>
-                        )}
+                        )
+                        }
 
                         {/* 
                                         {userCartCount > 0 ? (
@@ -2369,7 +1999,7 @@ const Header = () => {
                             <span className="hidden md:inline font-medium">Login</span>
                         </button> */}
 
-                        <div className="relative">
+                        < div className="relative" >
                             {!user ? (
                                 <button
                                     onClick={() => setLoginModalOpen(true)}

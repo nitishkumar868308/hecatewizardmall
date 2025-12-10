@@ -1,68 +1,3 @@
-// "use client";
-// import React from "react";
-
-// const Page = () => {
-//     const images = [
-//         "/image/1.jpeg",
-//         "/image/CANDLE SHOP 5.png",
-//         "/image/CANDLE SHOP 3.png",
-//         "/image/CANDLE SHOP 4.png",
-//         "/image/CRYSTAL SHOP 1.png",
-//         "/image/CRYSTAL SHOP 2.png",
-//     ];
-
-//     return (
-//         <div className="w-full flex items-center justify-center p-4">
-//             <div className="w-full p-4">
-//                 <h1>Candles Shop</h1>
-//                 {/* Main Container */}
-//                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-//                     {/* LEFT — BIG IMAGE */}
-//                     <div className="col-span-1">
-//                         <div className="w-full  md:h-full rounded-xl overflow-hidden">
-//                             <img
-//                                 src="/image/CANDLES SHOP NEW 2.png"
-//                                 className="w-full h-full object-cover"
-//                                 alt="Big"
-//                             />
-//                         </div>
-//                     </div>
-
-//                     {/* RIGHT — 4/6 GRID IMAGES */}
-//                     <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
-//                         {images.map((img, i) => (
-//                             <div
-//                                 key={i}
-//                                 className="w-full aspect-square rounded-xl overflow-hidden shadow-sm hover:scale-105 hover:shadow-lg transition"
-//                             >
-//                                 <img
-//                                     src={img}
-//                                     className="w-full h-full object-cover"
-//                                     alt={`img-${i}`}
-//                                 />
-//                             </div>
-//                         ))}
-//                     </div>
-
-
-//                 </div>
-
-//                 {/* VIEW ALL BUTTON */}
-//                 <div className="w-full flex justify-center mt-6">
-//                     <button className="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition cursor-pointer">
-//                         View All
-//                     </button>
-//                 </div>
-
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default Page;
-
-
 "use client";
 import React, { useState, useEffect } from "react";
 import Image from "next/image"
@@ -74,17 +9,22 @@ import {
     fetchSubcategories,
 } from "@/app/redux/slices/subcategory/subcategorySlice";
 import { usePathname } from "next/navigation";
-import ProductSlider from "@/components/Product/Product";
+import {
+    fetchAllProducts,
+} from "@/app/redux/slices/products/productSlice";
 
 const Page = () => {
     const dispatch = useDispatch();
     const pathname = usePathname();
     const { categories } = useSelector((state) => state.category);
     const { subcategories } = useSelector((state) => state.subcategory);
-    console.log("subcategories", subcategories)
+    const { products } = useSelector((state) => state.products);
+    console.log("products", products)
     console.log("categories", categories)
 
+
     useEffect(() => {
+        dispatch(fetchAllProducts())
         dispatch(fetchCategories());
         dispatch(fetchSubcategories());
     }, [dispatch]);
@@ -105,36 +45,9 @@ const Page = () => {
         sub => sub.categoryId === candlesCategory?.id
     );
 
-
-    const images = [
-        "/image/Taper Candles 1.png",
-        "/image/Tea Light Candles 2.png",
-        "/image/Spell Candles 3.png",
-        "/image/Herbs Oils Infused Candles 4.png",
-        "/image/Herbs Tea Light Candles 5.png",
-        "/image/Novena Jar Candles 6.png",
-    ];
-
-    const productsHerbs = [
-        "/image/Abre camino.jpg",
-        "/image/Acacia.jpg",
-        "/image/Acorn.jpg",
-        "/image/Adam EVE.jpg",
-        "/image/Agrimony.jpg",
-        "/image/Alfa Alfa.jpg",
-    ];
-
-    const productsOils = [
-        "/image/CHAKRA BALANCING OIL EDIT.png",
-        "/image/CLIENT ATTRACTION OIL EDIT.png",
-        "/image/COME TO ME OIL EDIT.png",
-        "/image/COMMUNICATION OIL EDIT.png",
-        "/image/CONCEIVING OIL EDIT.png",
-        "/image/CORD CUTTING OIL EDIT.png",
-    ];
-
-
-
+    const filteredProducts = isXpress
+        ? products.filter(p => p.platform?.includes("xpress"))
+        : products;
 
 
     return (
@@ -204,12 +117,12 @@ const Page = () => {
 
                         </div>
                     </div>
-                  
+
                     <div className="flex justify-center mt-5">
                         <button className="relative cursor-pointer bg-gradient-to-r from-[#264757] to-[#1e3744] text-white text-lg px-10 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-2xl">
                             View All
                             <span className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                          
+
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     className="h-5 w-5 inline-block"
@@ -228,64 +141,68 @@ const Page = () => {
 
             <div className="w-full  bg-stone-100 flex justify-center py-12 px-4 md:px-8">
                 <div className="max-w-7xl w-full">
-                   
+
                     <h2 className="text-center text-white bg-[#264757] py-3 rounded-lg text-3xl font-semibold mb-5">
                         Herbs
                     </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                    {(() => {
+                        const herbsCategory = categories?.find(cat => cat.name === "Herbs");
 
-                       
-                        <div className="col-span-1">
-                           
-                            <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
-                                <Image
-                                    src="/image/HERBSSHO.jpeg"
-                                    alt="Big"
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 768px) 100vw, 50vw"
-                                    priority
-                                />
-                            </div>
-                        </div>
+                        const herbsProducts = filteredProducts?.filter(
+                            item => item.categoryId === herbsCategory?.id
+                        );
 
-                        <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            {productsHerbs.map((img, i) => (
-                                <div
-                                    key={i}
-                                    className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
-                                >
-                                    <Image
-                                        src={img}
-                                        alt={`img-${i}`}
-                                        fill
-                                        className="object-cover"
-                                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-                                    />
+
+                        return (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+
+                                {/* LEFT — CATEGORY IMAGE */}
+                                <div className="col-span-1">
+                                    <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                                        <Image
+                                            src={herbsCategory?.image || "/fallback-herbs.jpg"}
+                                            alt="Herbs Category"
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 768px) 100vw, 50vw"
+                                            priority
+                                        />
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
 
-                    </div>
+                                {/* RIGHT — FILTERED PRODUCTS GRID */}
+                                <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    {herbsProducts?.map((item, i) => (
+                                        <div
+                                            key={i}
+                                            className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
+                                        >
+                                            <Image
+                                                src={item.image?.[0] || "/no-image.png"}
+                                                alt={item.name}
+                                                fill
+                                                className="object-cover"
+                                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })()}
+
                     <div className="flex justify-center mt-5">
                         <button className="relative cursor-pointer bg-gradient-to-r from-[#264757] to-[#1e3744] text-white text-lg px-10 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-2xl">
                             View All
                             <span className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                           
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-5 w-5 inline-block"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={2}
-                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                                 </svg>
                             </span>
                         </button>
                     </div>
+
                 </div>
             </div>
 
@@ -295,54 +212,62 @@ const Page = () => {
                         Oils
                     </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-                
-                        <div className="col-span-1">
-                            <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
-                                <Image
-                                    src="/image/OILSSHOP.jpeg"
-                                    alt="Oils Shop"
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 768px) 100vw, 50vw"
-                                    priority
-                                />
-                            </div>
-                        </div>
+                    {(() => {
+                        // STEP 1: Filter category = Oils
+                        const oilsCategory = categories?.find(cat => cat.name === "Oils");
 
-             
-                        <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            {productsOils.map((img, i) => (
-                                <div
-                                    key={i}
-                                    className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
-                                >
-                                    <Image
-                                        src={img}
-                                        alt={`Oil product ${i + 1}`}
-                                        fill
-                                        className="object-cover"
-                                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-                                    />
+                        // STEP 2: Find all products belonging to this category
+                        const oilsProducts = filteredProducts?.filter(
+                            item => item.categoryId === oilsCategory?.id
+                        );
+
+
+                        // STEP 3: Category image — backend se
+                        const oilsImage = oilsCategory?.image || "/fallback-oils.jpg";
+
+                        return (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+
+                                {/* LEFT — CATEGORY IMAGE */}
+                                <div className="col-span-1">
+                                    <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                                        <Image
+                                            src={oilsImage}
+                                            alt="Oils Category"
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 768px) 100vw, 50vw"
+                                            priority
+                                        />
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
 
-              
+                                {/* RIGHT — PRODUCT GRID */}
+                                <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    {oilsProducts?.map((item, i) => (
+                                        <div
+                                            key={i}
+                                            className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
+                                        >
+                                            <Image
+                                                src={item.image?.[0] || "/no-image.png"}
+                                                alt={item.name}
+                                                fill
+                                                className="object-cover"
+                                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })()}
+
                     <div className="flex justify-center mt-5">
                         <button className="relative cursor-pointer bg-gradient-to-r from-[#264757] to-[#1e3744] text-white text-lg px-10 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-2xl">
                             View All
                             <span className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                       
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-5 w-5 inline-block"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={2}
-                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                                 </svg>
                             </span>

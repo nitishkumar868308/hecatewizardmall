@@ -23,7 +23,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             )}
 
             <aside
-                className={`fixed top-0 left-0 h-full w-64 bg-[#161619] shadow-lg p-6 transform transition-transform duration-300 font-functionPro 
+                className={`fixed top-0 left-0 h-full w-64 bg-[#161619] shadow-lg p-6 overflow-y-auto scrollbar-hide  transform transition-transform duration-300 font-functionPro 
         ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 flex flex-col`}
             >
                 {/* Close btn mobile */}

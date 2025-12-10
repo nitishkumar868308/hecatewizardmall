@@ -221,6 +221,7 @@ model Cart {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   barCode       String?
+  purchasePlatform    String?   @default("website")
 }
 
 model Address {
