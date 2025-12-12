@@ -123,6 +123,13 @@ const ProductModalWrapper = ({
             minQuantity: details.minQuantity ?? newProduct.minQuantity ?? null,
             barCode: details["fnsku-code"] ?? newProduct["fnsku-code"] ?? null,
             MRP: details.MRP ?? newProduct.MRP ?? null,
+
+            dimension: {
+                weight: details.weight ?? newProduct.weight ?? null,
+                length: details.length ?? newProduct.length ?? null,
+                breadth: details.breadth ?? newProduct.breadth ?? null,
+                height: details.height ?? newProduct.height ?? null,
+            },
         };
     });
     console.log("variationsData", variationsData)
@@ -217,6 +224,12 @@ const ProductModalWrapper = ({
                 barCode: newProduct["fnsku-code"] ?? null,
                 MRP: newProduct.MRP ?? null,
                 platform: newProduct.platform || [],
+                dimension: {
+                    weight: newProduct.weight ?? null,
+                    length: newProduct.length ?? null,
+                    breadth: newProduct.breadth ?? null,
+                    height: newProduct.height ?? null,
+                },
                 variations: variationsData
             };
 
@@ -587,6 +600,7 @@ const ProductModalWrapper = ({
                 tags: existingVar?.tags ?? currentData.tags ?? [],
                 marketLinks: existingVar?.marketLinks ?? currentData.marketLinks ?? [],
                 sku: existingVar?.sku ?? generateSKU(currentData.sku || "", variationObj),
+
             };
             // newVariationDetails[variationKey] = {
             //     id: existingVar?.id || null,
@@ -657,10 +671,15 @@ const ProductModalWrapper = ({
                 };
             });
 
+            console.log("dbVariations", dbVariations)
+
             const dbVariationDetails = {};
+
             dbVariations.forEach((v) => {
                 const key = getVariationKey(v.attributes);
-
+                console.log("---- DB Variation Key ----", key);
+                console.log("v.dimension", v.dimension);
+                const dimension = v.dimension || {};
                 dbVariationDetails[key] = {
                     id: v.id,
                     short: v.short,
@@ -680,9 +699,15 @@ const ProductModalWrapper = ({
                         ? v.marketLinks
                         : v.marketLinks?.connect
                             ? v.marketLinks.connect.map(link => ({ id: link.id }))
-                            : []
+                            : [],
+                    weight: dimension.weight || v.weight || "",
+                    length: dimension.length || v.length || "",
+                    breadth: dimension.breadth || v.breadth || "",
+                    height: dimension.height || v.height || "",
                 };
             });
+            console.log("---- All DB Variation Keys ----", Object.keys(dbVariationDetails));
+            console.log("---- DB Variation Details ----", dbVariationDetails);
 
             setCurrentVariations(dbVariations.map(v => v.attributes));
             setVariationDetails(dbVariationDetails);
@@ -724,6 +749,10 @@ const ProductModalWrapper = ({
                     images: v.image ? [v.image] : [],
                     name: editProductData.name,
                     "fnsku-code": v.barCode,
+                    weight: v.dimension?.weight,
+                    length: v.dimension?.length,
+                    breadth: v.dimension?.breadth,
+                    height: v.dimension?.height,
                     MRP: v.MRP,
                     tags: (v.tags || []).map((t) =>
                         typeof t === "string" ? { id: t, name: t } : { id: t.id, name: t.name }
@@ -891,6 +920,7 @@ const ProductModalWrapper = ({
                                     { key: "MRP", type: "number", placeholder: "MRP" },
                                     { key: "description", type: "textarea", placeholder: "Description" },
                                     { key: "images", type: "file", placeholder: "Product Image" },
+                                    { key: "dimension", type: "custom-dimension", placeholder: "Dimension" },
                                 ]}
                                 setCurrentData={setCurrentData}
                                 currentData={currentData}

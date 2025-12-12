@@ -138,7 +138,11 @@ const ProductForm = ({
                         name: editProductData.primaryOffer.name,
                     }
                     : null,
-                "fnsku-code": editProductData.barCode || ""
+                "fnsku-code": editProductData.barCode || "",
+                weight: editProductData.dimension?.weight || "",
+                length: editProductData.dimension?.length || "",
+                breadth: editProductData.dimension?.breadth || "",
+                height: editProductData.dimension?.height || "",
             });
         }
     }, [editModalOpen, isEdit]);
@@ -623,72 +627,144 @@ const ProductForm = ({
                     </div>
                 </div>
 
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
+                    <div className="flex flex-col">
+                        <label className="block mb-2 font-medium text-gray-700">
+                            Product Images
+                        </label>
 
-                <div className="flex-1">
-                    <label className="block mb-2 font-medium text-gray-700">
-                        Product Images
-                    </label>
-
-                    <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={(e) =>
-                            setNewImage((prev = []) => [...prev, ...Array.from(e.target.files)])
-                        }
-                        className="block mb-4 file:mr-3 file:py-2 file:px-4 file:rounded-full
+                        <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) =>
+                                setNewImage((prev = []) => [...prev, ...Array.from(e.target.files)])
+                            }
+                            className="block mb-4 file:mr-3 file:py-2 file:px-4 file:rounded-full
                             file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 
                             hover:file:bg-blue-100 cursor-pointer transition"
-                    />
+                        />
 
-                    <div className="flex gap-3 flex-wrap mt-2">
-                        {/* Preview new images */}
-                        {newImage?.map((img, idx) => (
-                            <div key={idx} className="relative w-32 h-32">
-                                <img
-                                    src={URL.createObjectURL(img)}
-                                    alt={`Preview ${idx}`}
-                                    className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setNewImage((prev) => prev.filter((_, i) => i !== idx))
-                                    }
-                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full
-                                        w-6 h-6 flex items-center justify-center hover:bg-red-600"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        ))}
-
-                        {/* Existing DB images */}
-                        {currentData?.image?.length > 0 &&
-                            currentData.image.map((img, idx) => (
+                        <div className="flex gap-3 flex-wrap mt-2">
+                            {/* Preview new images */}
+                            {newImage?.map((img, idx) => (
                                 <div key={idx} className="relative w-32 h-32">
                                     <img
-                                        src={img}
-                                        alt={`Product ${idx}`}
+                                        src={URL.createObjectURL(img)}
+                                        alt={`Preview ${idx}`}
                                         className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
                                     />
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            setCurrentData((prev) => ({
-                                                ...prev,
-                                                image: prev.image?.filter((_, i) => i !== idx) || [],
-                                            }))
+                                            setNewImage((prev) => prev.filter((_, i) => i !== idx))
                                         }
                                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full
-                                            w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                                        w-6 h-6 flex items-center justify-center hover:bg-red-600"
                                     >
                                         ✕
                                     </button>
                                 </div>
                             ))}
+
+                            {/* Existing DB images */}
+                            {currentData?.image?.length > 0 &&
+                                currentData.image.map((img, idx) => (
+                                    <div key={idx} className="relative w-32 h-32">
+                                        <img
+                                            src={img}
+                                            alt={`Product ${idx}`}
+                                            className="w-32 h-32 object-cover rounded-2xl shadow-sm border"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setCurrentData((prev) => ({
+                                                    ...prev,
+                                                    image: prev.image?.filter((_, i) => i !== idx) || [],
+                                                }))
+                                            }
+                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full
+                                            w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ))}
+                        </div>
                     </div>
+
                 </div>
+
+
+                <div className="grid grid-cols-4 gap-3">
+
+                    <div className="flex flex-col">
+                        <label className="text-sm text-gray-600 mb-1">Weight</label>
+                        <input
+                            type="number"
+                            value={currentData.weight || ""}
+                            onChange={(e) =>
+                                setCurrentData({
+                                    ...currentData,
+                                    weight: e.target.value ? Number(e.target.value) : null
+                                })
+                            }
+                            placeholder="Weight"
+                            className="border rounded-lg px-3 py-2"
+                        />
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-sm text-gray-600 mb-1">L</label>
+                        <input
+                            type="number"
+                            value={currentData.length || ""}
+                            onChange={(e) =>
+                                setCurrentData({
+                                    ...currentData,
+                                    length: e.target.value ? Number(e.target.value) : null
+                                })
+                            }
+                            placeholder="L"
+                            className="border rounded-lg px-3 py-2"
+                        />
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-sm text-gray-600 mb-1">B</label>
+                        <input
+                            type="number"
+                            value={currentData.breadth || ""}
+                            onChange={(e) =>
+                                setCurrentData({
+                                    ...currentData,
+                                    breadth: e.target.value ? Number(e.target.value) : null
+                                })
+                            }
+                            placeholder="B"
+                            className="border rounded-lg px-3 py-2"
+                        />
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-sm text-gray-600 mb-1">H</label>
+                        <input
+                            type="number"
+                            value={currentData.height || ""}
+                            onChange={(e) =>
+                                setCurrentData({
+                                    ...currentData,
+                                    height: e.target.value ? Number(e.target.value) : null
+                                })
+                            }
+                            placeholder="H"
+                            className="border rounded-lg px-3 py-2"
+                        />
+                    </div>
+
+                </div>
+
 
 
 

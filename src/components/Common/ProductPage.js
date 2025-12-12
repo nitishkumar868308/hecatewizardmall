@@ -18,6 +18,8 @@ import { useCountries } from "@/lib/CustomHook/useCountries";
 import { AlertTriangle, ShoppingCart, Trash2 } from "lucide-react";
 import ProductOffers from "@/components/Product/ProductOffers/ProductOffers";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
 
 const ProductDetail = () => {
     const pathname = usePathname();
@@ -56,7 +58,8 @@ const ProductDetail = () => {
     const { items } = useSelector((state) => state.cart);
     const country = useSelector((state) => state.country);
     console.log("products", products)
-
+    const { dispatches } = useSelector((state) => state.dispatchWarehouse);
+    console.log("dispatches", dispatches)
     const isXpress = pathname.includes("/hecate-quickGo");
     const purchasePlatform = isXpress ? "xpress" : "website";
     useEffect(() => {
@@ -69,7 +72,7 @@ const ProductDetail = () => {
         (item) => item.variationId === selectedVariation?.id
     );
     const isInCart = !!cartItem;
-
+    console.log("currentProduct", currentProduct)
     // 🟢 whenever selectedVariation or cart changes → sync quantity
     useEffect(() => {
         if (cartItem) {
@@ -84,6 +87,7 @@ const ProductDetail = () => {
         dispatch(fetchMe());
         dispatch(fetchProducts()); // always fetch for current country
         dispatch(fetchOffers());
+        dispatch(fetchDispatches())
     }, [dispatch, country]); // <-- refetch whenever country changes
 
 
@@ -2077,7 +2081,7 @@ const ProductDetail = () => {
                 image: mainImage || "No Image",
                 selectedCountry,
                 barCode,
-                purchasePlatform 
+                purchasePlatform
             };
 
             console.log("🛒 NEW CART ITEM:", cartItem);
@@ -2640,6 +2644,12 @@ const ProductDetail = () => {
         setShowConfirm(true)
     }
 
+    const tags = Array.isArray(selectedVariation?.tags)
+        ? selectedVariation.tags
+        : Array.isArray(product?.tags)
+            ? product.tags
+            : [];
+    const baseUrl = isXpress ? "/hecate-quickGo/categories" : "/categories";
 
     return (
         <>
@@ -3213,13 +3223,34 @@ const ProductDetail = () => {
                                 ? `Already in your cart: ${existingCartQuantity}`
                                 : ""}
                         </p> */}
-                        <p className="text-lg text-gray-600 mt-8 leading-relaxed">
+                        <div className="mt-8">
+                            <span className="text-lg text-gray-600 font-medium mr-2">Tags:</span>
+                            <div className="mt-2 flex flex-wrap gap-3">
+                                {(selectedVariation?.tags?.length > 0
+                                    ? selectedVariation.tags
+                                    : product?.tags
+                                        ? product.tags
+                                        : []
+                                ).map((tag) => (
+                                    <Link
+                                        key={tag.id || tag.name}
+                                        href={`${baseUrl}?tag=${encodeURIComponent(tag.name)}`}
+                                        className="px-4 py-2 bg-blue-50 text-blue-700 font-semibold rounded-full shadow-sm hover:bg-blue-100 hover:shadow-md transition-all duration-200 cursor-pointer"
+                                    >
+                                        {tag.name}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+
+
+                        {/* <p className="text-lg text-gray-600 mt-8 leading-relaxed">
                             Tag: {Array.isArray(selectedVariation?.tags)
                                 ? selectedVariation.tags.map(tag => tag.name).join(", ")
                                 : Array.isArray(product.tags)
                                     ? product.tags.map(tag => tag.name).join(", ")
                                     : "No tags"}
-                        </p>
+                        </p> */}
                         {/* Buy Button / Market Link */}
                         {/* {product.matchedMarketLink ? (
                             <a

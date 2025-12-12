@@ -1313,6 +1313,7 @@ import { fetchSubcategories } from "@/app/redux/slices/subcategory/subcategorySl
 import { fetchCategories } from "@/app/redux/slices/addCategory/addCategorySlice";
 import { fetchTags } from "@/app/redux/slices/tag/tagSlice";
 import { usePathname } from "next/navigation";
+import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
 
 const sortOptions = ["Price: Low to High", "Price: High to Low"];
 
@@ -1338,6 +1339,8 @@ const Categories = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const productsPerPage = 6;
     const [selectedAlphabet, setSelectedAlphabet] = useState(null);
+    const { dispatches } = useSelector((state) => state.dispatchWarehouse);
+    console.log("dispatches", dispatches)
     const isXpress = pathname.includes("/hecate-quickGo");
     useEffect(() => {
         setPriceRange(highestPrice);
@@ -1347,6 +1350,7 @@ const Categories = () => {
         dispatch(fetchSubcategories());
         dispatch(fetchCategories());
         dispatch(fetchTags());
+        dispatch(fetchDispatches())
     }, [dispatch]);
 
     useEffect(() => {
@@ -1355,6 +1359,10 @@ const Categories = () => {
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
+    useEffect(() => {
+        const tagQuery = searchParams.get("tag") || "All";
+        setSelectedTag(tagQuery);
+    }, [searchParams]);
 
     useEffect(() => {
         const categoryQuery = searchParams.get("category") || "All";
@@ -1405,28 +1413,107 @@ const Categories = () => {
     //     .sort((a, b) =>
     //         sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
     //     );
+    // const baseFiltered = products
+    //     .filter((p) => {
+    //         const matchCategory =
+    //             selectedCategory === "All" || p.categoryId === selectedCategory;
+    //         const matchSubcategory =
+    //             selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory;
+    //         const matchTag =
+    //             selectedTag === "All" ||
+    //             (Array.isArray(p.tags)
+    //                 ? p.tags.some(
+    //                     (t) => (String(t?.name || t || "")).toLowerCase() === selectedTag.toLowerCase()
+    //                 )
+    //                 : false);
+
+    //         // Platform filter
+    //         const matchPlatform = isXpress ? p.platform.includes("xpress") : p.platform.includes("website");
+
+    //         return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && p.price <= priceRange;
+    //     })
+    //     .sort((a, b) =>
+    //         sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
+    //     );
+    // Filter products
+
+    const selectedWarehouseId = typeof window !== "undefined" ? localStorage.getItem("warehouseId") : null;
+
+    const warehouseProductIds = isXpress
+        ? dispatches?.map(ds => {
+            let foundProductId = null;
+
+            ds.entries?.forEach(dim => {
+                dim.entries?.forEach(e => {
+                    if (
+                        e.warehouseId?.toString() === selectedWarehouseId?.toString()
+                    ) {
+                        foundProductId = dim.productId; // productId nested entries me hai
+                    }
+                });
+            });
+
+            return foundProductId;
+        }).filter(Boolean)
+        : null;
+
     const baseFiltered = products
         .filter((p) => {
             const matchCategory =
                 selectedCategory === "All" || p.categoryId === selectedCategory;
             const matchSubcategory =
                 selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory;
-            const matchTag =
-                selectedTag === "All" ||
-                (Array.isArray(p.tags)
-                    ? p.tags.some(
-                        (t) => (String(t?.name || t || "")).toLowerCase() === selectedTag.toLowerCase()
-                    )
-                    : false);
 
-            // Platform filter
+            const matchTag =
+                selectedTag === "All"
+                    ? true
+                    : (Array.isArray(p.tags)
+                        ? p.tags.some((t) => {
+                            const officialTagNames = tags.map(tag => tag.name.toLowerCase());
+                            return officialTagNames.includes((t?.name || t || "").toLowerCase()) &&
+                                (t?.name || t || "").toLowerCase() === selectedTag.toLowerCase();
+                        })
+                        : false);
+
             const matchPlatform = isXpress ? p.platform.includes("xpress") : p.platform.includes("website");
 
-            return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && p.price <= priceRange;
+            // ✅ Warehouse filter only for Xpress
+            const matchWarehouse = isXpress
+                ? warehouseProductIds?.includes(p.id)
+                : true;
+
+            return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && matchWarehouse && p.price <= priceRange;
         })
         .sort((a, b) =>
             sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
         );
+
+
+    // const baseFiltered = products
+    //     .filter((p) => {
+    //         const matchCategory =
+    //             selectedCategory === "All" || p.categoryId === selectedCategory;
+    //         const matchSubcategory =
+    //             selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory;
+
+    //         const matchTag =
+    //             selectedTag === "All"
+    //                 ? true
+    //                 : (Array.isArray(p.tags) ? p.tags.some((t) => {
+    //                     // Only match if tag exists in official tags
+    //                     const officialTagNames = tags.map(tag => tag.name.toLowerCase());
+    //                     return officialTagNames.includes((t?.name || t || "").toLowerCase()) &&
+    //                         (t?.name || t || "").toLowerCase() === selectedTag.toLowerCase();
+    //                 }) : false);
+
+    //         const matchPlatform = isXpress ? p.platform.includes("xpress") : p.platform.includes("website");
+
+    //         return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && p.price <= priceRange;
+    //     })
+    //     .sort((a, b) =>
+    //         sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
+    //     );
+
 
 
 
@@ -1498,6 +1585,15 @@ const Categories = () => {
     useEffect(() => {
         setCurrentPage(1);
     }, [selectedCategory, selectedSubcategory, priceRange, sortBy, selectedAlphabet, showSubcategoryCards]);
+
+    // Compute tags from currently filtered products
+    const displayedTags = Array.from(
+        new Set(
+            baseFiltered
+                .flatMap(p => p.tags?.filter(t => t.active).map(t => t.name) || [])
+        )
+    );
+
 
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro relative">
@@ -1579,23 +1675,22 @@ const Categories = () => {
                             <ul className="flex flex-col gap-2 max-h-48 overflow-y-auto">
                                 <li
                                     onClick={() => setSelectedTag("All")}
-                                    className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedTag === "All" ? "bg-blue-200 font-semibold" : ""
-                                        }`}
+                                    className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedTag === "All" ? "bg-blue-200 font-semibold" : ""}`}
                                 >
                                     All
                                 </li>
-                                {tags.map((tag) => (
+                                {displayedTags.map((tagName) => (
                                     <li
-                                        key={tag.id}
-                                        onClick={() => setSelectedTag(tag.name)}
-                                        className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedTag === tag.name ? "bg-blue-200 font-semibold" : ""
-                                            }`}
+                                        key={tagName}
+                                        onClick={() => setSelectedTag(tagName)}
+                                        className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedTag === tagName ? "bg-blue-200 font-semibold" : ""}`}
                                     >
-                                        {tag.name}
+                                        {tagName}
                                     </li>
                                 ))}
                             </ul>
                         </div>
+
 
 
                         {/* Price */}

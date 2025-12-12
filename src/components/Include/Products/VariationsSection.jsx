@@ -422,7 +422,7 @@ const VariationsSection = ({
             .catch(() => toast.error("Failed to delete variation"));
     };
 
-
+    console.log("currentVariations", currentVariations)
 
     return (
         <div className="h-full mx-auto max-h-[90vh] md:max-h-[75vh] overflow-y-auto space-y-5 p-2 sm:p-4">
@@ -450,6 +450,7 @@ const VariationsSection = ({
 
             {currentVariations.map((variation) => {
                 const variationKey = JSON.stringify(variation);
+                console.log("variationKey", variationKey)
 
                 return (
                     <div
@@ -511,6 +512,50 @@ const VariationsSection = ({
                                             field.type === "file"
                                                 ? variationDetails[variationKey]?.[field.key]
                                                 : variationDetails[variationKey]?.[field.key] ?? "";
+
+                                        // --- CUSTOM DIMENSION FIELD ---
+                                        if (field.type === "custom-dimension") {
+                                            // stringify variationKey to match dbVariationDetails keys
+                                            const keyStr = JSON.stringify(variationKey);
+                                            console.log("keyStr" , keyStr)
+                                            const variation = variationDetails[keyStr] || {};
+                                            console.log("variationPage" , variation)
+
+                                            const dimension = {
+                                                weight: variation.weight || "",
+                                                length: variation.length || "",
+                                                breadth: variation.breadth || "",
+                                                height: variation.height || "",
+                                            };
+
+                                            console.log("dimensionvariationPage", dimension);
+
+                                            return (
+                                                <div key={field.key} className="flex flex-col mb-4">
+                                                    <h1 className="font-semibold text-gray-800 mb-3">Dimension</h1>
+
+                                                    <div className="grid grid-cols-4 gap-3">
+                                                        {["weight", "length", "breadth", "height"].map((dim) => (
+                                                            <div className="flex flex-col" key={dim}>
+                                                                <label className="text-sm text-gray-600 mb-1">{dim.toUpperCase()}</label>
+                                                                <input
+                                                                    type="number"
+                                                                    value={dimension[dim]}
+                                                                    onChange={(e) =>
+                                                                        handleVariationChange(keyStr, dim, e.target.value)
+                                                                    }
+                                                                    placeholder={dim.toUpperCase()}
+                                                                    className="border rounded-lg px-3 py-2"
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+
+
 
                                         if (field.type === "textarea") {
                                             return (

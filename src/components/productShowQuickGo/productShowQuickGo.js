@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation";
 import {
     fetchAllProducts,
 } from "@/app/redux/slices/products/productSlice";
+import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
 
 const Page = () => {
     const dispatch = useDispatch();
@@ -19,6 +20,8 @@ const Page = () => {
     const { categories } = useSelector((state) => state.category);
     const { subcategories } = useSelector((state) => state.subcategory);
     const { products } = useSelector((state) => state.products);
+    const { dispatches } = useSelector((state) => state.dispatchWarehouse);
+    console.log("dispatches", dispatches)
     console.log("products", products)
     console.log("categories", categories)
 
@@ -27,9 +30,42 @@ const Page = () => {
         dispatch(fetchAllProducts())
         dispatch(fetchCategories());
         dispatch(fetchSubcategories());
+        dispatch(fetchDispatches())
     }, [dispatch]);
 
     const isXpress = pathname.includes("/hecate-quickGo");
+
+    const selectedWarehouseId = typeof window !== "undefined" ? localStorage.getItem("warehouseId") : null;
+    const selectedWarehouseCode = typeof window !== "undefined" ? localStorage.getItem("warehouseCode") : null;
+
+    const warehouseProductIds = dispatches
+        ?.map(ds => {
+            let foundProductId = null;
+
+            ds.entries?.forEach(dim => {
+                dim.entries?.forEach(e => {
+                    if (e.warehouseId?.toString() === selectedWarehouseId?.toString()) {
+                        foundProductId = dim.productId; // <-- productId यहाँ से लेना
+                    }
+                });
+            });
+
+            return foundProductId;
+        })
+        .filter(Boolean); // remove nulls
+
+    console.log("warehouseProductIds", warehouseProductIds);
+
+
+
+
+    const filteredProducts = isXpress
+        ? products.filter(
+            p => p.platform?.includes("xpress") && warehouseProductIds.includes(p.id)
+        )
+        : products;
+
+
 
     const filteredCategories = isXpress
         ? categories.filter(cat => cat.platform?.includes("xpress"))
@@ -45,9 +81,9 @@ const Page = () => {
         sub => sub.categoryId === candlesCategory?.id
     );
 
-    const filteredProducts = isXpress
-        ? products.filter(p => p.platform?.includes("xpress"))
-        : products;
+    // const filteredProducts = isXpress
+    //     ? products.filter(p => p.platform?.includes("xpress"))
+    //     : products;
 
 
     return (

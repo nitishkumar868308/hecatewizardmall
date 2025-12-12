@@ -176,7 +176,8 @@ export async function POST(req) {
             bulkPrice,
             MRP,
             barCode,
-            platform
+            platform,
+            dimension
         } = body;
         // console.log("isDefault", isDefault)
         if (!name?.trim() || !subcategory || !sku?.trim() || !Array.isArray(platform) ||
@@ -277,6 +278,7 @@ export async function POST(req) {
                 barCode: barCode ?? null,
                 MRP: MRP ?? null,
                 platform: platform ?? [],
+                dimension: dimension ?? null,
                 variations: variations && Array.isArray(variations) && variations.length > 0
                     ? {
                         create: variations.map(v => ({
@@ -297,8 +299,8 @@ export async function POST(req) {
                             minQuantity: minQuantity?.toString() ?? null,
                             bulkPrice: bulkPrice?.toString() ?? null,
                             barCode: v.barCode ?? null,
-                            MRP: v.MRP ?? null
-
+                            MRP: v.MRP ?? null,
+                            dimension: v.dimension ?? null
                         }))
                     }
                     : undefined

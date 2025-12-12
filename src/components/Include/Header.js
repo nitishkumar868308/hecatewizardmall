@@ -111,17 +111,38 @@ const Header = () => {
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         .map(h => h.name);
     const isXpress = pathname.includes("/hecate-quickGo");
-    const [activeTab, setActiveTab] = useState(isXpress ? "xpress" : "website");
-    useEffect(() => {
-        if (isOpen) {
-            setActiveTab(isXpress ? "xpress" : "website");
+
+    const selectedState = typeof window !== "undefined"
+        ? localStorage.getItem("selectedState")
+        : null;
+
+    const filteredCategories = categories.filter(cat => {
+
+        // -------------------------
+        // CASE 1: WEBSITE MODE
+        // -------------------------
+        if (!isXpress) {
+            return cat.platform?.includes("website");
         }
-    }, [isOpen, isXpress]);
-    const filteredCategories = categories.filter(cat =>
-        isXpress
-            ? cat.platform?.includes("xpress")
-            : cat.platform?.includes("website")
-    );
+
+        // -------------------------
+        // CASE 2: XPRESS MODE
+        // -------------------------
+        const isXpressCategory = cat.platform?.includes("xpress");
+        if (!isXpressCategory) return false;
+
+        // 💥 IMPORTANT RULE
+        // XPRESS CATEGORY MUST HAVE STATES
+        if (!cat.states || cat.states.length === 0) {
+            return false; // ❌ NO STATES → HIDE IN XPRESS
+        }
+
+        // STATE MATCHING
+        if (!selectedState) return false;
+
+        return cat.states.some(st => st.name === selectedState);
+    });
+
     const categoriesMap = {};
 
     filteredCategories.forEach(cat => {
@@ -132,6 +153,13 @@ const Header = () => {
             sub: [],
         };
     });
+
+    const [activeTab, setActiveTab] = useState(isXpress ? "xpress" : "website");
+    useEffect(() => {
+        if (isOpen) {
+            setActiveTab(isXpress ? "xpress" : "website");
+        }
+    }, [isOpen, isXpress]);
 
     // subcategories
     //     .filter(sub => sub.active)
