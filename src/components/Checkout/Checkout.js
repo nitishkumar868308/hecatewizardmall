@@ -87,7 +87,38 @@ const Checkout = () => {
     pincode: user?.pincode || "",
     profileImage: null,
   };
+  const [timeLeft, setTimeLeft] = useState("");
+  const isXpress = pathname.includes("/hecate-quickGo");
+  useEffect(() => {
+    if (!isXpress) return; // Only for Xpress
 
+    const updateTimer = () => {
+      const now = new Date();
+
+      // 3 PM target
+      const target = new Date();
+      target.setHours(15, 0, 0, 0);
+
+      if (now >= target) {
+        // Time is over → show tomorrow message
+        setTimeLeft("");
+        return;
+      }
+
+      const diff = target - now;
+
+      const hours = Math.floor(diff / 1000 / 60 / 60);
+      const minutes = Math.floor((diff / 1000 / 60) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(timer);
+  }, [isXpress]);
 
   useEffect(() => {
     if (!selected) {  // only if user hasn't chosen anything
@@ -300,7 +331,7 @@ const Checkout = () => {
     setSelectAll(updated.length === allIndexes.length);
   };
 
-  const isXpress = pathname.includes("/hecate-quickGo");
+
 
   // Step 1: Filter cart based on purchasePlatform
   const filteredCart = useMemo(() => {
@@ -1293,10 +1324,66 @@ const Checkout = () => {
 
   const countryCode = selectedCountry || "IND";
   console.log("countryCode", countryCode)
+
+  const totalUnits = Object.values(groupedCart).reduce((acc, product) => {
+    const unitCount = product.colors.reduce((sum, c) => sum + c.quantity, 0);
+    return acc + unitCount;
+  }, 0);
+
+  const unitsNeeded = totalUnits >= 10 ? 0 : 10 - totalUnits;
+
   return (
     <div className=" bg-gray-50 py-8 px-4">
+
       <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
+          <div className="mt-6 p-4 sm:p-6 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg max-w-3xl mx-auto text-gray-800">
+            <h2 className="font-semibold text-lg mb-2">Delivery Info</h2>
+
+            {isXpress ? (
+              <>
+                {/* Countdown / Tomorrow Message */}
+                {timeLeft ? (
+                  <p className="text-sm sm:text-base mb-2">
+                    Order within{" "}
+                    <span className="font-bold text-green-600">{timeLeft}</span>{" "}
+                    to get your parcel <span className="font-bold">today</span>.
+                  </p>
+                ) : (
+                  <p className="text-sm sm:text-base mb-2">
+                    You’ve missed the <span className="font-bold">3 PM</span> cutoff.
+                    Your parcel will be delivered <span className="font-bold">tomorrow</span>.
+                  </p>
+                )}
+
+                {/* ⭐ Xpress Unit Requirement */}
+                <div className="mt-3 p-3 bg-white border border-yellow-300 rounded-lg">
+                  <p className="text-sm">
+                    <span className="font-bold text-gray-900">Total Items:</span>{" "}
+                    {totalUnits}
+                  </p>
+
+                  {unitsNeeded > 0 ? (
+                    <p className="text-sm text-red-600 font-medium mt-1">
+                      You need <span className="font-bold">{unitsNeeded}</span> more units to place an Xpress order.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-green-600 font-semibold mt-1">
+                      ✔ Minimum requirement reached! You can place your Xpress order.
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm sm:text-base">
+                  Standard delivery within{" "}
+                  <span className="font-bold text-gray-900">4–5 days</span>.
+                </p>
+              </>
+            )}
+          </div>
+
           <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-between">
             Shopping Cart
             {userCart.length > 0 && (
@@ -1558,27 +1645,7 @@ const Checkout = () => {
 
             })
           )}
-          <div className="mt-6 p-4 sm:p-6 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg max-w-3xl mx-auto text-gray-800">
-            {isXpress ? (
-              <>
-                <h2 className="font-semibold text-lg mb-2">Delivery Info</h2>
-                <p className="text-sm sm:text-base">
-                  Your parcel will be delivered{" "}
-                  <span className="font-bold text-gray-900">today</span> if you place the order before{" "}
-                  <span className="font-bold text-gray-900">3 PM</span>.
-                  If you place the order after 3 PM, it will be delivered{" "}
-                  <span className="font-bold text-gray-900">tomorrow</span>.
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 className="font-semibold text-lg mb-2">Delivery Info</h2>
-                <p className="text-sm sm:text-base">
-                  Standard delivery within <span className="font-bold text-gray-900">4–5 days</span>.
-                </p>
-              </>
-            )}
-          </div>
+
 
 
         </div>
@@ -1949,9 +2016,10 @@ const Checkout = () => {
 
       {open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-3xl rounded-2xl shadow-xl p-8 animate-fadeIn relative">
+          <div className="bg-white w-full max-w-3xl rounded-2xl shadow-xl p-8 animate-fadeIn relative 
+                    max-h-[90vh] flex flex-col">
 
-            {/* CLOSE BUTTON */}
+
             <button
               onClick={() => setOpen(false)}
               className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 text-2xl"
@@ -1959,8 +2027,8 @@ const Checkout = () => {
               ×
             </button>
 
-            {/* IMAGE SECTION */}
-            <div className="flex flex-col items-center mb-6 space-y-2">
+
+            <div className="overflow-y-auto pr-2">
               <Formik
                 initialValues={initialValues}
                 validationSchema={validationSchema}
@@ -1971,7 +2039,7 @@ const Checkout = () => {
                     <div className="flex flex-col items-center mb-6 space-y-2">
                       <label className="cursor-pointer group flex flex-col items-center">
 
-                        {/* Avatar */}
+
                         <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 shadow-md flex items-center justify-center bg-gray-100">
                           {values.profileImage || user?.profileImage ? (
                             <img
@@ -2009,13 +2077,13 @@ const Checkout = () => {
                       </label>
                     </div>
 
-                    {/* TITLE */}
+
                     <h2 className="text-2xl font-bold mb-6 text-center">Update Profile</h2>
 
-                    {/* FORM GRID */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-1">
 
-                      {/* NAME */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pr-1">
+
+
                       <div className="col-span-1">
                         <label className="text-sm font-medium">Name</label>
                         <input
@@ -2026,7 +2094,7 @@ const Checkout = () => {
                         />
                       </div>
 
-                      {/* EMAIL */}
+
                       <div className="col-span-1">
                         <label className="text-sm font-medium">Email</label>
                         <input
@@ -2037,7 +2105,7 @@ const Checkout = () => {
                         />
                       </div>
 
-                      {/* GENDER */}
+
                       <div className="col-span-1">
                         <label className="text-sm font-medium">Gender</label>
                         <Field
@@ -2057,7 +2125,7 @@ const Checkout = () => {
                         />
                       </div>
 
-                      {/* COUNTRY */}
+
                       <div className="col-span-1">
                         <label className="mb-2 font-medium text-gray-700">Country</label>
                         <ReactSelect
@@ -2094,7 +2162,7 @@ const Checkout = () => {
                         />
                       </div>
 
-                      {/* PINCODE */}
+
                       <div className="col-span-1">
                         <label className="mb-2 font-medium text-gray-700">Pincode</label>
                         <Field name="pincode">
@@ -2119,7 +2187,7 @@ const Checkout = () => {
                         </Field>
                       </div>
 
-                      {/* STATE */}
+
                       <div className="col-span-1">
                         <label className="mb-2 font-medium text-gray-700">State</label>
                         <ReactSelect
@@ -2150,7 +2218,7 @@ const Checkout = () => {
                         />
                       </div>
 
-                      {/* CITY */}
+
                       <div className="col-span-1">
                         <label className="mb-2 font-medium text-gray-700">City</label>
                         <ReactSelect
@@ -2168,7 +2236,7 @@ const Checkout = () => {
                         />
                       </div>
 
-                      {/* PHONE */}
+
                       <div className="col-span-1">
                         <label className="mb-2 font-medium text-gray-700">Phone Number</label>
                         <Field name="phone">
@@ -2208,7 +2276,6 @@ const Checkout = () => {
                         />
                       </div>
 
-                      {/* ADDRESS */}
                       <div className="col-span-1 sm:col-span-2">
                         <label className="text-sm font-medium">Address</label>
                         <Field
@@ -2224,7 +2291,6 @@ const Checkout = () => {
                       </div>
                     </div>
 
-                    {/* BUTTONS */}
                     <div className="flex justify-end gap-4 mt-8">
                       <button
                         type="button"

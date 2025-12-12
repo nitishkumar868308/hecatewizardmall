@@ -1214,8 +1214,8 @@ const Header = () => {
     const websiteCount = Object.values(groupedCart).filter(item => item.platform === "website").length;
     const xpressCount = Object.values(groupedCart).filter(item => item.platform === "xpress").length;
     const tabs = [
-        { id: "website", label: "Website Items", count: websiteCount },
-        { id: "xpress", label: "Xpress Items", count: xpressCount },
+        { id: "website", label: "Hecate Wizard Mall Cart", count: websiteCount },
+        { id: "xpress", label: "Hecate QuickGo Cart", count: xpressCount },
     ];
     const orderedTabs = pathname.includes("/hecate-quickGo")
         ? tabs.sort((a, b) => (a.id === "xpress" ? -1 : 1)) // Xpress first
@@ -1549,7 +1549,7 @@ const Header = () => {
                                                         onClick={() => setActiveTab(tab.id)}
                                                         className={`relative px-5 py-2 text-sm md:text-base rounded-full  font-medium transition-all duration-300
                                                                 ${activeTab === tab.id
-                                                                ? "bg-white shadow-lg text-gray-900 "
+                                                                ? "bg-black shadow-lg text-white "
                                                                 : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"}
                                                                 `}
                                                     >
@@ -1916,7 +1916,7 @@ const Header = () => {
                                             </div>
                                         )
                                     } */}
-                                    {
+                                    {/* {
                                         userCartCount > 0 && (
                                             <div className="mt-4">
                                                 <button
@@ -1935,7 +1935,22 @@ const Header = () => {
                                                 </button>
                                             </div>
                                         )
-                                    }
+                                    } */}
+                                    <button
+                                        onClick={() => {
+                                            setIsOpen(false);
+
+                                            const checkoutUrl =
+                                                activeTab === "xpress"
+                                                    ? "/hecate-quickGo/checkout"
+                                                    : "/checkout";
+
+                                            router.push(checkoutUrl);
+                                        }}
+                                        className="w-full bg-gray-800 text-white py-3 rounded-lg text-lg font-semibold hover:bg-gray-900 transition-colors cursor-pointer"
+                                    >
+                                        Checkout
+                                    </button>
 
                                 </div>
                             </div>
