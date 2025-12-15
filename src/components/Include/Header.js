@@ -117,27 +117,16 @@ const Header = () => {
         : null;
 
     const filteredCategories = categories.filter(cat => {
-
-        // -------------------------
-        // CASE 1: WEBSITE MODE
-        // -------------------------
         if (!isXpress) {
             return cat.platform?.includes("website");
         }
-
-        // -------------------------
-        // CASE 2: XPRESS MODE
-        // -------------------------
         const isXpressCategory = cat.platform?.includes("xpress");
         if (!isXpressCategory) return false;
 
-        // 💥 IMPORTANT RULE
-        // XPRESS CATEGORY MUST HAVE STATES
         if (!cat.states || cat.states.length === 0) {
-            return false; // ❌ NO STATES → HIDE IN XPRESS
+            return false;
         }
 
-        // STATE MATCHING
         if (!selectedState) return false;
 
         return cat.states.some(st => st.name === selectedState);
@@ -169,19 +158,40 @@ const Header = () => {
     //             categoriesMap[catId].sub.push(sub.name);
     //         }
     //     });
+    // subcategories
+    //     .filter(sub => sub.active)
+    //     .filter(sub =>
+    //         isXpress
+    //             ? sub.platform?.includes("xpress")
+    //             : sub.platform?.includes("website")
+    //     )
+    //     .forEach(sub => {
+    //         const catId = sub.categoryId || sub.category.id;
+    //         if (categoriesMap[catId]) {
+    //             categoriesMap[catId].sub.push(sub.name);
+    //         }
+    //     });
     subcategories
         .filter(sub => sub.active)
-        .filter(sub =>
-            isXpress
-                ? sub.platform?.includes("xpress")
-                : sub.platform?.includes("website")
-        )
+        .filter(sub => {
+            if (!isXpress) {
+                return sub.platform?.includes("website");
+            }
+
+            // Xpress case
+            if (!sub.platform?.includes("xpress")) return false;
+            if (!sub.states || sub.states.length === 0) return false;
+            if (!selectedState) return false;
+
+            return sub.states.some(st => st.name === selectedState);
+        })
         .forEach(sub => {
-            const catId = sub.categoryId || sub.category.id;
+            const catId = sub.categoryId || sub.category?.id;
             if (categoriesMap[catId]) {
                 categoriesMap[catId].sub.push(sub.name);
             }
         });
+
 
 
     const mappedCategories = Object.values(categoriesMap);

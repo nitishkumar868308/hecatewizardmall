@@ -1,6 +1,6 @@
 "use client";
 import { useParams } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import ProductSlider from "@/components/Product/Product";
 import { useSelector, useDispatch } from "react-redux";
@@ -62,11 +62,18 @@ const ProductDetail = () => {
     console.log("dispatches", dispatches)
     const isXpress = pathname.includes("/hecate-quickGo");
     const purchasePlatform = isXpress ? "xpress" : "website";
+    // useEffect(() => {
+    //     const prod = products.find((p) => p.id == id);
+    //     console.log("prod", prod)
+    //     setCurrentProduct(prod || null);
+    // }, [products, id]);
     useEffect(() => {
-        const prod = products.find((p) => p.id == id);
-        console.log("prod", prod)
-        setCurrentProduct(prod || null);
-    }, [products, id]);
+        const prod = products.find((p) => p.id == id) || null;
+        if (prod?.id !== currentProduct?.id) {
+            setCurrentProduct(prod);
+        }
+    }, [products, id, currentProduct]);
+
     // const product = products.find((p) => p.id === id);
     const cartItem = userCart?.find(
         (item) => item.variationId === selectedVariation?.id
@@ -91,48 +98,77 @@ const ProductDetail = () => {
     }, [dispatch, country]); // <-- refetch whenever country changes
 
 
+    const selectedWarehouseId =
+        typeof window !== "undefined"
+            ? localStorage.getItem("warehouseId")
+            : null;
+
+    const allowedVariationIds = useMemo(() => {
+        if (!isXpress || !currentProduct || !dispatches?.length) return null; // null = loading
+
+        return dispatches
+            .flatMap(d =>
+                d.entries?.flatMap(dim => {
+                    if (dim.productId !== currentProduct.id) return [];
+                    return dim.entries
+                        ?.filter(e => e.warehouseId?.toString() === selectedWarehouseId)
+                        .map(() => dim.variationId);
+                })
+            )
+            .filter(Boolean);
+    }, [dispatches, currentProduct?.id, isXpress, selectedWarehouseId]);
+    console.log("allowedVariationIds", allowedVariationIds)
+
+
+
     useEffect(() => {
         if (!currentProduct) return;
-        console.log("currentProduct", currentProduct)
-        // Reset selected attributes based on new product
+
+
+        // Wait for allowedVariationIds if Xpress
+        if (isXpress && allowedVariationIds === null) return;
+
+        const variationsToUse = isXpress
+            ? currentProduct.variations?.filter(v => allowedVariationIds.includes(v.id))
+            : currentProduct.variations;
+
+        if (!variationsToUse || variationsToUse.length === 0) {
+            setSelectedVariation(null);
+            setVariationAttributes({});
+            return;
+        }
+
+        // Build attributes
         const attrs = {};
-        currentProduct.variations?.forEach((v) => {
-            const parts = v.variationName.split(" / ");
-            parts.forEach((part) => {
-                const [key, val] = part.split(":").map((p) => p.trim());
+        variationsToUse.forEach(v => {
+            v.variationName.split(" / ").forEach(part => {
+                const [key, val] = part.split(":").map(p => p.trim());
                 if (!attrs[key]) attrs[key] = new Set();
                 attrs[key].add(val);
             });
         });
 
         const finalAttrs = {};
-        Object.entries(attrs).forEach(([k, v]) => (finalAttrs[k] = Array.from(v)));
+        Object.entries(attrs).forEach(([k, v]) => finalAttrs[k] = Array.from(v));
+
         setVariationAttributes(finalAttrs);
 
-        // Reset selected attributes
+        // Initial selected attributes
         const initialSelected = {};
-        if (currentProduct?.isDefault) {
-            Object.entries(finalAttrs).forEach(([attr, values]) => {
-                initialSelected[attr] = currentProduct.isDefault[attr] || values[0];
-            });
-        } else {
-            Object.entries(finalAttrs).forEach(([attr, values]) => {
-                initialSelected[attr] = values[0];
-            });
-        }
+        Object.entries(finalAttrs).forEach(([attr, values]) => initialSelected[attr] = values[0]);
         setSelectedAttributes(initialSelected);
 
         // Match variation
-        const matchedVariation = currentProduct.variations?.find((v) => {
+        const matchedVariation = variationsToUse.find(v => {
             const parts = parseVariationName(v.variationName);
             return Object.entries(initialSelected).every(
                 ([k, val]) => parts[k.toLowerCase()] === val.toLowerCase()
             );
-        }) || null;
+        }) || variationsToUse[0];
 
         setSelectedVariation(matchedVariation);
 
-        // Set main image
+        // Set images
         if (matchedVariation?.image?.length) {
             setCurrentImages(matchedVariation.image);
             setMainImage(matchedVariation.image[0]);
@@ -143,7 +179,187 @@ const ProductDetail = () => {
             setCurrentImages([]);
             setMainImage(null);
         }
-    }, [currentProduct]);
+    }, [currentProduct, isXpress, allowedVariationIds]);
+
+
+    const variationStockMap = useMemo(() => {
+        if (!dispatches?.length) return {};
+
+        const map = {};
+
+        dispatches.forEach(d => {
+            d.entries?.forEach(item => {
+                item.entries?.forEach(e => {
+                    if (e.warehouseId?.toString() !== selectedWarehouseId) return;
+
+                    const variationId = item.variationId;
+                    const units = Number(e.units) || 0;
+
+                    map[variationId] = (map[variationId] || 0) + units;
+                });
+            });
+        });
+
+        return map;
+    }, [dispatches, selectedWarehouseId]);
+
+
+    const getAttributeStock = (attrKey, attrValue) => {
+        if (!currentProduct?.variations) return 0;
+
+        return currentProduct.variations.reduce((sum, v) => {
+            const parts = parseVariationName(v.variationName);
+
+            // check all selected attributes
+            const isMatch = Object.entries(selectedAttributes).every(
+                ([key, selectedVal]) => {
+                    if (key === attrKey) {
+                        // is attribute ke liye current value match karo
+                        return parts[key.toLowerCase()]?.toLowerCase() ===
+                            attrValue.toLowerCase();
+                    }
+                    // baaki attributes already selected hone chahiye
+                    return (
+                        !selectedVal ||
+                        parts[key.toLowerCase()]?.toLowerCase() ===
+                        selectedVal.toLowerCase()
+                    );
+                }
+            );
+
+            if (!isMatch) return sum;
+
+            return sum + (variationStockMap[v.id] || 0);
+        }, 0);
+    };
+
+
+    const selectedStock =
+        selectedVariation?.id
+            ? variationStockMap[selectedVariation.id] || 0
+            : 0;
+
+    // useEffect(() => {
+    //     if (!currentProduct) return;
+
+    //     // ✅ Filter variations by allowedVariationIds
+    //     const variationsToUse = isXpress
+    //         ? currentProduct.variations?.filter(v =>
+    //             allowedVariationIds?.includes(v.id)
+    //         )
+    //         : currentProduct.variations;
+
+    //     if (!variationsToUse || variationsToUse.length === 0) {
+    //         setSelectedVariation(null);
+    //         setVariationAttributes({});
+    //         return;
+    //     }
+
+    //     const attrs = {};
+
+    //     // ✅ Only use filtered variations here
+    //     variationsToUse.forEach((v) => {
+    //         const parts = v.variationName.split(" / ");
+    //         parts.forEach((part) => {
+    //             const [key, val] = part.split(":").map(p => p.trim());
+    //             if (!attrs[key]) attrs[key] = new Set();
+    //             attrs[key].add(val);
+    //         });
+    //     });
+
+    //     const finalAttrs = {};
+    //     Object.entries(attrs).forEach(([k, v]) => {
+    //         finalAttrs[k] = Array.from(v);
+    //     });
+
+    //     setVariationAttributes(finalAttrs);
+
+    //     const initialSelected = {};
+    //     Object.entries(finalAttrs).forEach(([attr, values]) => {
+    //         initialSelected[attr] = values[0];
+    //     });
+
+    //     setSelectedAttributes(initialSelected);
+
+    //     const matchedVariation =
+    //         variationsToUse.find((v) => {
+    //             const parts = parseVariationName(v.variationName);
+    //             return Object.entries(initialSelected).every(
+    //                 ([k, val]) =>
+    //                     parts[k.toLowerCase()] === val.toLowerCase()
+    //             );
+    //         }) || variationsToUse[0];
+
+    //     setSelectedVariation(matchedVariation);
+
+    //     if (matchedVariation?.image?.length) {
+    //         setCurrentImages(matchedVariation.image);
+    //         setMainImage(matchedVariation.image[0]);
+    //     } else if (currentProduct.image?.length) {
+    //         setCurrentImages(currentProduct.image);
+    //         setMainImage(currentProduct.image[0]);
+    //     } else {
+    //         setCurrentImages([]);
+    //         setMainImage(null);
+    //     }
+    // }, [currentProduct, dispatches, isXpress, allowedVariationIds]);
+
+
+
+
+    // useEffect(() => {
+    //     if (!currentProduct) return;
+    //     console.log("currentProduct", currentProduct)
+    //     // Reset selected attributes based on new product
+    //     const attrs = {};
+    //     currentProduct.variations?.forEach((v) => {
+    //         const parts = v.variationName.split(" / ");
+    //         parts.forEach((part) => {
+    //             const [key, val] = part.split(":").map((p) => p.trim());
+    //             if (!attrs[key]) attrs[key] = new Set();
+    //             attrs[key].add(val);
+    //         });
+    //     });
+
+    //     const finalAttrs = {};
+    //     Object.entries(attrs).forEach(([k, v]) => (finalAttrs[k] = Array.from(v)));
+    //     setVariationAttributes(finalAttrs);
+
+    //     // Reset selected attributes
+    //     const initialSelected = {};
+    //     if (currentProduct?.isDefault) {
+    //         Object.entries(finalAttrs).forEach(([attr, values]) => {
+    //             initialSelected[attr] = currentProduct.isDefault[attr] || values[0];
+    //         });
+    //     } else {
+    //         Object.entries(finalAttrs).forEach(([attr, values]) => {
+    //             initialSelected[attr] = values[0];
+    //         });
+    //     }
+    //     setSelectedAttributes(initialSelected);
+
+    //     // Match variation
+    //     const matchedVariation = currentProduct.variations?.find((v) => {
+    //         const parts = parseVariationName(v.variationName);
+    //         return Object.entries(initialSelected).every(
+    //             ([k, val]) => parts[k.toLowerCase()] === val.toLowerCase()
+    //         );
+    //     }) || null;
+
+    //     setSelectedVariation(matchedVariation);
+
+    //     // Set main image
+    //     if (matchedVariation?.image?.length) {
+    //         setCurrentImages(matchedVariation.image);
+    //         setMainImage(matchedVariation.image[0]);
+    //     } else if (currentProduct.image?.length) {
+    //         setCurrentImages(currentProduct.image);
+    //         setMainImage(currentProduct.image[0]);
+    //     } else {
+    //         setCurrentImages([]);
+    //         setMainImage(null);
+    //     }
+    // }, [currentProduct]);
 
 
     console.log("productsId", products)
@@ -2651,8 +2867,19 @@ const ProductDetail = () => {
             : [];
     const baseUrl = isXpress ? "/hecate-quickGo/categories" : "/categories";
 
+
+
+
     return (
         <>
+            <div>
+                {isXpress && allowedVariationIds === null ? (
+                    <div>Loading...</div>
+                ) : (
+                    ""
+                )}
+
+            </div>
             <div className="max-w-7xl mx-auto p-8 flex flex-col md:flex-row gap-12">
                 {loading && <Loader />}
                 {/* Product Images */}
@@ -2782,6 +3009,9 @@ const ProductDetail = () => {
                         <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                             {selectedVariation?.short || product.short}
                         </p>
+
+
+
 
 
                         {/* {Object.entries(variationAttributes).map(([attrKey, values]) => {
@@ -2976,6 +3206,16 @@ const ProductDetail = () => {
                             );
                         })}
 
+                        {isXpress && (
+                            <p
+                                className={`mt-3 text-sm font-semibold
+        ${selectedStock > 0 ? "text-green-700" : "text-red-600"}`}
+                            >
+                                {selectedStock > 0
+                                    ? `Stock left: ${selectedStock} units`
+                                    : "Out of stock"}
+                            </p>
+                        )}
 
 
                         {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
@@ -3223,25 +3463,39 @@ const ProductDetail = () => {
                                 ? `Already in your cart: ${existingCartQuantity}`
                                 : ""}
                         </p> */}
-                        <div className="mt-8">
-                            <span className="text-lg text-gray-600 font-medium mr-2">Tags:</span>
-                            <div className="mt-2 flex flex-wrap gap-3">
-                                {(selectedVariation?.tags?.length > 0
-                                    ? selectedVariation.tags
-                                    : product?.tags
-                                        ? product.tags
-                                        : []
-                                ).map((tag) => (
-                                    <Link
-                                        key={tag.id || tag.name}
-                                        href={`${baseUrl}?tag=${encodeURIComponent(tag.name)}`}
-                                        className="px-4 py-2 bg-blue-50 text-blue-700 font-semibold rounded-full shadow-sm hover:bg-blue-100 hover:shadow-md transition-all duration-200 cursor-pointer"
-                                    >
-                                        {tag.name}
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
+                        {(
+                            (selectedVariation?.tags?.length > 0
+                                ? selectedVariation.tags
+                                : product?.tags?.length > 0
+                                    ? product.tags
+                                    : []
+                            ).length > 0
+                        ) && (
+                                <div className="mt-8">
+                                    <span className="text-lg text-gray-600 font-medium mr-2">
+                                        Tags:
+                                    </span>
+
+                                    <div className="mt-2 flex flex-wrap gap-3">
+                                        {(selectedVariation?.tags?.length > 0
+                                            ? selectedVariation.tags
+                                            : product?.tags?.length > 0
+                                                ? product.tags
+                                                : []
+                                        ).map((tag) => (
+                                            <Link
+                                                key={tag.id || tag.name}
+                                                href={`${baseUrl}?tag=${encodeURIComponent(tag.name)}`}
+                                                className="px-4 py-2 bg-blue-50 text-blue-700 font-semibold rounded-full
+                    shadow-sm hover:bg-blue-100 hover:shadow-md
+                    transition-all duration-200 cursor-pointer"
+                                            >
+                                                {tag.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
 
                         {/* <p className="text-lg text-gray-600 mt-8 leading-relaxed">

@@ -57,6 +57,10 @@ const Page = () => {
     console.log("warehouseProductIds", warehouseProductIds);
 
 
+    const selectedState =
+        typeof window !== "undefined"
+            ? localStorage.getItem("selectedState")
+            : null;
 
 
     const filteredProducts = isXpress
@@ -67,19 +71,49 @@ const Page = () => {
 
 
 
-    const filteredCategories = isXpress
-        ? categories.filter(cat => cat.platform?.includes("xpress"))
-        : categories;
+    // const filteredCategories = isXpress
+    //     ? categories.filter(cat => cat.platform?.includes("xpress"))
+    //     : categories;
+    const filteredCategories = categories.filter(cat => {
+        if (!isXpress) {
+            return cat.platform?.includes("website");
+        }
 
-    const filteredSubcategories = isXpress
-        ? subcategories.filter(sub => sub.platform?.includes("xpress"))
-        : subcategories;
+        if (!cat.platform?.includes("xpress")) return false;
+        if (!cat.states?.length) return false;
+        if (!selectedState) return false;
 
-    const candlesCategory = filteredCategories?.find(cat => cat.name === "Candles");
+        return cat.states.some(st => st.name === selectedState);
+    });
 
-    const candlesSubcategories = filteredSubcategories?.filter(
+
+
+    // const filteredSubcategories = isXpress
+    //     ? subcategories.filter(sub => sub.platform?.includes("xpress"))
+    //     : subcategories;
+    const filteredSubcategories = subcategories.filter(sub => {
+        if (!sub.active) return false;
+
+        if (!isXpress) {
+            return sub.platform?.includes("website");
+        }
+
+        if (!sub.platform?.includes("xpress")) return false;
+        if (!sub.states?.length) return false;
+        if (!selectedState) return false;
+
+        return sub.states.some(st => st.name === selectedState);
+    });
+
+
+    const candlesCategory = filteredCategories.find(
+        cat => cat.name === "Candles"
+    );
+
+    const candlesSubcategories = filteredSubcategories.filter(
         sub => sub.categoryId === candlesCategory?.id
     );
+
 
     // const filteredProducts = isXpress
     //     ? products.filter(p => p.platform?.includes("xpress"))

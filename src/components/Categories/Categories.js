@@ -1586,13 +1586,43 @@ const Categories = () => {
         setCurrentPage(1);
     }, [selectedCategory, selectedSubcategory, priceRange, sortBy, selectedAlphabet, showSubcategoryCards]);
 
+    const productsWithoutTagFilter = products.filter((p) => {
+        const matchCategory =
+            selectedCategory === "All" || p.categoryId === selectedCategory;
+
+        const matchSubcategory =
+            selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory;
+
+        const matchPlatform = isXpress
+            ? p.platform.includes("xpress")
+            : p.platform.includes("website");
+
+        const matchWarehouse = isXpress
+            ? warehouseProductIds?.includes(p.id)
+            : true;
+
+        return (
+            p.active &&
+            matchCategory &&
+            matchSubcategory &&
+            matchPlatform &&
+            matchWarehouse &&
+            p.price <= priceRange
+        );
+    });
+
+
     // Compute tags from currently filtered products
     const displayedTags = Array.from(
         new Set(
-            baseFiltered
-                .flatMap(p => p.tags?.filter(t => t.active).map(t => t.name) || [])
+            productsWithoutTagFilter.flatMap(p =>
+                p.tags
+                    ?.filter(t => t.active)
+                    .map(t => t.name) || []
+            )
         )
     );
+
 
 
     return (
