@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse, ShoppingCart } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse  , ShoppingCart, Image as ImageIcon   } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -135,6 +135,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             </div>
                         )}
                     </div>
+
+                    <Link
+                        href="/admin/banners"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                    >
+                        <ImageIcon className="w-5 h-5" /> Banners
+                    </Link>
 
                     <Link
                         href="/admin/users"
@@ -289,7 +296,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                         >
                             <span className="flex items-center gap-3">
-                                <Archive className="w-5 h-5" />FullFillment Center
+                                <Warehouse   className="w-5 h-5" />FullFillment Center
                             </span>
                             {manuOpenWareHouseFullfillment ? (
                                 <ChevronUp className="w-4 h-4" />

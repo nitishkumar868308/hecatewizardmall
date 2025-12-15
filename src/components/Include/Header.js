@@ -57,6 +57,16 @@ const Header = () => {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const { products } = useSelector((state) => state.products);
     const [userCartState, setUserCartState] = useState([]);
+    const [selectedCountry, setSelectedCountry] = useState("");
+    const [isXpressAvailable, setIsXpressAvailable] = useState(false);
+
+    useEffect(() => {
+        const country = localStorage.getItem("selectedCountry")?.toUpperCase() || "";
+        setSelectedCountry(country);
+        setIsXpressAvailable(country === "IND");
+    }, []);
+
+
     useEffect(() => {
         setUserCartState(prev => {
             // Only update if different length or different ids
@@ -1092,9 +1102,14 @@ const Header = () => {
 
         userCart.forEach(item => {
             // build key based on non-color attributes
-            const key = item.productId + '-' + Object.entries(item.attributes || {})
-                .filter(([k]) => k !== 'color')
-                .map(([k, v]) => `${k}:${v}`).join('|');
+            // const key = item.productId + '-' + Object.entries(item.attributes || {})
+            //     .filter(([k]) => k !== 'color')
+            //     .map(([k, v]) => `${k}:${v}`).join('|');
+            const key = item.productId + '-' + item.purchasePlatform + '-' +
+                Object.entries(item.attributes || {})
+                    .filter(([k]) => k !== 'color')
+                    .map(([k, v]) => `${k}:${v}`).join('|');
+
 
             if (!acc[key]) {
                 acc[key] = {
@@ -1354,24 +1369,28 @@ const Header = () => {
                     <nav className="hidden md:flex flex-1 justify-center relative">
                         <ul className="flex items-center gap-6">
                             <div className="flex items-center gap-2">
-                                {isXpress ? (
+                                {/* ❌ NOT IND → kuch bhi mat dikhao */}
+                                {!isXpressAvailable ? null : isXpress ? (
+                                    /* IND + Xpress → Website redirect */
                                     <Link href="/">
                                         <img
                                             src="/image/HWM LOGO 1 GREY 100.png"
-                                            alt="Logo"
+                                            alt="Website Logo"
                                             className="h-20 w-24 object-contain"
                                         />
                                     </Link>
                                 ) : (
+                                    /* IND + Website → Xpress redirect */
                                     <Link href="/hecate-quickGo/home">
                                         <img
                                             src="/image/quickgo logo.png"
-                                            alt="Logo"
+                                            alt="QuickGo Logo"
                                             className="h-20 w-24 object-contain"
                                         />
                                     </Link>
                                 )}
                             </div>
+
 
                             {menuItems.map((item) => {
                                 // const href = item === "Home" ? "/" : `/${item.toLowerCase()}`;

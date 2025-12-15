@@ -73,12 +73,16 @@ const ProductDetail = () => {
             setCurrentProduct(prod);
         }
     }, [products, id, currentProduct]);
-
+    console.log("currentProduct", currentProduct)
     // const product = products.find((p) => p.id === id);
     const cartItem = userCart?.find(
-        (item) => item.variationId === selectedVariation?.id
+        (item) =>
+            item.variationId === selectedVariation?.id &&
+            item.purchasePlatform === purchasePlatform // <-- check platform
     );
+
     const isInCart = !!cartItem;
+
     console.log("currentProduct", currentProduct)
     // 🟢 whenever selectedVariation or cart changes → sync quantity
     useEffect(() => {
@@ -96,7 +100,7 @@ const ProductDetail = () => {
         dispatch(fetchOffers());
         dispatch(fetchDispatches())
     }, [dispatch, country]); // <-- refetch whenever country changes
-
+    console.log("selectedVariation", selectedVariation)
 
     const selectedWarehouseId =
         typeof window !== "undefined"
@@ -2204,7 +2208,8 @@ const ProductDetail = () => {
                 item =>
                     item.productId === product.id &&
                     item.variationId === (selectedVariation?.id || null) &&
-                    item.attributes?.color === flatAttributes?.color
+                    item.attributes?.color === flatAttributes?.color &&
+                    item.purchasePlatform === purchasePlatform 
             );
             if (isAlreadyInCart) {
                 toast.error("This product is already in your cart!");
@@ -2825,7 +2830,7 @@ const ProductDetail = () => {
     };
 
 
-
+    console.log("displayedPrice", displayedPrice)
 
     // Check rangeBuyXGetY offer applied
     const getRangeOfferApplied = (offer) => {
@@ -2867,7 +2872,9 @@ const ProductDetail = () => {
             : [];
     const baseUrl = isXpress ? "/hecate-quickGo/categories" : "/categories";
 
-
+    const currency = isXpress
+        ? "INR"
+        : selectedVariation?.currency ?? product.currency ?? "INR";
 
 
     return (
@@ -2973,8 +2980,37 @@ const ProductDetail = () => {
                                     : priceObj.original;
                             })()}
                         </p> */}
-                        <p className="text-3xl text-gray-800 mb-4 font-semibold flex flex-wrap items-center gap-2">
+                        {/* <p className="text-3xl text-gray-800 mb-4 font-semibold flex flex-wrap items-center gap-2">
                             {(selectedVariation?.currency ?? product.currency) + " "}
+                            {(() => {
+                                const priceObj = displayedPrice();
+
+                                return priceObj.discounted ? (
+                                    <>
+                                        <span className="line-through text-gray-500 mr-1 text-2xl">
+                                            {priceObj.original}
+                                        </span>
+
+                                        <span className="text-gray-900 text-3xl font-bold">
+                                            {priceObj.discounted}
+                                        </span>
+
+                                        {priceObj.label && (
+                                            <span className="ml-2 text-sm bg-green-100 text-green-700 px-2 py-1 rounded-lg font-medium">
+                                                {priceObj.label}
+                                            </span>
+                                        )}
+                                    </>
+                                ) : (
+                                    <span className="text-gray-900 text-3xl font-bold">
+                                        {priceObj.original}
+                                    </span>
+                                );
+                            })()}
+                        </p> */}
+
+                        <p className="text-3xl text-gray-800 mb-4 font-semibold flex flex-wrap items-center gap-2">
+                            {currency + " "}
                             {(() => {
                                 const priceObj = displayedPrice();
 
@@ -3162,7 +3198,7 @@ const ProductDetail = () => {
                                                             !selectedWax || (itemWax && itemWax === selectedWax);
 
                                                         // ✅ Only count if both product + color + wax match
-                                                        if (sameProduct && colorMatch && waxMatch) {
+                                                        if (sameProduct && colorMatch && waxMatch && item.purchasePlatform === purchasePlatform) {
                                                             return sum + (Number(item?.quantity) || 0);
                                                         }
                                                         return sum;
