@@ -1487,7 +1487,7 @@ const Categories = () => {
         .sort((a, b) =>
             sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
         );
-
+        console.log("baseFiltered" , baseFiltered)
 
     // const baseFiltered = products
     //     .filter((p) => {
@@ -1665,8 +1665,8 @@ const Categories = () => {
                                     <li key={cat.id} className="mb-2">
                                         <div
                                             onClick={() => handleCategoryClick(cat)}
-                                            className={`cursor-pointer flex items-center justify-between p-2 rounded hover:bg-blue-100 ${selectedCategory === cat.id ? "bg-blue-200 font-semibold" : ""
-                                                }`}
+                                            className={`cursor-pointer flex items-center justify-between p-2 rounded hover:bg-blue-100 
+            ${selectedCategory === cat.id ? "bg-blue-200 font-semibold" : ""}`}
                                         >
                                             <span>{cat.name}</span>
                                             <span className="text-lg font-bold">
@@ -1675,8 +1675,7 @@ const Categories = () => {
                                         </div>
 
                                         {selectedCategory === cat.id &&
-                                            subcategories.filter((s) => s.categoryId === cat.id).length > 0 &&
-                                            selectedSubcategory !== "All" && (
+                                            subcategories.some((s) => s.categoryId === cat.id) && (
                                                 <ul className="ml-4 mt-1 flex flex-col gap-1">
                                                     {subcategories
                                                         .filter((s) => s.categoryId === cat.id)
@@ -1684,10 +1683,8 @@ const Categories = () => {
                                                             <li
                                                                 key={sub.id}
                                                                 onClick={() => handleSubcategoryClick(cat, sub)}
-                                                                className={`cursor-pointer p-1 rounded hover:bg-blue-50 text-sm ${selectedSubcategory === sub.id
-                                                                    ? "bg-blue-100 font-semibold"
-                                                                    : ""
-                                                                    }`}
+                                                                className={`cursor-pointer p-1 rounded hover:bg-blue-50 text-sm 
+                                ${selectedSubcategory === sub.id ? "bg-blue-100 font-semibold" : ""}`}
                                                             >
                                                                 {sub.name}
                                                             </li>
@@ -1696,6 +1693,7 @@ const Categories = () => {
                                             )}
                                     </li>
                                 ))}
+
                             </ul>
                         </div>
 
