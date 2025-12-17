@@ -8,33 +8,38 @@ import {
     fetchStates,
 } from "@/app/redux/slices/state/addStateSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { createBanner, fetchBanners, deleteBanner, updateBanner } from "@/app/redux/slices/banners/bannersSlice";
 
 const BannerPage = () => {
     const dispatch = useDispatch();
-    const [banners, setBanners] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalType, setModalType] = useState("add");
     const [editIndex, setEditIndex] = useState(null);
     const { states } = useSelector((state) => state.states);
     const [countries, setCountries] = useState([]);
     const [filteredCountries, setFilteredCountries] = useState(countries);
-    console.log("states", states)
+    const { banners } = useSelector((state) => state.banner);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedBanner, setSelectedBanner] = useState(null);
+    const [selectedCountry, setSelectedCountry] = useState("");
+    const [selectedState, setSelectedState] = useState("");
+
+    console.log("banners", banners)
     console.log("countries", countries)
     const [platform, setPlatform] = useState({
         xpress: false,
         website: false,
     });
-    const [countrySearch, setCountrySearch] = useState("");  // ✅ Add this
+    const [countrySearch, setCountrySearch] = useState("");
     const [stateSearch, setStateSearch] = useState("");
     const [form, setForm] = useState({
         image: null,
-        countries: [], // multi-select
-        states: [], // multi-select
+        countries: [],
+        states: [],
         text: "",
         active: true,
     });
 
-    // Each selected country/state will have a number field
     const [countryNumbers, setCountryNumbers] = useState({});
     const [stateNumbers, setStateNumbers] = useState({});
 
@@ -52,15 +57,42 @@ const BannerPage = () => {
         const banner = banners[index];
         setModalType("edit");
         setEditIndex(index);
-        setPlatform(banner.platform);
-        setForm(banner);
-        setCountryNumbers(banner.countryNumbers || {});
-        setStateNumbers(banner.stateNumbers || {});
+
+        // Platform array
+        const platformObj = {
+            xpress: banner.platform.includes("xpress"),
+            website: banner.platform.includes("website"),
+        };
+        setPlatform(platformObj);
+
+        // Form state: only necessary fields + countries/states as code/id
+        setForm({
+            text: banner.text || "",
+            active: banner.active,
+            image: banner.image || null,
+            countries: (banner.countries || []).map(c => c.countryCode),
+            states: (banner.states || []).map(s => s.stateId),
+        });
+
+        // Positions
+        const cNumbers = {};
+        (banner.countries || []).forEach(c => {
+            cNumbers[c.countryCode] = c.position;
+        });
+        setCountryNumbers(cNumbers);
+
+        const sNumbers = {};
+        (banner.states || []).forEach(s => {
+            sNumbers[s.stateId] = s.position;
+        });
+        setStateNumbers(sNumbers);
+
         setIsModalOpen(true);
     };
 
     useEffect(() => {
         dispatch(fetchStates());
+        dispatch(fetchBanners());
     }, [dispatch]);
 
     useEffect(() => {
@@ -80,7 +112,7 @@ const BannerPage = () => {
                     const currencySymbol =
                         c.currencies && currencyKey && c.currencies[currencyKey]?.symbol
                             ? c.currencies[currencyKey].symbol
-                            : ""; // fallback to empty string if not available
+                            : "";
 
                     return {
                         code: c.cca3,
@@ -100,68 +132,328 @@ const BannerPage = () => {
         fetchCountries();
     }, []);
 
-    const handleSave = () => {
+    const handleImageUpload = async (file) => {
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+
+        let data;
+        try {
+            data = await res.json();
+        } catch (err) {
+            throw new Error("Server did not return valid JSON");
+        }
+
+        if (!res.ok) throw new Error(data.message || "Upload failed");
+
+        return data.urls;
+    };
+
+    const handleSave = async () => {
         if (!form.countries.length || !form.states.length) {
             toast.error("Please select at least one country and state");
             return;
         }
 
-        const newBanner = {
-            ...form,
-            platform,
-            countryNumbers,
-            stateNumbers
-        };
-
-        if (modalType === "add") {
-            setBanners([...banners, newBanner]);
-            toast.success("Banner added successfully");
-        } else {
-            const updated = [...banners];
-            updated[editIndex] = newBanner;
-            setBanners(updated);
-            toast.success("Banner updated successfully");
+        if (!platform.xpress && !platform.website) {
+            toast.error("Please select at least one platform");
+            return;
         }
 
-        setIsModalOpen(false);
+        let imageUrl = null;
+
+        if (form.image && typeof form.image !== "string") {
+            imageUrl = await handleImageUpload(form.image);
+        }
+
+
+
+        const formData = new FormData();
+
+        formData.append("text", form.text);
+        formData.append("active", String(form.active));
+        formData.append("platform", JSON.stringify(platform));
+        formData.append("countries", JSON.stringify(form.countries));
+        formData.append("states", JSON.stringify(form.states));
+        formData.append("countryNumbers", JSON.stringify(countryNumbers));
+        formData.append("stateNumbers", JSON.stringify(stateNumbers));
+
+        if (imageUrl) {
+            formData.append("image", imageUrl);
+        } else if (typeof form.image === "string") {
+            formData.append("image", form.image); // existing URL
+        }
+
+        try {
+            if (modalType === "add") {
+                await dispatch(createBanner(formData)).unwrap();
+                toast.success("Banner created successfully");
+            } else {
+                formData.append("id", banners[editIndex].id);
+                await dispatch(updateBanner(formData)).unwrap();
+                toast.success("Banner updated successfully");
+            }
+
+            setIsModalOpen(false);
+        } catch (err) {
+            toast.error(err)
+        }
     };
 
-    const handleDelete = (index) => {
-        const updated = banners.filter((_, i) => i !== index);
-        setBanners(updated);
-        toast.success("Banner deleted successfully");
+    const openDeleteModal = (banner) => {
+        setSelectedBanner(banner);
+        setIsDeleteModalOpen(true);
     };
 
-    const toggleSelect = (value, list, setList, numbers, setNumbers) => {
+    const handleConfirmDelete = async () => {
+        if (!selectedBanner) return;
+
+        try {
+            await dispatch(deleteBanner(selectedBanner.id)).unwrap();
+            toast.success("Banner deleted");
+            setIsDeleteModalOpen(false);
+            setSelectedBanner(null);
+        } catch (err) {
+            toast.error("Failed to delete banner");
+        }
+    };
+
+    const getTakenPositions = (idList, numbers, existingBanners, type, itemId) => {
+        console.log("========== getTakenPositions ==========");
+        console.log("Type:", type);
+        console.log("ItemId:", itemId);
+        console.log("Existing Banners:", existingBanners);
+        console.log("Numbers (modal):", numbers);
+        console.log("ID List:", idList);
+
+        const existingPositions = existingBanners.flatMap((b, bannerIndex) => {
+            console.log(`-- Banner ${bannerIndex} --`, b);
+
+            const items = type === "country" ? b.countries : b.states;
+            console.log(`Raw items for type '${type}':`, items);
+
+            if (!items) return [];
+
+            const filtered = items.filter((i, itemIndex) => {
+                if (type === 'state') return i.stateId === itemId;
+                if (type === 'country') return String(i.countryCode).trim().toUpperCase() === String(itemId).trim().toUpperCase();
+            });
+
+            console.log(`Filtered positions for this banner:`, filtered.map(i => i.position));
+
+            return filtered.map(i => i.position);
+        });
+
+        const modalPositions = Object.entries(numbers)
+            .filter(([key, val]) => key === itemId)
+            .map(([key, val]) => val);
+
+        const combinedPositions = [...new Set([...existingPositions, ...modalPositions])];
+        console.log("Positions from existing banners:", existingPositions);
+        console.log("Positions from modal numbers:", modalPositions);
+        console.log("Combined taken positions:", combinedPositions);
+        console.log("======================================");
+
+        return combinedPositions;
+    };
+
+
+
+
+    const toggleSelect = (value, list, setList, numbers, setNumbers, type) => {
         if (list.includes(value)) {
-            setList(list.filter((v) => v !== value));
+            // Remove
+            setList(list.filter(v => v !== value));
             const updatedNumbers = { ...numbers };
             delete updatedNumbers[value];
             setNumbers(updatedNumbers);
         } else {
-            setList([...list, value]);
-            setNumbers({ ...numbers, [value]: 1 });
+            // Add
+            const updatedList = [...list, value];
+
+            // Important: pass updatedList
+            const takenPositions = getTakenPositions(updatedList, numbers, banners, type, value);
+
+            // Find next available position
+            let newPosition = 1;
+            while (takenPositions.includes(newPosition)) {
+                newPosition++;
+            }
+
+            setList(updatedList);
+            setNumbers({ ...numbers, [value]: newPosition });
         }
     };
+
+
+    // 1. Create a map: stateId -> all assigned positions
+    const statePositionMap = {};
+    banners.forEach(banner => {
+        (banner.states || []).forEach(s => {
+            const stateName = s.state?.name || `State ${s.stateId}`;
+            if (!statePositionMap[stateName]) statePositionMap[stateName] = [];
+            statePositionMap[stateName].push(s.position);
+        });
+    });
+
+    // 2. For each state, find missing positions
+    const missingStateDetails = [];
+
+    states.forEach(s => {
+        const stateName = s.name;
+        const assignedPositions = statePositionMap[stateName] || [];
+        if (assignedPositions.length === 0) return; // skip if no banners yet
+
+        const maxPos = Math.max(...assignedPositions);
+
+        for (let i = 1; i <= maxPos; i++) {  // <-- 1 se start karenge
+            if (!assignedPositions.includes(i)) {
+                missingStateDetails.push({ position: i, name: stateName });
+            }
+        }
+    });
+
+    console.log(missingStateDetails);
+
+
+    // Same for countries
+    const countryPositions = banners.flatMap(b => b.countries.map(c => c.position));
+    const maxCountryPosition = Math.max(...countryPositions, 0);
+    const missingCountryPositions = [];
+    for (let i = 1; i <= maxCountryPosition; i++) {
+        if (!countryPositions.includes(i)) missingCountryPositions.push(i);
+    }
+
+    // Create a map: countryCode -> all assigned positions
+    const countryPositionMap = {};
+    banners.forEach(b => {
+        (b.countries || []).forEach(c => {
+            const countryName = countries.find(ct => ct.code === c.countryCode)?.name || c.countryCode;
+            if (!countryPositionMap[countryName]) countryPositionMap[countryName] = [];
+            countryPositionMap[countryName].push(c.position);
+        });
+    });
+
+    // Find missing positions for each country
+    const missingCountryDetails = [];
+    Object.entries(countryPositionMap).forEach(([countryName, assignedPositions]) => {
+        const maxPos = Math.max(...assignedPositions, 0);
+        for (let i = 1; i <= maxPos; i++) { // 1 se max tak
+            if (!assignedPositions.includes(i)) {
+                missingCountryDetails.push({ position: i, name: countryName });
+            }
+        }
+    });
+
+    console.log("Missing country positions:", missingCountryDetails);
+
+    const filteredBanners = banners.filter((b) => {
+        // 🟢 Country filter
+        if (selectedCountry) {
+            return b.countries?.some(
+                (c) => c.countryCode === selectedCountry
+            );
+        }
+
+        // 🟢 State filter
+        if (selectedState) {
+            return b.states?.some(
+                (s) => String(s.stateId) === String(selectedState)
+            );
+        }
+
+        return true; // no filter
+    });
+
 
     return (
         <DefaultPageAdmin>
             {/* HEADER */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
                 <h1 className="text-2xl font-bold text-gray-800">Banners</h1>
-                <button
-                    onClick={openAddModal}
-                    className="flex items-center gap-2 bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg cursor-pointer"
-                >
-                    <Plus className="w-5 h-5" /> Add Banner
-                </button>
+
+                <div className="flex items-center gap-3">
+                    {/* COUNTRY FILTER */}
+                    {!selectedState && (
+                        <select
+                            value={selectedCountry}
+                            onChange={(e) => setSelectedCountry(e.target.value)}
+                            className="border rounded px-3 py-2 text-sm"
+                        >
+                            <option value="">Filter by Country</option>
+                            {countries.map((c) => (
+                                <option key={c.code} value={c.code}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+
+                    {/* STATE FILTER */}
+                    {!selectedCountry && (
+                        <select
+                            value={selectedState}
+                            onChange={(e) => setSelectedState(e.target.value)}
+                            className="border rounded px-3 py-2 text-sm"
+                        >
+                            <option value="">Filter by State</option>
+                            {states.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                    {s.name}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+
+                    {/* CLEAR FILTER */}
+                    {(selectedCountry || selectedState) && (
+                        <button
+                            onClick={() => {
+                                setSelectedCountry("");
+                                setSelectedState("");
+                            }}
+                            className="text-sm text-red-600 underline"
+                        >
+                            Clear
+                        </button>
+                    )}
+
+                    {/* ADD BANNER */}
+                    <button
+                        onClick={openAddModal}
+                        className="flex items-center gap-2 bg-gray-600 hover:bg-gray-800 text-white px-4 py-2 rounded-lg"
+                    >
+                        <Plus className="w-5 h-5" /> Add Banner
+                    </button>
+                </div>
             </div>
+
+
+            {missingStateDetails.length > 0 && (
+                <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded mb-4">
+                    Missing state positions:{" "}
+                    {missingStateDetails.map(d => `${d.position} (${d.name})`).join(", ")}
+                </div>
+            )}
+
+
+            {missingCountryDetails.length > 0 && (
+                <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded mb-4">
+                    Missing country positions:{" "}
+                    {missingCountryDetails
+                        .map(d => `${d.position} (${d.name})`)
+                        .join(", ")}
+                </div>
+            )}
+
 
             {/* TABLE */}
             <div className="bg-white rounded-lg shadow overflow-x-auto">
                 <table className="min-w-full divide-y">
                     <thead className="bg-gray-50">
                         <tr>
+                            <th className="px-4 py-3 text-left text-xs">S.no</th>
                             <th className="px-4 py-3 text-left text-xs">Image</th>
                             <th className="px-4 py-3 text-left text-xs">Platform</th>
                             <th className="px-4 py-3 text-left text-xs">Country</th>
@@ -173,29 +465,49 @@ const BannerPage = () => {
                     </thead>
 
                     <tbody>
-                        {banners.map((b, idx) => (
+                        {filteredBanners.map((b, idx) => (
                             <tr key={idx} className="border-t hover:bg-gray-50">
+                                <td className="px-4 py-3">{idx + 1} . </td>
                                 <td className="px-4 py-3">
                                     {b.image && (
                                         <img
-                                            src={URL.createObjectURL(b.image)}
-                                            className="w-20 h-12 object-cover rounded border"
+                                            src={b.image}
+                                            className="w-20 h-20 object-cover rounded border"
                                             alt="banner"
                                         />
                                     )}
                                 </td>
 
-                                <td className="px-4 py-3 text-sm">
-                                    {b.platform.xpress && "QuickGo "}
-                                    {b.platform.website && "Wizard Mall"}
+                                <td className="px-4 py-6 text-sm flex gap-2">
+                                    {b.platform.includes("xpress") && (
+                                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
+                                            Hecate QuickGo
+                                        </span>
+                                    )}
+                                    {b.platform.includes("website") && (
+                                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
+                                            Hecate Wizard Mall
+                                        </span>
+                                    )}
                                 </td>
 
+
                                 <td className="px-4 py-3">
-                                    {b.countries.map((c) => `${c} (${b.countryNumbers[c]})`).join(", ")}
+                                    {b.countries
+                                        ?.map((c) => {
+                                            const country = countries.find((co) => co.code === c.countryCode);
+                                            return `${country ? country.name : c.countryCode} (${c.position})`;
+                                        })
+                                        .join(", ")}
                                 </td>
+
+
                                 <td className="px-4 py-3">
-                                    {b.states.map((s) => `${s} (${b.stateNumbers[s]})`).join(", ")}
+                                    {b.states
+                                        ?.map((s) => `${s.state?.name || s.stateId} (${s.position})`)
+                                        .join(", ")}
                                 </td>
+
 
                                 <td className="px-4 py-3">{b.text}</td>
 
@@ -215,14 +527,14 @@ const BannerPage = () => {
                                     <div className="flex gap-4">
                                         <button
                                             onClick={() => openEditModal(idx)}
-                                            className="flex items-center gap-1 text-blue-600 hover:underline"
+                                            className="flex items-center gap-1 text-blue-600  cursor-pointer"
                                         >
                                             <Edit className="w-4 h-4" /> Edit
                                         </button>
 
                                         <button
-                                            onClick={() => handleDelete(idx)}
-                                            className="flex items-center gap-1 text-red-600 hover:underline"
+                                            onClick={() => openDeleteModal(b)}
+                                            className="flex items-center gap-1 text-red-600  cursor-pointer"
                                         >
                                             <Trash2 className="w-4 h-4" /> Delete
                                         </button>
@@ -231,7 +543,7 @@ const BannerPage = () => {
                             </tr>
                         ))}
 
-                        {banners.length === 0 && (
+                        {filteredBanners.length === 0 && (
                             <tr>
                                 <td colSpan={7} className="text-center py-6 text-gray-400">
                                     No banners found
@@ -289,11 +601,19 @@ const BannerPage = () => {
 
                             <label className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg h-36 cursor-pointer hover:border-blue-400 transition">
                                 {form.image ? (
-                                    <img
-                                        src={URL.createObjectURL(form.image)}
-                                        className="h-full object-contain rounded"
-                                        alt="preview"
-                                    />
+                                    typeof form.image === "string" ? (
+                                        <img
+                                            src={form.image}
+                                            className="h-full object-contain rounded"
+                                            alt="preview"
+                                        />
+                                    ) : (
+                                        <img
+                                            src={URL.createObjectURL(form.image)}
+                                            className="h-full object-contain rounded"
+                                            alt="preview"
+                                        />
+                                    )
                                 ) : (
                                     <div className="flex flex-col items-center text-gray-400">
                                         <ImageIcon className="w-8 h-8 mb-2" />
@@ -301,6 +621,7 @@ const BannerPage = () => {
                                         <p className="text-xs">(PNG, JPG, WEBP)</p>
                                     </div>
                                 )}
+
 
                                 <input
                                     type="file"
@@ -339,7 +660,9 @@ const BannerPage = () => {
                                                         form.countries,
                                                         (val) => setForm({ ...form, countries: val }),
                                                         countryNumbers,
-                                                        setCountryNumbers
+                                                        setCountryNumbers,
+                                                        "country",
+                                                        banners
                                                     )}
                                                 />
                                                 <span>{c.name}</span>
@@ -365,20 +688,23 @@ const BannerPage = () => {
                                     <div className="mt-2">
                                         <p className="text-sm font-semibold text-gray-700">Selected Countries:</p>
                                         <div className="flex flex-wrap gap-2 mt-1">
-                                            {form.countries.map((code) => {
-                                                const country = countries.find((c) => c.code === code);
+                                            {form.countries.map((c, idx) => {
+                                                const countryCode = typeof c === "string" ? c : c.countryCode;
+                                                const country = countries.find((ct) => ct.code === countryCode);
+
                                                 return (
                                                     <span
-                                                        key={code}
+                                                        key={`${countryCode}-${idx}`} // unique key
                                                         className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs flex items-center gap-1"
                                                     >
-                                                        {country?.name || code} ({countryNumbers[code]})
+                                                        {country?.name || countryCode} ({countryNumbers[countryCode]})
                                                     </span>
                                                 );
                                             })}
                                         </div>
                                     </div>
                                 )}
+
                             </div>
 
                             {/* STATES */}
@@ -404,7 +730,9 @@ const BannerPage = () => {
                                                         form.states,
                                                         (val) => setForm({ ...form, states: val }),
                                                         stateNumbers,
-                                                        setStateNumbers
+                                                        setStateNumbers,
+                                                        "state",
+                                                        banners
                                                     )}
                                                 />
                                                 <span>{s.name}</span>
@@ -496,9 +824,74 @@ const BannerPage = () => {
                             </button>
                         </div>
                     </Dialog.Panel>
+
+
                 </div>
             </Dialog>
-        </DefaultPageAdmin>
+
+            <Dialog
+                open={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                className="relative z-50"
+            >
+                <div className="fixed inset-0 bg-black/30" />
+                <div className="fixed inset-0 flex items-center justify-center p-4">
+                    <Dialog.Panel className="bg-white rounded-lg max-w-md w-full p-6">
+                        <Dialog.Title className="text-lg font-bold mb-4">Confirm Delete</Dialog.Title>
+                        <p className="mb-4">Are you sure you want to delete this banner?</p>
+
+                        {/* Countries */}
+                        {/* Countries */}
+                        {selectedBanner?.countries?.length > 0 && (
+                            <div className="mb-3">
+                                <p className="font-semibold">Countries:</p>
+                                <ul className="ml-4">
+                                    {selectedBanner.countries.map((c) => {
+                                        const country = countries.find((co) => co.code === c.countryCode);
+                                        return (
+                                            <li key={c.id}>
+                                                {country ? country.name : c.countryCode} (Position: {c.position})
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        )}
+
+
+                        {/* States */}
+                        {selectedBanner?.states?.length > 0 && (
+                            <div className="mb-3">
+                                <p className="font-semibold">States:</p>
+                                <ul className="ml-4">
+                                    {selectedBanner.states.map((s) => (
+                                        <li key={s.id}>
+                                            {s.state?.name || s.stateId} (Position: {s.position})
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex justify-end gap-2 mt-4">
+                            <button
+                                onClick={() => setIsDeleteModalOpen(false)}
+                                className="border px-4 py-2 rounded cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmDelete}
+                                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                            >
+                                Yes, Delete
+                            </button>
+                        </div>
+                    </Dialog.Panel>
+                </div>
+            </Dialog>
+        </DefaultPageAdmin >
     );
 };
 

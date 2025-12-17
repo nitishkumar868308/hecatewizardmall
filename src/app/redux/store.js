@@ -26,7 +26,7 @@ import dispatchWarehouseReducer from './slices/dispatchUnitsWareHouse/dispatchUn
 import delhiStoreReducer from './slices/delhiStore/delhiStoreSlice';
 import variationReducer from './slices/variationDelete/variationDeleteSlice';
 import chatReducer from './slices/chat/chatSlice';
-
+import bannerReducer from "./slices/banners/bannersSlice";
 
 // import updateUserReducer from './slices/userSlice';
 
@@ -59,6 +59,7 @@ const store = configureStore({
         delhiStore: delhiStoreReducer,
         variation: variationReducer,
         chat: chatReducer,
+        banner: bannerReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

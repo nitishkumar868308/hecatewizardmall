@@ -370,6 +370,7 @@ model State {
   createdAt DateTime @default(now())
   categories Category[] @relation("CategoryStates")
   subcategories Subcategory[]  @relation("SubcategoryStates")
+  banners BannerState[]
 }
 
 model WareHouse {
@@ -456,3 +457,39 @@ model ChatMessage {
 }
 
 
+model Banner {
+  id         Int      @id @default(autoincrement())
+  text       String?
+  image      String?
+  platform   String[] // ["XPRESS", "WEBSITE"]
+  active     Boolean  @default(true)
+  deleted    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  countries  BannerCountry[]
+  states     BannerState[]
+}
+
+model BannerCountry {
+  id        Int    @id @default(autoincrement())
+  bannerId  Int
+  countryCode String // "IND", "USA"
+  position  Int      // number/order
+
+  banner Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+
+  @@unique([bannerId, countryCode])
+}
+
+model BannerState {
+  id        Int @id @default(autoincrement())
+  bannerId  Int
+  stateId   Int
+  position  Int
+
+  banner Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  state  State  @relation(fields: [stateId], references: [id])
+
+  @@unique([bannerId, stateId])
+}
