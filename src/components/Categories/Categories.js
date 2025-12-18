@@ -1340,6 +1340,21 @@ const Categories = () => {
     const productsPerPage = 6;
     const [selectedAlphabet, setSelectedAlphabet] = useState(null);
     const { dispatches } = useSelector((state) => state.dispatchWarehouse);
+    const [categoryVariations, setCategoryVariations] = useState({});
+    const [selectedVariations, setSelectedVariations] = useState({});
+
+    const [activeFilter, setActiveFilter] = useState(null);
+
+    const [tempFilters, setTempFilters] = useState({
+        category: selectedCategory,
+        subcategory: selectedSubcategory,
+        price: priceRange,
+        sortBy,
+        tag: selectedTag,
+        alphabet: selectedAlphabet || null,
+    });
+
+
     console.log("dispatches", dispatches)
     const isXpress = pathname.includes("/hecate-quickGo");
     useEffect(() => {
@@ -1352,6 +1367,37 @@ const Categories = () => {
         dispatch(fetchTags());
         dispatch(fetchDispatches())
     }, [dispatch]);
+
+    useEffect(() => {
+        if (selectedCategory === "All") {
+            setCategoryVariations({});
+            setSelectedVariations({});
+            return;
+        }
+
+        const catProducts = products.filter(p => p.categoryId === selectedCategory);
+
+        const variationsObj = {};
+
+        catProducts.forEach(p => {
+            p.variations?.forEach(v => {
+                // v.variationName: "Color: Red / Type of wax: Soya Blended Wax"
+                const parts = v.variationName?.split(" / ") || [];
+                parts.forEach(part => {
+                    const [varName, value] = part.split(":").map(str => str.trim());
+                    if (!variationsObj[varName]) variationsObj[varName] = [];
+                    if (!variationsObj[varName].includes(value)) {
+                        variationsObj[varName].push(value);
+                    }
+                });
+            });
+        });
+
+        setCategoryVariations(variationsObj);
+        setSelectedVariations({});
+    }, [selectedCategory, products]);
+
+
 
     useEffect(() => {
         const handleResize = () => setIsDesktop(window.innerWidth >= 768);
@@ -1380,62 +1426,6 @@ const Categories = () => {
         );
         setSelectedSubcategory(sub ? sub.id : "All");
     }, [searchParams, categories, subcategories]);
-
-    // Filter products
-    // const baseFiltered = products
-    //     .filter(
-    //         (p) =>
-    //             p.active &&
-    //             (selectedCategory === "All" || p.categoryId === selectedCategory) &&
-    //             (selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory)
-    //     )
-    //     .filter((p) => p.price <= priceRange)
-    //     .sort((a, b) =>
-    //         sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
-    //     );
-    // const baseFiltered = products
-    //     .filter((p) => {
-    //         const matchCategory =
-    //             selectedCategory === "All" || p.categoryId === selectedCategory;
-    //         const matchSubcategory =
-    //             selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory;
-    //         const matchTag =
-    //             selectedTag === "All" ||
-    //             (Array.isArray(p.tags)
-    //                 ? p.tags.some(
-    //                     (t) => (String(t?.name || t || "")).toLowerCase() === selectedTag.toLowerCase()
-    //                 )
-    //                 : false);
-
-
-    //         return p.active && matchCategory && matchSubcategory && matchTag && p.price <= priceRange;
-    //     })
-    //     .sort((a, b) =>
-    //         sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
-    //     );
-    // const baseFiltered = products
-    //     .filter((p) => {
-    //         const matchCategory =
-    //             selectedCategory === "All" || p.categoryId === selectedCategory;
-    //         const matchSubcategory =
-    //             selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory;
-    //         const matchTag =
-    //             selectedTag === "All" ||
-    //             (Array.isArray(p.tags)
-    //                 ? p.tags.some(
-    //                     (t) => (String(t?.name || t || "")).toLowerCase() === selectedTag.toLowerCase()
-    //                 )
-    //                 : false);
-
-    //         // Platform filter
-    //         const matchPlatform = isXpress ? p.platform.includes("xpress") : p.platform.includes("website");
-
-    //         return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && p.price <= priceRange;
-    //     })
-    //     .sort((a, b) =>
-    //         sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
-    //     );
-    // Filter products
 
     const selectedWarehouseId = typeof window !== "undefined" ? localStorage.getItem("warehouseId") : null;
 
@@ -1482,40 +1472,19 @@ const Categories = () => {
                 ? warehouseProductIds?.includes(p.id)
                 : true;
 
-            return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && matchWarehouse && p.price <= priceRange;
+            const matchVariations = Object.entries(selectedVariations).every(
+                ([varName, value]) => {
+                    if (!value) return true; // no selection
+                    return p.variations?.some(v => v.name === varName && v.value === value);
+                }
+            );
+
+            return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && matchWarehouse && matchVariations && p.price <= priceRange;
         })
         .sort((a, b) =>
             sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
         );
-        console.log("baseFiltered" , baseFiltered)
-
-    // const baseFiltered = products
-    //     .filter((p) => {
-    //         const matchCategory =
-    //             selectedCategory === "All" || p.categoryId === selectedCategory;
-    //         const matchSubcategory =
-    //             selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory;
-
-    //         const matchTag =
-    //             selectedTag === "All"
-    //                 ? true
-    //                 : (Array.isArray(p.tags) ? p.tags.some((t) => {
-    //                     // Only match if tag exists in official tags
-    //                     const officialTagNames = tags.map(tag => tag.name.toLowerCase());
-    //                     return officialTagNames.includes((t?.name || t || "").toLowerCase()) &&
-    //                         (t?.name || t || "").toLowerCase() === selectedTag.toLowerCase();
-    //                 }) : false);
-
-    //         const matchPlatform = isXpress ? p.platform.includes("xpress") : p.platform.includes("website");
-
-    //         return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && p.price <= priceRange;
-    //     })
-    //     .sort((a, b) =>
-    //         sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
-    //     );
-
-
-
+    console.log("baseFiltered", baseFiltered)
 
     // Determine if we should show subcategory cards instead of products
     const showSubcategoryCards =
@@ -1628,7 +1597,7 @@ const Categories = () => {
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro relative">
             {/* Toggle Filters for Mobile */}
-            {!isDesktop && (
+            {/* {!isDesktop && (
                 <div className="mb-4 flex justify-end">
                     <button
                         onClick={() => setShowFilters(!showFilters)}
@@ -1637,7 +1606,20 @@ const Categories = () => {
                         {showFilters ? "Hide Filters" : "Show Filters"}
                     </button>
                 </div>
+            )} */}
+            {!isDesktop && (
+                <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[90%]">
+                    <button
+                        onClick={() => setShowFilters(true)}
+                        className="w-full bg-gray-900 text-white py-3 rounded-lg shadow-lg"
+                    >
+                        Filters
+                    </button>
+                </div>
             )}
+
+
+
 
             <div className={`flex ${isDesktop ? "flex-row gap-6" : "flex-col"}`}>
                 {/* Sidebar Filters */}
@@ -1697,6 +1679,41 @@ const Categories = () => {
                             </ul>
                         </div>
 
+                        {/* Category Variations */}
+                        {Object.keys(categoryVariations).length > 0 && (
+                            <div className="mb-4">
+                                {Object.entries(categoryVariations).map(([varName, varValues]) => (
+                                    <div key={varName} className="mb-2">
+                                        <h3 className="font-semibold mb-1">{varName}</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {varValues.map(value => {
+                                                const isSelected = selectedVariations[varName] === value;
+                                                return (
+                                                    <button
+                                                        key={`${varName}-${value}`} // ✅ Unique key
+                                                        onClick={() => {
+                                                            setSelectedVariations(prev => ({
+                                                                ...prev,
+                                                                [varName]: prev[varName] === value ? null : value
+                                                            }));
+                                                        }}
+                                                        className={`px-2 py-1 rounded border transition ${isSelected
+                                                            ? "bg-blue-600 text-white"
+                                                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                                            }`}
+                                                    >
+                                                        {value}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+
+
                         {/* Tags */}
                         <div>
                             <h3 className="font-semibold mb-2">Tags</h3>
@@ -1755,7 +1772,7 @@ const Categories = () => {
                 )}
 
                 {/* Products or Subcategory Grid */}
-                <div className="w-full md:w-3/4 relative">
+                <div className="w-full md:w-3/4 relative pt-28 md:pt-0">
                     {showSubcategoryCards ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 cursor-pointer">
                             {displayedItems.map((sub) => (
@@ -1956,29 +1973,7 @@ const Categories = () => {
                         })}
                     </div>
                 )}
-
-
-                {/* Mobile Alphabet Sidebar */}
                 {/* {!isDesktop && (
-                    <div className="fixed right-0 z-30 cursor-pointer  flex flex-col gap-5 p-1 overflow-y-auto">
-                        {availableAlphabets.map((letter) => (
-                            <button
-                                key={letter}
-                                onClick={() => setSelectedAlphabet(letter)}
-                                className={`
-          text-sm font-semibold t
-          ${selectedAlphabet === letter
-                                        ? "  "
-                                        : "bg-gray-400 text-white"
-                                    }
-        `}
-                            >
-                                {letter}
-                            </button>
-                        ))}
-                    </div>
-                )} */}
-                {!isDesktop && (
                     <div className="fixed right-0 z-30 cursor-pointer flex flex-col gap-5 p-1 overflow-y-auto">
                         {availableAlphabets.map((letter) => (
                             <button
@@ -1996,7 +1991,225 @@ const Categories = () => {
                             </button>
                         ))}
                     </div>
+                )} */}
+
+
+                {/* Mobile Filters Modal */}
+                {!isDesktop && showFilters && (
+                    <div className="fixed inset-0 z-[999] bg-white flex flex-col">
+
+                        {/* HEADER */}
+                        <div className="flex items-center justify-between px-4 py-3 border-b">
+                            <h2 className="text-lg font-semibold">Filters</h2>
+                            <button onClick={() => setShowFilters(false)}>✕</button>
+                        </div>
+
+                        {/* BODY */}
+                        <div className="flex flex-1 overflow-hidden">
+
+                            {/* LEFT PANEL */}
+                            <div className="w-1/3 border-r bg-gray-50">
+                                {[
+                                    { key: "category", label: "Category" },
+                                    { key: "price", label: "Price" },
+                                    { key: "alphabet", label: "Alphabet" },
+                                    { key: "tags", label: "Tags" },
+                                    { key: "sort", label: "Sort By" },
+                                ].map(({ key, label }) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setActiveFilter(key)}
+                                        className={`w-full text-left px-3 py-3 text-sm border-b
+        ${activeFilter === key
+                                                ? "bg-white font-semibold text-black"
+                                                : "text-gray-600"}
+      `}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+
+
+                            <div className="flex-1 p-4 overflow-y-auto">
+                                {!activeFilter && (
+                                    <div className="flex items-center justify-center h-full text-center text-gray-400 text-sm">
+                                        Select a filter from the left to see options here.
+                                    </div>
+                                )}
+
+                                {activeFilter === "category" && (
+                                    <div className="space-y-2">
+                                        <button
+                                            onClick={() =>
+                                                setTempFilters((p) => ({
+                                                    ...p,
+                                                    category: "All",
+                                                    subcategory: "All",
+                                                }))
+                                            }
+                                            className={`block py-2 font-medium ${tempFilters.category === "All" ? "text-black font-semibold" : "text-gray-600"}`}
+                                        >
+                                            All Categories
+                                        </button>
+
+                                        {categories.map((cat) => {
+                                            const isOpen = tempFilters.category === cat.id;
+                                            return (
+                                                <div key={cat.id} className="border-b">
+                                                    <button
+                                                        onClick={() =>
+                                                            setTempFilters((p) => ({
+                                                                ...p,
+                                                                category: isOpen ? null : cat.id,
+                                                                subcategory: null,
+                                                            }))
+                                                        }
+                                                        className="w-full flex justify-between py-3 font-medium"
+                                                    >
+                                                        {cat.name} <span>{isOpen ? "−" : "+"}</span>
+                                                    </button>
+
+                                                    {isOpen && (
+                                                        <div className="pl-4 pb-3 space-y-2">
+                                                            {subcategories.filter((s) => s.categoryId === cat.id).map((sub) => (
+                                                                <button
+                                                                    key={sub.id}
+                                                                    onClick={() =>
+                                                                        setTempFilters((p) => ({
+                                                                            ...p,
+                                                                            subcategory: sub.id,
+                                                                        }))
+                                                                    }
+                                                                    className={`block text-sm ${tempFilters.subcategory === sub.id ? "font-semibold text-black" : "text-gray-600"}`}
+                                                                >
+                                                                    {sub.name}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {activeFilter === "tags" && (
+                                    <div className="space-y-2">
+                                        <button
+                                            onClick={() => setTempFilters((p) => ({ ...p, tag: "All" }))}
+                                            className={`block text-sm ${tempFilters.tag === "All" ? "font-semibold text-black" : "text-gray-600"}`}
+                                        >
+                                            All Tags
+                                        </button>
+
+                                        {displayedTags.map((tag) => (
+                                            <button
+                                                key={tag}
+                                                onClick={() => setTempFilters((p) => ({ ...p, tag }))}
+                                                className={`block text-sm ${tempFilters.tag === tag ? "font-semibold text-black" : "text-gray-600"}`}
+                                            >
+                                                {tag}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* ALPHABET */}
+                                {activeFilter === "alphabet" && (
+                                    <div className="flex flex-wrap gap-2 justify-start">
+                                        {availableAlphabets.map((letter) => (
+                                            <button
+                                                key={letter}
+                                                onClick={() =>
+                                                    setTempFilters((p) => ({
+                                                        ...p,
+                                                        alphabet: p.alphabet === letter ? null : letter,
+                                                    }))
+                                                }
+                                                className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold transition-all duration-300
+                    ${tempFilters.alphabet === letter
+                                                        ? "bg-gray-500 text-white shadow-lg scale-110"
+                                                        : "bg-gray-400 text-white hover:bg-gray-500 hover:scale-105"
+                                                    }`}
+                                            >
+                                                {letter}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* PRICE */}
+                                {activeFilter === "price" && (
+                                    <div>
+                                        <p className="font-medium mb-2">
+                                            Price: ₹{tempFilters.price}
+                                        </p>
+                                        <input
+                                            type="range"
+                                            min={0}
+                                            max={highestPrice}
+                                            value={tempFilters.price}
+                                            onChange={(e) =>
+                                                setTempFilters((p) => ({
+                                                    ...p,
+                                                    price: Number(e.target.value),
+                                                }))
+                                            }
+                                            className="w-full"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* SORT */}
+                                {activeFilter === "sort" && (
+                                    <select
+                                        value={tempFilters.sortBy}
+                                        onChange={(e) =>
+                                            setTempFilters((p) => ({
+                                                ...p,
+                                                sortBy: e.target.value,
+                                            }))
+                                        }
+                                        className="w-full border p-2 rounded"
+                                    >
+                                        {sortOptions.map((opt) => (
+                                            <option key={opt}>{opt}</option>
+                                        ))}
+                                    </select>
+                                )}
+
+
+                            </div>
+
+                        </div>
+                        <div className="flex border-t">
+                            <button
+                                onClick={() => setShowFilters(false)}
+                                className="w-1/2 py-3 text-center text-gray-600"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setSelectedCategory(tempFilters.category);
+                                    setSelectedSubcategory(tempFilters.subcategory);
+                                    setPriceRange(tempFilters.price);
+                                    setSortBy(tempFilters.sortBy);
+                                    setSelectedTag(tempFilters.tag);
+                                    setShowFilters(false);
+                                }}
+                                className="w-1/2 py-3 bg-black text-white font-semibold"
+                            >
+                                Apply
+                            </button>
+                        </div>
+                        {/* FOOTER */}
+
+                    </div>
                 )}
+
 
             </div>
         </div>

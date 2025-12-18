@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { ShoppingCart, User, Menu, X, Search, LogOut, LayoutDashboard, Trash } from "lucide-react";
+import { ShoppingCart, User, Menu, X, Search, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Login from "./Login";
@@ -30,7 +30,6 @@ const Header = () => {
     const pathname = usePathname();
     const [active, setActive] = useState("Home");
     const [expanded, setExpanded] = useState(null);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [open, setOpen] = useState(false);
@@ -42,6 +41,13 @@ const Header = () => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [websiteExpandedId, setWebsiteExpandedId] = useState(null);
     const [xpressExpandedId, setXpressExpandedId] = useState(null);
+
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [openCategory, setOpenCategory] = useState(null);
+    const [activeSub, setActiveSub] = useState(null);
+
+
+
 
     const { headers } = useSelector((state) => state.headers);
     const { categories, loading, error } = useSelector((state) => state.category);
@@ -1291,13 +1297,6 @@ const Header = () => {
 
                     {/* Logo */}
                     <div className="flex items-center gap-2">
-                        {/* <Link href="/">
-                            <img
-                                src="/image/HWM LOGO 1 GREY 100.png"
-                                alt="Logo"
-                                className="h-20 w-24 object-contain"
-                            />
-                        </Link> */}
                         <div className="flex items-center gap-2">
                             {isXpress ? (
                                 <Link href="/hecate-quickGo/home">
@@ -1319,51 +1318,6 @@ const Header = () => {
                             )}
                         </div>
                     </div>
-
-                    {/* Navigation Menu (Desktop) */}
-                    {/* <nav className="hidden md:flex flex-1 justify-center">
-                    <ul className="flex items-center gap-6">
-                        {menuItems.map((item) => (
-                            <li key={item}>
-                                <Link href="">
-                                    <button
-                                        onClick={() => handleMenuClick(item)}
-                                        className={`px-4 py-2 rounded-lg font-medium transition cursor-pointer ${active === item
-                                            ? "bg-white text-[#161619]"
-                                            : "text-white hover:bg-gray-700"
-                                            }`}
-                                    >
-                                        {item}
-                                    </button>
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                </nav> */}
-
-                    {/* <nav className="hidden md:flex flex-1 justify-center">
-                        <ul className="flex items-center gap-6">
-                            {menuItems.map((item) => {
-                                // Generate proper href for each item
-                                const href = item === "Home" ? "/" : `/${item.toLowerCase()}`;
-                                const isActive = pathname === href;
-
-                                return (
-                                    <li key={item}>
-                                        <Link
-                                            href={href}
-                                            className={`font-functionPro px-4 py-2 rounded-lg font-medium transition cursor-pointer ${isActive
-                                                ? "bg-white text-[#161619]"
-                                                : "text-white hover:bg-gray-700"
-                                                }`}
-                                        >
-                                            {item}
-                                        </Link>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </nav> */}
 
 
                     <nav className="hidden md:flex flex-1 justify-center relative">
@@ -1482,71 +1436,6 @@ const Header = () => {
                         </ul>
                     </nav>
 
-                    {/* <nav className="hidden md:flex flex-1 justify-center">
-                        <ul className="flex items-center gap-6">
-                            {menuItems.map((item) => {
-                                const href = item === "Home" ? "/" : `/${item.toLowerCase()}`;
-                                const isActive = pathname === href;
-
-                                // Check if item has dropdown
-                                const hasDropdown = dropdownItems && dropdownItems[item]?.length > 0;
-
-                                return (
-                                    <li key={item} className={`relative ${hasDropdown ? "group" : ""}`}>
-                                        {hasDropdown ? (
-                                            <>
-                                                <span
-                                                    className={`font-functionPro px-4 py-2 rounded-lg font-medium transition cursor-pointer inline-block ${isActive ? "bg-white text-[#161619]" : "text-white hover:bg-gray-700"
-                                                        }`}
-                                                >
-                                                    {item}
-                                                </span>
-
-                                          
-                                                <ul className="absolute left-0 mt-2 w-40 bg-white text-gray-800 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all duration-200">
-                                                    {dropdownItems[item].map((subItem) => (
-                                                        <li key={subItem.name} className="px-4 py-2 hover:bg-gray-100 relative group">
-                                                            <Link
-                                                                href={`/${item.toLowerCase()}/${subItem.name.toLowerCase()}`}
-                                                                className="block"
-                                                            >
-                                                                {subItem.name}
-                                                            </Link>
-
-                                                          
-                                                            {/* {subItem.subItems && subItem.subItems.length > 0 && (
-                                                                <ul className="absolute left-full top-0 mt-0 ml-0 w-40 bg-white text-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all duration-200">
-                                                                    {subItem.subItems.map((nested) => (
-                                                                        <li key={nested.name} className="px-4 py-2 hover:bg-gray-100">
-                                                                            <Link
-                                                                                href={`/${item.toLowerCase()}/${subItem.name.toLowerCase()}/${nested.name.toLowerCase()}`}
-                                                                                className="block"
-                                                                            >
-                                                                                {nested.name}
-                                                                            </Link>
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            )} 
-                                                        </li>
-                                                    ))}
-                                                </ul>
-
-                                            </>
-                                        ) : (
-                                            <Link
-                                                href={href}
-                                                className={`font-functionPro px-4 py-2 rounded-lg font-medium transition cursor-pointer ${isActive ? "bg-white text-[#161619]" : "text-white hover:bg-gray-700"
-                                                    }`}
-                                            >
-                                                {item}
-                                            </Link>
-                                        )}
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </nav> */}
 
                     <div className=" sm:hidden flex items-end gap-2">
                         {isXpress ? (
@@ -1957,42 +1846,7 @@ const Header = () => {
                                     </div>
 
 
-                                    {/* Checkout Button */}
-                                    {/* {
-                                        userCartCount > 0 && (
-                                            <div className="mt-4">
-                                                <button
-                                                    onClick={() => {
-                                                        setIsOpen(false);
-                                                        router.push(`/checkout`);
-                                                    }}
-                                                    className="w-full bg-gray-800 text-white py-3 rounded-lg text-lg font-semibold hover:bg-gray-900 transition-colors cursor-pointer"
-                                                >
-                                                    Checkout
-                                                </button>
-                                            </div>
-                                        )
-                                    } */}
-                                    {/* {
-                                        userCartCount > 0 && (
-                                            <div className="mt-4">
-                                                <button
-                                                    onClick={() => {
-                                                        setIsOpen(false);
 
-                                                        const isXpress = pathname.includes("/hecate-quickGo");
-
-                                                        router.push(
-                                                            isXpress ? "/hecate-quickGo/checkout" : "/checkout"
-                                                        );
-                                                    }}
-                                                    className="w-full bg-gray-800 text-white py-3 rounded-lg text-lg font-semibold hover:bg-gray-900 transition-colors cursor-pointer"
-                                                >
-                                                    Checkout
-                                                </button>
-                                            </div>
-                                        )
-                                    } */}
                                     <button
                                         onClick={() => {
                                             setIsOpen(false);
@@ -2014,91 +1868,6 @@ const Header = () => {
                         )
                         }
 
-                        {/* 
-                                        {userCartCount > 0 ? (
-                                            userCart.map((item, index) => {
-                                                const fullProduct = products.find(p => p.id === item.productId);
-                                                return (
-                                                    <div
-                                                        key={item.id}
-                                                        className="relative flex items-center gap-4 p-3 border rounded-lg shadow-sm hover:shadow-md transition bg-gray-50"
-                                                    >
-                                               
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedItemId(item.id); // delete karne wala item
-                                                                setIsConfirmOpen(true);      // modal open
-                                                            }}
-                                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-                                                            title="Remove item"
-                                                        >
-                                                            <Trash className="w-5 h-5" />
-                                                        </button>
-
-                                                        <div className="flex items-center gap-3 cursor-pointer">
-                                                            <Link href={`/product/${item.productId}`} className="flex items-center gap-3" onClick={() => setIsOpen(false)} >
-                                                                <img
-                                                                    src={item.image || "/placeholder.png"}
-                                                                    alt={item.productName}
-                                                                    className="w-16 h-16 object-cover rounded-md border"
-                                                                />
-                                                                <h3 className="text-sm font-semibold text-gray-800 line-clamp-1">
-                                                                    {item.productName}
-                                                                </h3>
-                                                            </Link>
-                                                        </div>
-
-                                                  
-                                                        <div className="flex-1 flex flex-col gap-1 ml-2">
-                                                            <p className="text-xs text-gray-500">
-                                                                {Object.entries(item.attributes || {})
-                                                                    .map(([key, val]) => `${key}: ${val}`)
-                                                                    .join(", ")}
-                                                            </p>
-
-                                                        
-                                                            <div className="flex items-center gap-2 mt-1">
-                                                                <button
-                                                                    className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
-                                                                    onClick={() => updateQuantity(index, -1)}
-                                                                >
-                                                                    -
-                                                                </button>
-                                                                <span className="px-2 text-sm">{item.quantity}</span>
-                                                                <button
-                                                                    className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded hover:bg-gray-300"
-                                                                    onClick={() => updateQuantity(index, 1)}
-                                                                >
-                                                                    +
-                                                                </button>
-                                                            </div>
-
-                                                            <p className="text-sm font-medium text-gray-700 mt-1">
-                                                                {item.currency} {(item.pricePerItem * item.quantity).toFixed(2)}
-                                                            </p>
-                                                        </div>
-
-                                                  <ProductOffers product={fullProduct} quantity={item.quantity} /> 
-
-                                                  
-                                                        <div className="text-sm font-bold text-gray-900 whitespace-nowrap self-center ml-auto">
-                                                            {item.currency} {(item.pricePerItem * item.quantity).toFixed(2)}
-                                                        </div>
-                                                    </div>
-
-
-                                                )
-                                            })
-
-                                        ) : (
-                                            <p className="text-center text-gray-500 mt-10">Your cart is empty</p>
-                                        )} */}
-
-
-                        {/* <button onClick={() => setLoginModalOpen(true)} className="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition text-white font-functionPro">
-                            <User className="h-6 w-6" />
-                            <span className="hidden md:inline font-medium">Login</span>
-                        </button> */}
 
                         < div className="relative" >
                             {!user ? (
@@ -2115,17 +1884,8 @@ const Header = () => {
                                     onMouseEnter={() => setDropdownOpen(true)}
                                     onMouseLeave={() => setDropdownOpen(false)}
                                 >
-                                    {/* <div className="flex items-center gap-2 cursor-pointer hover:text-blue-200 transition text-white font-functionPro">
-                                        <span className="font-medium">Welcome,</span>
-                                        <div className="h-12 w-12 rounded-full bg-gray-500 flex items-center justify-center text-black font-bold">
-                                            {getInitials(user.name)}
-                                        </div>
-                                    </div> */}
                                     <div className="flex items-center gap-3 cursor-pointer group">
 
-                                        {/* <div className="text-white text-sm sm:text-base md:text-lg font-medium">
-                                            Welcome,
-                                        </div> */}
                                         <div className="hidden sm:block text-white text-sm font-medium sm:text-base md:text-lg">
                                             Welcome,
                                         </div>
@@ -2160,21 +1920,6 @@ const Header = () => {
                                                 maxWidth: "90vw",
                                             }}
                                         >
-                                            {/* <Link
-                                                href={
-                                                    user.role === "USER"
-                                                        ? "/dashboard"
-                                                        : "/admin/dashboard"
-                                                }
-                                            >
-                                                <button
-                                                    className="flex items-center gap-2 px-4 py-2 w-full hover:bg-gray-100 cursor-pointer"
-                                                    onClick={() => setDropdownOpen(false)}
-                                                >
-                                                    <LayoutDashboard className="h-4 w-4" />
-                                                    Dashboard
-                                                </button>
-                                            </Link> */}
                                             <Link href={dashboardLink}>
                                                 <button
                                                     className="flex items-center gap-2 px-4 py-2 w-full hover:bg-gray-100 cursor-pointer"
@@ -2215,27 +1960,140 @@ const Header = () => {
 
 
                 {/* Mobile Menu */}
-                {
-                    mobileMenuOpen && (
-                        <div className="md:hidden px-4 pb-3 font-functionPro">
-                            <ul className="flex flex-col gap-3">
-                                {menuItems.map((item) => (
-                                    <li key={item}>
+                {/* {mobileMenuOpen && (
+                    <div className="md:hidden px-4 pb-3 font-functionPro">
+                        <ul className="flex flex-col gap-3">
+                            {menuItems.map((item) => (
+                                <li key={item}>
+                                    <button
+                                        onClick={() => handleMenuClick(item)}
+                                        className={`w-full text-left px-3 py-2 rounded-lg font-medium transition cursor-pointer ${active === item
+                                            ? "bg-white text-[#161619]"
+                                            : "text-white hover:bg-gray-700"
+                                            }`}
+                                    >
+                                        {item}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )} */}
+                {mobileMenuOpen && (
+                    <div className="fixed inset-0 z-[999] md:hidden">
+
+                        {/* BACKDROP */}
+                        <div
+                            className="absolute inset-0 bg-black/50"
+                            onClick={() => setMobileMenuOpen(false)}
+                        />
+
+                        {/* DRAWER */}
+                        <div className="absolute right-0 top-0 h-full w-[85%] bg-[#161619] text-white
+      transform transition-transform duration-300 ease-in-out">
+
+                            {/* HEADER */}
+                            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-700">
+                                <h2 className="text-lg font-semibold">Menu</h2>
+                                <button onClick={() => setMobileMenuOpen(false)}>✕</button>
+                            </div>
+
+                            {/* MENU LIST */}
+                            <div className="p-4 space-y-4 font-functionPro overflow-y-auto h-full pb-20">
+
+                                {/* NORMAL MENU ITEMS */}
+                                {menuItems.map(item => {
+                                    if (item === "Categories") return null;
+
+                                    return (
                                         <button
-                                            onClick={() => handleMenuClick(item)}
-                                            className={`w-full text-left px-3 py-2 rounded-lg font-medium transition cursor-pointer ${active === item
-                                                ? "bg-white text-[#161619]"
-                                                : "text-white hover:bg-gray-700"
-                                                }`}
+                                            key={item}
+                                            onClick={() => {
+                                                handleMenuClick(item);
+                                                setMobileMenuOpen(false);
+                                            }}
+                                            className="w-full text-left text-base font-medium py-2 border-b border-gray-700"
                                         >
                                             {item}
                                         </button>
-                                    </li>
-                                ))}
-                            </ul>
+                                    );
+                                })}
+
+                                {/* CATEGORIES ACCORDION */}
+                                <div>
+                                    <div className="text-sm font-semibold uppercase tracking-wide text-gray-100 py-3 border-b border-gray-700">
+                                        Shop by Category
+                                    </div>
+
+
+                                    {mappedCategories.map(cat => {
+                                        const isOpen = openCategory === cat.id;
+
+                                        return (
+                                            <div key={cat.id} className="border-b border-gray-700">
+                                                {/* CATEGORY HEADER */}
+                                                <button
+                                                    onClick={() => setOpenCategory(isOpen ? null : cat.id)}
+                                                    className={`w-full flex justify-between items-center px-2 py-3 rounded-lg transition
+    ${isOpen ? "bg-white text-black" : "hover:bg-white"}
+  `}
+                                                >
+                                                    <span className="text-sm font-medium">{cat.name}</span>
+
+                                                    <ChevronDown
+                                                        className={`h-5 w-5 transition-transform duration-300
+      ${isOpen ? "rotate-180 text-black" : "text-gray-400"}
+    `}
+                                                    />
+                                                </button>
+
+
+                                                {/* SUB CATEGORIES */}
+                                                <div
+                                                    className={`
+                        overflow-hidden transition-all duration-300
+                        ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}
+                    `}
+                                                >
+                                                    <div className="pl-6 py-2 space-y-1 border-l border-gray-600">
+                                                        {cat.sub.map((sub) => {
+                                                            const isActive = activeSub === sub;
+
+                                                            return (
+                                                                <Link
+                                                                    key={sub}
+                                                                    href={`/categories?category=${encodeURIComponent(
+                                                                        cat.name
+                                                                    )}&subcategory=${encodeURIComponent(sub)}`}
+                                                                    onClick={() => {
+                                                                        setActiveSub(sub);
+                                                                        setMobileMenuOpen(false);
+                                                                    }}
+                                                                    className={`
+                                        block px-2 py-2 rounded-md text-sm
+                                        transition-all
+                                        ${isActive
+                                                                            ? "bg-white text-black font-semibold"
+                                                                            : "text-gray-300 hover:bg-gray-700 hover:text-white"}
+                                    `}
+                                                                >
+                                                                    {sub}
+                                                                </Link>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
-                    )
-                }
+                    </div>
+                )}
+
+
+
             </header >
 
             <Modal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)}>
