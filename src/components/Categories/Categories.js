@@ -1819,7 +1819,7 @@ const Categories = () => {
                                     <span className="mx-1 text-gray-400">{">"}</span>
                                     <span
                                         onClick={() => setSelectedTag(selectedTag)}
-                                        className="cursor-pointer text-gray-600 hover:text-black font-semibold text-black"
+                                        className="cursor-pointer  hover:text-black font-semibold text-black"
                                     >
                                         {selectedTag}
                                     </span>
