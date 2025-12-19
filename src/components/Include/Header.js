@@ -45,7 +45,7 @@ const Header = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [openCategory, setOpenCategory] = useState(null);
     const [activeSub, setActiveSub] = useState(null);
-
+    const [activeMenuItem, setActiveMenuItem] = useState(null);
 
 
 
@@ -2005,19 +2005,35 @@ const Header = () => {
                                 {menuItems.map(item => {
                                     if (item === "Categories") return null;
 
+                                    const itemPath = isXpress
+                                        ? `/hecate-quickGo/${item.toLowerCase()}`
+                                        : `/${item.toLowerCase()}`;
+
+                                    const isActive = isXpress
+                                        ? pathname === itemPath
+                                        : activeMenuItem === item;
+
                                     return (
-                                        <button
+                                        <Link
                                             key={item}
+                                            href={itemPath}
                                             onClick={() => {
-                                                handleMenuClick(item);
+                                                if (!isXpress) setActiveMenuItem(item); // only set state for normal site
+                                                setOpenCategory(null);
+                                                setActiveSub(null);
                                                 setMobileMenuOpen(false);
                                             }}
-                                            className="w-full text-left text-base font-medium py-2 border-b border-gray-700"
+                                            className={`
+                w-full flex justify-between items-center rounded-lg px-2 py-3
+                transition-all
+                ${isActive ? "bg-white text-black" : "text-gray-100 hover:bg-gray-700 hover:text-white"}
+            `}
                                         >
                                             {item}
-                                        </button>
+                                        </Link>
                                     );
                                 })}
+
 
                                 {/* CATEGORIES ACCORDION */}
                                 <div>
@@ -2033,7 +2049,11 @@ const Header = () => {
                                             <div key={cat.id} className="border-b border-gray-700">
                                                 {/* CATEGORY HEADER */}
                                                 <button
-                                                    onClick={() => setOpenCategory(isOpen ? null : cat.id)}
+                                                    onClick={() => {
+                                                        setOpenCategory(isOpen ? null : cat.id);
+                                                        setActiveMenuItem(null);
+                                                    }}
+
                                                     className={`w-full flex justify-between items-center px-2 py-3 rounded-lg transition
     ${isOpen ? "bg-white text-black" : "hover:bg-white"}
   `}
@@ -2062,13 +2082,22 @@ const Header = () => {
                                                             return (
                                                                 <Link
                                                                     key={sub}
-                                                                    href={`/categories?category=${encodeURIComponent(
-                                                                        cat.name
-                                                                    )}&subcategory=${encodeURIComponent(sub)}`}
+                                                                    // href={`/categories?category=${encodeURIComponent(
+                                                                    //     cat.name
+                                                                    // )}&subcategory=${encodeURIComponent(sub)}`}
+                                                                    href={isXpress
+                                                                        ? `/hecate-quickGo/categories?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub)}`
+                                                                        : `/categories?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub)}`}
+                                                                    // onClick={() => {
+                                                                    //     setActiveSub(sub);
+                                                                    //     setMobileMenuOpen(false);
+                                                                    // }}
                                                                     onClick={() => {
                                                                         setActiveSub(sub);
+                                                                        setActiveMenuItem(null);
                                                                         setMobileMenuOpen(false);
                                                                     }}
+
                                                                     className={`
                                         block px-2 py-2 rounded-md text-sm
                                         transition-all

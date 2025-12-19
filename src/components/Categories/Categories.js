@@ -1772,7 +1772,66 @@ const Categories = () => {
                 )}
 
                 {/* Products or Subcategory Grid */}
-                <div className="w-full md:w-3/4 relative pt-28 md:pt-0">
+                <div className="w-full md:w-3/4 relative pt-0 md:pt-0">
+
+                    {/* Breadcrumbs */}
+                    <div className="mb-4">
+                        <div className="flex flex-wrap items-center gap-1 text-sm">
+
+                            {/* All Category */}
+                            <span
+                                onClick={() => {
+                                    setSelectedCategory("All");
+                                    setSelectedSubcategory("All");
+                                }}
+                                className="cursor-pointer text-gray-600 hover:text-black font-medium"
+                            >
+                                All Category
+                            </span>
+
+                            {/* Category */}
+                            {selectedCategory !== "All" && (
+                                <>
+                                    <span className="mx-1 text-gray-400">{">"}</span>
+                                    <span
+                                        onClick={() => setSelectedCategory(selectedCategory)}
+                                        className="cursor-pointer text-gray-600 hover:text-black font-medium"
+                                    >
+                                        {categories.find(c => c.id === selectedCategory)?.name}
+                                    </span>
+                                </>
+                            )}
+
+                            {/* All Tags */}
+                            <>
+                                <span className="mx-1 text-gray-400">{">"}</span>
+                                <span
+                                    onClick={() => setSelectedTag("All")}
+                                    className="cursor-pointer text-gray-600 hover:text-black font-medium"
+                                >
+                                    All Tags
+                                </span>
+                            </>
+
+                            {/* Selected Tag */}
+                            {selectedTag !== "All" && (
+                                <>
+                                    <span className="mx-1 text-gray-400">{">"}</span>
+                                    <span
+                                        onClick={() => setSelectedTag(selectedTag)}
+                                        className="cursor-pointer text-gray-600 hover:text-black font-semibold text-black"
+                                    >
+                                        {selectedTag}
+                                    </span>
+                                </>
+                            )}
+
+                        </div>
+                    </div>
+
+
+
+
                     {showSubcategoryCards ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 cursor-pointer">
                             {displayedItems.map((sub) => (
@@ -1999,9 +2058,14 @@ const Categories = () => {
                     <div className="fixed inset-0 z-[999] bg-white flex flex-col">
 
                         {/* HEADER */}
-                        <div className="flex items-center justify-between px-4 py-3 border-b">
-                            <h2 className="text-lg font-semibold">Filters</h2>
-                            <button onClick={() => setShowFilters(false)}>✕</button>
+                        <div className="flex items-center justify-between px-4 py-4 border-b shadow-sm">
+                            <h2 className="text-lg font-bold text-gray-900">Filters</h2>
+                            <button
+                                onClick={() => setShowFilters(false)}
+                                className="text-gray-600 hover:text-gray-900 text-xl font-semibold"
+                            >
+                                ✕
+                            </button>
                         </div>
 
                         {/* BODY */}
@@ -2019,18 +2083,18 @@ const Categories = () => {
                                     <button
                                         key={key}
                                         onClick={() => setActiveFilter(key)}
-                                        className={`w-full text-left px-3 py-3 text-sm border-b
-        ${activeFilter === key
-                                                ? "bg-white font-semibold text-black"
-                                                : "text-gray-600"}
-      `}
+                                        className={`w-full text-left px-4 py-3 text-sm border-b transition-colors duration-200
+              ${activeFilter === key
+                                                ? "bg-white font-semibold text-gray-900"
+                                                : "text-gray-600 hover:bg-gray-100"
+                                            }`}
                                     >
                                         {label}
                                     </button>
                                 ))}
                             </div>
 
-
+                            {/* RIGHT PANEL */}
                             <div className="flex-1 p-4 overflow-y-auto">
                                 {!activeFilter && (
                                     <div className="flex items-center justify-center h-full text-center text-gray-400 text-sm">
@@ -2038,6 +2102,7 @@ const Categories = () => {
                                     </div>
                                 )}
 
+                                {/* CATEGORY */}
                                 {activeFilter === "category" && (
                                     <div className="space-y-2">
                                         <button
@@ -2048,7 +2113,7 @@ const Categories = () => {
                                                     subcategory: "All",
                                                 }))
                                             }
-                                            className={`block py-2 font-medium ${tempFilters.category === "All" ? "text-black font-semibold" : "text-gray-600"}`}
+                                            className={`block py-2 font-medium ${tempFilters.category === "All" ? "text-black font-semibold" : "text-gray-600 hover:text-gray-900"}`}
                                         >
                                             All Categories
                                         </button>
@@ -2065,7 +2130,7 @@ const Categories = () => {
                                                                 subcategory: null,
                                                             }))
                                                         }
-                                                        className="w-full flex justify-between py-3 font-medium"
+                                                        className="w-full flex justify-between py-3 font-medium text-gray-700 hover:text-gray-900 transition-colors"
                                                     >
                                                         {cat.name} <span>{isOpen ? "−" : "+"}</span>
                                                     </button>
@@ -2081,7 +2146,7 @@ const Categories = () => {
                                                                             subcategory: sub.id,
                                                                         }))
                                                                     }
-                                                                    className={`block text-sm ${tempFilters.subcategory === sub.id ? "font-semibold text-black" : "text-gray-600"}`}
+                                                                    className={`block text-sm transition-colors duration-200 ${tempFilters.subcategory === sub.id ? "font-semibold text-gray-900" : "text-gray-600 hover:text-gray-900"}`}
                                                                 >
                                                                     {sub.name}
                                                                 </button>
@@ -2094,11 +2159,12 @@ const Categories = () => {
                                     </div>
                                 )}
 
+                                {/* TAGS */}
                                 {activeFilter === "tags" && (
                                     <div className="space-y-2">
                                         <button
                                             onClick={() => setTempFilters((p) => ({ ...p, tag: "All" }))}
-                                            className={`block text-sm ${tempFilters.tag === "All" ? "font-semibold text-black" : "text-gray-600"}`}
+                                            className={`block text-sm ${tempFilters.tag === "All" ? "font-semibold text-gray-900" : "text-gray-600 hover:text-gray-900"}`}
                                         >
                                             All Tags
                                         </button>
@@ -2107,7 +2173,7 @@ const Categories = () => {
                                             <button
                                                 key={tag}
                                                 onClick={() => setTempFilters((p) => ({ ...p, tag }))}
-                                                className={`block text-sm ${tempFilters.tag === tag ? "font-semibold text-black" : "text-gray-600"}`}
+                                                className={`block text-sm ${tempFilters.tag === tag ? "font-semibold text-gray-900" : "text-gray-600 hover:text-gray-900"}`}
                                             >
                                                 {tag}
                                             </button>
@@ -2117,7 +2183,7 @@ const Categories = () => {
 
                                 {/* ALPHABET */}
                                 {activeFilter === "alphabet" && (
-                                    <div className="flex flex-wrap gap-2 justify-start">
+                                    <div className="flex flex-wrap gap-2 justify-start mt-2">
                                         {availableAlphabets.map((letter) => (
                                             <button
                                                 key={letter}
@@ -2127,10 +2193,10 @@ const Categories = () => {
                                                         alphabet: p.alphabet === letter ? null : letter,
                                                     }))
                                                 }
-                                                className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold transition-all duration-300
-                    ${tempFilters.alphabet === letter
-                                                        ? "bg-gray-500 text-white shadow-lg scale-110"
-                                                        : "bg-gray-400 text-white hover:bg-gray-500 hover:scale-105"
+                                                className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold transition-all duration-200
+                  ${tempFilters.alphabet === letter
+                                                        ? "bg-gray-700 text-white shadow-lg scale-110"
+                                                        : "bg-gray-300 text-gray-800 hover:bg-gray-400 hover:text-white hover:scale-105"
                                                     }`}
                                             >
                                                 {letter}
@@ -2141,8 +2207,8 @@ const Categories = () => {
 
                                 {/* PRICE */}
                                 {activeFilter === "price" && (
-                                    <div>
-                                        <p className="font-medium mb-2">
+                                    <div className="mt-4">
+                                        <p className="font-medium mb-2 text-gray-700">
                                             Price: ₹{tempFilters.price}
                                         </p>
                                         <input
@@ -2156,7 +2222,7 @@ const Categories = () => {
                                                     price: Number(e.target.value),
                                                 }))
                                             }
-                                            className="w-full"
+                                            className="w-full accent-gray-600"
                                         />
                                     </div>
                                 )}
@@ -2171,22 +2237,21 @@ const Categories = () => {
                                                 sortBy: e.target.value,
                                             }))
                                         }
-                                        className="w-full border p-2 rounded"
+                                        className="w-full border p-2 rounded mt-2"
                                     >
                                         {sortOptions.map((opt) => (
                                             <option key={opt}>{opt}</option>
                                         ))}
                                     </select>
                                 )}
-
-
                             </div>
-
                         </div>
+
+                        {/* FOOTER */}
                         <div className="flex border-t">
                             <button
                                 onClick={() => setShowFilters(false)}
-                                className="w-1/2 py-3 text-center text-gray-600"
+                                className="w-1/2 py-3 text-center text-gray-600 hover:text-gray-900 transition-colors"
                             >
                                 Cancel
                             </button>
@@ -2198,17 +2263,17 @@ const Categories = () => {
                                     setPriceRange(tempFilters.price);
                                     setSortBy(tempFilters.sortBy);
                                     setSelectedTag(tempFilters.tag);
+                                    setSelectedAlphabet(tempFilters.alphabet);
                                     setShowFilters(false);
                                 }}
-                                className="w-1/2 py-3 bg-black text-white font-semibold"
+                                className="w-1/2 py-3 bg-gray-900 text-white font-semibold hover:bg-black transition-colors"
                             >
                                 Apply
                             </button>
                         </div>
-                        {/* FOOTER */}
-
                     </div>
                 )}
+
 
 
             </div>
