@@ -11,6 +11,9 @@ import PendingTabSendToWarehouse from "@/components/Admin/PendingTabSendToWareho
 import DispatchTabToWarehouse from "@/components/Admin/dispatchTabToWarehouse/dispatchTabToWarehouse";
 import { createDispatch, fetchDispatches, updateDispatch, deleteDispatch, finalizeDispatch } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
 import CompletedTab from "@/components/Admin/CompletedTab/CompletedTab";
+import {
+    fetchCategories,
+} from "@/app/redux/slices/addCategory/addCategorySlice";
 
 const SendToWarehousePage = () => {
     const dispatch = useDispatch();
@@ -27,6 +30,7 @@ const SendToWarehousePage = () => {
     const { transfers } = useSelector((state) => state.transferWarehouse);
     const { dispatches } = useSelector((state) => state.dispatchWarehouse);
     const [matchedTransferEntries, setMatchedTransferEntries] = useState([]);
+    const { categories } = useSelector((state) => state.category);
     console.log("dispatches", dispatches)
 
     useEffect(() => {
@@ -34,6 +38,7 @@ const SendToWarehousePage = () => {
         dispatch(fetchTransfers())
         dispatch(fetchAllProducts());
         dispatch(fetchWarehouses());
+        dispatch(fetchCategories())
     }, [dispatch]);
 
 
@@ -679,7 +684,7 @@ const SendToWarehousePage = () => {
                 )}
 
                 {mainTab === "dispatch" && (
-                    <DispatchTabToWarehouse fetchDispatches={fetchDispatches} dispatches={dispatches} warehouses={warehouses} deleteDispatch={deleteDispatch} updateDispatch={updateDispatch} finalizeDispatch={finalizeDispatch} />
+                    <DispatchTabToWarehouse fetchDispatches={fetchDispatches} products={products} categories={categories} transfers={transfers} dispatches={dispatches} warehouses={warehouses} deleteDispatch={deleteDispatch} updateDispatch={updateDispatch} finalizeDispatch={finalizeDispatch} />
                 )}
 
                 {mainTab === "completed" && (

@@ -24,8 +24,10 @@ const AddCategory = () => {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [newCategory, setNewCategory] = useState("");
+    const [hsn, setHsn] = useState("");
     const [editCategory, setEditCategory] = useState({
-        id: null, name: "", image: null, platform: { xpress: false, website: false },
+        id: null, name: "", image: null, hsn: ""
+        , platform: { xpress: false, website: false },
         stateIds: [],
     });
     const [deleteCategoryId, setDeleteCategoryId] = useState(null);
@@ -87,34 +89,6 @@ const AddCategory = () => {
         }
     };
 
-
-
-    // const handleAddCategory = async () => {
-    //     if (!newCategory.trim()) {
-    //         toast.error("Category name cannot be empty");
-    //         return;
-    //     }
-    //     try {
-    //         await dispatch(createCategory({ name: newCategory.trim(), active: true })).unwrap();
-    //         toast.success("Category added successfully");
-    //         setNewCategory("");
-    //         setModalOpen(false);
-    //     } catch (err) {
-    //         toast.error(err.message || "Failed to add category");
-    //     }
-    // };
-
-    // const handleImageUpload = async (file) => {
-    //     if (!file) throw new Error('No file provided');
-
-    //     try {
-    //         const url = await uploadToCloudinary(file, 'products');
-    //         return url;
-    //     } catch (err) {
-    //         console.error('Upload failed:', err);
-    //         throw err;
-    //     }
-    // };
     const handleImageUpload = async (file) => {
         const formData = new FormData();
         formData.append("image", file);
@@ -151,7 +125,7 @@ const AddCategory = () => {
                 name: newCategory.trim(), active: true, image: imageUrl, platform: [
                     ...(platform.xpress ? ["xpress"] : []),
                     ...(platform.website ? ["website"] : [])
-                ], stateIds: selectedStates
+                ], stateIds: selectedStates, hsn: hsn.trim()
             })).unwrap();
             toast.success("Category added successfully");
             await fetchCategories();
@@ -169,36 +143,7 @@ const AddCategory = () => {
     };
 
 
-    // const handleEditCategory = async () => {
-    //     if (!editCategory.name.trim()) {
-    //         toast.error("Category name cannot be empty");
-    //         return;
-    //     }
-    //     setLoading(true);
-    //     let imageUrl = editCategory.image ?? null;
 
-    //     if (newCategoryImage) {
-    //         imageUrl = await handleImageUpload(newCategoryImage);
-    //     }
-
-    //     try {
-    //         await dispatch(
-    //             updateCategory({
-    //                 id: editCategory.id,
-    //                 name: editCategory.name,
-    //                 image: imageUrl,
-    //             })
-    //         ).unwrap();
-
-    //         toast.success("Category updated successfully");
-    //         setEditModalOpen(false);
-    //         setEditCategory({});
-    //     } catch (err) {
-    //         toast.error(err.message || "Failed to update category");
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
     const handleEditCategory = async () => {
         if (!editCategory.name.trim()) {
             toast.error("Category name cannot be empty");
@@ -230,7 +175,8 @@ const AddCategory = () => {
                 name: editCategory.name,
                 image: imageUrl,
                 platform: platformToSend,
-                stateIds: editCategory.stateIds
+                stateIds: editCategory.stateIds,
+                hsn: editCategory.hsn
             })).unwrap();
 
             toast.success("Category updated successfully");
@@ -274,18 +220,12 @@ const AddCategory = () => {
     const filteredCategories = categories.filter((c) =>
         c.name.toLowerCase().includes(search.toLowerCase())
     );
-    // console.log("filteredCategories", filteredCategories)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    // console.log("baseUrl" , baseUrl)
 
-    // console.log("Image Preview URL =>", newCategoryImage
-    //     ? URL.createObjectURL(newCategoryImage)
-    //     : editCategory.image?.startsWith("http")
-    //         ? editCategory.image
-    //         : `${baseUrl}/uploads/${editCategory.image}`);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
     const imageSrc = newCategoryImage
-        ? URL.createObjectURL(newCategoryImage) // preview before upload
-        : editCategory.image;                    // already like /uploads/filename.jpg
+        ? URL.createObjectURL(newCategoryImage)
+        : editCategory.image;
 
     console.log("Image URL =>", imageSrc);
 
@@ -303,6 +243,7 @@ const AddCategory = () => {
             name: c.name,
             image: c.image || null,
             imageFile: null,
+            hsn: c.hsn || "",
             platform: {
                 xpress: c.platform?.includes("xpress") || false,
                 website: c.platform?.includes("website") || false
@@ -428,21 +369,6 @@ const AddCategory = () => {
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex gap-3">
                                             <button
-                                                // onClick={() => {
-                                                //     setEditCategory({
-                                                //         id: c.id,
-                                                //         name: c.name,
-                                                //         image: c.image || null,
-                                                //         platform: c.platform,
-                                                //         stateId: c.stateId,
-                                                //     });
-                                                //     setPlatform({
-                                                //         xpress: c.platform?.includes("xpress"),
-                                                //         website: c.platform?.includes("website"),
-                                                //     });
-                                                //     setNewCategoryImage(null);
-                                                //     setEditModalOpen(true);
-                                                // }}
                                                 onClick={() => openEditModal(c)}
                                                 className="text-blue-500 hover:text-blue-700 cursor-pointer"
                                             >
@@ -470,51 +396,6 @@ const AddCategory = () => {
                 </div>
             </div>
 
-            {/* Add Modal */}
-            {/* {modalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-                        <button
-                            onClick={() => setModalOpen(false)}
-                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                        <h2 className="text-xl font-bold mb-4 text-center">Add New Category</h2>
-                        <input
-                            type="text"
-                            placeholder="Category Name"
-                            value={newCategory}
-                            onChange={(e) => setNewCategory(e.target.value)}
-                            className="border rounded-lg px-4 py-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        />
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                        />
-
-                        {imagePreview && (
-                            <img src={imagePreview} alt="Preview" className="mb-4 w-32 h-32 object-cover rounded-lg" />
-                        )}
-
-                        <div className="flex justify-end gap-2">
-                            <button
-                                onClick={() => setModalOpen(false)}
-                                className="px-4 py-2 rounded-lg border hover:bg-gray-100 cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleAddCategory}
-                                className="px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-800 cursor-pointer"
-                            >
-                                {loading ? "Adding..." : "Add"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )} */}
             {modalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-7 relative">
@@ -620,26 +501,23 @@ const AddCategory = () => {
                             </label>
                         </div>
 
-                        {/* STATE DROPDOWN */}
-                        {/* <div className="mb-3">
+                        {/* HSN CODE */}
+                        <div className="mb-6">
                             <label className="block font-medium mb-2 text-gray-700">
-                                Select State
+                                HSN Code
                             </label>
-
-                            <select
-                                value={selectedState}
-                                onChange={(e) => setSelectedState(Number(e.target.value))}
+                            <input
+                                type="text"
+                                placeholder="Enter HSN code (e.g. 34060010)"
+                                value={hsn}
+                                onChange={(e) => setHsn(e.target.value)}
                                 className="border rounded-lg px-4 py-2 w-full
-                    focus:outline-none focus:ring-2 focus:ring-gray-700"
-                            >
-                                <option value="">-- Select State --</option>
-                                {states.map((st) => (
-                                    <option key={st.id} value={st.id}>
-                                        {st.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div> */}
+        focus:outline-none focus:ring-2 focus:ring-gray-700"
+                            />
+                        </div>
+
+
+
                         <div className="mb-3 relative" ref={dropdownRef}>
                             <label className="block font-medium mb-2 text-gray-700">
                                 Select States
@@ -703,85 +581,6 @@ const AddCategory = () => {
                     </div>
                 </div>
             )}
-
-
-
-
-            {/* Edit Modal */}
-            {/* {editModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-                        <button
-                            onClick={() => setEditModalOpen(false)}
-                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-
-                        <h2 className="text-xl font-bold mb-4 text-center">Edit Category</h2>
-
-                        
-                        <input
-                            type="text"
-                            placeholder="Category Name"
-                            value={editCategory.name}
-                            onChange={(e) => setEditCategory({ ...editCategory, name: e.target.value })}
-                            className="border rounded-lg px-4 py-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        />
-
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleEditImageChange}
-                            className="border rounded-lg px-4 py-2 w-full mb-4"
-                        />
-
-                        {/* {newCategoryImage ? (
-                            <div className="text-sm text-gray-700 mb-2">{newCategoryImage.name}</div>
-                        ) : editCategory.image ? (
-                            <div className="text-sm text-gray-700 mb-2">
-                                {editCategory.image.split('/').pop()}
-                            </div>
-                        ) : null}
-
-                        {editCategory.image || newCategoryImage ? (
-                            <div className="mb-4">
-                                <div className="relative w-24 h-24">
-                                    <Image
-                                        src={
-                                            newCategoryImage
-                                                ? URL.createObjectURL(newCategoryImage)
-                                                : editCategory.image?.startsWith("http")
-                                                    ? editCategory.image
-                                                    : `${baseUrl}${editCategory.image}`
-                                        }
-                                        alt={editCategory.name || "Category"}
-                                        fill
-                                        className="object-cover rounded-md"
-                                    />
-                                </div>
-                            </div>
-                        ) : (
-                            <span className="text-gray-400 italic mb-4 block">No Image</span>
-                        )}
-
-                        <div className="flex justify-end gap-2">
-                            <button
-                                onClick={() => setEditModalOpen(false)}
-                                className="px-4 py-2 rounded-lg border hover:bg-gray-100 cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleEditCategory}
-                                className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 cursor-pointer"
-                            >
-                                Update
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )} */}
 
             {editModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -876,20 +675,27 @@ const AddCategory = () => {
                             )}
                         </div>
 
-                        {/* State Dropdown */}
-                        {/* <div className="mb-4">
-                            <label className="block font-medium mb-2 text-gray-700">Select State</label>
-                            <select
-                                value={editCategory.stateId || ""}
-                                onChange={(e) => setEditCategory(prev => ({ ...prev, stateId: Number(e.target.value) }))}
-                                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            >
-                                <option value="">-- Select State --</option>
-                                {states.map(st => (
-                                    <option key={st.id} value={st.id}>{st.name}</option>
-                                ))}
-                            </select>
-                        </div> */}
+                        {/* HSN CODE */}
+                        <div className="mb-4">
+                            <label className="block font-medium mb-2 text-gray-700">
+                                HSN Code
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Enter HSN code"
+                                value={editCategory.hsn || ""}
+                                onChange={(e) =>
+                                    setEditCategory(prev => ({
+                                        ...prev,
+                                        hsn: e.target.value
+                                    }))
+                                }
+                                className="border rounded-lg px-4 py-2 w-full
+        focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            />
+                        </div>
+
+
                         {/* Multi-State Dropdown */}
                         <div className="mb-4 relative" ref={editDropdownRef}>
                             <label className="block font-medium mb-2 text-gray-700">Select States</label>

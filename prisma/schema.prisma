@@ -71,6 +71,7 @@ model Category {
   products  Product[]
   countryTaxes CountryTax[] 
   states        State[]       @relation("CategoryStates")
+  hsn           String?
 }
 
 model Subcategory {

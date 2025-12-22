@@ -27,7 +27,7 @@ export async function GET(req) {
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { name, active, image, platform, stateIds } = body;
+        const { name, active, image, platform, stateIds, hsn } = body;
 
         // Validation
         if (!name || typeof name !== "string") {
@@ -50,6 +50,7 @@ export async function POST(req) {
         const category = await prisma.category.create({
             data: {
                 name, active: active ?? true, image: image ?? null, platform,
+                hsn: hsn ?? null,
                 states: stateIds ? { connect: stateIds.map(id => ({ id })) } : undefined
             },
         });
@@ -69,7 +70,7 @@ export async function POST(req) {
 export async function PUT(req) {
     try {
         const body = await req.json();
-        const { id, name, active, deleted, image, platform, stateIds } = body;
+        const { id, name, active, deleted, image, platform, stateIds, hsn } = body;
 
         if (!id) {
             return new Response(JSON.stringify({ message: "Category ID is required" }), { status: 400 });
@@ -85,6 +86,7 @@ export async function PUT(req) {
             data: {
                 name: name ?? existing.name,
                 active: active ?? existing.active,
+                hsn: hsn ?? existing.hsn,
                 deleted: deleted ?? existing.deleted,
                 image: image ?? existing.image,
                 platform: platform ?? existing.platform,

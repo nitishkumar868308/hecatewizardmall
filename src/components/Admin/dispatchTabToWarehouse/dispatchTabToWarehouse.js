@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect } from "react";
-import { Eye, Truck } from "lucide-react";
+import { Eye, Truck, Check } from "lucide-react";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import Barcode from "react-barcode";
@@ -104,18 +104,25 @@ const DispatchTabToWarehouse = ({
     fetchDispatches,
     dispatches,
     warehouses,
+    transfers,
+    products,
+    categories,
     deleteDispatch,
     updateDispatch,
     finalizeDispatch
 }) => {
     const dispatch = useDispatch();
+    const [loadingIds, setLoadingIds] = useState([]);
     const [modalData, setModalData] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [dispatchFormData, setDispatchFormData] = useState([]);
     const [formModalOpen, setFormModalOpen] = useState(false);
     const [currentDispatch, setCurrentDispatch] = useState(null);
     const [trackingId, setTrackingId] = useState("");
     const [trackingLink, setTrackingLink] = useState("");
-
+    console.log("products", products)
+    console.log("transfers", transfers)
+    console.log("categories", categories)
     const [barcodeMap, setBarcodeMap] = useState({});
     useEffect(() => {
         const map = {};
@@ -328,8 +335,68 @@ const DispatchTabToWarehouse = ({
     //     }
     // };
 
+    const fetchMasterProducts = async (transfer) => {
+        console.log("Processing transfer entries:", transfer.entries);
+        setLoadingIds((prev) => [...prev, transfer.id]);
+        try {
 
-    console.log("dispatches", dispatches)
+
+            // Use first entry (or loop through entries if multiple)
+            const entry = transfer.entries[0];
+            if (!entry) {
+                console.error("No entries found in transfer:", transfer);
+                return;
+            }
+
+            const product = products.find((p) => p.id === entry.productId);
+            if (!product) {
+                console.error("Product not found for entry:", entry);
+                return;
+            }
+
+            const category = product.category;
+
+            const payload = [{
+                barcode: product.barCode || entry.FNSKU,
+                brand: "Heacte Wizard Mall",
+                category: category?.name || "",
+                channelSerialNo: entry.productId,
+                channelSkuCode: product.barCode || entry.FNSKU,
+                clientSkuId: entry.productId,
+                color: entry.variationName || "",
+                hsn: category?.hsn || "",
+                imageUrl: product.image[0] || "",
+                mrp: entry.MRP || 0,
+                name: entry.productName,
+                size: "",
+                styleCode: product.barCode || entry.productId,
+                taxRule: "",
+            }];
+
+            console.log("Payload for transfer entry:", transfer.id, payload);
+
+            const res = await fetch("/api/masterProducts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ articleMasters: payload }),
+            });
+
+            const data = await res.json();
+            console.log("Master Products Response:", data);
+            setModalData(data.articleMasters);
+
+        } catch (err) {
+            console.error("Error sending master products:", err);
+        } finally {
+            setLoadingIds((prev) => prev.filter((id) => id !== transfer.id));
+        }
+    };
+
+
+
+
+
+
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
@@ -412,6 +479,15 @@ const DispatchTabToWarehouse = ({
 
                                 {/* Actions */}
                                 <div className="flex gap-2 justify-end mt-auto">
+                                    <button
+                                        onClick={() => fetchMasterProducts(d)}
+                                        className={`flex items-center gap-1 px-3 py-1 rounded-xl text-xs cursor-pointer ${loadingIds.includes(d.id) ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-800"
+                                            } text-white`}
+                                        disabled={loadingIds.includes(d.id)}
+                                    >
+                                        <Check size={14} /> {loadingIds.includes(d.id) ? "Loading..." : "Master Products"}
+                                    </button>
+
                                     <button
                                         onClick={() => setModalData(d)}
                                         className="flex items-center gap-1 px-3 py-1 bg-gray-700 text-white rounded-xl hover:bg-gray-800 text-xs cursor-pointer"
