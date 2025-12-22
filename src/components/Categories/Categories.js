@@ -1305,7 +1305,7 @@
 
 "use client";
 import Image from "next/image";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchFastProducts } from "@/app/redux/slices/products/productSlice";
@@ -1357,6 +1357,27 @@ const Categories = () => {
 
     console.log("dispatches", dispatches)
     const isXpress = pathname.includes("/hecate-quickGo");
+
+    const selectedWarehouseId = typeof window !== "undefined" ? localStorage.getItem("warehouseId") : null;
+
+    const warehouseProductIds = isXpress
+        ? dispatches?.map(ds => {
+            let foundProductId = null;
+
+            ds.entries?.forEach(dim => {
+                dim.entries?.forEach(e => {
+                    if (
+                        e.warehouseId?.toString() === selectedWarehouseId?.toString()
+                    ) {
+                        foundProductId = dim.productId; // productId nested entries me hai
+                    }
+                });
+            });
+
+            return foundProductId;
+        }).filter(Boolean)
+        : null;
+
     useEffect(() => {
         setPriceRange(highestPrice);
     }, [highestPrice]);
@@ -1368,23 +1389,59 @@ const Categories = () => {
         dispatch(fetchDispatches())
     }, [dispatch]);
 
+    const variationBaseProducts = useMemo(() => {
+        return products.filter((p) => {
+            const matchCategory =
+                selectedCategory === "All" || p.categoryId === selectedCategory;
+
+            const matchSubcategory =
+                selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory;
+
+            const matchPlatform = isXpress
+                ? p.platform.includes("xpress")
+                : p.platform.includes("website");
+
+            const matchWarehouse = isXpress
+                ? warehouseProductIds?.includes(p.id)
+                : true;
+
+            return (
+                p.active &&
+                matchCategory &&
+                matchSubcategory &&
+                matchPlatform &&
+                matchWarehouse &&
+                p.price <= priceRange
+            );
+        });
+    }, [
+        products,
+        selectedCategory,
+        selectedSubcategory,
+        isXpress,
+        warehouseProductIds,
+        priceRange
+    ]);
+
+
+
     useEffect(() => {
-        if (selectedCategory === "All") {
+        if (selectedSubcategory === "All") {
             setCategoryVariations({});
             setSelectedVariations({});
             return;
         }
 
-        const catProducts = products.filter(p => p.categoryId === selectedCategory);
-
         const variationsObj = {};
 
-        catProducts.forEach(p => {
+        variationBaseProducts.forEach(p => {
             p.variations?.forEach(v => {
-                // v.variationName: "Color: Red / Type of wax: Soya Blended Wax"
                 const parts = v.variationName?.split(" / ") || [];
+
                 parts.forEach(part => {
-                    const [varName, value] = part.split(":").map(str => str.trim());
+                    const [varName, value] = part.split(":").map(s => s.trim());
+                    if (!varName || !value) return;
+
                     if (!variationsObj[varName]) variationsObj[varName] = [];
                     if (!variationsObj[varName].includes(value)) {
                         variationsObj[varName].push(value);
@@ -1395,7 +1452,13 @@ const Categories = () => {
 
         setCategoryVariations(variationsObj);
         setSelectedVariations({});
-    }, [selectedCategory, products]);
+    }, [
+        selectedSubcategory,
+        variationBaseProducts
+    ]);
+
+
+
 
 
 
@@ -1427,25 +1490,6 @@ const Categories = () => {
         setSelectedSubcategory(sub ? sub.id : "All");
     }, [searchParams, categories, subcategories]);
 
-    const selectedWarehouseId = typeof window !== "undefined" ? localStorage.getItem("warehouseId") : null;
-
-    const warehouseProductIds = isXpress
-        ? dispatches?.map(ds => {
-            let foundProductId = null;
-
-            ds.entries?.forEach(dim => {
-                dim.entries?.forEach(e => {
-                    if (
-                        e.warehouseId?.toString() === selectedWarehouseId?.toString()
-                    ) {
-                        foundProductId = dim.productId; // productId nested entries me hai
-                    }
-                });
-            });
-
-            return foundProductId;
-        }).filter(Boolean)
-        : null;
 
     const baseFiltered = products
         .filter((p) => {
@@ -1472,12 +1516,25 @@ const Categories = () => {
                 ? warehouseProductIds?.includes(p.id)
                 : true;
 
-            const matchVariations = Object.entries(selectedVariations).every(
-                ([varName, value]) => {
-                    if (!value) return true; // no selection
-                    return p.variations?.some(v => v.name === varName && v.value === value);
-                }
-            );
+            const shouldApplyVariations = selectedSubcategory !== "All";
+
+            const matchVariations = shouldApplyVariations
+                ? Object.entries(selectedVariations).every(([varName, value]) => {
+                    if (!value) return true;
+
+                    return p.variations?.some(v => {
+                        const parts = v.variationName?.split(" / ") || [];
+                        return parts.some(part => {
+                            const [name, val] = part.split(":").map(s => s.trim());
+                            return (
+                                name === varName &&
+                                val?.toLowerCase() === value.toLowerCase()
+                            );
+                        });
+                    });
+                })
+                : true;
+
 
             return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && matchWarehouse && matchVariations && p.price <= priceRange;
         })
@@ -1508,6 +1565,8 @@ const Categories = () => {
             !selectedAlphabet ||
             (p.name && p.name.toUpperCase().startsWith(selectedAlphabet))
     );
+    console.log("filteredProducts", filteredProducts.length);
+
 
     const displayedItems = showSubcategoryCards
         ? subcategories
@@ -1592,7 +1651,7 @@ const Categories = () => {
         )
     );
 
-
+    console.log("Selected Variations", selectedVariations);
 
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro relative">
@@ -1680,27 +1739,31 @@ const Categories = () => {
                         </div>
 
                         {/* Category Variations */}
-                        {Object.keys(categoryVariations).length > 0 && (
+                        {selectedSubcategory !== "All" && Object.keys(categoryVariations).length > 0 && (
                             <div className="mb-4">
                                 {Object.entries(categoryVariations).map(([varName, varValues]) => (
-                                    <div key={varName} className="mb-2">
-                                        <h3 className="font-semibold mb-1">{varName}</h3>
+                                    <div key={varName} className="mb-3">
+                                        <h3 className="font-semibold mb-2">{varName}</h3>
+
                                         <div className="flex flex-wrap gap-2">
                                             {varValues.map(value => {
                                                 const isSelected = selectedVariations[varName] === value;
+
                                                 return (
                                                     <button
-                                                        key={`${varName}-${value}`} // ✅ Unique key
-                                                        onClick={() => {
+                                                        key={`${varName}-${value}`}
+                                                        onClick={() =>
                                                             setSelectedVariations(prev => ({
                                                                 ...prev,
-                                                                [varName]: prev[varName] === value ? null : value
-                                                            }));
-                                                        }}
-                                                        className={`px-2 py-1 rounded border transition ${isSelected
-                                                            ? "bg-blue-600 text-white"
-                                                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                                            }`}
+                                                                [varName]: isSelected ? null : value
+                                                            }))
+                                                        }
+                                                        className={`px-3 py-1.5 rounded border text-sm transition
+                  ${isSelected
+                                                                ? "bg-blue-600 text-white border-blue-600"
+                                                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                                            }
+                `}
                                                     >
                                                         {value}
                                                     </button>
@@ -1711,6 +1774,7 @@ const Categories = () => {
                                 ))}
                             </div>
                         )}
+
 
 
 
@@ -1784,50 +1848,43 @@ const Categories = () => {
                                     setSelectedCategory("All");
                                     setSelectedSubcategory("All");
                                 }}
-                                className="cursor-pointer text-gray-600 hover:text-black font-medium"
+                                className={`cursor-pointer font-medium ${selectedCategory === "All"
+                                    ? "text-black"
+                                    : "text-gray-600 hover:text-black"
+                                    }`}
                             >
                                 All Category
                             </span>
 
-                            {/* Category */}
+                            {/* Selected Category */}
                             {selectedCategory !== "All" && (
                                 <>
-                                    <span className="mx-1 text-gray-400">{">"}</span>
+                                    <span className="mx-1 text-gray-400">{">>"}</span>
                                     <span
-                                        onClick={() => setSelectedCategory(selectedCategory)}
-                                        className="cursor-pointer text-gray-600 hover:text-black font-medium"
+                                        onClick={() => setSelectedSubcategory("All")}
+                                        className={`cursor-pointer font-medium ${selectedSubcategory === "All"
+                                            ? "text-black"
+                                            : "text-gray-600 hover:text-black"
+                                            }`}
                                     >
                                         {categories.find(c => c.id === selectedCategory)?.name}
                                     </span>
                                 </>
                             )}
 
-                            {/* All Tags */}
-                            <>
-                                <span className="mx-1 text-gray-400">{">"}</span>
-                                <span
-                                    onClick={() => setSelectedTag("All")}
-                                    className="cursor-pointer text-gray-600 hover:text-black font-medium"
-                                >
-                                    All Tags
-                                </span>
-                            </>
-
-                            {/* Selected Tag */}
-                            {selectedTag !== "All" && (
+                            {/* Selected Subcategory */}
+                            {selectedCategory !== "All" && selectedSubcategory !== "All" && (
                                 <>
-                                    <span className="mx-1 text-gray-400">{">"}</span>
-                                    <span
-                                        onClick={() => setSelectedTag(selectedTag)}
-                                        className="cursor-pointer  hover:text-black font-semibold text-black"
-                                    >
-                                        {selectedTag}
+                                    <span className="mx-1 text-gray-400">{">>"}</span>
+                                    <span className="font-semibold text-black">
+                                        {subcategories.find(s => s.id === selectedSubcategory)?.name}
                                     </span>
                                 </>
                             )}
 
                         </div>
                     </div>
+
 
 
 
