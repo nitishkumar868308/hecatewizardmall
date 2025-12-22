@@ -2209,7 +2209,7 @@ const ProductDetail = () => {
                     item.productId === product.id &&
                     item.variationId === (selectedVariation?.id || null) &&
                     item.attributes?.color === flatAttributes?.color &&
-                    item.purchasePlatform === purchasePlatform 
+                    item.purchasePlatform === purchasePlatform
             );
             if (isAlreadyInCart) {
                 toast.error("This product is already in your cart!");
@@ -2876,6 +2876,7 @@ const ProductDetail = () => {
         ? "INR"
         : selectedVariation?.currency ?? product.currency ?? "INR";
 
+    console.log("selectedVariation", selectedVariation)
 
     return (
         <>
@@ -3398,7 +3399,7 @@ const ProductDetail = () => {
                                 )}
                             </div>
                         </div> */}
-                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mt-4">
+                        <div className="hidden md:flex flex-col sm:flex-row items-center sm:items-start gap-6 mt-4">
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                                 {/* 🧮 Quantity Control */}
                                 <div className="flex items-center border rounded-lg overflow-hidden shadow-sm">
@@ -3446,7 +3447,6 @@ const ProductDetail = () => {
                                     // </button>
                                 )}
 
-
                                 {/* 🛍️ Amazon link (if available) */}
                                 {product.matchedMarketLink && (
                                     <a
@@ -3492,6 +3492,52 @@ const ProductDetail = () => {
                                 </div>
                             )}
                         </div>
+
+                        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg px-4 py-3">
+                            {/* Selected Variation */}
+                            <p className="text-sm text-gray-600 mb-2 truncate">
+                                Selected: <span className="font-semibold">{selectedVariation?.variationName}</span>
+                            </p>
+
+                            {/* Layout */}
+                            <div
+                                className={`grid gap-3 ${isInCart ? "grid-cols-1 place-items-center" : "grid-cols-2"
+                                    }`}
+                            >
+                                {/* Quantity */}
+                                <div className="flex items-center justify-center border rounded-lg overflow-hidden h-12 w-full max-w-[180px]">
+                                    <button
+                                        onClick={decrement}
+                                        className={`w-12 h-12 bg-gray-200 text-xl flex items-center justify-center ${quantity === 1 && isInCart ? "text-red-500" : ""
+                                            }`}
+                                    >
+                                        {quantity === 1 && isInCart ? <Trash2 size={18} /> : "-"}
+                                    </button>
+
+                                    <span className="w-12 h-12 flex items-center justify-center font-semibold">
+                                        {quantity}
+                                    </span>
+
+                                    <button
+                                        onClick={increment}
+                                        className="w-12 h-12 bg-gray-200 text-xl flex items-center justify-center"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+
+                                {/* Add to Cart (ONLY when not in cart) */}
+                                {!isInCart && (
+                                    <button
+                                        onClick={handleAdd}
+                                        className="h-12 bg-gray-700 text-white rounded-lg text-lg font-medium flex items-center justify-center"
+                                    >
+                                        Add to Cart
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
 
 
                         {/* <p className="text-gray-700 mt-3">

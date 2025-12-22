@@ -12,6 +12,7 @@ import {
 import {
     fetchSubcategories,
 } from "@/app/redux/slices/subcategory/subcategorySlice";
+import { useCountries } from "@/lib/CustomHook/useCountries";
 
 const ExternalMarket = () => {
     const dispatch = useDispatch();
@@ -27,7 +28,7 @@ const ExternalMarket = () => {
     const [selectedCountry, setSelectedCountry] = useState("");
     const { categories } = useSelector((state) => state.category);
     const { subcategories } = useSelector((state) => state.subcategory);
-    const [countries, setCountries] = useState([]);
+    const { countries } = useCountries();
     console.log("subcategories", subcategories)
     useEffect(() => {
         dispatch(fetchMarketLinks())
@@ -65,35 +66,6 @@ const ExternalMarket = () => {
 
         return match;
     });
-
-    useEffect(() => {
-        const fetchCountries = async () => {
-            try {
-                const res = await fetch(
-                    "https://restcountries.com/v3.1/all?fields=cca3,name,flags,currencies"
-                );
-                const data = await res.json();
-
-                if (!Array.isArray(data)) return;
-
-                const formatted = data.map((c) => ({
-                    code: c.cca3,
-                    name: c.name?.common || "",
-                    flag: c.flags?.svg || c.flags?.png || "", // use SVG if available
-                }));
-
-                // Sort alphabetically by name
-                formatted.sort((a, b) => a.name.localeCompare(b.name));
-
-                setCountries(formatted);
-            } catch (err) {
-                console.error("Failed to fetch countries:", err);
-            }
-        };
-
-        fetchCountries();
-    }, []);
-
 
 
     const handleDelete = async () => {

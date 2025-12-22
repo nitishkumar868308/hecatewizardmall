@@ -11,13 +11,14 @@ import {
     updateCountryPricing,
     deleteCountryPricing,
 } from "@/app/redux/slices/countryPricing/countryPricingSlice";
+import { useCountries } from "@/lib/CustomHook/useCountries";
 
 const CountryPricing = () => {
     const dispatch = useDispatch();
     const { countryPricing } = useSelector((state) => state.countryPricing);
-    const [countries, setCountries] = useState([]);
+
     const [showDropdown, setShowDropdown] = useState(false);
-    const [filteredCountries, setFilteredCountries] = useState(countries);
+    const { countries, filteredCountries, setFilteredCountries } = useCountries();
     const [search, setSearch] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalType, setModalType] = useState("add");
@@ -36,53 +37,21 @@ const CountryPricing = () => {
         dispatch(fetchCountryPricing());
     }, [dispatch]);
 
+    useEffect(() => {
+        if (!countries) return;
+        const filtered = countries.filter(c =>
+            c.name.toLowerCase().includes(search.toLowerCase())
+        );
+        setFilteredCountries(filtered);
+    }, [search, countries, setFilteredCountries]);
+
     // Filter
     const filteredPricing = (countryPricing || []).filter(
         (item) =>
             item.code.toLowerCase().includes(search.toLowerCase()) ||
             item.currency.toLowerCase().includes(search.toLowerCase())
     );
-
-
-    useEffect(() => {
-        const fetchCountries = async () => {
-            try {
-                const res = await fetch("https://restcountries.com/v3.1/all?fields=cca3,name,currencies");
-                const data = await res.json();
-                console.log("data", data);
-
-                if (!Array.isArray(data)) {
-                    console.error("Expected an array but got:", data);
-                    return;
-                }
-
-                const formatted = data.map((c) => {
-                    const currencyKey = c.currencies ? Object.keys(c.currencies)[0] : null;
-                    const currencySymbol =
-                        c.currencies && currencyKey && c.currencies[currencyKey]?.symbol
-                            ? c.currencies[currencyKey].symbol
-                            : ""; // fallback to empty string if not available
-
-                    return {
-                        code: c.cca3,
-                        name: c.name?.common || "",
-                        currency: currencyKey || "",
-                        currencySymbol,
-                    };
-                })
-
-                setCountries(formatted);
-                setFilteredCountries(formatted);
-            } catch (err) {
-                console.error("Failed to fetch countries:", err);
-            }
-        };
-
-        fetchCountries();
-    }, []);
-
-
-
+    
     // Modal handlers
     const openAddModal = () => {
         setModalType("add");
@@ -166,7 +135,7 @@ const CountryPricing = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">S.No</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Country Code</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Multiplier</th>
-                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conversion Rate</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conversion Rate</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Currency</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -178,7 +147,7 @@ const CountryPricing = () => {
                                     <td className="px-4 py-4">{idx + 1}</td>
                                     <td className="px-6 py-4 font-medium">{item.code}</td>
                                     <td className="px-6 py-4">{item.multiplier}</td>
-                                     <td className="px-6 py-4">{item.conversionRate}</td>
+                                    <td className="px-6 py-4">{item.conversionRate}</td>
                                     <td className="px-6 py-4">{item.currency}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded-full text-sm ${item.active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>

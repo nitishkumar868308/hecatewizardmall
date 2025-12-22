@@ -11,6 +11,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import Loader from "@/components/Include/Loader";
+import { useCountries } from "@/lib/CustomHook/useCountries";
 
 const ShippingPricing = () => {
     const dispatch = useDispatch();
@@ -22,10 +23,8 @@ const ShippingPricing = () => {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-    const [countries, setCountries] = useState([]);
-    const [filteredCountries, setFilteredCountries] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
-
+    const { countries, filteredCountries, setFilteredCountries } = useCountries();
     const [currentPricing, setCurrentPricing] = useState({
         name: "",
         price: "",
@@ -42,37 +41,12 @@ const ShippingPricing = () => {
 
     // Fetch countries
     useEffect(() => {
-        const fetchCountries = async () => {
-            try {
-                const res = await fetch(
-                    "https://restcountries.com/v3.1/all?fields=cca3,name,currencies"
-                );
-                const data = await res.json();
-                if (!Array.isArray(data)) return;
-
-                const formatted = data.map((c) => {
-                    const currencyKey = c.currencies ? Object.keys(c.currencies)[0] : null;
-                    const currencySymbol =
-                        c.currencies && currencyKey && c.currencies[currencyKey]?.symbol
-                            ? c.currencies[currencyKey].symbol
-                            : "";
-
-                    return {
-                        code: c.cca3,
-                        name: c.name?.common || "",
-                        currency: currencyKey || "",
-                        currencySymbol,
-                    };
-                });
-
-                setCountries(formatted);
-                setFilteredCountries(formatted);
-            } catch (err) {
-                console.error("Failed to fetch countries:", err);
-            }
-        };
-        fetchCountries();
-    }, []);
+        if (!countries) return;
+        const filtered = countries.filter(c =>
+            c.name.toLowerCase().includes(search.toLowerCase())
+        );
+        setFilteredCountries(filtered);
+    }, [search, countries, setFilteredCountries]);
 
     // Fetch Shipping Pricings
     useEffect(() => {
@@ -268,14 +242,12 @@ const ShippingPricing = () => {
                                             className="sr-only"
                                         />
                                         <span
-                                            className={`w-12 h-6 flex items-center p-1 rounded-full duration-300 ${
-                                                p.active ? "bg-green-500" : "bg-gray-300"
-                                            }`}
+                                            className={`w-12 h-6 flex items-center p-1 rounded-full duration-300 ${p.active ? "bg-green-500" : "bg-gray-300"
+                                                }`}
                                         >
                                             <span
-                                                className={`bg-white w-4 h-4 rounded-full shadow transform duration-300 ${
-                                                    p.active ? "translate-x-6" : "translate-x-0"
-                                                }`}
+                                                className={`bg-white w-4 h-4 rounded-full shadow transform duration-300 ${p.active ? "translate-x-6" : "translate-x-0"
+                                                    }`}
                                             />
                                         </span>
                                     </label>
@@ -399,7 +371,7 @@ const ShippingPricing = () => {
                             className="border px-4 py-2 w-full rounded mb-4"
                         >
                             <option value="Air">Air</option>
-                            <option value="Road">Road</option>                            
+                            <option value="Road">Road</option>
                         </select>
 
                         {/* Price */}

@@ -105,26 +105,3 @@ export const fetchPincodeData = async (pincode, setFieldValue) => {
         return false;
     }
 };
-
-
-
-// export const validatePincode = async (countryCode, pincode, state, city) => {
-//     try {
-//         const res = await fetch(
-//             `http://api.geonames.org/postalCodeSearchJSON?postalcode=${pincode}&country=${countryCode}&maxRows=10&username=demo`
-//         );
-//         const data = await res.json();
-
-//         if (!data.postalCodes || data.postalCodes.length === 0) return false;
-
-//         // Check state and city match
-//         return data.postalCodes.some(
-//             (item) =>
-//                 (!state || item.adminName1.toLowerCase() === state.toLowerCase()) &&
-//                 (!city || item.placeName.toLowerCase() === city.toLowerCase())
-//         );
-//     } catch (err) {
-//         console.error("Failed to validate pincode:", err);
-//         return false;
-//     }
-// };

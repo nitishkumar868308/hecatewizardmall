@@ -9,6 +9,7 @@ import {
 } from "@/app/redux/slices/state/addStateSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { createBanner, fetchBanners, deleteBanner, updateBanner } from "@/app/redux/slices/banners/bannersSlice";
+import { useCountries } from "@/lib/CustomHook/useCountries";
 
 const BannerPage = () => {
     const dispatch = useDispatch();
@@ -16,14 +17,12 @@ const BannerPage = () => {
     const [modalType, setModalType] = useState("add");
     const [editIndex, setEditIndex] = useState(null);
     const { states } = useSelector((state) => state.states);
-    const [countries, setCountries] = useState([]);
-    const [filteredCountries, setFilteredCountries] = useState(countries);
     const { banners } = useSelector((state) => state.banner);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedBanner, setSelectedBanner] = useState(null);
     const [selectedCountry, setSelectedCountry] = useState("");
     const [selectedState, setSelectedState] = useState("");
-
+    const { countries, filteredCountries, setFilteredCountries } = useCountries();
     console.log("banners", banners)
     console.log("countries", countries)
     const [platform, setPlatform] = useState({
@@ -96,41 +95,12 @@ const BannerPage = () => {
     }, [dispatch]);
 
     useEffect(() => {
-        const fetchCountries = async () => {
-            try {
-                const res = await fetch("https://restcountries.com/v3.1/all?fields=cca3,name,currencies");
-                const data = await res.json();
-                console.log("data", data);
-
-                if (!Array.isArray(data)) {
-                    console.error("Expected an array but got:", data);
-                    return;
-                }
-
-                const formatted = data.map((c) => {
-                    const currencyKey = c.currencies ? Object.keys(c.currencies)[0] : null;
-                    const currencySymbol =
-                        c.currencies && currencyKey && c.currencies[currencyKey]?.symbol
-                            ? c.currencies[currencyKey].symbol
-                            : "";
-
-                    return {
-                        code: c.cca3,
-                        name: c.name?.common || "",
-                        currency: currencyKey || "",
-                        currencySymbol,
-                    };
-                })
-
-                setCountries(formatted);
-                setFilteredCountries(formatted);
-            } catch (err) {
-                console.error("Failed to fetch countries:", err);
-            }
-        };
-
-        fetchCountries();
-    }, []);
+        if (!countries) return;
+        const filtered = countries.filter(c =>
+            c.name.toLowerCase().includes(countrySearch.toLowerCase())
+        );
+        setFilteredCountries(filtered);
+    }, [countrySearch, countries, setFilteredCountries]);
 
     const handleImageUpload = async (file) => {
         const formData = new FormData();

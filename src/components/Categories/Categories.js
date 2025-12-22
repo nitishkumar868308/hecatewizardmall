@@ -1423,6 +1423,71 @@ const Categories = () => {
         priceRange
     ]);
 
+    const mobileVariationBaseProducts = useMemo(() => {
+        return products.filter((p) => {
+            const matchCategory =
+                tempFilters.category === "All" || p.categoryId === tempFilters.category;
+
+            const matchSubcategory =
+                tempFilters.subcategory === "All" || p.subcategoryId === tempFilters.subcategory;
+
+            const matchPlatform = isXpress
+                ? p.platform.includes("xpress")
+                : p.platform.includes("website");
+
+            const matchWarehouse = isXpress
+                ? warehouseProductIds?.includes(p.id)
+                : true;
+
+            return (
+                p.active &&
+                matchCategory &&
+                matchSubcategory &&
+                matchPlatform &&
+                matchWarehouse &&
+                p.price <= priceRange
+            );
+        });
+    }, [
+        products,
+        tempFilters.category,
+        tempFilters.subcategory,
+        isXpress,
+        warehouseProductIds,
+        priceRange
+    ]);
+
+
+    useEffect(() => {
+        if (tempFilters.subcategory === "All") {
+            setCategoryVariations({});
+            setSelectedVariations({});
+            return;
+        }
+
+        const variationsObj = {};
+
+        mobileVariationBaseProducts.forEach(p => {
+            p.variations?.forEach(v => {
+                const parts = v.variationName?.split(" / ") || [];
+                parts.forEach(part => {
+                    const [varName, value] = part.split(":").map(s => s.trim());
+                    if (!varName || !value) return;
+
+                    if (!variationsObj[varName]) variationsObj[varName] = [];
+                    if (!variationsObj[varName].includes(value)) {
+                        variationsObj[varName].push(value);
+                    }
+                });
+            });
+        });
+
+        setCategoryVariations(variationsObj);
+        setSelectedVariations({}); // reset for mobile
+    }, [tempFilters.subcategory, mobileVariationBaseProducts]);
+
+
+
 
 
     useEffect(() => {
@@ -1489,6 +1554,28 @@ const Categories = () => {
         );
         setSelectedSubcategory(sub ? sub.id : "All");
     }, [searchParams, categories, subcategories]);
+
+    useEffect(() => {
+        if (!showFilters) return;
+
+        setTempFilters({
+            category: selectedCategory,
+            subcategory: selectedSubcategory,
+            price: priceRange,
+            sortBy: sortBy,
+            tag: selectedTag,
+            alphabet: selectedAlphabet,
+        });
+    }, [
+        showFilters,
+        selectedCategory,
+        selectedSubcategory,
+        priceRange,
+        sortBy,
+        selectedTag,
+        selectedAlphabet,
+    ]);
+
 
 
     const baseFiltered = products
@@ -1652,20 +1739,10 @@ const Categories = () => {
     );
 
     console.log("Selected Variations", selectedVariations);
+    const activeSubcategory = !isDesktop ? tempFilters.subcategory : selectedSubcategory;
 
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro relative">
-            {/* Toggle Filters for Mobile */}
-            {/* {!isDesktop && (
-                <div className="mb-4 flex justify-end">
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="bg-gray-600 text-white px-4 py-2 rounded"
-                    >
-                        {showFilters ? "Hide Filters" : "Show Filters"}
-                    </button>
-                </div>
-            )} */}
             {!isDesktop && (
                 <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[90%]">
                     <button
@@ -1676,10 +1753,6 @@ const Categories = () => {
                     </button>
                 </div>
             )}
-
-
-
-
             <div className={`flex ${isDesktop ? "flex-row gap-6" : "flex-col"}`}>
                 {/* Sidebar Filters */}
                 {(isDesktop || showFilters) && (
@@ -1738,7 +1811,7 @@ const Categories = () => {
                             </ul>
                         </div>
 
-                        {/* Category Variations */}
+                        {/* SubCategory Variations */}
                         {selectedSubcategory !== "All" && Object.keys(categoryVariations).length > 0 && (
                             <div className="mb-4">
                                 {Object.entries(categoryVariations).map(([varName, varValues]) => (
@@ -2024,18 +2097,6 @@ const Categories = () => {
                         </div>
                     )}
                 </div>
-
-                {/* Dynamic Alphabet Sidebar */}
-                {/* {isDesktop && (
-                    <div className="hidden md:flex  flex-col gap-4 ml-4 sticky top-20">
-                        {availableAlphabets.map((letter) => (
-                            <button key={letter} onClick={() => setSelectedAlphabet(letter)} className={`w-8 h-8 cursor-pointer flex items-center justify-center text-sm font-semibold rounded-full transition-all duration-300
-          ${selectedAlphabet === letter ? "bg-gray-500  text-white shadow-lg scale-110" : "bg-gray-100 hover:bg-gray-200 hover:scale-105"}`}>
-                                {letter}
-                            </button>
-                        ))}
-                    </div>
-                )} */}
                 {isDesktop && (
                     <div className="hidden md:flex flex-col gap-4 ml-4 sticky top-20">
                         {availableAlphabets.map((letter) => {
@@ -2089,25 +2150,6 @@ const Categories = () => {
                         })}
                     </div>
                 )}
-                {/* {!isDesktop && (
-                    <div className="fixed right-0 z-30 cursor-pointer flex flex-col gap-5 p-1 overflow-y-auto">
-                        {availableAlphabets.map((letter) => (
-                            <button
-                                key={letter}
-                                onClick={() =>
-                                    setSelectedAlphabet((prev) => (prev === letter ? null : letter))
-                                }
-                                className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold transition-all duration-300
-          ${selectedAlphabet === letter
-                                        ? "bg-gray-500 text-white shadow-lg scale-110"
-                                        : "bg-gray-400 text-white hover:bg-gray-500 hover:scale-105"
-                                    }`}
-                            >
-                                {letter}
-                            </button>
-                        ))}
-                    </div>
-                )} */}
 
 
                 {/* Mobile Filters Modal */}
@@ -2129,27 +2171,96 @@ const Categories = () => {
                         <div className="flex flex-1 overflow-hidden">
 
                             {/* LEFT PANEL */}
-                            <div className="w-1/3 border-r bg-gray-50">
-                                {[
-                                    { key: "category", label: "Category" },
-                                    { key: "price", label: "Price" },
-                                    { key: "alphabet", label: "Alphabet" },
-                                    { key: "tags", label: "Tags" },
-                                    { key: "sort", label: "Sort By" },
-                                ].map(({ key, label }) => (
-                                    <button
-                                        key={key}
-                                        onClick={() => setActiveFilter(key)}
-                                        className={`w-full text-left px-4 py-3 text-sm border-b transition-colors duration-200
-              ${activeFilter === key
-                                                ? "bg-white font-semibold text-gray-900"
-                                                : "text-gray-600 hover:bg-gray-100"
-                                            }`}
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
+                            <div className="w-1/3 border-r bg-gray-50 flex flex-col overflow-y-auto">
+
+                                {/* MAIN FILTER TABS */}
+                                <div className="border-b">
+                                    {[
+                                        { key: "category", label: "Category" },
+                                        { key: "price", label: "Price" },
+                                        { key: "alphabet", label: "Alphabet" },
+                                        { key: "tags", label: "Tags" },
+                                        { key: "sort", label: "Sort By" },
+                                    ].map(({ key, label }) => (
+                                        <button
+                                            key={key}
+                                            onClick={() => setActiveFilter(key)}
+                                            className={`w-full text-left px-4 py-3 text-sm border-b transition-colors
+                    ${activeFilter === key
+                                                    ? "bg-white font-semibold text-gray-900"
+                                                    : "text-gray-600 hover:bg-gray-100"
+                                                }`}
+                                        >
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* ATTRIBUTES SECTION */}
+                                {!isDesktop && showFilters && tempFilters.subcategory && tempFilters.subcategory !== "All" && Object.keys(categoryVariations).length > 0 && (
+                                    <div className="px-3 py-4 space-y-5">
+                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Attributes</p>
+
+                                        {Object.entries(categoryVariations).map(([varName, varValues]) => (
+                                            <div key={varName}>
+                                                <h4 className="text-sm font-medium text-gray-700 mb-2">{varName}</h4>
+
+                                                {varName.toLowerCase() === "color" ? (
+                                                    <div className="flex flex-wrap gap-3 max-h-32 overflow-y-auto pr-1">
+                                                        {varValues.map((value) => {
+                                                            const isSelected = selectedVariations[varName] === value;
+
+                                                            return (
+                                                                <button
+                                                                    key={`${varName}-${value}`}
+                                                                    onClick={() =>
+                                                                        setSelectedVariations((prev) => ({
+                                                                            ...prev,
+                                                                            [varName]: isSelected ? null : value,
+                                                                        }))
+                                                                    }
+                                                                    title={value}
+                                                                    className={`w-8 h-8 rounded-full border-2 transition ${isSelected ? "ring-2 ring-gray-900 border-white" : "border-gray-300"
+                                                                        }`}
+                                                                    style={{ backgroundColor: value }}
+                                                                />
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {varValues.map((value) => {
+                                                            const isSelected = selectedVariations[varName] === value;
+
+                                                            return (
+                                                                <button
+                                                                    key={`${varName}-${value}`}
+                                                                    onClick={() =>
+                                                                        setSelectedVariations((prev) => ({
+                                                                            ...prev,
+                                                                            [varName]: isSelected ? null : value,
+                                                                        }))
+                                                                    }
+                                                                    className={`px-3 py-1.5 rounded-full text-xs border transition ${isSelected
+                                                                        ? "bg-gray-900 text-white border-gray-900"
+                                                                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                                                                        }`}
+                                                                >
+                                                                    {value}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+
+
                             </div>
+
 
                             {/* RIGHT PANEL */}
                             <div className="flex-1 p-4 overflow-y-auto">
