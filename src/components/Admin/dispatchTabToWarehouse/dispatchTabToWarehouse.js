@@ -300,41 +300,6 @@ const DispatchTabToWarehouse = ({
         }
     };
 
-    // const saveDispatchFinal = async (
-    //     dispatchId,
-    //     currentDispatch, // poora product detail snapshot
-    //     dimensions,
-    //     trackingId,
-    //     trackingLink,
-    //     shippingId,
-    //     warehouseState // jaise "Delhi" ya koi aur
-    // ) => {
-    //     try {
-    //         const finalData = {
-    //             dispatchId,
-    //             productsSnapshot: currentDispatch,      // Redux/Backend me poora product detail
-    //             dimensions: dispatchFormData || dimensions,
-    //             trackingId,
-    //             trackingLink,
-    //             shippingId: shippingId ?? null,
-    //             warehouseState,        // Delhi check ke liye
-    //         };
-    //         console.log("finalData" , finalData)
-    //         // Redux asyncThunk call
-    //         // const result = await dispatch(finalizeDispatch(finalData));
-
-    //         // if (finalizeDispatch.fulfilled.match(result)) {
-    //         //     toast.success(result.payload?.message || "Dispatch finalized successfully");
-    //         // } else {
-    //         //     toast.error(result.payload?.message || result.error?.message || "Update failed");
-    //         // }
-
-    //         console.log("Final dispatch data sent:", finalData);
-    //     } catch (error) {
-    //         console.error("Error finalizing dispatch:", error);
-    //     }
-    // };
-
     const fetchMasterProducts = async (transfer) => {
         console.log("Processing transfer entries:", transfer.entries);
         setLoadingIds((prev) => [...prev, transfer.id]);
@@ -383,7 +348,30 @@ const DispatchTabToWarehouse = ({
 
             const data = await res.json();
             console.log("Master Products Response:", data);
-            setModalData(data.articleMasters);
+            if (!res.ok || data.success === false) {
+                let errorMsg = "Failed to create master product";
+
+                switch (data.code) {
+                    case "RESOURCE_EXISTS":
+                        errorMsg = "Product already exists in master system";
+                        break;
+
+                    case "BAD_DATA":
+                        errorMsg = data.originalMessage || "Invalid product data";
+                        break;
+
+                    default:
+                        errorMsg = data.message || errorMsg;
+                }
+
+                // UI me show
+                toast.error(errorMsg);
+
+                return; // ❗ STOP further execution
+            }
+
+            // ✅ SUCCESS HANDLING
+            toast.success("Master product created successfully");
 
         } catch (err) {
             console.error("Error sending master products:", err);

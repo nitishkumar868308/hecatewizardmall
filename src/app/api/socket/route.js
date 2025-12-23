@@ -1,6 +1,9 @@
 import { Server } from "socket.io";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // ya koi DB connection
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
 
 export const GET = (req) => {
     if (!globalThis.io) {
