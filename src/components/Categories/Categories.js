@@ -1342,7 +1342,7 @@ const Categories = () => {
     const { dispatches } = useSelector((state) => state.dispatchWarehouse);
     const [categoryVariations, setCategoryVariations] = useState({});
     const [selectedVariations, setSelectedVariations] = useState({});
-
+    const [selectedWarehouseId, setSelectedWarehouseId] = useState(null);
     const [activeFilter, setActiveFilter] = useState(null);
 
     const [tempFilters, setTempFilters] = useState({
@@ -1355,32 +1355,53 @@ const Categories = () => {
     });
 
 
-    console.log("dispatches", dispatches)
+    // console.log("dispatches", dispatches)
     const isXpress = pathname.includes("/hecate-quickGo");
 
-    const selectedWarehouseId = typeof window !== "undefined" ? localStorage.getItem("warehouseId") : null;
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            setSelectedWarehouseId(localStorage.getItem("warehouseId"));
+        }
+    }, []);
 
-    const warehouseProductIds = isXpress
-        ? dispatches?.map(ds => {
+    // const warehouseProductIds = isXpress
+    //     ? dispatches?.map(ds => {
+    //         let foundProductId = null;
+
+    //         ds.entries?.forEach(dim => {
+    //             dim.entries?.forEach(e => {
+    //                 if (
+    //                     e.warehouseId?.toString() === selectedWarehouseId?.toString()
+    //                 ) {
+    //                     foundProductId = dim.productId; // productId nested entries me hai
+    //                 }
+    //             });
+    //         });
+
+    //         return foundProductId;
+    //     }).filter(Boolean)
+    //     : null;
+    const warehouseProductIds = useMemo(() => {
+        if (!isXpress || !dispatches?.length || !selectedWarehouseId) return [];
+        return dispatches.map(ds => {
             let foundProductId = null;
-
             ds.entries?.forEach(dim => {
                 dim.entries?.forEach(e => {
-                    if (
-                        e.warehouseId?.toString() === selectedWarehouseId?.toString()
-                    ) {
-                        foundProductId = dim.productId; // productId nested entries me hai
+                    if (e.warehouseId?.toString() === selectedWarehouseId.toString()) {
+                        foundProductId = dim.productId;
                     }
                 });
             });
-
             return foundProductId;
-        }).filter(Boolean)
-        : null;
+        }).filter(Boolean);
+    }, [dispatches, selectedWarehouseId, isXpress]);
+
 
     useEffect(() => {
         setPriceRange(highestPrice);
     }, [highestPrice]);
+
+
     useEffect(() => {
         dispatch(fetchFastProducts());
         dispatch(fetchSubcategories());
@@ -1490,6 +1511,38 @@ const Categories = () => {
 
 
 
+    // useEffect(() => {
+    //     if (selectedSubcategory === "All") {
+    //         setCategoryVariations({});
+    //         setSelectedVariations({});
+    //         return;
+    //     }
+
+    //     const variationsObj = {};
+
+    //     variationBaseProducts.forEach(p => {
+    //         p.variations?.forEach(v => {
+    //             const parts = v.variationName?.split(" / ") || [];
+
+    //             parts.forEach(part => {
+    //                 const [varName, value] = part.split(":").map(s => s.trim());
+    //                 if (!varName || !value) return;
+
+    //                 if (!variationsObj[varName]) variationsObj[varName] = [];
+    //                 if (!variationsObj[varName].includes(value)) {
+    //                     variationsObj[varName].push(value);
+    //                 }
+    //             });
+    //         });
+    //     });
+
+    //     setCategoryVariations(variationsObj);
+    //     setSelectedVariations({});
+    // }, [
+    //     selectedSubcategory,
+    //     variationBaseProducts
+    // ]);
+
     useEffect(() => {
         if (selectedSubcategory === "All") {
             setCategoryVariations({});
@@ -1498,11 +1551,9 @@ const Categories = () => {
         }
 
         const variationsObj = {};
-
         variationBaseProducts.forEach(p => {
             p.variations?.forEach(v => {
                 const parts = v.variationName?.split(" / ") || [];
-
                 parts.forEach(part => {
                     const [varName, value] = part.split(":").map(s => s.trim());
                     if (!varName || !value) return;
@@ -1515,13 +1566,9 @@ const Categories = () => {
             });
         });
 
-        setCategoryVariations(variationsObj);
+        setCategoryVariations(prev => JSON.stringify(prev) === JSON.stringify(variationsObj) ? prev : variationsObj);
         setSelectedVariations({});
-    }, [
-        selectedSubcategory,
-        variationBaseProducts
-    ]);
-
+    }, [selectedSubcategory, variationBaseProducts]);
 
 
 
@@ -1555,26 +1602,42 @@ const Categories = () => {
         setSelectedSubcategory(sub ? sub.id : "All");
     }, [searchParams, categories, subcategories]);
 
+    // useEffect(() => {
+    //     if (!showFilters) return;
+
+    //     setTempFilters({
+    //         category: selectedCategory,
+    //         subcategory: selectedSubcategory,
+    //         price: priceRange,
+    //         sortBy: sortBy,
+    //         tag: selectedTag,
+    //         alphabet: selectedAlphabet,
+    //     });
+    // }, [
+    //     showFilters,
+    //     selectedCategory,
+    //     selectedSubcategory,
+    //     priceRange,
+    //     sortBy,
+    //     selectedTag,
+    //     selectedAlphabet,
+    // ]);
     useEffect(() => {
         if (!showFilters) return;
-
-        setTempFilters({
-            category: selectedCategory,
-            subcategory: selectedSubcategory,
-            price: priceRange,
-            sortBy: sortBy,
-            tag: selectedTag,
-            alphabet: selectedAlphabet,
+        setTempFilters(prev => {
+            const newFilters = {
+                category: selectedCategory,
+                subcategory: selectedSubcategory,
+                price: priceRange,
+                sortBy: sortBy,
+                tag: selectedTag,
+                alphabet: selectedAlphabet,
+            };
+            if (JSON.stringify(prev) === JSON.stringify(newFilters)) return prev;
+            return newFilters;
         });
-    }, [
-        showFilters,
-        selectedCategory,
-        selectedSubcategory,
-        priceRange,
-        sortBy,
-        selectedTag,
-        selectedAlphabet,
-    ]);
+    }, [showFilters, selectedCategory, selectedSubcategory, priceRange, sortBy, selectedTag, selectedAlphabet]);
+
 
 
 
@@ -1628,7 +1691,7 @@ const Categories = () => {
         .sort((a, b) =>
             sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
         );
-    console.log("baseFiltered", baseFiltered)
+    // console.log("baseFiltered", baseFiltered)
 
     // Determine if we should show subcategory cards instead of products
     const showSubcategoryCards =
@@ -1652,7 +1715,7 @@ const Categories = () => {
             !selectedAlphabet ||
             (p.name && p.name.toUpperCase().startsWith(selectedAlphabet))
     );
-    console.log("filteredProducts", filteredProducts.length);
+    // console.log("filteredProducts", filteredProducts.length);
 
 
     const displayedItems = showSubcategoryCards
@@ -1738,8 +1801,7 @@ const Categories = () => {
         )
     );
 
-    console.log("Selected Variations", selectedVariations);
-    const activeSubcategory = !isDesktop ? tempFilters.subcategory : selectedSubcategory;
+    // console.log("Selected Variations", selectedVariations);
 
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro relative">
