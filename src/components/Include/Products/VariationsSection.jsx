@@ -516,7 +516,8 @@ const VariationsSection = ({
                                         // --- CUSTOM DIMENSION FIELD ---
                                         if (field.type === "custom-dimension") {
                                             // stringify variationKey to match dbVariationDetails keys
-                                            const keyStr = JSON.stringify(variationKey);
+                                            // const keyStr = JSON.stringify(variationKey);
+                                            const keyStr = variationKey;
                                             console.log("keyStr" , keyStr)
                                             const variation = variationDetails[keyStr] || {};
                                             console.log("variationPage" , variation)
@@ -542,7 +543,8 @@ const VariationsSection = ({
                                                                     type="number"
                                                                     value={dimension[dim]}
                                                                     onChange={(e) =>
-                                                                        handleVariationChange(keyStr, dim, e.target.value)
+                                                                        // handleVariationChange(keyStr, dim, e.target.value)
+                                                                        handleVariationChange(variationKey, dim, e.target.value)
                                                                     }
                                                                     placeholder={dim.toUpperCase()}
                                                                     className="border rounded-lg px-3 py-2"
