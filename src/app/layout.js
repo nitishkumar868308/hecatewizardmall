@@ -9,6 +9,7 @@ import { Provider } from 'react-redux';
 import store from './redux/store';
 import { Toaster } from 'react-hot-toast';
 import "react-international-phone/style.css";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const firaSans = Fira_Sans({
   variable: "--font-fira-sans",
@@ -32,13 +33,15 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${firaSans.variable} ${firaCode.variable} antialiased`}>
         <Provider store={store}>
-          {!hideLayout && <DefaultPage />}
-          {/* <main className="pt-[60px] md:pt-0 sm:pt-0"> */}
-          <main className=" md:pt-0 pt-[30px]">
-            {children}
-          </main>
-          {!hideLayout && <Footer />}
-          <Toaster position="top-right" reverseOrder={false} />
+          <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
+            {!hideLayout && <DefaultPage />}
+            {/* <main className="pt-[60px] md:pt-0 sm:pt-0"> */}
+            <main className=" md:pt-0 pt-[30px]">
+              {children}
+            </main>
+            {!hideLayout && <Footer />}
+            <Toaster position="top-right" reverseOrder={false} />
+          </GoogleOAuthProvider>
         </Provider>
       </body>
     </html>
