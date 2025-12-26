@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse  , ShoppingCart, Image as ImageIcon   } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse, ShoppingCart, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -9,6 +9,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [menuOpenProduct, setMenuOpenProduct] = useState(false);
     const [menuOpenTax, setMenuOpenTax] = useState(false);
     const [manuOpenLocation, setMenuOpenLocation] = useState(false);
+    const [manuOpenOrder, setMenuOpenOrder] = useState(false);
     const [manuOpenWareHouseLocation, setMenuOpenWareHouseLocation] = useState(false);
     const [manuOpenWareHouseFullfillment, setMenuOpenWareHouseFullfillment] = useState(false);
 
@@ -150,12 +151,39 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                         <Users className="w-5 h-5" /> Users
                     </Link>
 
-                    <Link
-                        href="/admin/orders"
-                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
-                    >
-                        <ShoppingCart className="w-5 h-5" /> Orders
-                    </Link>
+                    <div>
+                        <button
+                            onClick={() => setMenuOpenOrder(!manuOpenOrder)}
+                            className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                        >
+                            <span className="flex items-center gap-3">
+                                <ShoppingCart className="w-5 h-5" /> Orders
+                            </span>
+                            {manuOpenOrder ? (
+                                <ChevronUp className="w-4 h-4" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4" />
+                            )}
+                        </button>
+
+                        {/* Dropdown items */}
+                        {manuOpenOrder && (
+                            <div className="ml-8 mt-2 flex flex-col gap-2">
+                                <Link
+                                    href="/admin/orders"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    All Orders
+                                </Link>
+                                <Link
+                                    href="/admin/create_order"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Create Order
+                                </Link>
+                            </div>
+                        )}
+                    </div>
 
                     <div>
                         <button
@@ -296,7 +324,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                         >
                             <span className="flex items-center gap-3">
-                                <Warehouse   className="w-5 h-5" />FullFillment Center
+                                <Warehouse className="w-5 h-5" />FullFillment Center
                             </span>
                             {manuOpenWareHouseFullfillment ? (
                                 <ChevronUp className="w-4 h-4" />

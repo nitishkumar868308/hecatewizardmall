@@ -4,6 +4,8 @@ import DefaultPageAdmin from "@/components/Admin/Include/DefaultPageAdmin/Defaul
 import { fetchAllUsers } from "@/app/redux/slices/getAllUser/getAllUser";
 import { useDispatch, useSelector } from "react-redux";
 import { AiOutlinePlus, AiOutlineSearch, AiOutlineClose } from "react-icons/ai";
+import { registerUser } from '@/app/redux/slices/authSlice';
+import toast from 'react-hot-toast';
 
 const Page = () => {
     const dispatch = useDispatch();
@@ -16,16 +18,38 @@ const Page = () => {
     const [email, setEmail] = useState("");
     const [search, setSearch] = useState("");
 
+    function generateRandomPassword(length = 8) {
+        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+        let password = "";
+        for (let i = 0; i < length; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return password;
+    }
+
+
     useEffect(() => {
         dispatch(fetchAllUsers());
     }, [dispatch]);
 
-    const handleAddUser = (e) => {
+    const handleAddUser = async (e) => {
         e.preventDefault();
         console.log("Add user:", { name, email });
-        setName("");
-        setEmail("");
-        setModalOpen(false);
+        const resultAction = await dispatch(registerUser({
+            name: name,
+            email: email,
+            password: generateRandomPassword(),
+        }));
+        console.log("resultAction", resultAction)
+        if (registerUser.fulfilled.match(resultAction)) {
+
+            toast.success(resultAction.payload.message || 'Registration successful');
+            setName("");
+            setEmail("");
+            setModalOpen(false);
+        } else {
+            toast.error(resultAction.payload?.message || 'Registration failed');
+        }
     };
 
     const filteredUsers = users.filter(
@@ -116,8 +140,8 @@ const Page = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span
                                                         className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role.toLowerCase() === "admin"
-                                                                ? "bg-black text-white"
-                                                                : "bg-gray-200 text-gray-800"
+                                                            ? "bg-black text-white"
+                                                            : "bg-gray-200 text-gray-800"
                                                             }`}
                                                     >
                                                         {user.role}
