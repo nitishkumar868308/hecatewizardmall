@@ -2,21 +2,22 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchWarehouses } from '@/app/redux/slices/warehouse/wareHouseSlice';
+import { setSelectedState } from "@/app/redux/slices/selectedStateSlice";
 
 export default function LandingModal() {
     const dispatch = useDispatch();
     const { warehouses } = useSelector((state) => state.warehouses);
-   
+
 
     const [open, setOpen] = useState(false);
-    const [selectedState, setSelectedState] = useState("");
+    const [selectedStateLocal, setSelectedStateLocal] = useState("");
     const [pin, setPin] = useState("");
     const [search, setSearch] = useState("");
     const [showDropdown, setShowDropdown] = useState(false);
 
     useEffect(() => {
         dispatch(fetchWarehouses());
-       
+
         const savedState = localStorage.getItem("selectedState");
         const savedPin = localStorage.getItem("pincode");
         const savedCode = localStorage.getItem("warehouseCode");
@@ -27,7 +28,7 @@ export default function LandingModal() {
     }, [dispatch]);
 
     const handleSubmit = () => {
-        if (!selectedState) {
+        if (!selectedStateLocal) {
             alert("Please select a state");
             return;
         }
@@ -36,9 +37,9 @@ export default function LandingModal() {
             alert("Please select a valid pincode");
             return;
         }
-
+        dispatch(setSelectedState(selectedStateLocal));
         const matchedWarehouse = warehouses.find((w) =>
-            w.state === selectedState &&
+            w.state === selectedStateLocal &&
             w.pincode.split(",").map(p => p.trim()).includes(pin)
         );
 
@@ -47,7 +48,7 @@ export default function LandingModal() {
             return;
         }
 
-        localStorage.setItem("selectedState", selectedState);
+        localStorage.setItem("selectedState", selectedStateLocal);
         localStorage.setItem("pincode", pin);
         localStorage.setItem("warehouseCode", matchedWarehouse.code);
         localStorage.setItem("warehouseId", matchedWarehouse.id);
@@ -61,7 +62,7 @@ export default function LandingModal() {
     const statesList = [...new Set(warehouses.map((w) => w.state))];
 
     // Find selected warehouse's multiple pincodes
-    const selectedWarehouse = warehouses.find(w => w.state === selectedState);
+    const selectedWarehouse = warehouses.find(w => w.state === selectedStateLocal);
     const pincodeList = selectedWarehouse
         ? selectedWarehouse.pincode
             .split(",")
@@ -81,9 +82,9 @@ export default function LandingModal() {
                 <label className="block mb-2 text-sm">State</label>
                 <select
                     className="w-full p-2 border rounded mb-4"
-                    value={selectedState}
+                    value={selectedStateLocal}
                     onChange={(e) => {
-                        setSelectedState(e.target.value);
+                        setSelectedStateLocal(e.target.value);
                         setPin("");
                         setSearch("");
                         setShowDropdown(false);
@@ -98,7 +99,7 @@ export default function LandingModal() {
                 </select>
 
                 {/* SEARCHABLE PINCODE DROPDOWN */}
-                {selectedState && (
+                {selectedStateLocal && (
                     <div className="relative mb-4">
                         <label className="block mb-2 text-sm">Pincode</label>
 

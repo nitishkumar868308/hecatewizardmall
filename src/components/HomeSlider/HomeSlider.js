@@ -15,24 +15,15 @@ const HomeSlider = () => {
     const dispatch = useDispatch();
     const pathname = usePathname();
     const isXpress = pathname.includes("/hecate-quickGo");
-
+    const country = useSelector((state) => state.country);
+    const selectedState = useSelector(state => state.selectedState);
     const { banners = [] } = useSelector((state) => state.banner);
-
-    const [selectedCountry, setSelectedCountry] = useState(null);
-    const [selectedState, setSelectedState] = useState(null);
+    console.log("banners", banners)
 
     /* ================= FETCH ================= */
     useEffect(() => {
         dispatch(fetchBanners());
     }, [dispatch]);
-
-    /* ================= LOCAL STORAGE ================= */
-    useEffect(() => {
-        if (typeof window !== "undefined") {
-            setSelectedCountry(localStorage.getItem("selectedCountry"));
-            setSelectedState(localStorage.getItem("selectedState"));
-        }
-    }, []);
 
     /* ================= FILTER & POSITION ================= */
     const slides = useMemo(() => {
@@ -52,9 +43,9 @@ const HomeSlider = () => {
                         selectedState?.trim().toLowerCase()
                 );
             } else {
-                if (!selectedCountry) return false;
+                if (!country) return false;
                 if (!banner.countries?.length) return false;
-                return banner.countries.some((c) => c.countryCode === selectedCountry);
+                return banner.countries.some((c) => c.countryCode === country);
             }
         });
 
@@ -81,13 +72,14 @@ const HomeSlider = () => {
 
             slidesArray.push({
                 id: found?.id || `default-${pos}`,
-                image: found?.image || `/images/one.jpg`,
+                image: found?.image || `/image/1.jpeg`,
                 text: found?.text || "",
+                // key: `${found?.id || `default-${pos}`}-${pos}`, 
             });
         }
 
         return slidesArray;
-    }, [banners, isXpress, selectedCountry, selectedState]);
+    }, [banners, isXpress, country, selectedState]);
 
     if (!slides.length) return null;
 

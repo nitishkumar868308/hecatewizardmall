@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const countrySlice = createSlice({
     name: "country",
-    initialState: "IN",
+    initialState: "IND",
     reducers: {
         setCountry: (state, action) => action.payload,
     },

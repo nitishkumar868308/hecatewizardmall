@@ -121,7 +121,7 @@ const BannerPage = () => {
     };
 
     const handleSave = async () => {
-        if (!form.countries.length || !form.states.length) {
+        if (!form.countries.length && !form.states.length) {
             toast.error("Please select at least one country and state");
             return;
         }

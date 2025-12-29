@@ -13,6 +13,7 @@ import {
 import {
     fetchStates,
 } from "@/app/redux/slices/state/addStateSlice";
+import { setSelectedState } from "@/app/redux/slices/selectedStateSlice";
 
 const Topbar = () => {
     const dispatch = useDispatch();
@@ -24,7 +25,7 @@ const Topbar = () => {
     const { user } = useSelector((state) => state.me);
     const { products } = useSelector((state) => state.products);
     const { states } = useSelector((state) => state.states);
-    const [selectedState, setSelectedState] = useState("");
+    // const [selectedState, setSelectedState] = useState("");
     console.log("states", states)
     const userCart = useMemo(() => {
         return items?.filter(item => String(item.userId) === String(user?.id)) || [];
@@ -38,12 +39,13 @@ const Topbar = () => {
         dispatch(fetchCountryPricing());
 
     }, [dispatch]);
-    useEffect(() => {
-        const savedState = localStorage.getItem("selectedState");
-        if (savedState) {
-            setSelectedState(savedState);
-        }
-    }, []);
+    const selectedState = useSelector(state => state.selectedState);
+    // useEffect(() => {
+    //     const savedState = localStorage.getItem("selectedState");
+    //     if (savedState) {
+    //         setSelectedState(savedState);
+    //     }
+    // }, []);
 
 
     useEffect(() => {
@@ -65,13 +67,6 @@ const Topbar = () => {
 
     if (!mounted) return null;
 
-
-    // const handleChange = (e) => {
-    //     const selectedCountry = e.target.value;
-    //     dispatch(setCountry(selectedCountry));
-    //     localStorage.setItem("selectedCountry", selectedCountry); // persist
-    //     dispatch(fetchProducts(selectedCountry));
-    // };
     const handleChange = async (e) => {
         const selectedCountry = e.target.value;
         console.log("selectedCountry", selectedCountry)
@@ -155,9 +150,10 @@ const Topbar = () => {
                                     className="border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base bg-[#082D3F]"
                                     value={selectedState}
                                     onChange={(e) => {
-                                        setSelectedState(e.target.value);
+                                        dispatch(setSelectedState(e.target.value));
                                         localStorage.setItem("selectedState", e.target.value);
                                     }}
+
                                 >
                                     {states.map((s) => (
                                         <option key={s.id} value={s.name}>
@@ -182,31 +178,7 @@ const Topbar = () => {
                             )}
                         </div>
 
-                        {/* <select
-                            value={country}
-                            onChange={handleChange}
-                            // className="bg-black border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base"
-                            className={`border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base ${isXpress ? "bg-[#082D3F]" : "bg-black"}`}
-                        >
-                            {countriesprice.map((c) => (
-                                <option key={c.code} value={c.code}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select> */}
-                        {/* {pathname !== "/checkout" && (
-                            <select
-                                value={country}
-                                onChange={handleChange}
-                                className="bg-black border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base"
-                            >
-                                {countries.map((c) => (
-                                    <option key={c.code} value={c.code}>
-                                        {c.name}
-                                    </option>
-                                ))}
-                            </select>
-                        )} */}
+
                     </div>
                 </div>
             </div>

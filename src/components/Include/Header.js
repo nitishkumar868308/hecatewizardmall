@@ -64,14 +64,16 @@ const Header = () => {
     const { products } = useSelector((state) => state.products);
     const [userCartState, setUserCartState] = useState([]);
     const [selectedCountry, setSelectedCountry] = useState("");
-    const [isXpressAvailable, setIsXpressAvailable] = useState(false);
+    // const [isXpressAvailable, setIsXpressAvailable] = useState(false);
 
-    useEffect(() => {
-        const country = localStorage.getItem("selectedCountry")?.toUpperCase() || "";
-        setSelectedCountry(country);
-        setIsXpressAvailable(country === "IND");
-    }, []);
+    // useEffect(() => {
+    //     const country = localStorage.getItem("selectedCountry")?.toUpperCase() || "";
+    //     setSelectedCountry(country);
+    //     setIsXpressAvailable(country === "IND");
+    // }, []);
 
+    const country = useSelector((state) => state.country); // ✅ subscribe to Redux
+    const isXpressAvailable = country === "IND";
 
     useEffect(() => {
         setUserCartState(prev => {
@@ -208,7 +210,7 @@ const Header = () => {
             }
         });
 
-
+    console.log("subcategories", subcategories)
 
     const mappedCategories = Object.values(categoriesMap);
     console.log("mappedCategories", mappedCategories);
@@ -1322,10 +1324,8 @@ const Header = () => {
 
                     <nav className="hidden md:flex flex-1 justify-center relative">
                         <ul className="flex items-center gap-6">
-                            <div className="flex items-center gap-2">
-                                {/* ❌ NOT IND → kuch bhi mat dikhao */}
+                            {/* <div className="flex items-center gap-2">
                                 {!isXpressAvailable ? null : isXpress ? (
-                                    /* IND + Xpress → Website redirect */
                                     <Link href="/">
                                         <img
                                             src="/image/HWM LOGO 1 GREY 100.png"
@@ -1334,7 +1334,25 @@ const Header = () => {
                                         />
                                     </Link>
                                 ) : (
-                                    /* IND + Website → Xpress redirect */
+                                    <Link href="/hecate-quickGo/home">
+                                        <img
+                                            src="/image/quickgo logo.png"
+                                            alt="QuickGo Logo"
+                                            className="h-20 w-24 object-contain"
+                                        />
+                                    </Link>
+                                )}
+                            </div> */}
+                            <div className="flex items-center gap-2">
+                                {!isXpressAvailable ? null : isXpress ? (
+                                    <Link href="/">
+                                        <img
+                                            src="/image/HWM LOGO 1 GREY 100.png"
+                                            alt="Website Logo"
+                                            className="h-20 w-24 object-contain"
+                                        />
+                                    </Link>
+                                ) : (
                                     <Link href="/hecate-quickGo/home">
                                         <img
                                             src="/image/quickgo logo.png"
@@ -1344,6 +1362,7 @@ const Header = () => {
                                     </Link>
                                 )}
                             </div>
+
 
 
                             {menuItems.map((item) => {

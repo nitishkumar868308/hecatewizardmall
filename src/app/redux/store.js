@@ -27,7 +27,7 @@ import delhiStoreReducer from './slices/delhiStore/delhiStoreSlice';
 import variationReducer from './slices/variationDelete/variationDeleteSlice';
 import chatReducer from './slices/chat/chatSlice';
 import bannerReducer from "./slices/banners/bannersSlice";
-
+import selectedStateReducer from './slices/selectedStateSlice';
 // import updateUserReducer from './slices/userSlice';
 
 const store = configureStore({
@@ -60,6 +60,7 @@ const store = configureStore({
         variation: variationReducer,
         chat: chatReducer,
         banner: bannerReducer,
+        selectedState: selectedStateReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });
