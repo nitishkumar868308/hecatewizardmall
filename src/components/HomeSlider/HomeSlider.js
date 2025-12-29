@@ -26,10 +26,63 @@ const HomeSlider = () => {
     }, [dispatch]);
 
     /* ================= FILTER & POSITION ================= */
+    // const slides = useMemo(() => {
+    //     if (!banners.length) return [];
+
+    //     // Filter banners according to page type
+    //     const filtered = banners.filter((banner) => {
+    //         if (isXpress && !banner.platform?.includes("xpress")) return false;
+    //         if (!isXpress && !banner.platform?.includes("website")) return false;
+
+    //         if (isXpress) {
+    //             if (!selectedState) return false;
+    //             if (!banner.states?.length) return false;
+    //             return banner.states.some(
+    //                 (s) =>
+    //                     s.state?.name?.trim().toLowerCase() ===
+    //                     selectedState?.trim().toLowerCase()
+    //             );
+    //         } else {
+    //             if (!country) return false;
+    //             if (!banner.countries?.length) return false;
+    //             return banner.countries.some((c) => c.countryCode === country);
+    //         }
+    //     });
+
+    //     if (!filtered.length) return [];
+
+    //     // Find max position
+    //     const positions = [];
+    //     filtered.forEach((banner) => {
+    //         const arr = isXpress ? banner.states : banner.countries;
+    //         arr.forEach((item) => {
+    //             if (item.position) positions.push(item.position);
+    //         });
+    //     });
+    //     const maxPosition = positions.length ? Math.max(...positions) : filtered.length;
+
+    //     // Prepare slides array with default image fallback
+    //     const slidesArray = [];
+    //     for (let pos = 1; pos <= maxPosition; pos++) {
+    //         // Try to find banner for this position
+    //         const found = filtered.find((banner) => {
+    //             const arr = isXpress ? banner.states : banner.countries;
+    //             return arr.some((item) => item.position === pos);
+    //         });
+
+    //         slidesArray.push({
+    //             id: found?.id || `default-${pos}`,
+    //             image: found?.image || `/image/1.jpeg`,
+    //             text: found?.text || "",
+    //             // key: `${found?.id || `default-${pos}`}-${pos}`, 
+    //         });
+    //     }
+
+    //     return slidesArray;
+    // }, [banners, isXpress, country, selectedState]);
     const slides = useMemo(() => {
         if (!banners.length) return [];
 
-        // Filter banners according to page type
         const filtered = banners.filter((banner) => {
             if (isXpress && !banner.platform?.includes("xpress")) return false;
             if (!isXpress && !banner.platform?.includes("website")) return false;
@@ -51,35 +104,17 @@ const HomeSlider = () => {
 
         if (!filtered.length) return [];
 
-        // Find max position
-        const positions = [];
-        filtered.forEach((banner) => {
-            const arr = isXpress ? banner.states : banner.countries;
-            arr.forEach((item) => {
-                if (item.position) positions.push(item.position);
-            });
-        });
-        const maxPosition = positions.length ? Math.max(...positions) : filtered.length;
-
-        // Prepare slides array with default image fallback
-        const slidesArray = [];
-        for (let pos = 1; pos <= maxPosition; pos++) {
-            // Try to find banner for this position
-            const found = filtered.find((banner) => {
-                const arr = isXpress ? banner.states : banner.countries;
-                return arr.some((item) => item.position === pos);
-            });
-
-            slidesArray.push({
-                id: found?.id || `default-${pos}`,
-                image: found?.image || `/image/1.jpeg`,
-                text: found?.text || "",
-                // key: `${found?.id || `default-${pos}`}-${pos}`, 
-            });
-        }
+        const slidesArray = filtered.map((banner) => ({
+            id: banner.id,
+            key: `banner-${banner.id}`,
+            image: banner.image || `/image/1.jpeg`,
+            text: banner.text || "",
+        }));
 
         return slidesArray;
     }, [banners, isXpress, country, selectedState]);
+
+
 
     if (!slides.length) return null;
 
@@ -93,7 +128,7 @@ const HomeSlider = () => {
                 pagination={{ clickable: true }}
             >
                 {slides.map((slide) => (
-                    <SwiperSlide key={slide.id}>
+                    <SwiperSlide key={slide.key}>
                         <SlideContent slide={slide} />
                     </SwiperSlide>
                 ))}
