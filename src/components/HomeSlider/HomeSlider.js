@@ -121,6 +121,7 @@ const SlideContent = ({ slide }) => (
             fill
             className="object-cover"
             priority
+            unoptimized
         />
 
         {slide.text && (

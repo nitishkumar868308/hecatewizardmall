@@ -21,8 +21,8 @@ const getPhoneYup = (countryCode) =>
             }
         });
 
-const BillingAddress = ({ userId, open, setOpen, user }) => {
-      const dispatch = useDispatch();
+const BillingAddress = ({ userId, open, setOpen, user, onUpdateAddress  }) => {
+    const dispatch = useDispatch();
     const initialValues = {
         id: userId || "",
         name: user?.name || "",
@@ -93,6 +93,16 @@ const BillingAddress = ({ userId, open, setOpen, user }) => {
             const response = await dispatch(updateUser(payload)).unwrap();
             console.log("response", response);
             toast.success(response.message || "Profile updated!");
+            if (onUpdateAddress) {
+                onUpdateAddress({
+                    address: payload.address,
+                    city: payload.city,
+                    state: payload.state,
+                    country: payload.country,
+                    pincode: payload.pincode,
+                });
+            }
+
             setOpen(false);
         } catch (err) {
             console.error(err);

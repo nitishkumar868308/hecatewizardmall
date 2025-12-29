@@ -10,6 +10,7 @@ import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 import { registerUser } from '@/app/redux/slices/authSlice';
 import toast from 'react-hot-toast';
 import BillingAddress from "./BillingAddress";
+import ShippingAddress from "./ShippingAddress";
 
 function generateRandomPassword(length = 8) {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
@@ -34,9 +35,10 @@ const CreateOrderModal = ({ onClose }) => {
     const [email, setEmail] = useState("");
 
     const [billingAddress, setBillingAddress] = useState(null);
-    const [shippingAddress, setShippingAddress] = useState(null);
-    const [showShippingModal, setShowShippingModal] = useState(false);
     const [billingModalOpen, setBillingModalOpen] = useState(false);
+    const [shippingModalOpen, setShippingModalOpen] = useState(false);
+    const [tempShipping, setTempShipping] = useState(null);
+    const [selectedShipping, setSelectedShipping] = useState(null);
 
 
     const [notes, setNotes] = useState("");
@@ -63,7 +65,7 @@ const CreateOrderModal = ({ onClose }) => {
     useEffect(() => {
         if (!selectedUser) {
             setBillingAddress(null);
-            setShippingAddress(null);
+
             return;
         }
 
@@ -88,9 +90,9 @@ const CreateOrderModal = ({ onClose }) => {
         // ✅ SHIPPING CHECK
         if (addresses && addresses.length > 0) {
             const defaultAddr = addresses.find(a => a.isDefault);
-            setShippingAddress(defaultAddr || addresses[0]);
+           
         } else {
-            setShippingAddress(null);
+            
         }
 
     }, [selectedUser, addresses]);
@@ -307,7 +309,7 @@ const CreateOrderModal = ({ onClose }) => {
 
                     {/* BILLING */}
                     <div className="p-4 border rounded-xl bg-gray-50">
-                        <h3 className="font-semibold mb-1 text-gray-700">Billing</h3>
+                        <h3 className="font-semibold mb-1 text-gray-700">Billing Address</h3>
 
                         {!selectedUser ? (
                             <p className="text-gray-400 text-sm">Select a customer to see billing info</p>
@@ -334,44 +336,37 @@ const CreateOrderModal = ({ onClose }) => {
 
 
                     {/* SHIPPING */}
-                    {showShippingModal && (
-                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center">
-                            <div className="bg-white rounded-xl w-full max-w-md p-4">
+                    <div className="p-4 border rounded-xl bg-gray-50">
+                        <h3 className="font-semibold mb-1 text-gray-700">Shipping Address</h3>
 
-                                <h3 className="font-semibold mb-3">Select Shipping Address</h3>
-
-                                <div className="space-y-2 max-h-64 overflow-y-auto">
-                                    {addresses.map(addr => (
-                                        <div
-                                            key={addr.id}
-                                            onClick={() => {
-                                                setShippingAddress(addr);
-                                                setShowShippingModal(false);
-                                            }}
-                                            className="p-3 border rounded-lg cursor-pointer hover:bg-gray-100"
-                                        >
-                                            <p className="font-medium">{addr.name}</p>
-                                            <p className="text-xs text-gray-600">{addr.address}</p>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <button
-                                    className="mt-3 text-xs text-blue-600"
-                                    onClick={() => console.log("Open Add Address Modal")}
-                                >
-                                    + Add New Address
-                                </button>
+                        {!selectedUser ? (
+                            <p className="text-gray-400 text-sm">Select a customer to see shipping info</p>
+                        ) : billingAddress ? (
+                            <div className="text-sm text-gray-700">
+                                <p>{billingAddress.address}</p>
+                                <p>
+                                    {billingAddress.city}, {billingAddress.state}
+                                </p>
+                                <p>
+                                    {billingAddress.country} - {billingAddress.pincode}
+                                </p>
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <button
+                                className="text-xs text-blue-600 font-medium"
+                                onClick={() => setShippingModalOpen(true)}
+                            >
+                                + Select Shipping Address
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* PRODUCTS TABLE */}
                 <div className="overflow-x-auto">
                     <table className="min-w-full border-collapse rounded-xl overflow-hidden text-sm shadow-md">
-                        <thead className="bg-gray-100">
-                            <tr className="uppercase text-xs text-gray-700">
+                        <thead className="bg-gray-900 ">
+                            <tr className="uppercase text-xs text-gray-100">
                                 <th className="p-2 text-center">#</th>
                                 <th className="p-2 text-center">Product</th>
                                 <th className="p-2 text-center">Variation</th>
@@ -490,8 +485,23 @@ const CreateOrderModal = ({ onClose }) => {
                     user={selectedUser}
                     open={billingModalOpen}
                     setOpen={setBillingModalOpen}
+                    onUpdateAddress={(updated) => setBillingAddress(updated)}
                 />
             )}
+
+
+            {shippingModalOpen && (
+                <ShippingAddress
+                    userId={selectedUser?.id}
+                    user={selectedUser}
+                    open={shippingModalOpen}           // modal open/close control
+                    setOpen={setShippingModalOpen}     // close ke liye
+                    addresses={addresses}              // user ke addresses
+                    billingAddress={billingAddress}    // billing address include karna
+                    onUpdateAddress={(updated) => setSelectedShipping(updated)}
+                />
+            )}
+
 
         </div>
     );
