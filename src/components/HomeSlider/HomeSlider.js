@@ -141,7 +141,7 @@ export default HomeSlider;
 
 /* ================= SLIDE CONTENT ================= */
 const SlideContent = ({ slide }) => (
-    <div className="relative w-full aspect-[16/9] md:aspect-[16/7] lg:aspect-[16/6]">
+    <div className="relative w-full aspect-[16/7] md:aspect-[16/7] lg:aspect-[16/7]">
         <Image
             src={slide.image}
             alt={slide.text || "Banner"}
@@ -149,16 +149,19 @@ const SlideContent = ({ slide }) => (
             className="object-cover"
             priority
             unoptimized
-        />
+        /> 
 
-        {slide.text && (
-            <div className="absolute inset-0 flex items-center justify-center px-4">
-                <h2 className="text-white font-bold text-center drop-shadow-lg 
-        text-lg md:text-3xl lg:text-5xl xl:text-6xl">
-                    {slide.text}
-                </h2>
-            </div>
-        )}
-    </div>
+
+        {
+    slide.text && (
+        <div className="absolute inset-0 flex items-center justify-center px-4">
+            <h2 className="text-white font-bold text-center drop-shadow-lg 
+                       text-lg sm:text-2xl md:text-3xl lg:text-5xl xl:text-6xl">
+                {slide.text}
+            </h2>
+        </div>
+    )
+}
+    </div >
 
 );

@@ -1353,6 +1353,7 @@ const Categories = () => {
         tag: selectedTag,
         alphabet: selectedAlphabet || null,
     });
+    const selectedState = useSelector(state => state.selectedState);
 
 
     // console.log("dispatches", dispatches)
@@ -1410,6 +1411,30 @@ const Categories = () => {
         dispatch(fetchDispatches())
     }, [dispatch]);
 
+
+    const stateProductIds = useMemo(() => {
+        if (!isXpress || !dispatches?.length || !selectedState) return [];
+
+        return dispatches
+            .map(ds => {
+                let foundProductId = null;
+
+                ds.entries?.forEach(dim => {
+                    dim.entries?.forEach(e => {
+                        if (
+                            e.state?.toLowerCase() === selectedState.toLowerCase()
+                        ) {
+                            foundProductId = dim.productId;
+                        }
+                    });
+                });
+
+                return foundProductId;
+            })
+            .filter(Boolean);
+    }, [dispatches, selectedState, isXpress]);
+    console.log("stateProductIds" , stateProductIds)
+
     const variationBaseProducts = useMemo(() => {
         return products.filter((p) => {
             const matchCategory =
@@ -1426,12 +1451,17 @@ const Categories = () => {
                 ? warehouseProductIds?.includes(p.id)
                 : true;
 
+            const matchState = isXpress
+                ? !selectedState || stateProductIds.includes(p.id)
+                : true;
+                console.log("matchState" , matchState)
             return (
                 p.active &&
                 matchCategory &&
                 matchSubcategory &&
                 matchPlatform &&
                 matchWarehouse &&
+                matchState && 
                 p.price <= priceRange
             );
         });

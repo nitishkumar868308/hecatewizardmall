@@ -24,6 +24,7 @@ const Page = () => {
     console.log("dispatches", dispatches)
     console.log("products", products)
     console.log("categories", categories)
+    const selectedState = useSelector(state => state.selectedState);
 
 
     useEffect(() => {
@@ -57,10 +58,10 @@ const Page = () => {
     console.log("warehouseProductIds", warehouseProductIds);
 
 
-    const selectedState =
-        typeof window !== "undefined"
-            ? localStorage.getItem("selectedState")
-            : null;
+    // const selectedState =
+    //     typeof window !== "undefined"
+    //         ? localStorage.getItem("selectedState")
+    //         : null;
 
 
     const filteredProducts = isXpress
@@ -68,12 +69,9 @@ const Page = () => {
             p => p.platform?.includes("xpress") && warehouseProductIds.includes(p.id)
         )
         : products;
+    console.log("filteredProducts" , filteredProducts)
 
 
-
-    // const filteredCategories = isXpress
-    //     ? categories.filter(cat => cat.platform?.includes("xpress"))
-    //     : categories;
     const filteredCategories = categories.filter(cat => {
         if (!isXpress) {
             return cat.platform?.includes("website");
@@ -87,10 +85,6 @@ const Page = () => {
     });
 
 
-
-    // const filteredSubcategories = isXpress
-    //     ? subcategories.filter(sub => sub.platform?.includes("xpress"))
-    //     : subcategories;
     const filteredSubcategories = subcategories.filter(sub => {
         if (!sub.active) return false;
 
@@ -114,21 +108,10 @@ const Page = () => {
         sub => sub.categoryId === candlesCategory?.id
     );
 
-
-    // const filteredProducts = isXpress
-    //     ? products.filter(p => p.platform?.includes("xpress"))
-    //     : products;
-
-
     return (
         <>
             <div className="w-full  bg-stone-100 flex justify-center py-12 px-4 md:px-8">
                 <div className="max-w-7xl w-full">
-                    {/* Heading */}
-                    {/* <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8 text-center md:text-left">
-                        Candles
-                    </h1> */}
-                    {/* <p className="w-full flex mb-5 justify-center bg-[#264757] h-10"><span className="mt-1 text-white text-2xl">Candles</span></p> */}
                     <h2 className="text-center text-white bg-[#264757] py-3 rounded-lg text-3xl font-semibold mb-5">
                         Candles
                     </h2>
@@ -139,9 +122,6 @@ const Page = () => {
 
                         {/* LEFT — BIG IMAGE */}
                         <div className="col-span-1">
-                            {/* <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300">
-                                <img src="/image/CANDLES SHOP NEW 2.png" className="w-full h-full object-cover" alt="Big" />
-                            </div> */}
                             <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
                                 <Image
                                     src={candlesCategory?.image || "/image/CANDLES SHOP NEW 2.png"}
@@ -153,22 +133,6 @@ const Page = () => {
                                 />
                             </div>
                         </div>
-
-                        {/* RIGHT — GRID IMAGES */}
-                        {/* <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            {images.map((img, i) => (
-                                <div
-                                    key={i}
-                                    className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer"
-                                >
-                                    <img
-                                        src={img}
-                                        className="w-full h-full object-cover"
-                                        alt={`img-${i}`}
-                                    />
-                                </div>
-                            ))}
-                        </div> */}
                         <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {candlesSubcategories?.map((item, i) => (
                                 <div
@@ -345,9 +309,6 @@ const Page = () => {
                     </div>
                 </div>
             </div>
-
-
-
         </>
 
     );

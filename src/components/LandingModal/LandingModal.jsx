@@ -3,17 +3,19 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchWarehouses } from '@/app/redux/slices/warehouse/wareHouseSlice';
 import { setSelectedState } from "@/app/redux/slices/selectedStateSlice";
+import { closeLocationModal } from "@/app/redux/slices/locationModalSlice";
 
 export default function LandingModal() {
     const dispatch = useDispatch();
     const { warehouses } = useSelector((state) => state.warehouses);
-
-
-    const [open, setOpen] = useState(false);
+    const reduxOpen = useSelector((state) => state.locationModal.open);
+    const [localOpen, setLocalOpen] = useState(false);
     const [selectedStateLocal, setSelectedStateLocal] = useState("");
     const [pin, setPin] = useState("");
     const [search, setSearch] = useState("");
     const [showDropdown, setShowDropdown] = useState(false);
+    const open = reduxOpen || localOpen;
+    const selectedState = useSelector(state => state.selectedState);
 
     useEffect(() => {
         dispatch(fetchWarehouses());
@@ -23,9 +25,20 @@ export default function LandingModal() {
         const savedCode = localStorage.getItem("warehouseCode");
 
         if (!savedState || !savedPin || !savedCode) {
-            setOpen(true);
+            setLocalOpen(true);
         }
     }, [dispatch]);
+
+    useEffect(() => {
+        if (reduxOpen) {
+            setSelectedStateLocal(selectedState || ""); // ← Topbar se select hui state
+            setPin(""); // pin hamesha khali
+            setSearch("");
+            setShowDropdown(false);
+            setLocalOpen(true);
+        }
+    }, [reduxOpen, selectedState]);
+
 
     const handleSubmit = () => {
         if (!selectedStateLocal) {
@@ -37,7 +50,6 @@ export default function LandingModal() {
             alert("Please select a valid pincode");
             return;
         }
-        dispatch(setSelectedState(selectedStateLocal));
         const matchedWarehouse = warehouses.find((w) =>
             w.state === selectedStateLocal &&
             w.pincode.split(",").map(p => p.trim()).includes(pin)
@@ -52,8 +64,13 @@ export default function LandingModal() {
         localStorage.setItem("pincode", pin);
         localStorage.setItem("warehouseCode", matchedWarehouse.code);
         localStorage.setItem("warehouseId", matchedWarehouse.id);
+        dispatch(setSelectedState(selectedStateLocal));
+        dispatch(closeLocationModal());
+        setLocalOpen(false);
+        setSelectedStateLocal("");
+        setPin("");
+        setSearch("");
 
-        setOpen(false);
     };
 
     if (!open) return null;

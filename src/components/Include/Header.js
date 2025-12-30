@@ -1294,7 +1294,7 @@ const Header = () => {
     return (
         <>
             {/* <header className="w-full bg-[#161619] shadow-md md:relative fixed md:static top-0 z-50"> */}
-            <header className={`w-full shadow-md md:relative fixed md:static top-0 z-50 ${isXpress ? "bg-[#264757]" : "bg-[#161619]"}`}>
+            <header className={`w-full shadow-md md:relative fixed md:static top-0 z-50 mt-[40px] md:mt-0 ${isXpress ? "bg-[#264757]" : "bg-[#161619]"}`} >
                 <div className="max-w-screen-2xl mx-auto flex items-center justify-between px-6 py-3">
 
                     {/* Logo */}
@@ -1998,152 +1998,152 @@ const Header = () => {
                         </ul>
                     </div>
                 )} */}
-                {mobileMenuOpen && (
-                    <div className="fixed inset-0 z-[999] md:hidden">
 
-                        {/* BACKDROP */}
-                        <div
-                            className="absolute inset-0 bg-black/50"
-                            onClick={() => setMobileMenuOpen(false)}
-                        />
-
-                        {/* DRAWER */}
-                        <div className="absolute right-0 top-0 h-full w-[85%] bg-[#161619] text-white
-      transform transition-transform duration-300 ease-in-out">
-
-                            {/* HEADER */}
-                            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-700">
-                                <h2 className="text-lg font-semibold">Menu</h2>
-                                <button onClick={() => setMobileMenuOpen(false)}>✕</button>
-                            </div>
-
-                            {/* MENU LIST */}
-                            <div className="p-4 space-y-4 font-functionPro overflow-y-auto h-full pb-20">
-
-                                {/* NORMAL MENU ITEMS */}
-                                {menuItems.map(item => {
-                                    if (item === "Categories") return null;
-
-                                    const itemPath = isXpress
-                                        ? `/hecate-quickGo/${item.toLowerCase()}`
-                                        : `/${item.toLowerCase()}`;
-
-                                    const isActive = isXpress
-                                        ? pathname === itemPath
-                                        : activeMenuItem === item;
-
-                                    return (
-                                        <Link
-                                            key={item}
-                                            href={itemPath}
-                                            onClick={() => {
-                                                if (!isXpress) setActiveMenuItem(item); // only set state for normal site
-                                                setOpenCategory(null);
-                                                setActiveSub(null);
-                                                setMobileMenuOpen(false);
-                                            }}
-                                            className={`
-                w-full flex justify-between items-center rounded-lg px-2 py-3
-                transition-all
-                ${isActive ? "bg-white text-black" : "text-gray-100 hover:bg-gray-700 hover:text-white"}
-            `}
-                                        >
-                                            {item}
-                                        </Link>
-                                    );
-                                })}
-
-
-                                {/* CATEGORIES ACCORDION */}
-                                <div>
-                                    <div className="text-sm font-semibold uppercase tracking-wide text-gray-100 py-3 border-b border-gray-700">
-                                        Shop by Category
-                                    </div>
-
-
-                                    {mappedCategories.map(cat => {
-                                        const isOpen = openCategory === cat.id;
-
-                                        return (
-                                            <div key={cat.id} className="border-b border-gray-700">
-                                                {/* CATEGORY HEADER */}
-                                                <button
-                                                    onClick={() => {
-                                                        setOpenCategory(isOpen ? null : cat.id);
-                                                        setActiveMenuItem(null);
-                                                    }}
-
-                                                    className={`w-full flex justify-between items-center px-2 py-3 rounded-lg transition
-    ${isOpen ? "bg-white text-black" : "hover:bg-white"}
-  `}
-                                                >
-                                                    <span className="text-sm font-medium">{cat.name}</span>
-
-                                                    <ChevronDown
-                                                        className={`h-5 w-5 transition-transform duration-300
-      ${isOpen ? "rotate-180 text-black" : "text-gray-400"}
-    `}
-                                                    />
-                                                </button>
-
-
-                                                {/* SUB CATEGORIES */}
-                                                <div
-                                                    className={`
-                        overflow-hidden transition-all duration-300
-                        ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}
-                    `}
-                                                >
-                                                    <div className="pl-6 py-2 space-y-1 border-l border-gray-600">
-                                                        {cat.sub.map((sub) => {
-                                                            const isActive = activeSub === sub;
-
-                                                            return (
-                                                                <Link
-                                                                    key={sub}
-                                                                    // href={`/categories?category=${encodeURIComponent(
-                                                                    //     cat.name
-                                                                    // )}&subcategory=${encodeURIComponent(sub)}`}
-                                                                    href={isXpress
-                                                                        ? `/hecate-quickGo/categories?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub)}`
-                                                                        : `/categories?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub)}`}
-                                                                    // onClick={() => {
-                                                                    //     setActiveSub(sub);
-                                                                    //     setMobileMenuOpen(false);
-                                                                    // }}
-                                                                    onClick={() => {
-                                                                        setActiveSub(sub);
-                                                                        setActiveMenuItem(null);
-                                                                        setMobileMenuOpen(false);
-                                                                    }}
-
-                                                                    className={`
-                                        block px-2 py-2 rounded-md text-sm
-                                        transition-all
-                                        ${isActive
-                                                                            ? "bg-white text-black font-semibold"
-                                                                            : "text-gray-300 hover:bg-gray-700 hover:text-white"}
-                                    `}
-                                                                >
-                                                                    {sub}
-                                                                </Link>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
 
 
             </header >
+            {mobileMenuOpen && (
+                <div className="fixed inset-0 z-[9999] md:hidden ">
 
+                    {/* BACKDROP */}
+                    <div
+                        className="absolute inset-0 bg-black/50"
+                        onClick={() => setMobileMenuOpen(false)}
+                    />
+
+                    {/* DRAWER */}
+                    <div className="absolute right-0 top-0 h-full w-[85%] bg-[#161619] text-white
+      transform transition-transform duration-300 ease-in-out">
+
+                        {/* HEADER */}
+                        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-700">
+                            <h2 className="text-lg font-semibold">Menu</h2>
+                            <button onClick={() => setMobileMenuOpen(false)}>✕</button>
+                        </div>
+
+                        {/* MENU LIST */}
+                        <div className="p-4 space-y-4 font-functionPro overflow-y-auto h-full pb-20">
+
+                            {/* NORMAL MENU ITEMS */}
+                            {menuItems.map(item => {
+                                if (item === "Categories") return null;
+
+                                const itemPath = isXpress
+                                    ? `/hecate-quickGo/${item.toLowerCase()}`
+                                    : `/${item.toLowerCase()}`;
+
+                                const isActive = isXpress
+                                    ? pathname === itemPath
+                                    : activeMenuItem === item;
+
+                                return (
+                                    <Link
+                                        key={item}
+                                        href={itemPath}
+                                        onClick={() => {
+                                            if (!isXpress) setActiveMenuItem(item); // only set state for normal site
+                                            setOpenCategory(null);
+                                            setActiveSub(null);
+                                            setMobileMenuOpen(false);
+                                        }}
+                                        className={`
+                w-full flex justify-between items-center rounded-lg px-2 py-3
+                transition-all
+                ${isActive ? "bg-white text-black" : "text-gray-100 hover:bg-gray-700 hover:text-white"}
+            `}
+                                    >
+                                        {item}
+                                    </Link>
+                                );
+                            })}
+
+
+                            {/* CATEGORIES ACCORDION */}
+                            <div>
+                                <div className="text-sm font-semibold uppercase tracking-wide text-gray-100 py-3 border-b border-gray-700">
+                                    Shop by Category
+                                </div>
+
+
+                                {mappedCategories.map(cat => {
+                                    const isOpen = openCategory === cat.id;
+
+                                    return (
+                                        <div key={cat.id} className="border-b border-gray-700">
+                                            {/* CATEGORY HEADER */}
+                                            <button
+                                                onClick={() => {
+                                                    setOpenCategory(isOpen ? null : cat.id);
+                                                    setActiveMenuItem(null);
+                                                }}
+
+                                                className={`w-full flex justify-between items-center px-2 py-3 rounded-lg transition
+    ${isOpen ? "bg-white text-black" : "hover:bg-white"}
+  `}
+                                            >
+                                                <span className="text-sm font-medium">{cat.name}</span>
+
+                                                <ChevronDown
+                                                    className={`h-5 w-5 transition-transform duration-300
+      ${isOpen ? "rotate-180 text-black" : "text-gray-400"}
+    `}
+                                                />
+                                            </button>
+
+
+                                            {/* SUB CATEGORIES */}
+                                            <div
+                                                className={`
+                        overflow-hidden transition-all duration-300
+                        ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}
+                    `}
+                                            >
+                                                <div className="pl-6 py-2 space-y-1 border-l border-gray-600">
+                                                    {cat.sub.map((sub) => {
+                                                        const isActive = activeSub === sub;
+
+                                                        return (
+                                                            <Link
+                                                                key={sub}
+                                                                // href={`/categories?category=${encodeURIComponent(
+                                                                //     cat.name
+                                                                // )}&subcategory=${encodeURIComponent(sub)}`}
+                                                                href={isXpress
+                                                                    ? `/hecate-quickGo/categories?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub)}`
+                                                                    : `/categories?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub)}`}
+                                                                // onClick={() => {
+                                                                //     setActiveSub(sub);
+                                                                //     setMobileMenuOpen(false);
+                                                                // }}
+                                                                onClick={() => {
+                                                                    setActiveSub(sub);
+                                                                    setActiveMenuItem(null);
+                                                                    setMobileMenuOpen(false);
+                                                                }}
+
+                                                                className={`
+                                        block px-2 py-2 rounded-md text-sm
+                                        transition-all
+                                        ${isActive
+                                                                        ? "bg-white text-black font-semibold"
+                                                                        : "text-gray-300 hover:bg-gray-700 hover:text-white"}
+                                    `}
+                                                            >
+                                                                {sub}
+                                                            </Link>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
             <Modal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)}>
                 <Login onClose={() => setLoginModalOpen(false)} />
             </Modal>

@@ -14,6 +14,7 @@ import {
     fetchStates,
 } from "@/app/redux/slices/state/addStateSlice";
 import { setSelectedState } from "@/app/redux/slices/selectedStateSlice";
+import { openLocationModal } from "@/app/redux/slices/locationModalSlice";
 
 const Topbar = () => {
     const dispatch = useDispatch();
@@ -127,15 +128,19 @@ const Topbar = () => {
     const isXpress = pathname.includes("/hecate-quickGo");
     return (
         // <div className="w-full bg-black text-white">
-        <div className={`w-full text-white ${isXpress ? "bg-[#082D3F]" : "bg-black"}`}>
+        <div className={`w-full z-[100] text-white
+            ${isXpress ? "bg-[#082D3F]" : "bg-black"}
+            fixed top-0 left-0 md:static
+        `}>
+
             <div className="mx-auto max-w-screen-2xl px-4">
                 <div className="flex items-center justify-between py-2 md:py-3">
                     <div className="w-1/3"></div>
-                    <h1 className="font-libreBaskerville tracking-wide text-base sm:text-lg md:text-2xl uppercase text-center w-1/3">
+                    <h1 className="font-libreBaskerville tracking-wide
+               text-sm md:text-2xl
+               uppercase text-center
+               w-full sm:w-1/3">
                         {isXpress ? (
-                            // <>
-                            //     Hecate <span style={{ color: "#584d3a" }}>QuickGo</span>
-                            // </>
                             "Hecate QuickGo"
                         ) : (
                             "hecate wizard mall"
@@ -149,10 +154,25 @@ const Topbar = () => {
                                 <select
                                     className="border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base bg-[#082D3F]"
                                     value={selectedState}
+                                    // onChange={(e) => {
+                                    //     dispatch(setSelectedState(e.target.value));
+                                    //     localStorage.setItem("selectedState", e.target.value);
+                                    // }}
                                     onChange={(e) => {
-                                        dispatch(setSelectedState(e.target.value));
-                                        localStorage.setItem("selectedState", e.target.value);
+                                        const newState = e.target.value;
+
+                                        dispatch(setSelectedState(newState));
+                                        localStorage.setItem("selectedState", newState);
+
+                                        // old warehouse invalidate
+                                        localStorage.removeItem("pincode");
+                                        localStorage.removeItem("warehouseCode");
+                                        localStorage.removeItem("warehouseId");
+
+                                        // 🔥 OPEN MODAL (THIS IS THE KEY)
+                                        dispatch(openLocationModal());
                                     }}
+
 
                                 >
                                     {states.map((s) => (

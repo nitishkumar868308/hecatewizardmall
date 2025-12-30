@@ -36,7 +36,7 @@ export default function RootLayout({ children }) {
           <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
             {!hideLayout && <DefaultPage />}
             {/* <main className="pt-[60px] md:pt-0 sm:pt-0"> */}
-            <main className=" md:pt-0 pt-[30px]">
+            <main className=" md:pt-0 pt-[160px]">
               {children}
             </main>
             {!hideLayout && <Footer />}

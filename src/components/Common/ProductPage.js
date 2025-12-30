@@ -242,7 +242,7 @@ const ProductDetail = () => {
         selectedVariation?.id
             ? variationStockMap[selectedVariation.id] || 0
             : 0;
-
+    console.log("selectedStock" , selectedStock)
     // useEffect(() => {
     //     if (!currentProduct) return;
 
@@ -3246,13 +3246,21 @@ const ProductDetail = () => {
                         {isXpress && (
                             <p
                                 className={`mt-3 text-sm font-semibold
-        ${selectedStock > 0 ? "text-green-700" : "text-red-600"}`}
+      ${selectedStock === 0
+                                        ? "text-red-600"
+                                        : selectedStock <= 10
+                                            ? "text-orange-600"
+                                            : "text-green-700"
+                                    }`}
                             >
-                                {selectedStock > 0
-                                    ? `Stock left: ${selectedStock} units`
-                                    : "Out of stock"}
+                                {selectedStock === 0
+                                    ? "Out of stock"
+                                    : selectedStock <= 10
+                                        ? `Only ${selectedStock} left – order soon!`
+                                        : ``}
                             </p>
                         )}
+
 
 
                         {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
