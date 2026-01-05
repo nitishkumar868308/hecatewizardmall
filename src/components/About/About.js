@@ -187,7 +187,7 @@ const About = () => {
                     <div className="relative overflow-hidden">
                         <div className="max-w-7xl mx-auto px-6 py-24 text-center">
                             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
-                                About <span className="text-[#264757]">Hecate Wizard Mall</span>
+                                About <span className="text-gray-900">Hecate Wizard Mall</span>
                             </h1>
                             <p className="max-w-4xl mx-auto text-gray-600 text-lg md:text-xl leading-relaxed">
                                 Hecate Wizard Mall is a spiritual sanctuary where ancient mystical wisdom

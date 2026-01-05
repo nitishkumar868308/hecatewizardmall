@@ -1342,9 +1342,9 @@ const Categories = () => {
     const { dispatches } = useSelector((state) => state.dispatchWarehouse);
     const [categoryVariations, setCategoryVariations] = useState({});
     const [selectedVariations, setSelectedVariations] = useState({});
-    const [selectedWarehouseId, setSelectedWarehouseId] = useState(null);
+    // const [selectedWarehouseId, setSelectedWarehouseId] = useState(null);
     const [activeFilter, setActiveFilter] = useState(null);
-
+    const [currentPath, setCurrentPath] = useState("");
     const [tempFilters, setTempFilters] = useState({
         category: selectedCategory,
         subcategory: selectedSubcategory,
@@ -1353,7 +1353,13 @@ const Categories = () => {
         tag: selectedTag,
         alphabet: selectedAlphabet || null,
     });
-    const selectedState = useSelector(state => state.selectedState);
+    const [hydrated, setHydrated] = useState(false);
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            setHydrated(true); // client-side ready
+        }
+    }, []);
+    const selectedState = useSelector(state => state.selectedState) || (hydrated ? localStorage.getItem("state") : null);
 
 
     // console.log("dispatches", dispatches)
@@ -1361,9 +1367,20 @@ const Categories = () => {
 
     useEffect(() => {
         if (typeof window !== "undefined") {
-            setSelectedWarehouseId(localStorage.getItem("warehouseId"));
+            setCurrentPath(pathname); // only set after client hydration
         }
-    }, []);
+    }, [pathname]);
+
+    // useEffect(() => {
+    //     if (typeof window !== "undefined") {
+    //         setSelectedWarehouseId(localStorage.getItem("warehouseId"));
+    //     }
+    // }, []);
+
+    const selectedWarehouseId = useSelector(
+        state => state.warehouseSelection?.warehouseId
+    ) || (hydrated ? localStorage.getItem("warehouseId") : null);
+
 
     // const warehouseProductIds = isXpress
     //     ? dispatches?.map(ds => {
@@ -1382,20 +1399,38 @@ const Categories = () => {
     //         return foundProductId;
     //     }).filter(Boolean)
     //     : null;
+    // const warehouseProductIds = useMemo(() => {
+    //     if (!isXpress || !dispatches?.length || !selectedWarehouseId) return [];
+    //     return dispatches.map(ds => {
+    //         let foundProductId = null;
+    //         ds.entries?.forEach(dim => {
+    //             dim.entries?.forEach(e => {
+    //                 if (e.warehouseId?.toString() === selectedWarehouseId.toString()) {
+    //                     foundProductId = dim.productId;
+    //                 }
+    //             });
+    //         });
+    //         return foundProductId;
+    //     }).filter(Boolean);
+    // }, [dispatches, selectedWarehouseId, isXpress]);
     const warehouseProductIds = useMemo(() => {
         if (!isXpress || !dispatches?.length || !selectedWarehouseId) return [];
-        return dispatches.map(ds => {
-            let foundProductId = null;
-            ds.entries?.forEach(dim => {
-                dim.entries?.forEach(e => {
-                    if (e.warehouseId?.toString() === selectedWarehouseId.toString()) {
-                        foundProductId = dim.productId;
-                    }
+
+        return dispatches
+            .map(ds => {
+                let found = null;
+                ds.entries?.forEach(dim => {
+                    dim.entries?.forEach(e => {
+                        if (e.warehouseId?.toString() === selectedWarehouseId.toString()) {
+                            found = dim.productId;
+                        }
+                    });
                 });
-            });
-            return foundProductId;
-        }).filter(Boolean);
+                return found;
+            })
+            .filter(Boolean);
     }, [dispatches, selectedWarehouseId, isXpress]);
+
 
 
     useEffect(() => {
@@ -1433,10 +1468,54 @@ const Categories = () => {
             })
             .filter(Boolean);
     }, [dispatches, selectedState, isXpress]);
-    console.log("stateProductIds" , stateProductIds)
+    console.log("stateProductIds", stateProductIds)
+
+    // const variationBaseProducts = useMemo(() => {
+    //     return products.filter((p) => {
+    //         const matchCategory =
+    //             selectedCategory === "All" || p.categoryId === selectedCategory;
+
+    //         const matchSubcategory =
+    //             selectedSubcategory === "All" || p.subcategoryId === selectedSubcategory;
+
+    //         const matchPlatform = isXpress
+    //             ? p.platform.includes("xpress")
+    //             : p.platform.includes("website");
+
+    //         const matchWarehouse = isXpress
+    //             ? warehouseProductIds?.includes(p.id)
+    //             : true;
+
+    //         const matchState = isXpress
+    //             ? !selectedState || stateProductIds.includes(p.id)
+    //             : true;
+    //         console.log("matchState", matchState)
+    //         return (
+    //             p.active &&
+    //             matchCategory &&
+    //             matchSubcategory &&
+    //             matchPlatform &&
+    //             matchWarehouse &&
+    //             matchState &&
+    //             p.price <= priceRange
+    //         );
+    //     });
+    // }, [
+    //     products,
+    //     selectedCategory,
+    //     selectedSubcategory,
+    //     isXpress,
+    //     warehouseProductIds,
+    //     priceRange
+    // ]);
 
     const variationBaseProducts = useMemo(() => {
-        return products.filter((p) => {
+        return products.filter(p => {
+            if (isXpress) {
+                if (!selectedState) return false;
+                if (!warehouseProductIds.includes(p.id)) return false;
+            }
+
             const matchCategory =
                 selectedCategory === "All" || p.categoryId === selectedCategory;
 
@@ -1447,21 +1526,11 @@ const Categories = () => {
                 ? p.platform.includes("xpress")
                 : p.platform.includes("website");
 
-            const matchWarehouse = isXpress
-                ? warehouseProductIds?.includes(p.id)
-                : true;
-
-            const matchState = isXpress
-                ? !selectedState || stateProductIds.includes(p.id)
-                : true;
-                console.log("matchState" , matchState)
             return (
                 p.active &&
                 matchCategory &&
                 matchSubcategory &&
                 matchPlatform &&
-                matchWarehouse &&
-                matchState && 
                 p.price <= priceRange
             );
         });
@@ -1471,8 +1540,11 @@ const Categories = () => {
         selectedSubcategory,
         isXpress,
         warehouseProductIds,
+        selectedState,
         priceRange
     ]);
+
+
 
     const mobileVariationBaseProducts = useMemo(() => {
         return products.filter((p) => {
@@ -1615,6 +1687,23 @@ const Categories = () => {
         setSelectedTag(tagQuery);
     }, [searchParams]);
 
+    // useEffect(() => {
+    //     const categoryQuery = searchParams.get("category") || "All";
+    //     const subcategoryQuery = searchParams.get("subcategory") || "All";
+
+    //     const cat = categories.find(
+    //         (c) => c.name.toLowerCase() === categoryQuery.toLowerCase()
+    //     );
+    //     setSelectedCategory(cat ? cat.id : "All");
+
+    //     const sub = subcategories.find(
+    //         (s) =>
+    //             s.name.toLowerCase() === subcategoryQuery.toLowerCase() &&
+    //             s.categoryId === (cat ? cat.id : null)
+    //     );
+    //     setSelectedSubcategory(sub ? sub.id : "All");
+    // }, [searchParams, categories, subcategories]);
+
     useEffect(() => {
         const categoryQuery = searchParams.get("category") || "All";
         const subcategoryQuery = searchParams.get("subcategory") || "All";
@@ -1716,7 +1805,8 @@ const Categories = () => {
                 : true;
 
 
-            return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && matchWarehouse && matchVariations && p.price <= priceRange;
+            return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && matchWarehouse && selectedState &&
+                stateProductIds && matchVariations && p.price <= priceRange;
         })
         .sort((a, b) =>
             sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
@@ -1767,28 +1857,64 @@ const Categories = () => {
     };
 
     // Category Click
+    // const handleCategoryClick = (cat) => {
+    //     setSelectedAlphabet(null);
+    //     setSelectedCategory(cat.id);
+    //     setSelectedSubcategory("All");
+    //     setCurrentPage(1);
+    //     router.push(
+    //         `/categories?category=${encodeURIComponent(cat.name)}&subcategory=All`
+    //     );
+    // };
+    const navigateTo = (catName, subName = "All") => {
+        if (!currentPath) return; // wait until client-side path is available
+
+        const basePath = currentPath.includes("/hecate-quickGo")
+            ? "/hecate-quickGo/categories"
+            : "/categories";
+        console.log("basePath", basePath)
+        router.push(
+            `${basePath}?category=${encodeURIComponent(catName)}&subcategory=${encodeURIComponent(subName)}`
+        );
+    };
     const handleCategoryClick = (cat) => {
         setSelectedAlphabet(null);
         setSelectedCategory(cat.id);
         setSelectedSubcategory("All");
         setCurrentPage(1);
-        router.push(
-            `/categories?category=${encodeURIComponent(cat.name)}&subcategory=All`
-        );
+
+        navigateTo(cat.name, "All");
     };
 
+
     // Subcategory Click
+    // const handleSubcategoryClick = (cat, sub) => {
+    //     setSelectedAlphabet(null);
+    //     setSelectedCategory(cat.id);
+    //     setSelectedSubcategory(sub.id);
+    //     setCurrentPage(1);
+    //     router.push(
+    //         `/categories?category=${encodeURIComponent(
+    //             cat.name
+    //         )}&subcategory=${encodeURIComponent(sub.name)}`
+    //     );
+    // };
     const handleSubcategoryClick = (cat, sub) => {
         setSelectedAlphabet(null);
         setSelectedCategory(cat.id);
         setSelectedSubcategory(sub.id);
         setCurrentPage(1);
+
+        // Decide base path
+        const basePath = pathname.includes("/hecate-quickGo")
+            ? "/hecate-quickGo/categories"
+            : "/categories";
+
         router.push(
-            `/categories?category=${encodeURIComponent(
-                cat.name
-            )}&subcategory=${encodeURIComponent(sub.name)}`
+            `${basePath}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`
         );
     };
+
 
     useEffect(() => {
         setCurrentPage(1);
@@ -1832,6 +1958,35 @@ const Categories = () => {
     );
 
     // console.log("Selected Variations", selectedVariations);
+    const getPaginationPages = (currentPage, totalPages) => {
+        const pages = [];
+        const delta = 2;
+
+        const range = {
+            start: Math.max(2, currentPage - delta),
+            end: Math.min(totalPages - 1, currentPage + delta),
+        };
+
+        pages.push(1);
+
+        if (range.start > 2) {
+            pages.push("...");
+        }
+
+        for (let i = range.start; i <= range.end; i++) {
+            pages.push(i);
+        }
+
+        if (range.end < totalPages - 1) {
+            pages.push("...");
+        }
+
+        if (totalPages > 1) {
+            pages.push(totalPages);
+        }
+
+        return pages;
+    };
 
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro relative">
@@ -1851,7 +2006,7 @@ const Categories = () => {
                     <div className="w-full md:w-1/4 bg-white p-6 space-y-6 mb-4 md:mb-0">
                         <h2 className="text-xl font-bold">Filters</h2>
 
-                        {/* Categories */}
+                        {/* Categories
                         <div>
                             <h3 className="font-semibold mb-2">Categories</h3>
                             <ul className="flex flex-col gap-2">
@@ -1860,7 +2015,12 @@ const Categories = () => {
                                         setSelectedCategory("All");
                                         setSelectedSubcategory("All");
                                         setSelectedAlphabet(null);
-                                        router.push(`/categories?category=All&subcategory=All`);
+                                        // router.push(`/categories?category=All&subcategory=All`);
+                                        const basePath = pathname.includes("/hecate-quickGo")
+                                            ? "/hecate-quickGo/categories"
+                                            : "/categories";
+
+                                        router.push(`${basePath}?category=All&subcategory=All`);
                                     }}
                                     className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedCategory === "All" ? "bg-blue-200 font-semibold" : ""
                                         }`}
@@ -1903,7 +2063,6 @@ const Categories = () => {
                             </ul>
                         </div>
 
-                        {/* SubCategory Variations */}
                         {selectedSubcategory !== "All" && Object.keys(categoryVariations).length > 0 && (
                             <div className="mb-4">
                                 {Object.entries(categoryVariations).map(([varName, varValues]) => (
@@ -1938,8 +2097,77 @@ const Categories = () => {
                                     </div>
                                 ))}
                             </div>
-                        )}
+                        )} */}
 
+                        {/* Categories */}
+                        <div>
+                            <h3 className="font-semibold mb-2">Categories</h3>
+                            <ul className="flex flex-col gap-2">
+                                {/* All Category */}
+                                <li
+                                    onClick={() => {
+                                        setSelectedCategory("All");
+                                        setSelectedSubcategory("All");
+                                        setSelectedAlphabet(null);
+
+                                        const basePath = pathname.includes("/hecate-quickGo")
+                                            ? "/hecate-quickGo/categories"
+                                            : "/categories";
+
+                                        router.push(`${basePath}?category=All&subcategory=All`);
+                                    }}
+                                    className={`cursor-pointer p-2 rounded hover:bg-blue-100 ${selectedCategory === "All" ? "bg-blue-200 font-semibold" : ""
+                                        }`}
+                                >
+                                    All
+                                </li>
+
+                                {/* Filtered Categories */}
+                                {(isXpress
+                                    ? categories.filter(cat =>
+                                        cat.platform?.includes("xpress") &&
+                                        cat.states?.some(st => st.name === selectedState)
+                                    )
+                                    : categories
+                                ).map((cat) => (
+                                    <li key={cat.id} className="mb-2">
+                                        <div
+                                            onClick={() => handleCategoryClick(cat)}
+                                            className={`cursor-pointer flex items-center justify-between p-2 rounded hover:bg-blue-100 
+                    ${selectedCategory === cat.id ? "bg-blue-200 font-semibold" : ""}`}
+                                        >
+                                            <span>{cat.name}</span>
+                                            <span className="text-lg font-bold">
+                                                {selectedCategory === cat.id ? "−" : "+"}
+                                            </span>
+                                        </div>
+
+                                        {/* Filtered Subcategories */}
+                                        {selectedCategory === cat.id &&
+                                            subcategories.some(s => s.categoryId === cat.id) && (
+                                                <ul className="ml-4 mt-1 flex flex-col gap-1">
+                                                    {(isXpress
+                                                        ? subcategories
+                                                            .filter(s => s.categoryId === cat.id)
+                                                            .filter(s => s.platform?.includes("xpress"))
+                                                            .filter(s => s.states?.some(st => st.name === selectedState))
+                                                        : subcategories.filter(s => s.categoryId === cat.id)
+                                                    ).map(sub => (
+                                                        <li
+                                                            key={sub.id}
+                                                            onClick={() => handleSubcategoryClick(cat, sub)}
+                                                            className={`cursor-pointer p-1 rounded hover:bg-blue-50 text-sm 
+                                    ${selectedSubcategory === sub.id ? "bg-blue-100 font-semibold" : ""}`}
+                                                        >
+                                                            {sub.name}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
 
 
 
@@ -2150,7 +2378,7 @@ const Categories = () => {
                     )}
 
                     {/* Pagination */}
-                    {!showSubcategoryCards && (
+                    {/* {!showSubcategoryCards && (
                         <div className="flex justify-center items-center gap-2 mt-6 flex-wrap">
                             <button
                                 disabled={currentPage === 1}
@@ -2187,61 +2415,80 @@ const Categories = () => {
                                 Next
                             </button>
                         </div>
+                    )} */}
+
+                    {!showSubcategoryCards && totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-2 mt-6 flex-wrap">
+
+                            {/* Prev */}
+                            <button
+                                disabled={currentPage === 1}
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                className={`px-3 py-2 rounded ${currentPage === 1
+                                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                    : "bg-gray-600 text-white hover:bg-gray-800"
+                                    }`}
+                            >
+                                Prev
+                            </button>
+
+                            {/* Page Numbers */}
+                            {getPaginationPages(currentPage, totalPages).map((page, idx) =>
+                                page === "..." ? (
+                                    <span key={idx} className="px-2 text-gray-500">...</span>
+                                ) : (
+                                    <button
+                                        key={idx}
+                                        onClick={() => handlePageChange(page)}
+                                        className={`px-3 py-1 rounded ${currentPage === page
+                                            ? "bg-gray-600 text-white font-semibold"
+                                            : "bg-gray-100 hover:bg-gray-300"
+                                            }`}
+                                    >
+                                        {page}
+                                    </button>
+                                )
+                            )}
+
+                            {/* Next */}
+                            <button
+                                disabled={currentPage === totalPages}
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                className={`px-3 py-2 rounded ${currentPage === totalPages
+                                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                    : "bg-gray-600 text-white hover:bg-gray-800"
+                                    }`}
+                            >
+                                Next
+                            </button>
+                        </div>
                     )}
+
                 </div>
                 {isDesktop && (
                     <div className="hidden md:flex flex-col gap-4 ml-4 sticky top-20">
                         {availableAlphabets.map((letter) => {
                             const isSelected = selectedAlphabet === letter;
+
                             return (
-                                <div key={letter} className="relative flex items-center justify-center">
-                                    {/* Alphabet Button */}
-                                    <button
-                                        onClick={() =>
-                                            setSelectedAlphabet((prev) => (prev === letter ? null : letter))
-                                        }
-                                        className={`group w-8 h-8 cursor-pointer flex items-center justify-center text-sm font-semibold rounded-full transition-all duration-300
-              ${isSelected
-                                                ? "bg-gray-500 text-white shadow-lg scale-110"
-                                                : "bg-gray-100 hover:bg-gray-200 hover:scale-105"
-                                            }`}
-                                    >
-                                        {letter}
-
-                                        {/* Tooltip (only on button hover now) */}
-                                        <div
-                                            className="
-                                                    absolute
-                                                    left-1/2
-                                                    -translate-x-1/2
-                                                    bottom-full     /* ❗ Tooltip element ke UPPAR show hoga */
-                                                    mb-4            /* ❗ Extra gap → alphabet clear dikhai dega */
-                                                    opacity-0
-                                                    group-hover:opacity-100
-                                                    bg-gray-700
-                                                    text-white
-                                                    text-xs
-                                                    px-2
-                                                    py-1
-                                                    rounded-md
-                                                    transition-opacity
-                                                    duration-300
-                                                    whitespace-nowrap
-                                                    max-w-[200px]
-                                                    text-center
-                                                    overflow-hidden
-                                                    text-ellipsis
-                                                "
-                                        >
-                                            {isSelected ? "Click again to deselect" : "Click to select"}
-                                        </div>
-
-                                    </button>
-                                </div>
+                                <button
+                                    key={letter}
+                                    onClick={() =>
+                                        setSelectedAlphabet(prev => (prev === letter ? null : letter))
+                                    }
+                                    className={`w-8 h-8 flex items-center justify-center text-sm font-semibold rounded-full transition-all duration-200
+                        ${isSelected
+                                            ? "bg-gray-500 text-white"
+                                            : "bg-gray-100 hover:bg-gray-200"
+                                        }`}
+                                >
+                                    {letter}
+                                </button>
                             );
                         })}
                     </div>
                 )}
+
 
 
                 {/* Mobile Filters Modal */}
@@ -2289,65 +2536,30 @@ const Categories = () => {
                                 </div>
 
                                 {/* ATTRIBUTES SECTION */}
-                                {!isDesktop && showFilters && tempFilters.subcategory && tempFilters.subcategory !== "All" && Object.keys(categoryVariations).length > 0 && (
-                                    <div className="px-3 py-4 space-y-5">
-                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Attributes</p>
+                                {/* ATTRIBUTES (LEFT SIDE – NAMES ONLY) */}
+                                {tempFilters.subcategory !== "All" &&
+                                    Object.keys(categoryVariations).length > 0 && (
+                                        <div className="border-t">
+                                            <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                                                Attributes
+                                            </p>
 
-                                        {Object.entries(categoryVariations).map(([varName, varValues]) => (
-                                            <div key={varName}>
-                                                <h4 className="text-sm font-medium text-gray-700 mb-2">{varName}</h4>
+                                            {Object.keys(categoryVariations).map((attr) => (
+                                                <button
+                                                    key={attr}
+                                                    onClick={() => setActiveFilter(attr)}
+                                                    className={`w-full text-left px-4 py-3 text-sm border-b transition
+            ${activeFilter === attr
+                                                            ? "bg-white font-semibold text-gray-900"
+                                                            : "text-gray-600 hover:bg-gray-100"
+                                                        }`}
+                                                >
+                                                    {attr}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
 
-                                                {varName.toLowerCase() === "color" ? (
-                                                    <div className="flex flex-wrap gap-3 max-h-32 overflow-y-auto pr-1">
-                                                        {varValues.map((value) => {
-                                                            const isSelected = selectedVariations[varName] === value;
-
-                                                            return (
-                                                                <button
-                                                                    key={`${varName}-${value}`}
-                                                                    onClick={() =>
-                                                                        setSelectedVariations((prev) => ({
-                                                                            ...prev,
-                                                                            [varName]: isSelected ? null : value,
-                                                                        }))
-                                                                    }
-                                                                    title={value}
-                                                                    className={`w-8 h-8 rounded-full border-2 transition ${isSelected ? "ring-2 ring-gray-900 border-white" : "border-gray-300"
-                                                                        }`}
-                                                                    style={{ backgroundColor: value }}
-                                                                />
-                                                            );
-                                                        })}
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {varValues.map((value) => {
-                                                            const isSelected = selectedVariations[varName] === value;
-
-                                                            return (
-                                                                <button
-                                                                    key={`${varName}-${value}`}
-                                                                    onClick={() =>
-                                                                        setSelectedVariations((prev) => ({
-                                                                            ...prev,
-                                                                            [varName]: isSelected ? null : value,
-                                                                        }))
-                                                                    }
-                                                                    className={`px-3 py-1.5 rounded-full text-xs border transition ${isSelected
-                                                                        ? "bg-gray-900 text-white border-gray-900"
-                                                                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                                                                        }`}
-                                                                >
-                                                                    {value}
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
 
 
 
@@ -2440,6 +2652,43 @@ const Categories = () => {
                                         ))}
                                     </div>
                                 )}
+
+                                {/* ATTRIBUTE VALUES (RIGHT SIDE) */}
+                                {activeFilter &&
+                                    categoryVariations[activeFilter] && (
+                                        <div className="space-y-3">
+                                            <h3 className="text-sm font-semibold text-gray-800 mb-2">
+                                                {activeFilter}
+                                            </h3>
+
+                                            <div className="flex flex-wrap gap-2">
+                                                {categoryVariations[activeFilter].map((value) => {
+                                                    const isSelected = selectedVariations[activeFilter] === value;
+
+                                                    return (
+                                                        <button
+                                                            key={value}
+                                                            onClick={() =>
+                                                                setSelectedVariations((prev) => ({
+                                                                    ...prev,
+                                                                    [activeFilter]: isSelected ? null : value,
+                                                                }))
+                                                            }
+                                                            className={`px-4 py-2 rounded-full text-xs border transition
+                ${isSelected
+                                                                    ? "bg-gray-900 text-white border-gray-900"
+                                                                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                                                                }`}
+                                                        >
+                                                            {value}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+
 
                                 {/* ALPHABET */}
                                 {activeFilter === "alphabet" && (

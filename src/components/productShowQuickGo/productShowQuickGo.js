@@ -26,6 +26,16 @@ const Page = () => {
     console.log("categories", categories)
     const selectedState = useSelector(state => state.selectedState);
 
+    const warehouseIdFromRedux = useSelector(
+        state => state.warehouseSelection?.warehouseId
+    );
+
+    const warehouseId =
+        warehouseIdFromRedux ||
+        (typeof window !== "undefined"
+            ? localStorage.getItem("warehouseId")
+            : null);
+
 
     useEffect(() => {
         dispatch(fetchAllProducts())
@@ -36,7 +46,6 @@ const Page = () => {
 
     const isXpress = pathname.includes("/hecate-quickGo");
 
-    const selectedWarehouseId = typeof window !== "undefined" ? localStorage.getItem("warehouseId") : null;
     const selectedWarehouseCode = typeof window !== "undefined" ? localStorage.getItem("warehouseCode") : null;
 
     const warehouseProductIds = dispatches
@@ -45,7 +54,7 @@ const Page = () => {
 
             ds.entries?.forEach(dim => {
                 dim.entries?.forEach(e => {
-                    if (e.warehouseId?.toString() === selectedWarehouseId?.toString()) {
+                    if (e.warehouseId?.toString() === warehouseId?.toString()) {
                         foundProductId = dim.productId; // <-- productId यहाँ से लेना
                     }
                 });
@@ -55,21 +64,13 @@ const Page = () => {
         })
         .filter(Boolean); // remove nulls
 
-    console.log("warehouseProductIds", warehouseProductIds);
-
-
-    // const selectedState =
-    //     typeof window !== "undefined"
-    //         ? localStorage.getItem("selectedState")
-    //         : null;
-
 
     const filteredProducts = isXpress
         ? products.filter(
             p => p.platform?.includes("xpress") && warehouseProductIds.includes(p.id)
         )
         : products;
-    console.log("filteredProducts" , filteredProducts)
+    console.log("filteredProducts", filteredProducts)
 
 
     const filteredCategories = categories.filter(cat => {

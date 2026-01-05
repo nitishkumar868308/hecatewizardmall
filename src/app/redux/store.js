@@ -29,6 +29,8 @@ import chatReducer from './slices/chat/chatSlice';
 import bannerReducer from "./slices/banners/bannersSlice";
 import selectedStateReducer from './slices/selectedStateSlice';
 import locationModalReducer from './slices/locationModalSlice';
+import warehouseSelectionReducer from "./slices/warehouseSelectionSlice";
+
 
 // import updateUserReducer from './slices/userSlice';
 
@@ -64,6 +66,7 @@ const store = configureStore({
         banner: bannerReducer,
         selectedState: selectedStateReducer,
         locationModal: locationModalReducer,
+        warehouseSelection: warehouseSelectionReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

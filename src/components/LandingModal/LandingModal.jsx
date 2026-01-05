@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchWarehouses } from '@/app/redux/slices/warehouse/wareHouseSlice';
 import { setSelectedState } from "@/app/redux/slices/selectedStateSlice";
 import { closeLocationModal } from "@/app/redux/slices/locationModalSlice";
+import { setWarehouseSelection } from "@/app/redux/slices/warehouseSelectionSlice";
+
 
 export default function LandingModal() {
     const dispatch = useDispatch();
@@ -65,6 +67,13 @@ export default function LandingModal() {
         localStorage.setItem("warehouseCode", matchedWarehouse.code);
         localStorage.setItem("warehouseId", matchedWarehouse.id);
         dispatch(setSelectedState(selectedStateLocal));
+        dispatch(
+            setWarehouseSelection({
+                warehouseId: matchedWarehouse.id,
+                warehouseCode: matchedWarehouse.code,
+                pincode: pin,
+            })
+        );
         dispatch(closeLocationModal());
         setLocalOpen(false);
         setSelectedStateLocal("");

@@ -5,7 +5,7 @@ import LandingModal from "@/components/LandingModal/LandingModal";
 export default function Home() {
     return (
         <>
-            <LandingModal />
+            {/* <LandingModal /> */}
             <HomeSlider />
             <ProductShowQuickGo />
         </>

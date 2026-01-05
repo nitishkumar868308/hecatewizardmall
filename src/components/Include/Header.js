@@ -74,7 +74,8 @@ const Header = () => {
 
     const country = useSelector((state) => state.country); // ✅ subscribe to Redux
     const isXpressAvailable = country === "IND";
-
+    const isXpress = pathname.includes("/hecate-quickGo");
+    const purchasePlatform = isXpress ? "xpress" : "website";
     useEffect(() => {
         setUserCartState(prev => {
             // Only update if different length or different ids
@@ -128,7 +129,7 @@ const Header = () => {
         .slice()
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
         .map(h => h.name);
-    const isXpress = pathname.includes("/hecate-quickGo");
+
 
     const selectedState = typeof window !== "undefined"
         ? localStorage.getItem("selectedState")
@@ -536,7 +537,8 @@ const Header = () => {
 
 
     const updateQuantity = async (itemId, delta) => {
-        const targetItem = userCartState.find((i) => i.id === itemId);
+        const targetItem = userCartState.find((i) => i.id === itemId && i.purchasePlatform === purchasePlatform);
+        console.log("targetItem" , targetItem)
         if (!targetItem) return;
 
         const newQuantity = Math.max(1, targetItem.quantity + delta);
@@ -694,7 +696,10 @@ const Header = () => {
     const buildFreePaidItems = (product, freeQty, sameCoreVariation, cart) => {
         let items = cart
             .filter(it => {
-                if (it.productId !== product.id) return false;
+                if (
+                    it.productId !== product.id ||
+                    it.purchasePlatform !== purchasePlatform
+                ) return false;
                 return sameCoreVariation(it); // color ignore + core attribute match
             })
             .map(it => ({
@@ -765,6 +770,7 @@ const Header = () => {
         const selectedCore = getCoreAttrs(selectedVariation?.attributes);
 
         const sameCoreVariation = (item) => {
+            if (item.purchasePlatform !== purchasePlatform) return false;
             const itemCore = getCoreAttrs(item.attributes);
             return Object.entries(selectedCore).every(([k, v]) => itemCore[k] && itemCore[k] === v);
         };
@@ -997,7 +1003,7 @@ const Header = () => {
         // 🧩 Find same group items
         const sameGroupItems = (Array.isArray(userCart) ? userCart : []).filter((item) => {
             if (!item) return false;
-            if (item.productId !== product.id) return false;
+            if (item.productId !== product.id || item.purchasePlatform !== purchasePlatform) return false;
             const itemCoreKey = Object.entries(item.attributes || {})
                 .filter(([k]) => !["color", "colour"].includes(k.toLowerCase()))
                 .map(([k, v]) => `${k}:${v}`)

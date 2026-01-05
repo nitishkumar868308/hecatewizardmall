@@ -242,7 +242,7 @@ const ProductDetail = () => {
         selectedVariation?.id
             ? variationStockMap[selectedVariation.id] || 0
             : 0;
-    console.log("selectedStock" , selectedStock)
+    console.log("selectedStock", selectedStock)
     // useEffect(() => {
     //     if (!currentProduct) return;
 
@@ -1024,58 +1024,61 @@ const ProductDetail = () => {
     //         });
     //     }
     // };
-    const increment = async () => {
-        const newQty = quantity + 1;
-        console.log("newQty", newQty);
+    // const increment = async () => {
+    //     const newQty = quantity + 1;
+    //     console.log("newQty", newQty);
 
-        // ✅ pehle local state update mat karo
-        // setQuantity(newQty);
+    //     // ✅ pehle local state update mat karo
+    //     // setQuantity(newQty);
 
-        // ✅ computeBulkStatus pehle karo taaki latest quantity pass ho
-        const newBulkStatus = computeBulkStatus({
-            product,
-            selectedVariation,
-            selectedAttributes,
-            userCart,
-            quantity: newQty,
-            cartItem,
-        });
+    //     // ✅ computeBulkStatus pehle karo taaki latest quantity pass ho
+    //     const newBulkStatus = computeBulkStatus({
+    //         product,
+    //         selectedVariation,
+    //         selectedAttributes,
+    //         userCart,
+    //         quantity: newQty,
+    //         cartItem,
+    //     });
 
-        if (isInCart) {
-            const isBulkEligible = newBulkStatus.eligible;
+    //     if (isInCart) {
+    //         const isBulkEligible = newBulkStatus.eligible;
 
-            // ✅ Redux update (offerApplied + new qty)
-            await updateGroupBulkStatus(newBulkStatus, isBulkEligible, newQty);
-        }
+    //         // ✅ Redux update (offerApplied + new qty)
+    //         await updateGroupBulkStatus(newBulkStatus, isBulkEligible, newQty);
+    //     }
 
-        // ✅ Redux update ke baad local quantity sync karo
-        setQuantity(newQty);
-    };
+    //     // ✅ Redux update ke baad local quantity sync karo
+    //     setQuantity(newQty);
+    // };
 
 
-    const decrement = async () => {
-        if (quantity === 1 && isInCart) {
-            setShowConfirm(true);
-        } else {
-            const newQty = Math.max(1, quantity - 1);
-            console.log("newQty", newQty)
-            setQuantity(newQty);
+    // const decrement = async () => {
+    //     if (quantity === 1 && isInCart) {
+    //         setShowConfirm(true);
+    //     } else {
+    //         const newQty = Math.max(1, quantity - 1);
+    //         console.log("newQty", newQty)
+    //         setQuantity(newQty);
 
-            const newBulkStatus = computeBulkStatus({
-                product,
-                selectedVariation,
-                selectedAttributes,
-                userCart,
-                quantity: newQty,
-                cartItem,
-            });
+    //         const newBulkStatus = computeBulkStatus({
+    //             product,
+    //             selectedVariation,
+    //             selectedAttributes,
+    //             userCart,
+    //             quantity: newQty,
+    //             cartItem,
+    //         });
 
-            if (isInCart) {
-                const isBulkEligible = newBulkStatus.eligible;
-                await updateGroupBulkStatus(newBulkStatus, isBulkEligible, newQty);
-            }
-        }
-    };
+    //         if (isInCart) {
+    //             const isBulkEligible = newBulkStatus.eligible;
+    //             await updateGroupBulkStatus(newBulkStatus, isBulkEligible, newQty);
+    //         }
+    //     }
+    // };
+
+
+
 
 
     // const decrement = async () => {
@@ -1704,10 +1707,168 @@ const ProductDetail = () => {
     //     return { offerApplied, offerDiscount, offerId, offerMeta };
     // };
 
+    // const updateGroupBulkStatus = async (bulkStatus, isBulkEligible, newQty) => {
+    //     const { sameGroupItems, variationBulkPrice, variationBulkMinQty } = bulkStatus;
+
+
+
+    //     const normalizeAttrs = (attrs = {}) => {
+    //         const result = {};
+    //         Object.entries(attrs).forEach(([k, v]) => {
+    //             if (!["color", "colour"].includes(k.toLowerCase())) {
+    //                 result[k.toLowerCase().trim()] = String(v).toLowerCase().trim();
+    //             }
+    //         });
+    //         return result;
+    //     };
+
+    //     console.log("===== updateGroupBulkStatus START =====");
+
+    //     const groupCoreAttrs = normalizeAttrs(sameGroupItems[0].attributes || {});
+
+    //     // 🔹 Compute group-level quantity ignoring color
+    //     const totalGroupQty = userCart.reduce((sum, cItem) => {
+    //         if (
+    //             cItem.productId !== product.id ||
+    //             cItem.purchasePlatform !== purchasePlatform
+    //         ) return sum;
+
+    //         const cartCoreAttrs = normalizeAttrs(cItem.attributes || {});
+    //         const isSameCore = Object.entries(groupCoreAttrs).every(
+    //             ([k, v]) => cartCoreAttrs[k] === v
+    //         );
+    //         const qtyToAdd = cItem.id === cartItem.id ? newQty : cItem.quantity;
+    //         return isSameCore ? sum + qtyToAdd : sum;
+    //     }, 0);
+
+    //     console.log("totalGroupQty", totalGroupQty);
+
+    //     // 🔹 Apply product offer for the group (pass cartItem.id for updates)
+    //     const groupVariation = product?.variations?.find(v => v.id === sameGroupItems[0].variationId) || sameGroupItems[0];
+    //     const groupProductOffer = applyProductOffers(product, groupVariation, totalGroupQty, userCart, cartItem.id);
+
+    //     console.log("groupProductOffer", groupProductOffer);
+
+    //     // 🔹 Update each item with offer & bulk logic
+    //     await Promise.all(
+    //         sameGroupItems.map(async (item) => {
+    //             console.log("\n--- Processing item ---", item);
+
+    //             const itemVariation = product?.variations?.find(
+    //                 (v) => v.id === item.variationId
+    //             );
+
+    //             const basePrice = Number(item.pricePerItem);
+    //             let offerApplied = false;
+    //             let itemBulkPrice = null;
+    //             let itemBulkMinQty = null;
+    //             let totalPrice = 0;
+
+    //             let itemQty = item.id === cartItem.id ? newQty : item.quantity;
+
+    //             if (isBulkEligible) {
+    //                 // 🔹 Bulk logic unchanged
+    //                 offerApplied = true;
+    //                 itemBulkPrice = Number(itemVariation?.bulkPrice) || Number(item.bulkPrice) || basePrice;
+    //                 itemBulkMinQty = variationBulkMinQty;
+    //                 totalPrice = itemBulkPrice * itemQty;
+
+    //                 // ✅ Product offer must be cleared for all items in group
+    //                 await dispatch(
+    //                     updateCart({
+    //                         id: item.id,
+    //                         quantity: itemQty,
+    //                         offerApplied,
+    //                         bulkPrice: itemBulkPrice,
+    //                         bulkMinQty: itemBulkMinQty,
+    //                         totalPrice,
+    //                         productOfferApplied: false,
+    //                         productOfferDiscount: null,
+    //                         productOfferId: null,
+    //                         productOffer: null,
+    //                     })
+    //                 );
+    //             } else {
+    //                 // 🔹 Product offer logic
+    //                 // Calculate offer per item to make sure sabka JSON update ho
+    //                 const groupVariation = product?.variations?.find(
+    //                     (v) => v.id === item.variationId
+    //                 ) || item;
+
+    //                 const productOffer = groupProductOffer;
+
+    //                 const productOfferApplied = productOffer.offerApplied;
+    //                 const productOfferDiscount = productOffer.offerDiscount;
+    //                 const productOfferId = productOffer.offerId;
+    //                 const productOfferMeta = productOffer.offerMeta;
+
+    //                 totalPrice =
+    //                     productOfferApplied && productOfferDiscount > 0
+    //                         ? basePrice * (1 - productOfferDiscount / 100) * itemQty
+    //                         : basePrice * itemQty;
+
+    //                 const shouldResetOffers = !productOfferApplied;
+
+    //                 await dispatch(
+    //                     updateCart({
+    //                         id: item.id,
+    //                         quantity: itemQty,
+    //                         offerApplied,
+    //                         bulkPrice: null,
+    //                         bulkMinQty: null,
+    //                         totalPrice,
+    //                         productOfferApplied: shouldResetOffers ? false : productOfferApplied,
+    //                         productOfferDiscount: shouldResetOffers
+    //                             ? null
+    //                             : productOfferDiscount,
+    //                         productOfferId: shouldResetOffers ? null : productOfferId,
+    //                         productOffer: shouldResetOffers ? null : productOfferMeta,
+    //                     })
+    //                 );
+    //             }
+    //         })
+    //     );
+
+    //     await dispatch(fetchCart());
+    //     dispatch(triggerCartRefresh());
+    //     console.log("===== updateGroupBulkStatus END =====");
+    // };
+
+    const increment = async () => {
+        const newQty = quantity + 1;
+        const newBulkStatus = computeBulkStatus({
+            product,
+            selectedVariation,
+            selectedAttributes,
+            userCart,
+            quantity: newQty,
+            cartItem,
+        });
+        if (isInCart) {
+            await updateGroupBulkStatus(newBulkStatus, newBulkStatus.eligible, newQty);
+        }
+        setQuantity(newQty); // last
+    };
+
+    const decrement = async () => {
+        if (quantity === 1 && isInCart) setShowConfirm(true);
+        else {
+            const newQty = Math.max(1, quantity - 1);
+            const newBulkStatus = computeBulkStatus({
+                product,
+                selectedVariation,
+                selectedAttributes,
+                userCart,
+                quantity: newQty,
+                cartItem,
+            });
+            if (isInCart) await updateGroupBulkStatus(newBulkStatus, newBulkStatus.eligible, newQty);
+            setQuantity(newQty);
+        }
+    };
+
     const updateGroupBulkStatus = async (bulkStatus, isBulkEligible, newQty) => {
         const { sameGroupItems, variationBulkPrice, variationBulkMinQty } = bulkStatus;
-
-
 
         const normalizeAttrs = (attrs = {}) => {
             const result = {};
@@ -1719,118 +1880,131 @@ const ProductDetail = () => {
             return result;
         };
 
-        console.log("===== updateGroupBulkStatus START =====");
-
         const groupCoreAttrs = normalizeAttrs(sameGroupItems[0].attributes || {});
 
-        // 🔹 Compute group-level quantity ignoring color
+        // build string key
+        const groupCoreKey = Object.entries(groupCoreAttrs)
+            .map(([k, v]) => `${k}:${v}`)
+            .join("|");
+
         const totalGroupQty = userCart.reduce((sum, cItem) => {
-            if (cItem.productId !== product.id) return sum;
+            if (cItem.productId !== product.id || cItem.purchasePlatform !== purchasePlatform) return sum;
+
             const cartCoreAttrs = normalizeAttrs(cItem.attributes || {});
-            const isSameCore = Object.entries(groupCoreAttrs).every(
-                ([k, v]) => cartCoreAttrs[k] === v
-            );
+            const cartCoreKey = Object.entries(cartCoreAttrs)
+                .map(([k, v]) => `${k}:${v}`)
+                .join("|");
+
+            const isSameCore = groupCoreKey === cartCoreKey;
             const qtyToAdd = cItem.id === cartItem.id ? newQty : cItem.quantity;
             return isSameCore ? sum + qtyToAdd : sum;
         }, 0);
 
-        console.log("totalGroupQty", totalGroupQty);
-
-        // 🔹 Apply product offer for the group (pass cartItem.id for updates)
+        console.log("normalizeAttrs", normalizeAttrs)
+        console.log("groupCoreAttrs", groupCoreAttrs)
+        console.log("totalGroupQty", totalGroupQty)
+        // 🔹 Apply product offer for the group
+        const groupCoreAttributes = {};
+        Object.entries(groupCoreAttrs).forEach(([k, v]) => {
+            groupCoreAttributes[k] = v;
+        });
         const groupVariation = product?.variations?.find(v => v.id === sameGroupItems[0].variationId) || sameGroupItems[0];
-        const groupProductOffer = applyProductOffers(product, groupVariation, newQty, userCart, cartItem.id);
+        console.log("productpage", product)
+        console.log("groupVariation", groupVariation)
+        console.log("userCart", userCart)
+        console.log("cartItem.id", cartItem.id)
+        console.log("cartItem.attributes", cartItem.attributes)
+        const updatedCartForOffer = userCart.map(it => {
+            if (it.id === cartItem.id) {
+                return { ...it, quantity: newQty };
+            }
+            return it;
+        });
+        const groupProductOffer = applyProductOffers(
+            product,
+            groupVariation,
+            newQty, // pass the incremented quantity
+            updatedCartForOffer, // ✅ updated cart
+            cartItem.id,
+            cartItem.attributes // ⚡ Pass the core attributes here
+        );
+        console.log("💥 groupProductOffer after qty update:", groupProductOffer);
+        console.log("💥 Free Items:", groupProductOffer.offerMeta?.freeItems || []);
+        console.log("💥 Paid Items:", groupProductOffer.offerMeta?.paidItems || []);
 
-        console.log("groupProductOffer", groupProductOffer);
-
+        console.log("totalGroupQty", totalGroupQty);
+        console.log("cartItem.id", cartItem.id);
+        console.log("sameGroupItems", sameGroupItems);
+        console.log("product.offers", product.offers);
         // 🔹 Update each item with offer & bulk logic
         await Promise.all(
             sameGroupItems.map(async (item) => {
-                console.log("\n--- Processing item ---", item);
-
-                const itemVariation = product?.variations?.find(
-                    (v) => v.id === item.variationId
-                );
-
+                const itemVariation = product?.variations?.find(v => v.id === item.variationId) || item;
                 const basePrice = Number(item.pricePerItem);
-                let offerApplied = false;
-                let itemBulkPrice = null;
-                let itemBulkMinQty = null;
-                let totalPrice = 0;
+                const itemQty = item.id === cartItem.id ? newQty : item.quantity;
 
-                let itemQty = item.id === cartItem.id ? newQty : item.quantity;
+                // 🔹 Bulk logic
+                let totalPrice = basePrice * itemQty;
+                let bulkPrice = null;
+                let bulkMinQty = null;
+                let offerApplied = false;
+                let productOfferApplied = false;
+                let productOfferDiscount = null;
+                let productOfferId = null;
+                let productOfferMeta = null;
 
                 if (isBulkEligible) {
-                    // 🔹 Bulk logic unchanged
+                    bulkPrice = Number(itemVariation?.bulkPrice || item.bulkPrice || basePrice);
+                    bulkMinQty = variationBulkMinQty;
+                    totalPrice = bulkPrice * itemQty;
                     offerApplied = true;
-                    itemBulkPrice = Number(itemVariation?.bulkPrice) || Number(item.bulkPrice) || basePrice;
-                    itemBulkMinQty = variationBulkMinQty;
-                    totalPrice = itemBulkPrice * itemQty;
 
-                    // ✅ Product offer must be cleared for all items in group
-                    await dispatch(
-                        updateCart({
-                            id: item.id,
-                            quantity: itemQty,
-                            offerApplied,
-                            bulkPrice: itemBulkPrice,
-                            bulkMinQty: itemBulkMinQty,
-                            totalPrice,
-                            productOfferApplied: false,
-                            productOfferDiscount: null,
-                            productOfferId: null,
-                            productOffer: null,
-                        })
-                    );
-                } else {
-                    // 🔹 Product offer logic
-                    // Calculate offer per item to make sure sabka JSON update ho
-                    const groupVariation = product?.variations?.find(
-                        (v) => v.id === item.variationId
-                    ) || item;
+                    // Clear product offers if bulk applies
+                    productOfferApplied = false;
+                    productOfferDiscount = null;
+                    productOfferId = null;
+                    productOfferMeta = null;
 
-                    const productOffer = groupProductOffer;
+                } else if (groupProductOffer && groupProductOffer.offerApplied) {
+                    // 🔹 Apply the precomputed group offer
+                    productOfferApplied = true;
+                    productOfferDiscount = groupProductOffer.offerDiscount || null;
+                    productOfferId = groupProductOffer.offerId || null;
+                    productOfferMeta = groupProductOffer.offerMeta || null;
 
-                    const productOfferApplied = productOffer.offerApplied;
-                    const productOfferDiscount = productOffer.offerDiscount;
-                    const productOfferId = productOffer.offerId;
-                    const productOfferMeta = productOffer.offerMeta;
-
-                    totalPrice =
-                        productOfferApplied && productOfferDiscount > 0
-                            ? basePrice * (1 - productOfferDiscount / 100) * itemQty
-                            : basePrice * itemQty;
-
-                    const shouldResetOffers = !productOfferApplied;
-
-                    await dispatch(
-                        updateCart({
-                            id: item.id,
-                            quantity: itemQty,
-                            offerApplied,
-                            bulkPrice: null,
-                            bulkMinQty: null,
-                            totalPrice,
-                            productOfferApplied: shouldResetOffers ? false : productOfferApplied,
-                            productOfferDiscount: shouldResetOffers
-                                ? null
-                                : productOfferDiscount,
-                            productOfferId: shouldResetOffers ? null : productOfferId,
-                            productOffer: shouldResetOffers ? null : productOfferMeta,
-                        })
-                    );
+                    totalPrice = groupProductOffer.offerMeta.totalPriceAfterOffer;
                 }
+
+                const finaldata = await dispatch(updateCart({
+                    id: item.id,
+                    quantity: itemQty,
+                    totalPrice,
+                    offerApplied,
+                    bulkPrice,
+                    bulkMinQty,
+                    productOfferApplied,
+                    productOfferDiscount,
+                    productOfferId,
+                    productOffer: productOfferMeta,
+                }));
+                console.log("finaldata", finaldata)
+
             })
         );
 
         await dispatch(fetchCart());
         dispatch(triggerCartRefresh());
-        console.log("===== updateGroupBulkStatus END =====");
     };
+
 
     const buildFreePaidItems = (freeQty, sameCoreVariation, cart) => {
         let items = cart
             .filter(it => {
-                if (it.productId !== product.id) return false;
+                if (
+                    it.productId !== product.id ||
+                    it.purchasePlatform !== purchasePlatform
+                ) return false;
+
                 return sameCoreVariation(it); // color ignore + core attribute match
             })
             .map(it => ({
@@ -1879,11 +2053,14 @@ const ProductDetail = () => {
     };
 
 
-    const applyProductOffers = (product, selectedVariation, quantity, userCart = [], cartItemId = null) => {
+
+    const applyProductOffers = (product, selectedVariation, quantity, userCart = [], cartItemId = null, incomingAttributes = {}) => {
         let offerApplied = false;
         let offerDiscount = 0;
         let offerMeta = null;
         let offerId = null;
+
+
 
         const productOffers = (product.offers || []).filter(o => o.active);
         if (!productOffers.length) return { offerApplied, offerDiscount, offerId, offerMeta };
@@ -1902,17 +2079,42 @@ const ProductDetail = () => {
         console.log("selectedVariation", selectedVariation);
         console.log("attributes", selectedVariation?.attributes);
 
-        const selectedCore = getCoreAttrs(selectedVariation?.attributes);
+        // const selectedCore = getCoreAttrs(selectedVariation?.attributes);
+        // const selectedCore = getCoreAttrs(incomingAttributes);
+        // Always fallback on incomingAttributes first
+        const selectedCore = getCoreAttrs(incomingAttributes || selectedVariation.attributes || {});
+
         console.log("selectedCore", selectedCore)
 
         const sameCoreVariation = (item) => {
+            if (item.purchasePlatform !== purchasePlatform) return false;
+
             const itemCore = getCoreAttrs(item.attributes);
-            return Object.entries(selectedCore).every(([k, v]) => itemCore[k] && itemCore[k] === v);
+
+            const isSame = Object.entries(selectedCore).every(([k, v]) => itemCore[k] && itemCore[k] === v);
+
+            console.log("🟢 Checking item:", item.id);
+            console.log("Item attributes:", item.attributes);
+            console.log("Item core attrs:", itemCore);
+            console.log("Selected core attrs:", selectedCore);
+            console.log("Same core match result:", isSame);
+
+            return isSame;
         };
 
+
+        // const sameCoreVariationSafe = (item) => {
+        //     if (!selectedCore || Object.keys(selectedCore).length === 0) return false;
+        //     return sameCoreVariation(item);
+        // };
+        // console.log("sameCoreVariationSafe" , sameCoreVariationSafe)
         // 🔹 Compute total group quantity including updated item if cartItemId provided
         const totalGroupQty = userCart.reduce((sum, item) => {
-            if (item.productId !== product.id) return sum;
+            if (
+                item.productId !== product.id ||
+                item.purchasePlatform !== purchasePlatform
+            ) return sum;
+
             if (!sameCoreVariation(item)) return sum;
 
             if (cartItemId && item.id === cartItemId) return sum + quantity;
@@ -1924,8 +2126,13 @@ const ProductDetail = () => {
 
         const updatedCartForFreeCalc = userCart.map(it => ({
             ...it,
-            attributes: { ...(it.attributes || {}) }
+            attributes: { ...(it.attributes || {}) },
+            // addedAt: it.addedAt || Date.now()
         }));
+        console.log("Updated Cart for Free Calc", updatedCartForFreeCalc);
+        console.log("Selected Core", selectedCore);
+        console.log("🟢 Updated Cart for Free Calc", updatedCartForFreeCalc.map(i => ({ id: i.id, attrs: i.attributes, platform: i.purchasePlatform, qty: i.quantity })));
+
 
         // 👉 If this is a new add-to-cart operation (not update)
         if (!cartItemId) {
@@ -1933,11 +2140,13 @@ const ProductDetail = () => {
                 id: "__temp__",
                 productId: product.id,
                 variationId: selectedVariation.id,
-                attributes: selectedVariation.attributes,
+                // attributes: selectedVariation.attributes,
+                attributes: incomingAttributes,
                 quantity,
                 pricePerItem: selectedVariation.pricePerItem || selectedVariation.price,
                 addedAt: Date.now(),
                 createdAt: new Date().toISOString(),
+                purchasePlatform
             });
         }
 
@@ -1945,7 +2154,8 @@ const ProductDetail = () => {
         if (cartItemId) {
             updatedCartForFreeCalc.forEach((it) => {
                 if (it.id === cartItemId) {
-                    it.quantity = quantity;   // now SAFE
+                    it.quantity = quantity;
+                    it.addedAt = it.addedAt || Date.now();
                 }
             });
         }
@@ -2150,7 +2360,11 @@ const ProductDetail = () => {
 
                 sameGroupItems =
                     userCart?.filter(item => {
-                        if (item.productId !== product.id) return false;
+                        if (
+                            item.productId !== product.id ||
+                            item.purchasePlatform !== purchasePlatform   // ✅
+                        ) return false;
+
                         const itemCoreKey = Object.entries(item.attributes || {})
                             .filter(([k]) => !["color", "colour"].includes(k.toLowerCase()))
                             .map(([k, v]) => `${k}:${v}`)
@@ -2225,7 +2439,9 @@ const ProductDetail = () => {
                 product,
                 selectedVariation,
                 quantity,
-                userCart
+                userCart,
+                null,
+                flatAttributes
             );
 
             // ✅ Apply product offer to all same-core items (ignore color differences)
@@ -2316,6 +2532,92 @@ const ProductDetail = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const computeBulkStatus = ({ product, selectedVariation, selectedAttributes, userCart, quantity, cartItem }) => {
+        const productMinQty = Number(product?.minQuantity || 0);
+        const variationBulkPrice = Number(selectedVariation?.bulkPrice ?? 0);
+        const variationBulkMinQty = Number(selectedVariation?.bulkMinQty ?? productMinQty) || 0;
+        const requiredQty = variationBulkMinQty || productMinQty;
+
+        // 🎯 Flatten attributes except color
+        const flatAttributes = {};
+        Object.entries(selectedAttributes || {}).forEach(([k, v]) => {
+            if (v && v !== "N/A") flatAttributes[k.toLowerCase()] = v;
+        });
+
+        const coreAttributes = Object.entries(flatAttributes)
+            .filter(([key]) => !["color", "colour"].includes(key.toLowerCase()));
+        const coreKey = coreAttributes.map(([k, v]) => `${k}:${v}`).join("|");
+
+        // 🧩 Find same group items
+        const sameGroupItems = (Array.isArray(userCart) ? userCart : []).filter(item => {
+            if (!item) return false;
+            if (item.productId !== product.id || item.purchasePlatform !== purchasePlatform) return false;
+            const itemCoreKey = Object.entries(item.attributes || {})
+                .filter(([k]) => !["color", "colour"].includes(k.toLowerCase()))
+                .map(([k, v]) => `${k}:${v}`)
+                .join("|");
+            return itemCoreKey === coreKey;
+        });
+
+        // 🧮 FIXED: replace current item's qty with newQty
+        const totalGroupQty = sameGroupItems.reduce((sum, item) => {
+            if (item.id === cartItem?.id) {
+                return sum + Number(quantity || 0);
+            }
+            return sum + (Number(item.quantity) || 0);
+        }, 0);
+
+        // const hasOfferApplied = sameGroupItems.some(it => it.offerApplied === true);
+        // const validVariationBulk =
+        //     selectedVariation?.bulkPrice != null &&
+        //     selectedVariation?.bulkMinQty != null &&
+        //     selectedVariation?.bulkPrice > 0 &&
+        //     selectedVariation?.bulkMinQty > 0;
+
+        // const hasBulkOffer = hasOfferApplied || validVariationBulk;
+        // const eligible = hasBulkOffer && totalGroupQty >= requiredQty;
+        const hasOfferApplied = sameGroupItems.some(it => it.offerApplied === true);
+
+        // ✅ VALID bulk offer available if price and minQty are > 0
+        const validVariationBulk = variationBulkPrice > 0 && variationBulkMinQty > 0;
+
+        // ✅ Bulk eligibility logic
+        const hasBulkOffer = true; // <— 🔥 force check always
+        const eligible = totalGroupQty >= variationBulkMinQty; // <— 🔥 simplified clean condition
+
+        console.log("💡 Bulk Check (Final)", {
+            totalGroupQty,
+            variationBulkMinQty,
+            variationBulkPrice,
+            validVariationBulk,
+            eligible,
+        });
+
+        console.log("🧩 Bulk Debug =>", {
+            productName: product?.name,
+            sameGroupItems: sameGroupItems.map(i => ({
+                id: i.id,
+                qty: i.quantity,
+                offerApplied: i.offerApplied,
+            })),
+            totalGroupQty,
+            requiredQty,
+            variationBulkPrice,
+            variationBulkMinQty,
+            validVariationBulk,
+            eligible,
+        });
+
+        return {
+            eligible,
+            requiredQty,
+            totalGroupQty,
+            variationBulkPrice,
+            variationBulkMinQty,
+            sameGroupItems,
+        };
     };
 
     const handleUpdateQuantity = async (cartItemId, newQty, extraFields = {}) => {
@@ -2548,91 +2850,7 @@ const ProductDetail = () => {
     };
 
 
-    const computeBulkStatus = ({ product, selectedVariation, selectedAttributes, userCart, quantity, cartItem }) => {
-        const productMinQty = Number(product?.minQuantity || 0);
-        const variationBulkPrice = Number(selectedVariation?.bulkPrice ?? 0);
-        const variationBulkMinQty = Number(selectedVariation?.bulkMinQty ?? productMinQty) || 0;
-        const requiredQty = variationBulkMinQty || productMinQty;
 
-        // 🎯 Flatten attributes except color
-        const flatAttributes = {};
-        Object.entries(selectedAttributes || {}).forEach(([k, v]) => {
-            if (v && v !== "N/A") flatAttributes[k.toLowerCase()] = v;
-        });
-
-        const coreAttributes = Object.entries(flatAttributes)
-            .filter(([key]) => !["color", "colour"].includes(key.toLowerCase()));
-        const coreKey = coreAttributes.map(([k, v]) => `${k}:${v}`).join("|");
-
-        // 🧩 Find same group items
-        const sameGroupItems = (Array.isArray(userCart) ? userCart : []).filter(item => {
-            if (!item) return false;
-            if (item.productId !== product.id) return false;
-            const itemCoreKey = Object.entries(item.attributes || {})
-                .filter(([k]) => !["color", "colour"].includes(k.toLowerCase()))
-                .map(([k, v]) => `${k}:${v}`)
-                .join("|");
-            return itemCoreKey === coreKey;
-        });
-
-        // 🧮 FIXED: replace current item's qty with newQty
-        const totalGroupQty = sameGroupItems.reduce((sum, item) => {
-            if (item.id === cartItem?.id) {
-                return sum + Number(quantity || 0);
-            }
-            return sum + (Number(item.quantity) || 0);
-        }, 0);
-
-        // const hasOfferApplied = sameGroupItems.some(it => it.offerApplied === true);
-        // const validVariationBulk =
-        //     selectedVariation?.bulkPrice != null &&
-        //     selectedVariation?.bulkMinQty != null &&
-        //     selectedVariation?.bulkPrice > 0 &&
-        //     selectedVariation?.bulkMinQty > 0;
-
-        // const hasBulkOffer = hasOfferApplied || validVariationBulk;
-        // const eligible = hasBulkOffer && totalGroupQty >= requiredQty;
-        const hasOfferApplied = sameGroupItems.some(it => it.offerApplied === true);
-
-        // ✅ VALID bulk offer available if price and minQty are > 0
-        const validVariationBulk = variationBulkPrice > 0 && variationBulkMinQty > 0;
-
-        // ✅ Bulk eligibility logic
-        const hasBulkOffer = true; // <— 🔥 force check always
-        const eligible = totalGroupQty >= variationBulkMinQty; // <— 🔥 simplified clean condition
-
-        console.log("💡 Bulk Check (Final)", {
-            totalGroupQty,
-            variationBulkMinQty,
-            variationBulkPrice,
-            validVariationBulk,
-            eligible,
-        });
-
-        console.log("🧩 Bulk Debug =>", {
-            productName: product?.name,
-            sameGroupItems: sameGroupItems.map(i => ({
-                id: i.id,
-                qty: i.quantity,
-                offerApplied: i.offerApplied,
-            })),
-            totalGroupQty,
-            requiredQty,
-            variationBulkPrice,
-            variationBulkMinQty,
-            validVariationBulk,
-            eligible,
-        });
-
-        return {
-            eligible,
-            requiredQty,
-            totalGroupQty,
-            variationBulkPrice,
-            variationBulkMinQty,
-            sameGroupItems,
-        };
-    };
     // Helper: compute whether bulk offer is active for the CURRENT selectedVariation + selectedAttributes + userCart
     // ✅ Helper: compute whether bulk offer is active for the CURRENT selectedVariation + selectedAttributes + userCart
     // const computeBulkStatus = ({ product, selectedVariation, selectedAttributes, userCart, quantity }) => {
@@ -2806,7 +3024,7 @@ const ProductDetail = () => {
             quantity,
         });
 
-        console.log("✅ bulkStatus:", bulkStatus);
+        // console.log("✅ bulkStatus:", bulkStatus);
 
         // ✅ If bulk offer is eligible
         if (bulkStatus.eligible && bulkPrice) {
@@ -3325,6 +3543,7 @@ const ProductDetail = () => {
                             quantity={quantity}
                             bulkStatus={bulkStatus}
                             userCart={userCart}
+                            purchasePlatform={purchasePlatform}
                         />
                         {/* {(product.offers?.length > 0 || (product.minQuantity && product.bulkPrice)) && (
                             <div className="mt-4 text-sm text-gray-800 space-y-2">

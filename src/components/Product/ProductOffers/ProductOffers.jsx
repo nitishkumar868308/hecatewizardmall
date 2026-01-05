@@ -156,6 +156,7 @@ const ProductOffers = ({
     selectedVariation,
     bulkStatus,
     userCart = [],
+    purchasePlatform
 }) => {
     const currency = selectedVariation?.currency || product.currency || "₹";
 
@@ -197,12 +198,14 @@ const ProductOffers = ({
         userCart.find(
             (i) =>
                 i.productOfferApplied &&
-                i.variationId === selectedVariation?.id
+                i.variationId === selectedVariation?.id &&
+                i.purchasePlatform === purchasePlatform
         ) ||
         userCart.find(
             (i) =>
                 i.productOfferApplied &&
-                i.productId === product?.id &&
+                i.productId === product?.id && 
+                i.purchasePlatform === purchasePlatform &&
                 isSameAttributes(i.attributes || {}, selectedAttrs)
         );
 
