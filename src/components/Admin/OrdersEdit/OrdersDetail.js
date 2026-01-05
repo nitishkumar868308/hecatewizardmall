@@ -12,7 +12,7 @@ export default function OrderDetail({
     handleUpdateDetail,
     generateInvoiceNumber
 }) {
-    console.log("selectedOrder.userId", selectedOrder.userId)
+    console.log("selectedOrder", selectedOrder)
     const dispatch = useDispatch();
     const [status, setStatus] = useState(selectedOrder?.status || "");
     const { user } = useSelector((state) => state.me);
@@ -191,78 +191,60 @@ export default function OrderDetail({
                         </thead>
 
                         <tbody>
-                            {selectedOrder.items?.map((item, idx) =>
-                                item.colors?.map((c, i) => (
-                                    <tr
-                                        key={`${idx}-${i}`}
-                                        className="border-b hover:bg-gray-50"
-                                    >
-                                        <td className="p-2 text-center">{idx + 1}</td>
+                            {selectedOrder.items?.map((item, idx) => (
+                                <tr key={idx} className="border-b hover:bg-gray-50">
+                                    <td className="p-2 text-center">{idx + 1}</td>
 
-                                        <td className="p-2">
-                                            <div className="relative w-20 h-20 mx-auto">
-                                                <Image
-                                                    src={c.image}
-                                                    fill
-                                                    className="rounded-lg object-cover shadow"
-                                                    alt="image"
-                                                />
+                                    <td className="p-2">
+                                        <div className="flex justify-center items-center">
+                                            <img
+                                                src={item.image}
+                                                alt={item.attributes?.color || "Product Image"}
+                                                className="w-16 h-16 rounded-lg object-cover shadow"
+                                            />
+                                        </div>
+                                    </td>
+
+                                    <td className="p-2 font-medium text-center">{item.productName}</td>
+
+                                    <td className="p-2 text-center">
+                                        {item.attributes && (
+                                            <div className="text-xs text-gray-500">
+                                                {Object.entries(item.attributes).map(([k, v]) => (
+                                                    <p key={k}>
+                                                        <b>{k}:</b> {v}
+                                                    </p>
+                                                ))}
                                             </div>
+                                        )}
+                                    </td>
 
-                                        </td>
+                                    <td className="p-2 text-center">{item.quantity}</td>
+                                    <td className="p-2 text-center">₹{item.pricePerItem}</td>
 
+                                    <td className="p-2 text-center">
+                                        {item.offerApplied ? (
+                                            <span className="text-green-600 font-semibold">Applied</span>
+                                        ) : (
+                                            <span className="text-gray-400">No</span>
+                                        )}
+                                    </td>
 
-                                        <td className="p-2 font-medium text-center">
-                                            {item.productName}
-                                        </td>
+                                    <td className="p-2 text-center font-bold">₹{item.totalPrice}</td>
 
-                                        <td className="p-2 text-center">
-                                            {item.attributes && (
-                                                <div className="text-xs text-gray-500">
-                                                    {Object.entries(item.attributes).map(
-                                                        ([k, v]) => (
-                                                            <p key={k}>
-                                                                <b>{k}:</b> {v}
-                                                            </p>
-                                                        )
-                                                    )}
-                                                </div>
-                                            )}
-                                        </td>
-
-                                        <td className="p-2 text-center">
-                                            {c.quantity}
-                                        </td>
-                                        <td className="p-2 text-center">₹{c.pricePerItem}</td>
-
-                                        <td className="p-2 text-center">
-                                            {c.offerApplied ? (
-                                                <span className="text-green-600 font-semibold">
-                                                    Applied
-                                                </span>
-                                            ) : (
-                                                <span className="text-gray-400">No</span>
-                                            )}
-                                        </td>
-
-                                        <td className="p-2 text-center font-bold">
-                                            ₹{c.totalPrice}
-                                        </td>
-
-                                        <td className="p-2 text-center space-x-1">
-                                            <button className="px-2 py-1 text-xs bg-blue-500 text-white rounded">
-                                                Query
-                                            </button>
-                                            <button className="px-2 py-1 text-xs bg-yellow-400 text-white rounded">
-                                                Update
-                                            </button>
-                                            <button className="px-2 py-1 text-xs bg-red-500 text-white rounded">
-                                                Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
+                                    <td className="p-2 text-center space-x-1">
+                                        <button className="px-2 py-1 text-xs bg-blue-500 text-white rounded">
+                                            Query
+                                        </button>
+                                        <button className="px-2 py-1 text-xs bg-yellow-400 text-white rounded">
+                                            Update
+                                        </button>
+                                        <button className="px-2 py-1 text-xs bg-red-500 text-white rounded">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
 
                             {/* TOTAL ROW - ITEMS */}
                             <tr className="bg-gray-200 font-semibold">

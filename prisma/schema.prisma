@@ -301,15 +301,42 @@ model VideoStory {
 }
 
 model ContactMessage {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String
-  message   String
-  isDeleted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?                     
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String
+  platform      String   @default("website")
+  message       String
+
+  isRegistered  Boolean  @default(false)
+
+  readByAdmin   Boolean  @default(false)
+  readByUser    Boolean  @default(true)
+
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  replies       MessageReply[]
 }
+
+
+model MessageReply {
+  id               Int      @id @default(autoincrement())
+  contactMessageId Int
+  contactMessage   ContactMessage @relation(fields: [contactMessageId], references: [id])
+
+  sender           String   // "admin" | "user"
+  message          String
+
+  readByAdmin      Boolean  @default(false)
+  readByUser       Boolean  @default(false)
+
+  createdAt        DateTime @default(now())
+}
+
+
+
+
 
 model Orders {
   id             Int      @id @default(autoincrement())

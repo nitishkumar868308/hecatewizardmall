@@ -10,6 +10,7 @@ import store from './redux/store';
 import { Toaster } from 'react-hot-toast';
 import "react-international-phone/style.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { CartProvider } from "@/utils/CartContext";
 
 const firaSans = Fira_Sans({
   variable: "--font-fira-sans",
@@ -34,13 +35,15 @@ export default function RootLayout({ children }) {
       <body className={`${firaSans.variable} ${firaCode.variable} antialiased`}>
         <Provider store={store}>
           <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
-            {!hideLayout && <DefaultPage />}
-            {/* <main className="pt-[60px] md:pt-0 sm:pt-0"> */}
-            <main className=" md:pt-0 pt-[160px]">
-              {children}
-            </main>
-            {!hideLayout && <Footer />}
-            <Toaster position="top-right" reverseOrder={false} />
+            <CartProvider>
+              {!hideLayout && <DefaultPage />}
+              {/* <main className="pt-[60px] md:pt-0 sm:pt-0"> */}
+              <main className=" md:pt-0 pt-[160px]">
+                {children}
+              </main>
+              {!hideLayout && <Footer />}
+              <Toaster position="top-right" reverseOrder={false} />
+            </CartProvider>
           </GoogleOAuthProvider>
         </Provider>
       </body>

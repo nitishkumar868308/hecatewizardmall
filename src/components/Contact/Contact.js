@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 
 const Contact = () => {
     const pathname = usePathname();
-    const isXpress = pathname.includes("/xpress");
+    const isXpress = pathname.includes("/hecate-quickGo");
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.me);
     const { messages, error, success, loading } = useSelector((state) => state.contactMessage);
@@ -62,7 +62,8 @@ const Contact = () => {
         dispatch(sendContactMessage({
             name: formData.name,
             email: formData.email,
-            message: formData.message
+            message: formData.message,
+            platform : isXpress ? "xpress" : "website"
         }));
 
     };

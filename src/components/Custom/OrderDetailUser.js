@@ -1,8 +1,4 @@
 "use client";
-import { useState, useEffect } from "react";
-import OrderChat from "../Common/OrderChat";
-import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
-import { useDispatch, useSelector } from "react-redux";
 
 export default function OrderDetail({
     selectedOrder,
@@ -11,39 +7,21 @@ export default function OrderDetail({
     handleUpdateDetail,
     generateInvoiceNumber
 }) {
-
-    const [status, setStatus] = useState(selectedOrder?.status || "");
-    const dispatch = useDispatch();
-    const { user } = useSelector((state) => state.me);
-    console.log("user", user)
-
-    useEffect(() => {
-        dispatch(fetchMe());
-    }, [dispatch]);
-
-
     if (!isOpen || !selectedOrder) return null;
-
+    console.log("selectedOrder", selectedOrder)
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex">
 
             {/* LEFT CHAT PANEL */}
-            <div className="w-80 bg-white border-r shadow-xl flex flex-col">
+            {/* <div className="w-80 bg-white border-r shadow-xl flex flex-col">
 
                 <div className="border-b px-4 py-3 font-semibold text-lg bg-gray-50">
                     Chat / Messages
                 </div>
-                <OrderChat
-                    orderId={selectedOrder.id}
-                    currentUser={user?.name}
-                    currentUserRole={user?.role} // ADMIN ya CUSTOMER
-                    receiver={user?.role === "ADMIN" ? selectedOrder.shippingName : "Admin"}
-                    receiverRole={user?.role === "ADMIN" ? "CUSTOMER" : "ADMIN"}
-                />
 
 
 
-                {/* <div className="flex-1 p-4 space-y-3 overflow-y-auto">
+                <div className="flex-1 p-4 space-y-3 overflow-y-auto">
 
                     <div className="text-center text-gray-400 text-sm">
                         No messages yet...
@@ -60,7 +38,7 @@ export default function OrderDetail({
                     <button className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm">
                         Send
                     </button>
-                </div> */}
+                </div>
 
                 <div className="border-t px-4 py-3 font-semibold text-lg bg-gray-50">
                     Notes / Info
@@ -71,7 +49,7 @@ export default function OrderDetail({
                     placeholder="Add notes here..."
                 ></textarea>
 
-            </div>
+            </div> */}
             <div className="flex-1 bg-white overflow-y-auto p-8 relative">
 
                 {/* Close Button */}
@@ -159,8 +137,8 @@ export default function OrderDetail({
                 {/* TABLE */}
                 <div className="mt-8 overflow-x-auto">
                     <table className="min-w-full border-collapse rounded-xl overflow-hidden text-sm shadow-md">
-                        <thead className="bg-gray-100">
-                            <tr className="uppercase text-xs text-gray-700">
+                        <thead className="bg-gray-900">
+                            <tr className="uppercase text-xs text-gray-100">
                                 <th className="p-2 text-center">#</th>
                                 <th className="p-2 text-center">Image</th>
                                 <th className="p-2 text-center">Product</th>
@@ -174,76 +152,48 @@ export default function OrderDetail({
                         </thead>
 
                         <tbody>
-                            {selectedOrder.items?.map((item, idx) =>
-                                item.colors?.map((c, i) => (
-                                    <tr
-                                        key={`${idx}-${i}`}
-                                        className="border-b hover:bg-gray-50"
-                                    >
-                                        <td className="p-2 text-center">{idx + 1}</td>
+                            {selectedOrder.items?.map((item, idx) => (
+                                <tr key={idx} className="border-b hover:bg-gray-50">
+                                    <td className="p-2 text-center">{idx + 1}</td>
 
-                                        <td className="p-2">
-                                            <div className="flex justify-center items-center">
-                                                <img
-                                                    src={c.image}
-                                                    alt={c.color || "Product Image"}
-                                                    className="w-16 h-16 rounded-lg object-cover shadow"
-                                                />
+                                    <td className="p-2">
+                                        <div className="flex justify-center items-center">
+                                            <img
+                                                src={item.image}
+                                                alt={item.attributes?.color || "Product Image"}
+                                                className="w-16 h-16 rounded-lg object-cover shadow"
+                                            />
+                                        </div>
+                                    </td>
+
+                                    <td className="p-2 font-medium text-center">{item.productName}</td>
+
+                                    <td className="p-2 text-center">
+                                        {item.attributes && (
+                                            <div className="text-xs text-gray-500">
+                                                {Object.entries(item.attributes).map(([k, v]) => (
+                                                    <p key={k}>
+                                                        <b>{k}:</b> {v}
+                                                    </p>
+                                                ))}
                                             </div>
-                                        </td>
+                                        )}
+                                    </td>
 
+                                    <td className="p-2 text-center">{item.quantity}</td>
+                                    <td className="p-2 text-center">₹{item.pricePerItem}</td>
 
-                                        <td className="p-2 font-medium text-center">
-                                            {item.productName}
-                                        </td>
+                                    <td className="p-2 text-center">
+                                        {item.offerApplied ? (
+                                            <span className="text-green-600 font-semibold">Applied</span>
+                                        ) : (
+                                            <span className="text-gray-400">No</span>
+                                        )}
+                                    </td>
 
-                                        <td className="p-2 text-center">
-                                            {item.attributes && (
-                                                <div className="text-xs text-gray-500">
-                                                    {Object.entries(item.attributes).map(
-                                                        ([k, v]) => (
-                                                            <p key={k}>
-                                                                <b>{k}:</b> {v}
-                                                            </p>
-                                                        )
-                                                    )}
-                                                </div>
-                                            )}
-                                        </td>
-
-                                        <td className="p-2 text-center">
-                                            {c.quantity}
-                                        </td>
-                                        <td className="p-2 text-center">₹{c.pricePerItem}</td>
-
-                                        <td className="p-2 text-center">
-                                            {c.offerApplied ? (
-                                                <span className="text-green-600 font-semibold">
-                                                    Applied
-                                                </span>
-                                            ) : (
-                                                <span className="text-gray-400">No</span>
-                                            )}
-                                        </td>
-
-                                        <td className="p-2 text-center font-bold">
-                                            ₹{c.totalPrice}
-                                        </td>
-
-                                        {/* <td className="p-2 text-center space-x-1">
-                                            <button className="px-2 py-1 text-xs bg-blue-500 text-white rounded">
-                                                Query
-                                            </button>
-                                            <button className="px-2 py-1 text-xs bg-yellow-400 text-white rounded">
-                                                Update
-                                            </button>
-                                            <button className="px-2 py-1 text-xs bg-red-500 text-white rounded">
-                                                Delete
-                                            </button>
-                                        </td> */}
-                                    </tr>
-                                ))
-                            )}
+                                    <td className="p-2 text-center font-bold">₹{item.totalPrice}</td>
+                                </tr>
+                            ))}
 
                             {/* TOTAL ROW - ITEMS */}
                             <tr className="bg-gray-200 font-semibold">

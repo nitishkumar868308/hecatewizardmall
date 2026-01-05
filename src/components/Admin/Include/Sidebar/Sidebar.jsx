@@ -1,8 +1,9 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse, ShoppingCart, Image as ImageIcon } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse, ShoppingCart, Image as ImageIcon   } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { FiMessageCircle } from "react-icons/fi";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [menuOpen, setMenuOpen] = useState(false);
@@ -10,6 +11,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [menuOpenTax, setMenuOpenTax] = useState(false);
     const [manuOpenLocation, setMenuOpenLocation] = useState(false);
     const [manuOpenOrder, setMenuOpenOrder] = useState(false);
+    const [messages, setMessages] = useState(false);
     const [manuOpenWareHouseLocation, setMenuOpenWareHouseLocation] = useState(false);
     const [manuOpenWareHouseFullfillment, setMenuOpenWareHouseFullfillment] = useState(false);
 
@@ -61,6 +63,34 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     >
                         <Home className="w-5 h-5" /> Home
                     </Link>
+
+                    <div>
+                        <button
+                            onClick={() => setMessages(!messages)}
+                            className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                        >
+                            <span className="flex items-center gap-3">
+                                <FiMessageCircle  className="w-5 h-5" /> Messages
+                            </span>
+                            {messages ? (
+                                <ChevronUp className="w-4 h-4" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4" />
+                            )}
+                        </button>
+
+                        {/* Dropdown items */}
+                        {messages && (
+                            <div className="ml-8 mt-2 flex flex-col gap-2">
+                                <Link
+                                    href="/admin/contact_us_message"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Contact Us Mesaage
+                                </Link>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Menus with dropdown */}
                     <div>

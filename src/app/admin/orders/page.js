@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 const Page = () => {
     const dispatch = useDispatch();
     const { orders } = useSelector((state) => state.order);
+    console.log("orders", orders)
     const { list: users } = useSelector(
         (state) => state.getAllUser
     );
@@ -143,11 +144,11 @@ const Page = () => {
 
                                         {/* First Item Image */}
                                         <td className="p-4 text-center">
-                                            {order.items && order.items.length > 0 && order.items[0].colors?.[0]?.image ? (
+                                            {order.items && order.items.length > 0 && order.items[0].image ? (
                                                 <div className="w-14 h-14 rounded-md overflow-hidden mx-auto shadow-sm">
                                                     <img
-                                                        src={order.items[0].colors[0].image}
-                                                        alt="item"
+                                                        src={order.items[0].image}
+                                                        alt={order.items[0].attributes?.color || "item"}
                                                         className="w-full h-full object-cover"
                                                     />
                                                 </div>
@@ -157,6 +158,7 @@ const Page = () => {
                                                 </div>
                                             )}
                                         </td>
+
 
                                         {/* Order Number */}
                                         <td className="p-4 font-semibold text-center">{order.orderNumber}</td>

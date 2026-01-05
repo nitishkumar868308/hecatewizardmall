@@ -1,41 +1,41 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// Create
+// Send new contact message
 export const sendContactMessage = createAsyncThunk(
     "contactMessage/sendContactMessage",
     async (payload, { rejectWithValue }) => {
         try {
-            const response = await axios.post("/api/contactMessage", payload);
-            return response.data;
+            const res = await axios.post("/api/contactMessage", payload);
+            return res.data;
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to send message");
         }
     }
 );
 
-// Read all messages
+// Fetch all messages
 export const fetchContactMessages = createAsyncThunk(
     "contactMessage/fetchContactMessages",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get("/api/contactMessage");
-            return response.data.messages;
+            const res = await axios.get("/api/contactMessage");
+            return res.data.messages;
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to fetch messages");
         }
     }
 );
 
-// Update message
-export const updateContactMessage = createAsyncThunk(
-    "contactMessage/updateContactMessage",
+// Post admin reply
+export const postReplyMessage = createAsyncThunk(
+    "contactMessage/postReplyMessage",
     async (payload, { rejectWithValue }) => {
         try {
-            const response = await axios.put("/api/contactMessage", payload);
-            return response.data.updatedMessage;
+            const res = await axios.post("/api/contactMessage/reply", payload);
+            return res.data.reply;
         } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to update message");
+            return rejectWithValue(err.response?.data || "Failed to send reply");
         }
     }
 );
@@ -45,13 +45,30 @@ export const deleteContactMessage = createAsyncThunk(
     "contactMessage/deleteContactMessage",
     async (id, { rejectWithValue }) => {
         try {
-            const response = await axios.delete("/api/contactMessage", { data: { id } });
-            return response.data.id;
+            const res = await axios.delete("/api/contactMessage", { data: { id } });
+            return id;
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to delete message");
         }
     }
 );
+
+// Read message
+export const readContactMessage = createAsyncThunk(
+    "contactMessage/readContactMessage",
+    async ({ id, role }, { rejectWithValue }) => {
+        try {
+            const res = await axios.put("/api/contactMessage/read", {
+                id,
+                role,
+            });
+            return res.data.message;
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to mark as read");
+        }
+    }
+);
+
 
 const contactMessageSlice = createSlice({
     name: "contactMessage",
@@ -71,41 +88,49 @@ const contactMessageSlice = createSlice({
     extraReducers: (builder) => {
         builder
             // Send
-            .addCase(sendContactMessage.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-                state.success = null;
-            })
+            .addCase(sendContactMessage.pending, (state) => { state.loading = true; state.error = null; })
             .addCase(sendContactMessage.fulfilled, (state, action) => {
                 state.loading = false;
                 state.success = action.payload.message;
-                state.messages.push(action.payload.contactMessage);
+                state.messages.unshift(action.payload.contactMessage);
             })
-            .addCase(sendContactMessage.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload?.message || action.error.message;
-            })
+            .addCase(sendContactMessage.rejected, (state, action) => { state.loading = false; state.error = action.payload?.message; })
 
             // Fetch
             .addCase(fetchContactMessages.pending, (state) => { state.loading = true; state.error = null; })
             .addCase(fetchContactMessages.fulfilled, (state, action) => { state.loading = false; state.messages = action.payload; })
-            .addCase(fetchContactMessages.rejected, (state, action) => { state.loading = false; state.error = action.payload?.message || action.error.message; })
+            .addCase(fetchContactMessages.rejected, (state, action) => { state.loading = false; state.error = action.payload?.message; })
 
-            // Update
-            .addCase(updateContactMessage.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(updateContactMessage.fulfilled, (state, action) => {
+            // Post Reply
+            .addCase(postReplyMessage.pending, (state) => { state.loading = true; state.error = null; })
+            .addCase(postReplyMessage.fulfilled, (state, action) => {
                 state.loading = false;
-                state.messages = state.messages.map(msg => msg.id === action.payload.id ? action.payload : msg);
+                const reply = action.payload;
+                const msgIndex = state.messages.findIndex(m => m.id === reply.contactMessageId);
+                if (msgIndex !== -1) {
+                    state.messages[msgIndex].replies.push(reply);
+                }
             })
-            .addCase(updateContactMessage.rejected, (state, action) => { state.loading = false; state.error = action.payload?.message || action.error.message; })
+            .addCase(postReplyMessage.rejected, (state, action) => { state.loading = false; state.error = action.payload?.message; })
 
             // Delete
-            .addCase(deleteContactMessage.pending, (state) => { state.loading = true; state.error = null; })
             .addCase(deleteContactMessage.fulfilled, (state, action) => {
-                state.loading = false;
                 state.messages = state.messages.filter(msg => msg.id !== action.payload);
             })
-            .addCase(deleteContactMessage.rejected, (state, action) => { state.loading = false; state.error = action.payload?.message || action.error.message; });
+
+            // Read message
+            .addCase(readContactMessage.fulfilled, (state, action) => {
+                const updated = action.payload;
+                const index = state.messages.findIndex(m => m.id === updated.id);
+
+                if (index !== -1) {
+                    state.messages[index] = {
+                        ...state.messages[index],
+                        readByAdmin: updated.readByAdmin,
+                        readByUser: updated.readByUser,
+                    };
+                }
+            });
     },
 });
 

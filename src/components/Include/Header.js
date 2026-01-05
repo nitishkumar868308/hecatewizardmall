@@ -24,14 +24,15 @@ import ProductOffers from "../Product/ProductOffers/ProductOffers";
 import ConfirmModal from "../ConfirmModal";
 import toast from "react-hot-toast";
 import { fetchProducts } from "@/app/redux/slices/products/productSlice";
-
+import { useCart } from "@/utils/CartContext";
 
 const Header = () => {
     const pathname = usePathname();
     const [active, setActive] = useState("Home");
     const [expanded, setExpanded] = useState(null);
     const [loginModalOpen, setLoginModalOpen] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
+    const { isOpen, setIsOpen } = useCart();
+    // const [isOpen, setIsOpen] = useState(false);
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
     const [openItem, setOpenItem] = useState(false);
@@ -76,20 +77,38 @@ const Header = () => {
     const isXpressAvailable = country === "IND";
     const isXpress = pathname.includes("/hecate-quickGo");
     const purchasePlatform = isXpress ? "xpress" : "website";
+    // useEffect(() => {
+    //     setUserCartState(prev => {
+    //         // Only update if different length or different ids
+    //         const prevIds = prev.map(i => i.id).join(',');
+    //         const newIds = userCart.map(i => i.id).join(',');
+    //         if (prevIds !== newIds) {
+    //             return userCart;
+    //         }
+    //         return prev;
+    //     });
+    // }, [userCart]);
+
+
+    // const userCartCount = userCartState.length;
     useEffect(() => {
         setUserCartState(prev => {
+            // Filter out items where is_buy === true
+            const filteredCart = userCart.filter(i => !i.is_buy);
+
             // Only update if different length or different ids
             const prevIds = prev.map(i => i.id).join(',');
-            const newIds = userCart.map(i => i.id).join(',');
+            const newIds = filteredCart.map(i => i.id).join(',');
             if (prevIds !== newIds) {
-                return userCart;
+                return filteredCart;
             }
             return prev;
         });
     }, [userCart]);
 
-
+    // Count only items where is_buy === false (already filtered in state)
     const userCartCount = userCartState.length;
+
     console.log("userCartCount", userCartCount);
     useEffect(() => {
         dispatch(fetchCart())
@@ -538,7 +557,7 @@ const Header = () => {
 
     const updateQuantity = async (itemId, delta) => {
         const targetItem = userCartState.find((i) => i.id === itemId && i.purchasePlatform === purchasePlatform);
-        console.log("targetItem" , targetItem)
+        console.log("targetItem", targetItem)
         if (!targetItem) return;
 
         const newQuantity = Math.max(1, targetItem.quantity + delta);
@@ -1266,13 +1285,20 @@ const Header = () => {
         console.log("🟢 groupedCart changed:", JSON.parse(JSON.stringify(groupedCart)));
     }, [groupedCart]);
 
+    // const displayedItems = Object.entries(groupedCart)
+    //     .filter(([key, item]) =>
+    //         activeTab === "website"
+    //             ? item.platform === "website"
+    //             : item.platform === "xpress"
+    //     )
+    //     .map(([key, item]) => ({ ...item, uid: key }));
     const displayedItems = Object.entries(groupedCart)
         .filter(([key, item]) =>
-            activeTab === "website"
-                ? item.platform === "website"
-                : item.platform === "xpress"
+            (activeTab === "website" ? item.platform === "website" : item.platform === "xpress")
+            && !item.is_buy // ❌ exclude items where is_buy is true
         )
         .map(([key, item]) => ({ ...item, uid: key }));
+
 
     console.log("displayedItems", displayedItems)
     const expandedId = activeTab === "website" ? websiteExpandedId : xpressExpandedId;
@@ -1499,7 +1525,7 @@ const Header = () => {
 
 
                         {isOpen && (
-                            <div className="fixed inset-0 z-50 flex">
+                            <div className="fixed inset-0 z-50 flex md:mt-0 mt-10">
                                 {/* Overlay */}
                                 <div
                                     className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 cursor-pointer"
@@ -1513,20 +1539,19 @@ const Header = () => {
                                 >
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex gap-4">
-                                            <div className="flex flex-wrap md:flex-nowrap gap-2 md:gap-4 bg-gray-100 p-1 rounded-full w-fit mx-auto md:mx-0 relative cursor-pointer">
+                                            <div className="flex gap-2 overflow-x-auto scrollbar-hide bg-gray-100 p-1 rounded-full w-full md:w-fit">
                                                 {orderedTabs.map(tab => (
                                                     <button
                                                         key={tab.id}
                                                         onClick={() => setActiveTab(tab.id)}
-                                                        className={`relative px-5 py-2 text-sm md:text-base rounded-full  font-medium transition-all duration-300
-                                                                ${activeTab === tab.id
-                                                                ? "bg-black shadow-lg text-white "
-                                                                : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"}
-                                                                `}
+                                                        className={`flex-shrink-0 px-3 py-1 text-xs md:text-base rounded-full font-medium transition-all duration-300
+                                                            ${activeTab === tab.id
+                                                                ? "bg-black shadow-lg text-white"
+                                                                : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"}`}
                                                     >
                                                         {tab.label}
                                                         {tab.count > 0 && (
-                                                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                                            <span className="ml-1 inline-block bg-red-500 text-white text-[10px] px-1 py-0.5 rounded-full">
                                                                 {tab.count}
                                                             </span>
                                                         )}
@@ -1534,13 +1559,9 @@ const Header = () => {
                                                 ))}
                                             </div>
 
-
-
-
                                         </div>
                                         <button onClick={() => setIsOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-900 text-gray-800 hover:text-white cursor-pointer">✕</button>
                                     </div>
-
 
 
                                     <div className="flex-1 overflow-y-auto space-y-5 pr-2">

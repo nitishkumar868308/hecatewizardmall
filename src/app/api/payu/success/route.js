@@ -17,6 +17,16 @@ export async function POST(req) {
         const orderRecord = await prisma.orders.findUnique({ where: { orderNumber: orderId } });
         if (!orderRecord) return new Response("Order not found", { status: 404 });
 
+        let userEmail = "kumarnitish4383@gmail.com";
+
+        if (orderRecord.userId) {
+            const user = await prisma.user.findUnique({
+                where: { id: orderRecord.userId },
+                select: { email: true, name: true },
+            });
+            if (user?.email) userEmail = user.email;
+        }
+
         if (orderBy === "website") {
             if (status === "success") {
                 // ✅ Update order as confirmed
@@ -25,19 +35,29 @@ export async function POST(req) {
                     data: { status: "PENDING", paymentStatus: "PAID" },
                 });
 
-                // ✅ Send confirmation email to user
-                // await sendMail({
-                //     to: orderRecord.billingEmail || "example@gmail.com",
-                //     subject: `Order Confirmation - ${orderId}`,
-                //     html: orderConfirmationTemplate(orderRecord),
-                // });
 
-                // ✅ Send notification email to admin
-                // await sendMail({
-                //     to: process.env.ADMIN_EMAIL,
-                //     subject: `New Order Received - ${orderId}`,
-                //     html: orderConfirmationTemplateAdmin(orderRecord),
-                // });
+
+                if (orderRecord.userId) {
+                    // ❌ Do NOT delete cart. Instead, mark is_buy = true
+                    await prisma.cart.updateMany({
+                        where: { userId: orderRecord.userId },
+                        data: { is_buy: true },
+                    });
+                }
+
+                // Send confirmation email to user
+                await sendMail({
+                    to: userEmail,
+                    subject: `Order Confirmation - ${orderId}`,
+                    html: orderConfirmationTemplate(orderRecord),
+                });
+
+                //Send notification email to admin
+                await sendMail({
+                    to: process.env.ADMIN_EMAIL,
+                    subject: `New Order Received - ${orderId}`,
+                    html: orderConfirmationTemplateAdmin(orderRecord),
+                });
 
                 const baseUrl = new URL(req.url).origin;
                 return Response.redirect(`${baseUrl}/payment-success?order_id=${orderId}`);
@@ -63,19 +83,27 @@ export async function POST(req) {
                     data: { status: "PENDING", paymentStatus: "PAID" },
                 });
 
-                // ✅ Send confirmation email to user
-                // await sendMail({
-                //     to: orderRecord.billingEmail || "example@gmail.com",
-                //     subject: `Order Confirmation - ${orderId}`,
-                //     html: orderConfirmationTemplate(orderRecord),
-                // });
+                if (orderRecord.userId) {
+                    // ❌ Do NOT delete cart. Instead, mark is_buy = true
+                    await prisma.cart.updateMany({
+                        where: { userId: orderRecord.userId },
+                        data: { is_buy: true },
+                    });
+                }
 
-                // ✅ Send notification email to admin
-                // await sendMail({
-                //     to: process.env.ADMIN_EMAIL,
-                //     subject: `New Order Received - ${orderId}`,
-                //     html: orderConfirmationTemplateAdmin(orderRecord),
-                // });
+                // Send confirmation email to user
+                await sendMail({
+                    to: userEmail,
+                    subject: `Order Confirmation - ${orderId}`,
+                    html: orderConfirmationTemplate(orderRecord),
+                });
+
+                // Send notification email to admin
+                await sendMail({
+                    to: process.env.ADMIN_EMAIL,
+                    subject: `New Order Received - ${orderId}`,
+                    html: orderConfirmationTemplateAdmin(orderRecord),
+                });
 
                 const baseUrl = new URL(req.url).origin;
                 return Response.redirect(`${baseUrl}/hecate-quickGo/payment-success?order_id=${orderId}`);

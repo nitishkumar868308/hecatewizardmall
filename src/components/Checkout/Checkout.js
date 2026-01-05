@@ -694,6 +694,52 @@ const Checkout = () => {
     }
 
 
+    // const orderData = {
+    //   user: {
+    //     id: user?.id,
+    //     name: user?.name,
+    //     phone: user?.phone,
+    //     email: user?.email,
+    //   },
+    //   shippingAddress: selectedAddress,
+    //   billingAddress: {
+    //     name: user?.name,
+    //     phone: user?.phone,
+    //     address: user?.address,
+    //     city: user?.city,
+    //     state: user?.state,
+    //     pincode: user?.pincode,
+    //   },
+    //   items: Object.values(groupedCart).map((product) => ({
+    //     productId: product.productId,
+    //     productName: product.productName,
+    //     currency: product.currency,
+    //     currencySymbol: product.currencySymbol,
+    //     attributes: product.attributes,
+    //     itemIds: product.itemIds,
+    //     productOfferApplied: product.productOfferApplied,
+    //     productOffer: product.productOffer,
+    //     colors: product.colors.map((c) => ({
+    //       color: c.color,
+    //       quantity: c.quantity,
+    //       pricePerItem: c.pricePerItem,
+    //       totalPrice: c.totalPrice,
+    //       variationId: c.variationId,
+    //       image: c.image,
+    //       offerApplied: c.offerApplied,
+    //       productOfferApplied: c.productOfferApplied,
+    //       productOfferDiscount: c.productOfferDiscount,
+    //       productOfferId: c.productOfferId,
+    //       productOffer: c.productOffer,
+    //     })),
+    //   })),
+
+    //   subtotal: `${userCart[0]?.currencySymbol || '₹'}${subtotal.toFixed(2)}`,
+    //   shipping: `${userCart[0]?.currencySymbol || '₹'}${shipping}`,
+    //   total: `${userCart[0]?.currencySymbol || '₹'}${grandTotal.toFixed(2)}`,
+    //   paymentMethod: selected,
+    //   isXpress
+    // };
     const orderData = {
       user: {
         id: user?.id,
@@ -710,36 +756,32 @@ const Checkout = () => {
         state: user?.state,
         pincode: user?.pincode,
       },
-      items: Object.values(groupedCart).map((product) => ({
-        productId: product.productId,
-        productName: product.productName,
-        currency: product.currency,
-        currencySymbol: product.currencySymbol,
-        attributes: product.attributes,
-        itemIds: product.itemIds,
-        productOfferApplied: product.productOfferApplied,
-        productOffer: product.productOffer,
-        colors: product.colors.map((c) => ({
-          color: c.color,
-          quantity: c.quantity,
-          pricePerItem: c.pricePerItem,
-          totalPrice: c.totalPrice,
-          variationId: c.variationId,
-          image: c.image,
-          offerApplied: c.offerApplied,
-          productOfferApplied: c.productOfferApplied,
-          productOfferDiscount: c.productOfferDiscount,
-          productOfferId: c.productOfferId,
-          productOffer: c.productOffer,
-        })),
+      items: userCart.map((item) => ({
+        productId: item.productId,
+        productName: item.productName,
+        currency: item.currency,
+        currencySymbol: item.currencySymbol,
+        attributes: item.attributes,
+        itemId: item.id,
+        quantity: item.quantity,
+        pricePerItem: item.pricePerItem,
+        totalPrice: item.totalPrice,
+        variationId: item.variationId,
+        image: item.image,
+        offerApplied: item.offerApplied,
+        productOfferApplied: item.productOfferApplied,
+        productOfferDiscount: item.productOfferDiscount,
+        productOfferId: item.productOfferId,
+        productOffer: item.productOffer,
+        purchasePlatform: item.purchasePlatform,
       })),
-
       subtotal: `${userCart[0]?.currencySymbol || '₹'}${subtotal.toFixed(2)}`,
       shipping: `${userCart[0]?.currencySymbol || '₹'}${shipping}`,
       total: `${userCart[0]?.currencySymbol || '₹'}${grandTotal.toFixed(2)}`,
       paymentMethod: selected,
-      isXpress
+      isXpress,
     };
+
     console.log("orderData", orderData)
     try {
       const data = await dispatch(createOrder(orderData)).unwrap();
@@ -841,7 +883,7 @@ const Checkout = () => {
       const freshCart = await dispatch(fetchCart()).unwrap();
 
       toast.success("Item(s) deleted successfully");
-
+      setShowConfirm(false);
       // 🔄 Recalculate offers, bulk, range, free qty
       for (const item of freshCart) {
         const fullProduct = products.find((p) => p.id === item.productId);
@@ -868,7 +910,7 @@ const Checkout = () => {
         );
       }
 
-      setShowConfirm(false);
+
     } catch (err) {
       toast.error(err.message || "Failed to delete item(s)");
     }

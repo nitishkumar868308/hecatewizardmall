@@ -20,8 +20,10 @@ import ProductOffers from "@/components/Product/ProductOffers/ProductOffers";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
+import { useCart } from "@/utils/CartContext";
 
 const ProductDetail = () => {
+    const { isOpen } = useCart();
     const pathname = usePathname();
     const [showConfirm, setShowConfirm] = useState(false);
     const dispatch = useDispatch();
@@ -3692,78 +3694,83 @@ const ProductDetail = () => {
                             </div>
 
                             {/* ⚠️ Confirm Delete Modal */}
-                            {showConfirm && (
-                                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                                    <div className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full">
-                                        <h3 className="text-lg font-semibold mb-2 text-gray-800">
-                                            Remove from Cart?
-                                        </h3>
-                                        <p className="text-gray-600 mb-4">
-                                            Are you sure you want to remove this item from your cart?
-                                        </p>
-                                        <div className="flex justify-end gap-3">
-                                            <button
-                                                onClick={() => setShowConfirm(false)}
-                                                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                onClick={confirmDelete}
-                                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                                            >
-                                                Remove
-                                            </button>
-                                        </div>
+
+                        </div>
+
+                        {!isOpen && (
+                            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg px-4 py-3">
+                                {/* Selected Variation */}
+                                <p className="text-sm text-gray-600 mb-2 truncate">
+                                    Selected: <span className="font-semibold">{selectedVariation?.variationName}</span>
+                                </p>
+
+                                {/* Layout */}
+                                <div
+                                    className={`grid gap-3 ${isInCart ? "grid-cols-1 place-items-center" : "grid-cols-2"
+                                        }`}
+                                >
+                                    {/* Quantity */}
+                                    <div className="flex items-center justify-center border rounded-lg overflow-hidden h-12 w-full max-w-[180px]">
+                                        <button
+                                            onClick={decrement}
+                                            className={`w-12 h-12 bg-gray-200 text-xl flex items-center justify-center ${quantity === 1 && isInCart ? "text-red-500" : ""
+                                                }`}
+                                        >
+                                            {quantity === 1 && isInCart ? <Trash2 size={18} /> : "-"}
+                                        </button>
+
+                                        <span className="w-12 h-12 flex items-center justify-center font-semibold">
+                                            {quantity}
+                                        </span>
+
+                                        <button
+                                            onClick={increment}
+                                            className="w-12 h-12 bg-gray-200 text-xl flex items-center justify-center"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+
+                                    {/* Add to Cart (ONLY when not in cart) */}
+                                    {!isInCart && (
+                                        <button
+                                            onClick={handleAdd}
+                                            className="h-12 bg-gray-700 text-white rounded-lg text-lg font-medium flex items-center justify-center"
+                                        >
+                                            Add to Cart
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+
+                        {showConfirm && (
+                            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                                <div className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full">
+                                    <h3 className="text-lg font-semibold mb-2 text-gray-800">
+                                        Remove from Cart?
+                                    </h3>
+                                    <p className="text-gray-600 mb-4">
+                                        Are you sure you want to remove this item from your cart?
+                                    </p>
+                                    <div className="flex justify-end gap-3">
+                                        <button
+                                            onClick={() => setShowConfirm(false)}
+                                            className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={confirmDelete}
+                                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                                        >
+                                            Remove
+                                        </button>
                                     </div>
                                 </div>
-                            )}
-                        </div>
-
-                        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg px-4 py-3">
-                            {/* Selected Variation */}
-                            <p className="text-sm text-gray-600 mb-2 truncate">
-                                Selected: <span className="font-semibold">{selectedVariation?.variationName}</span>
-                            </p>
-
-                            {/* Layout */}
-                            <div
-                                className={`grid gap-3 ${isInCart ? "grid-cols-1 place-items-center" : "grid-cols-2"
-                                    }`}
-                            >
-                                {/* Quantity */}
-                                <div className="flex items-center justify-center border rounded-lg overflow-hidden h-12 w-full max-w-[180px]">
-                                    <button
-                                        onClick={decrement}
-                                        className={`w-12 h-12 bg-gray-200 text-xl flex items-center justify-center ${quantity === 1 && isInCart ? "text-red-500" : ""
-                                            }`}
-                                    >
-                                        {quantity === 1 && isInCart ? <Trash2 size={18} /> : "-"}
-                                    </button>
-
-                                    <span className="w-12 h-12 flex items-center justify-center font-semibold">
-                                        {quantity}
-                                    </span>
-
-                                    <button
-                                        onClick={increment}
-                                        className="w-12 h-12 bg-gray-200 text-xl flex items-center justify-center"
-                                    >
-                                        +
-                                    </button>
-                                </div>
-
-                                {/* Add to Cart (ONLY when not in cart) */}
-                                {!isInCart && (
-                                    <button
-                                        onClick={handleAdd}
-                                        className="h-12 bg-gray-700 text-white rounded-lg text-lg font-medium flex items-center justify-center"
-                                    >
-                                        Add to Cart
-                                    </button>
-                                )}
                             </div>
-                        </div>
+                        )}
 
 
 
