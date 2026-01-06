@@ -113,6 +113,8 @@ const Page = () => {
 
     const herbsCategory = categories?.find(cat => cat.name === "Herbs Shop");
 
+    const oilsCategory = categories?.find(cat => cat.name === "Oils Shop");
+
     const handleClickCandles = () => {
         if (!candlesCategory?.name) return;
 
@@ -129,6 +131,16 @@ const Page = () => {
         router.push(
             `/hecate-quickGo/categories?category=${encodeURIComponent(
                 herbsCategory.name
+            )}&subcategory=All`
+        );
+    };
+
+    const handleClickOils = () => {
+        if (!oilsCategory?.name) return;
+
+        router.push(
+            `/hecate-quickGo/categories?category=${encodeURIComponent(
+                oilsCategory.name
             )}&subcategory=All`
         );
     };
@@ -206,7 +218,7 @@ const Page = () => {
                     </h2>
 
                     {(() => {
-                        
+
 
                         const herbsProducts = filteredProducts?.filter(
                             item => item.categoryId === herbsCategory?.id
@@ -273,7 +285,7 @@ const Page = () => {
 
                     {(() => {
                         // STEP 1: Filter category = Oils
-                        const oilsCategory = categories?.find(cat => cat.name === "Oils Shop");
+
 
                         // STEP 2: Find all products belonging to this category
                         const oilsProducts = filteredProducts?.filter(
@@ -289,7 +301,7 @@ const Page = () => {
 
                                 {/* LEFT — CATEGORY IMAGE */}
                                 <div className="col-span-1">
-                                    <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                                    <div onClick={handleClickOils} className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
                                         <Image
                                             src={oilsImage}
                                             alt="Oils Category"
