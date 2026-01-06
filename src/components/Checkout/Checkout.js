@@ -1355,6 +1355,7 @@ const Checkout = () => {
       const response = await dispatch(updateUser(payload)).unwrap();
       console.log("response", response);
       toast.success(response.message || "Profile updated!");
+      await dispatch(fetchMe());
       setOpen(false);
     } catch (err) {
       console.error(err);

@@ -184,17 +184,33 @@ const Topbar = () => {
 
                             ) : (
                                 /* Normal Website → Show Countries */
+                                // <select
+                                //     value={country}
+                                //     onChange={handleChange}
+                                //     className="border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base bg-black"
+                                // >
+                                //     {countriesprice.map((c) => (
+                                //         <option key={c.code} value={c.code}>
+                                //             {c.code}
+                                //         </option>
+                                //     ))}
+                                // </select>
                                 <select
                                     value={country}
                                     onChange={handleChange}
                                     className="border border-gray-500 text-white px-2 py-1 rounded-md text-sm md:text-base bg-black"
                                 >
                                     {countriesprice.map((c) => (
-                                        <option key={c.code} value={c.code}>
-                                            {c.name}
+                                        <option
+                                            key={c.code}
+                                            value={c.code}
+                                            title={c.name}
+                                        >
+                                            {c.code}
                                         </option>
                                     ))}
                                 </select>
+
                             )}
                         </div>
 

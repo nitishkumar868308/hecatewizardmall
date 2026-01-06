@@ -12,7 +12,7 @@ const Page = () => {
     const { list: users, loading, error } = useSelector(
         (state) => state.getAllUser
     );
-
+    console.log("users" , users)
     const [modalOpen, setModalOpen] = useState(false);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -64,7 +64,7 @@ const Page = () => {
             <div className="flex flex-col gap-6">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <h1 className="text-3xl font-bold text-gray-900">Admin Users</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">All Users</h1>
 
                     <div className="flex gap-2 flex-col md:flex-row items-center">
                         {/* Search */}

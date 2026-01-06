@@ -76,6 +76,9 @@ const Header = () => {
     const country = useSelector((state) => state.country); // ✅ subscribe to Redux
     const isXpressAvailable = country === "IND";
     const isXpress = pathname.includes("/hecate-quickGo");
+    const baseCategoryPath = isXpress
+        ? "/hecate-quickGo/categories"
+        : "/categories";
     const purchasePlatform = isXpress ? "xpress" : "website";
     // useEffect(() => {
     //     setUserCartState(prev => {
@@ -325,6 +328,7 @@ const Header = () => {
     const handleLogout = () => {
         dispatch(logoutUser());
         setDropdownOpen(false);
+        router.push("/");
     };
 
     // const updateQuantity = (index, delta) => {
@@ -1404,9 +1408,11 @@ const Header = () => {
                                         ? isXpress
                                             ? "/hecate-quickGo/home"
                                             : "/"
-                                        : isXpress
-                                            ? `/hecate-quickGo/${item.toLowerCase()}`
-                                            : `/${item.toLowerCase()}`;
+                                        : item === "Enter The Mall"
+                                            ? baseCategoryPath
+                                            : isXpress
+                                                ? `/hecate-quickGo/${item.toLowerCase()}`
+                                                : `/${item.toLowerCase()}`;
 
                                 const isActive = pathname === href;
 
@@ -1433,7 +1439,7 @@ const Header = () => {
                                         </Link>
 
                                         {/* Dropdown only for Categories */}
-                                        {item === "Categories" && openItem === "Categories" && (
+                                        {item === "Enter The Mall" && openItem === "Enter The Mall" && (
                                             <div className="absolute left-1/2 transform -translate-x-[48%]
  top-full mt-1 w-[1400px] bg-[#161619] text-white shadow-lg py-8 px-10 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 z-50">
                                                 {mappedCategories.map((cat, index) => {
@@ -1454,12 +1460,19 @@ const Header = () => {
                                                                 <ul className="space-y-2">
                                                                     {cat.sub.map((sub) => (
                                                                         <li key={sub}>
-                                                                            <Link
+                                                                            {/* <Link
                                                                                 href={`/categories?category=${encodeURIComponent(cat.name)}&&subcategory=${encodeURIComponent(sub)}`}
                                                                                 className="text-gray-300 hover:text-white transition font-functionPro text-sm"
                                                                             >
                                                                                 {sub}
+                                                                            </Link> */}
+                                                                            <Link
+                                                                                href={`${baseCategoryPath}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub)}`}
+                                                                                className="text-gray-300 hover:text-white transition font-functionPro text-sm"
+                                                                            >
+                                                                                {sub}
                                                                             </Link>
+
                                                                         </li>
                                                                     ))}
                                                                 </ul>
@@ -2054,7 +2067,7 @@ const Header = () => {
 
                             {/* NORMAL MENU ITEMS */}
                             {menuItems.map(item => {
-                                if (item === "Categories") return null;
+                                if (item === "Enter The Mall") return null;
 
                                 const itemPath = isXpress
                                     ? `/hecate-quickGo/${item.toLowerCase()}`
@@ -2089,7 +2102,7 @@ const Header = () => {
                             {/* CATEGORIES ACCORDION */}
                             <div>
                                 <div className="text-sm font-semibold uppercase tracking-wide text-gray-100 py-3 border-b border-gray-700">
-                                    Shop by Category
+                                    Enter The Mall
                                 </div>
 
 

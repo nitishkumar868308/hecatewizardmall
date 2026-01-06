@@ -13,8 +13,10 @@ import {
     fetchAllProducts,
 } from "@/app/redux/slices/products/productSlice";
 import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
+import { useRouter } from "next/navigation";
 
 const Page = () => {
+    const router = useRouter();
     const dispatch = useDispatch();
     const pathname = usePathname();
     const { categories } = useSelector((state) => state.category);
@@ -102,19 +104,41 @@ const Page = () => {
 
 
     const candlesCategory = filteredCategories.find(
-        cat => cat.name === "Candles"
+        cat => cat.name === "Candles Shop"
     );
 
     const candlesSubcategories = filteredSubcategories.filter(
         sub => sub.categoryId === candlesCategory?.id
     );
 
+    const herbsCategory = categories?.find(cat => cat.name === "Herbs Shop");
+
+    const handleClickCandles = () => {
+        if (!candlesCategory?.name) return;
+
+        router.push(
+            `/hecate-quickGo/categories?category=${encodeURIComponent(
+                candlesCategory.name
+            )}&subcategory=All`
+        );
+    };
+
+    const handleClickHerbs = () => {
+        if (!herbsCategory?.name) return;
+
+        router.push(
+            `/hecate-quickGo/categories?category=${encodeURIComponent(
+                herbsCategory.name
+            )}&subcategory=All`
+        );
+    };
+
     return (
         <>
             <div className="w-full  bg-stone-100 flex justify-center py-12 px-4 md:px-8">
                 <div className="max-w-7xl w-full">
                     <h2 className="text-center text-white bg-[#264757] py-3 rounded-lg text-3xl font-semibold mb-5">
-                        Candles
+                        Candles Shop
                     </h2>
 
 
@@ -123,7 +147,7 @@ const Page = () => {
 
                         {/* LEFT — BIG IMAGE */}
                         <div className="col-span-1">
-                            <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                            <div onClick={handleClickCandles} className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
                                 <Image
                                     src={candlesCategory?.image || "/image/CANDLES SHOP NEW 2.png"}
                                     alt="Big"
@@ -178,11 +202,11 @@ const Page = () => {
                 <div className="max-w-7xl w-full">
 
                     <h2 className="text-center text-white bg-[#264757] py-3 rounded-lg text-3xl font-semibold mb-5">
-                        Herbs
+                        Herbs Shop
                     </h2>
 
                     {(() => {
-                        const herbsCategory = categories?.find(cat => cat.name === "Herbs");
+                        
 
                         const herbsProducts = filteredProducts?.filter(
                             item => item.categoryId === herbsCategory?.id
@@ -194,7 +218,7 @@ const Page = () => {
 
                                 {/* LEFT — CATEGORY IMAGE */}
                                 <div className="col-span-1">
-                                    <div className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                                    <div onClick={handleClickHerbs} className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
                                         <Image
                                             src={herbsCategory?.image || "/fallback-herbs.jpg"}
                                             alt="Herbs Category"
@@ -244,12 +268,12 @@ const Page = () => {
             <div className="w-full bg-stone-100 flex justify-center py-12 px-4 md:px-8">
                 <div className="max-w-7xl w-full">
                     <h2 className="text-center text-white bg-[#264757] py-3 rounded-lg text-3xl font-semibold mb-5">
-                        Oils
+                        Oils Shop
                     </h2>
 
                     {(() => {
                         // STEP 1: Filter category = Oils
-                        const oilsCategory = categories?.find(cat => cat.name === "Oils");
+                        const oilsCategory = categories?.find(cat => cat.name === "Oils Shop");
 
                         // STEP 2: Find all products belonging to this category
                         const oilsProducts = filteredProducts?.filter(
