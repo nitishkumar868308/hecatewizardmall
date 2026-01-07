@@ -20,6 +20,7 @@ import ProductOffers from "@/components/Product/ProductOffers/ProductOffers";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
+import { fetchDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
 import { useCart } from "@/utils/CartContext";
 
 const ProductDetail = () => {
@@ -62,6 +63,8 @@ const ProductDetail = () => {
     console.log("products", products)
     const { dispatches } = useSelector((state) => state.dispatchWarehouse);
     console.log("dispatches", dispatches)
+    const { store } = useSelector((state) => state.delhiStore);
+    console.log("store", store)
     const isXpress = pathname.includes("/hecate-quickGo");
     const purchasePlatform = isXpress ? "xpress" : "website";
     // useEffect(() => {
@@ -101,6 +104,7 @@ const ProductDetail = () => {
         dispatch(fetchProducts()); // always fetch for current country
         dispatch(fetchOffers());
         dispatch(fetchDispatches())
+        dispatch(fetchDelhiStore())
     }, [dispatch, country]); // <-- refetch whenever country changes
     console.log("selectedVariation", selectedVariation)
 
@@ -109,21 +113,38 @@ const ProductDetail = () => {
             ? localStorage.getItem("warehouseId")
             : null;
 
-    const allowedVariationIds = useMemo(() => {
-        if (!isXpress || !currentProduct || !dispatches?.length) return null; // null = loading
+    // const allowedVariationIds = useMemo(() => {
+    //     if (!isXpress || !currentProduct || !dispatches?.length) return null; // null = loading
 
-        return dispatches
-            .flatMap(d =>
-                d.entries?.flatMap(dim => {
-                    if (dim.productId !== currentProduct.id) return [];
-                    return dim.entries
+    //     return dispatches
+    //         .flatMap(d =>
+    //             d.entries?.flatMap(dim => {
+    //                 if (dim.productId !== currentProduct.id) return [];
+    //                 return dim.entries
+    //                     ?.filter(e => e.warehouseId?.toString() === selectedWarehouseId)
+    //                     .map(() => dim.variationId);
+    //             })
+    //         )
+    //         .filter(Boolean);
+    // }, [dispatches, currentProduct?.id, isXpress, selectedWarehouseId]);
+    // console.log("allowedVariationIds", allowedVariationIds)
+    const allowedVariationIds = useMemo(() => {
+        if (!isXpress || !currentProduct || !store?.length) return null;
+
+        return store
+            .flatMap(dispatch =>
+                dispatch.productsSnapshot?.entries?.flatMap(product => {
+                    if (product.productId !== currentProduct.id) return [];
+
+                    return product.entries
                         ?.filter(e => e.warehouseId?.toString() === selectedWarehouseId)
-                        .map(() => dim.variationId);
-                })
+                        ?.map(() => product.variationId);
+                }) || []
             )
             .filter(Boolean);
-    }, [dispatches, currentProduct?.id, isXpress, selectedWarehouseId]);
-    console.log("allowedVariationIds", allowedVariationIds)
+    }, [store, currentProduct?.id, isXpress, selectedWarehouseId]);
+
+    console.log("allowedVariationIds", allowedVariationIds);
 
 
 
@@ -188,17 +209,38 @@ const ProductDetail = () => {
     }, [currentProduct, isXpress, allowedVariationIds]);
 
 
+    // const variationStockMap = useMemo(() => {
+    //     if (!dispatches?.length) return {};
+
+    //     const map = {};
+
+    //     dispatches.forEach(d => {
+    //         d.entries?.forEach(item => {
+    //             item.entries?.forEach(e => {
+    //                 if (e.warehouseId?.toString() !== selectedWarehouseId) return;
+
+    //                 const variationId = item.variationId;
+    //                 const units = Number(e.units) || 0;
+
+    //                 map[variationId] = (map[variationId] || 0) + units;
+    //             });
+    //         });
+    //     });
+
+    //     return map;
+    // }, [dispatches, selectedWarehouseId]);
     const variationStockMap = useMemo(() => {
-        if (!dispatches?.length) return {};
+        if (!store?.length) return {};
 
         const map = {};
 
-        dispatches.forEach(d => {
-            d.entries?.forEach(item => {
-                item.entries?.forEach(e => {
-                    if (e.warehouseId?.toString() !== selectedWarehouseId) return;
+        store.forEach(dispatch => {
+            dispatch.productsSnapshot?.entries?.forEach(product => {
+                product.entries?.forEach(e => {
+                    // Only selected warehouse
+                    if (e.warehouseId?.toString() !== selectedWarehouseId?.toString()) return;
 
-                    const variationId = item.variationId;
+                    const variationId = product.variationId;
                     const units = Number(e.units) || 0;
 
                     map[variationId] = (map[variationId] || 0) + units;
@@ -207,7 +249,10 @@ const ProductDetail = () => {
         });
 
         return map;
-    }, [dispatches, selectedWarehouseId]);
+    }, [store, selectedWarehouseId]);
+
+    console.log("variationStockMap", variationStockMap);
+
 
 
     const getAttributeStock = (attrKey, attrValue) => {

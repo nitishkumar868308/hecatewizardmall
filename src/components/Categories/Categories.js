@@ -1314,6 +1314,7 @@ import { fetchCategories } from "@/app/redux/slices/addCategory/addCategorySlice
 import { fetchTags } from "@/app/redux/slices/tag/tagSlice";
 import { usePathname } from "next/navigation";
 import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
+import { fetchDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
 
 const sortOptions = ["Price: Low to High", "Price: High to Low"];
 
@@ -1361,8 +1362,8 @@ const Categories = () => {
     }, []);
     const selectedState = useSelector(state => state.selectedState) || (hydrated ? localStorage.getItem("state") : null);
 
-
-    console.log("dispatches", dispatches)
+    const { store } = useSelector((state) => state.delhiStore);
+    console.log("store", store)
     const isXpress = pathname.includes("/hecate-quickGo");
 
     useEffect(() => {
@@ -1413,24 +1414,42 @@ const Categories = () => {
     //         return foundProductId;
     //     }).filter(Boolean);
     // }, [dispatches, selectedWarehouseId, isXpress]);
+    // const warehouseProductIds = store.flatMap(s =>
+    //     s.productsSnapshot?.entries?.flatMap(p =>
+    //         p.entries?.map(e => e.warehouseId)
+    //     )
+    // );
+    // const warehouseProductIds = useMemo(() => {
+    //     if (!isXpress || !store?.length || !selectedWarehouseId) return [];
+
+    //     return store
+    //         .map(ds => {
+    //             let found = null;
+    //             ds.entries?.forEach(dim => {
+    //                 dim.entries?.forEach(e => {
+    //                     if (e.warehouseId?.toString() == selectedWarehouseId.toString()) {
+    //                         found = dim.productId;
+    //                     }
+    //                 });
+    //             });
+    //             return found;
+    //         })
+    //         .filter(Boolean);
+    // }, [store, selectedWarehouseId, isXpress]);
     const warehouseProductIds = useMemo(() => {
-        if (!isXpress || !dispatches?.length || !selectedWarehouseId) return [];
+        if (!isXpress || !store?.length || !selectedWarehouseId) return [];
 
-        return dispatches
-            .map(ds => {
-                let found = null;
-                ds.entries?.forEach(dim => {
-                    dim.entries?.forEach(e => {
-                        if (e.warehouseId?.toString() === selectedWarehouseId.toString()) {
-                            found = dim.productId;
-                        }
-                    });
-                });
-                return found;
-            })
+        return store
+            .flatMap(ds =>
+                ds.productsSnapshot?.entries?.flatMap(p =>
+                    p.entries
+                        ?.filter(e => e.warehouseId?.toString() === selectedWarehouseId.toString())
+                        ?.map(e => p.productId)  // return productId if matched
+                ) || []
+            )
             .filter(Boolean);
-    }, [dispatches, selectedWarehouseId, isXpress]);
-
+    }, [store, selectedWarehouseId, isXpress]);
+    console.log("warehouseProductIds", warehouseProductIds)
 
 
     useEffect(() => {
@@ -1444,13 +1463,14 @@ const Categories = () => {
         dispatch(fetchCategories());
         dispatch(fetchTags());
         dispatch(fetchDispatches())
+        dispatch(fetchDelhiStore())
     }, [dispatch]);
 
 
     const stateProductIds = useMemo(() => {
-        if (!isXpress || !dispatches?.length || !selectedState) return [];
+        if (!isXpress || !store?.length || !selectedState) return [];
 
-        return dispatches
+        return store
             .map(ds => {
                 let foundProductId = null;
 
@@ -1467,7 +1487,7 @@ const Categories = () => {
                 return foundProductId;
             })
             .filter(Boolean);
-    }, [dispatches, selectedState, isXpress]);
+    }, [store, selectedState, isXpress]);
     console.log("stateProductIds", stateProductIds)
 
     // const variationBaseProducts = useMemo(() => {
@@ -1835,7 +1855,7 @@ const Categories = () => {
             !selectedAlphabet ||
             (p.name && p.name.toUpperCase().startsWith(selectedAlphabet))
     );
-    console.log("filteredProducts" , filteredProducts)
+    console.log("filteredProducts", filteredProducts)
     // console.log("filteredProducts", filteredProducts.length);
 
 

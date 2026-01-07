@@ -14,6 +14,7 @@ import {
 } from "@/app/redux/slices/products/productSlice";
 import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
 import { useRouter } from "next/navigation";
+import { fetchDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
 
 const Page = () => {
     const router = useRouter();
@@ -24,6 +25,8 @@ const Page = () => {
     const { products } = useSelector((state) => state.products);
     const { dispatches } = useSelector((state) => state.dispatchWarehouse);
     console.log("dispatches", dispatches)
+    const { store } = useSelector((state) => state.delhiStore);
+    console.log("store", store)
     console.log("products", products)
     console.log("categories", categories)
     const selectedState = useSelector(state => state.selectedState);
@@ -44,27 +47,46 @@ const Page = () => {
         dispatch(fetchCategories());
         dispatch(fetchSubcategories());
         dispatch(fetchDispatches())
+        dispatch(fetchDelhiStore())
     }, [dispatch]);
 
     const isXpress = pathname.includes("/hecate-quickGo");
 
     const selectedWarehouseCode = typeof window !== "undefined" ? localStorage.getItem("warehouseCode") : null;
 
-    const warehouseProductIds = dispatches
-        ?.map(ds => {
+    // const warehouseProductIds = store
+    //     ?.map(ds => {
+    //         let foundProductId = null;
+
+    //         ds.entries?.forEach(dim => {
+    //             dim.entries?.forEach(e => {
+    //                 if (e.warehouseId?.toString() === warehouseId?.toString()) {
+    //                     foundProductId = dim.productId;
+    //                 }
+    //             });
+    //         });
+
+    //         return foundProductId;
+    //     })
+    //     .filter(Boolean); // remove nulls
+    const warehouseProductIds = store
+        ?.map(dispatch => {
             let foundProductId = null;
 
-            ds.entries?.forEach(dim => {
-                dim.entries?.forEach(e => {
+            dispatch.productsSnapshot?.entries?.forEach(product => {
+                product.entries?.forEach(e => {
                     if (e.warehouseId?.toString() === warehouseId?.toString()) {
-                        foundProductId = dim.productId; // <-- productId यहाँ से लेना
+                        foundProductId = product.productId;
                     }
                 });
             });
 
             return foundProductId;
         })
-        .filter(Boolean); // remove nulls
+        .filter(Boolean);
+
+    console.log("warehouseProductIds", warehouseProductIds);
+
 
 
     const filteredProducts = isXpress
