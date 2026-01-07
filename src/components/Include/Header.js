@@ -25,6 +25,7 @@ import ConfirmModal from "../ConfirmModal";
 import toast from "react-hot-toast";
 import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 import { useCart } from "@/utils/CartContext";
+import { showPlatformToast } from "@/utils/platformToast";
 
 const Header = () => {
     const pathname = usePathname();
@@ -558,11 +559,22 @@ const Header = () => {
         }
     };
 
+    const currentTab = pathname.includes("/hecate-quickGo") ? "xpress" : "website";
 
-    const updateQuantity = async (itemId, delta) => {
-        const targetItem = userCartState.find((i) => i.id === itemId && i.purchasePlatform === purchasePlatform);
+    const updateQuantity = async (itemId, delta, isxpress) => {
+        //const targetItem = userCartState.find((i) => i.id === itemId && i.purchasePlatform === purchasePlatform);
+        const targetItem = userCartState.find(
+            (i) => i.id === itemId && i.purchasePlatform === activeTab
+        );
         console.log("targetItem", targetItem)
         if (!targetItem) return;
+
+        if (targetItem.purchasePlatform !== currentTab) {
+            const linkUrl = targetItem.purchasePlatform === "xpress" ? "/hecate-quickGo/home" : "/";
+            const platformName = targetItem.purchasePlatform === "xpress" ? "Hecate QuickGo" : "Hecate Wizard Mall";
+            showPlatformToast(platformName, linkUrl);
+            return;
+        }
 
         const newQuantity = Math.max(1, targetItem.quantity + delta);
 

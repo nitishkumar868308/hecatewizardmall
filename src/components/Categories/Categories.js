@@ -1356,13 +1356,13 @@ const Categories = () => {
     const [hydrated, setHydrated] = useState(false);
     useEffect(() => {
         if (typeof window !== "undefined") {
-            setHydrated(true); // client-side ready
+            setHydrated(true);
         }
     }, []);
     const selectedState = useSelector(state => state.selectedState) || (hydrated ? localStorage.getItem("state") : null);
 
 
-    // console.log("dispatches", dispatches)
+    console.log("dispatches", dispatches)
     const isXpress = pathname.includes("/hecate-quickGo");
 
     useEffect(() => {
@@ -1835,16 +1835,59 @@ const Categories = () => {
             !selectedAlphabet ||
             (p.name && p.name.toUpperCase().startsWith(selectedAlphabet))
     );
+    console.log("filteredProducts" , filteredProducts)
     // console.log("filteredProducts", filteredProducts.length);
 
 
+    // const displayedItems = showSubcategoryCards
+    //     ? subcategories
+    //         .filter((s) => s.categoryId === selectedCategory)
+    //         .filter((s) =>
+    //             !selectedAlphabet || (s.name && s.name.toUpperCase().startsWith(selectedAlphabet))
+    //         )
+    //     : filteredProducts;
     const displayedItems = showSubcategoryCards
-        ? subcategories
-            .filter((s) => s.categoryId === selectedCategory)
-            .filter((s) =>
-                !selectedAlphabet || (s.name && s.name.toUpperCase().startsWith(selectedAlphabet))
-            )
-        : filteredProducts;
+        ? subcategories.filter(s => {
+            // 1️⃣ Category filter
+            if (selectedCategory && selectedCategory !== "All" && s.categoryId !== Number(selectedCategory)) {
+                return false;
+            }
+
+            // 2️⃣ Subcategory filter
+            if (selectedSubcategory && selectedSubcategory !== "All" && s.id !== Number(selectedSubcategory)) {
+                return false;
+            }
+
+            // 3️⃣ Platform filter
+            if (isXpress && !s.platform?.includes("xpress")) return false;
+            if (!isXpress && !s.platform?.includes("website")) return false;
+
+            // 4️⃣ State filter (only for xpress)
+            if (isXpress && selectedState && !s.states?.some(st => st.name === selectedState)) {
+                return false;
+            }
+
+            // 5️⃣ Alphabet filter
+            if (selectedAlphabet && !s.name?.toUpperCase().startsWith(selectedAlphabet)) {
+                return false;
+            }
+
+            return true;
+        })
+        : filteredProducts.filter(p => {
+            if (selectedCategory && selectedCategory !== "All" && p.categoryId !== Number(selectedCategory)) {
+                return false;
+            }
+
+            if (selectedSubcategory && selectedSubcategory !== "All" && p.subcategoryId !== Number(selectedSubcategory)) {
+                return false;
+            }
+
+            return true;
+        });
+
+
+
 
     const indexOfLast = currentPage * productsPerPage;
     const indexOfFirst = indexOfLast - productsPerPage;
@@ -1987,6 +2030,10 @@ const Categories = () => {
 
         return pages;
     };
+
+    console.log("showSubcategoryCards", showSubcategoryCards);
+    console.log("displayedItems.length", displayedItems.length);
+
 
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro relative">
@@ -2143,7 +2190,7 @@ const Categories = () => {
                                         </div>
 
                                         {/* Filtered Subcategories */}
-                                        {selectedCategory === cat.id &&
+                                        {/* {selectedCategory === cat.id &&
                                             subcategories.some(s => s.categoryId === cat.id) && (
                                                 <ul className="ml-4 mt-1 flex flex-col gap-1">
                                                     {(isXpress
@@ -2163,7 +2210,30 @@ const Categories = () => {
                                                         </li>
                                                     ))}
                                                 </ul>
+                                            )} */}
+                                        {selectedCategory === cat.id &&
+                                            subcategories.some(s => s.categoryId === cat.id) && (
+                                                <ul className="ml-4 mt-1 flex flex-col gap-1">
+                                                    {subcategories
+                                                        .filter(s => s.categoryId === cat.id)
+                                                        .filter(s =>
+                                                            isXpress
+                                                                ? s.platform?.includes("xpress") && s.states?.some(st => st.name === selectedState)
+                                                                : s.platform?.includes("website")
+                                                        )
+                                                        .map(sub => (
+                                                            <li
+                                                                key={sub.id}
+                                                                onClick={() => handleSubcategoryClick(cat, sub)}
+                                                                className={`cursor-pointer p-1 rounded hover:bg-blue-50 text-sm 
+              ${selectedSubcategory === sub.id ? "bg-blue-100 font-semibold" : ""}`}
+                                                            >
+                                                                {sub.name}
+                                                            </li>
+                                                        ))}
+                                                </ul>
                                             )}
+
                                     </li>
                                 ))}
                             </ul>
@@ -2282,7 +2352,7 @@ const Categories = () => {
 
 
 
-                    {showSubcategoryCards ? (
+                    {showSubcategoryCards && displayedItems.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 cursor-pointer">
                             {displayedItems.map((sub) => (
                                 <div

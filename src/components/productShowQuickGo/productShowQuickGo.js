@@ -125,6 +125,17 @@ const Page = () => {
         );
     };
 
+    const handleClickCandlesSubcatogry = (sub) => {
+        if (!sub?.name) return;
+
+        router.push(
+            `/hecate-quickGo/categories?category=${encodeURIComponent(
+                candlesCategory.name
+            )}&subcategory=${encodeURIComponent(sub.name)}`
+        );
+    };
+
+
     const handleClickHerbs = () => {
         if (!herbsCategory?.name) return;
 
@@ -145,6 +156,13 @@ const Page = () => {
         );
     };
 
+    const prdocuPage = (product) => {
+        if (!product?.id) return; // safety check
+
+        router.push(`/hecate-quickGo/product/${product.id}`);
+    }
+
+
     return (
         <>
             <div className="w-full  bg-stone-100 flex justify-center py-12 px-4 md:px-8">
@@ -159,7 +177,7 @@ const Page = () => {
 
                         {/* LEFT — BIG IMAGE */}
                         <div className="col-span-1">
-                            <div onClick={handleClickCandles} className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                            <div onClick={handleClickCandles} className="cursor-pointer w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
                                 <Image
                                     src={candlesCategory?.image || "/image/CANDLES SHOP NEW 2.png"}
                                     alt="Big"
@@ -174,6 +192,7 @@ const Page = () => {
                             {candlesSubcategories?.map((item, i) => (
                                 <div
                                     key={i}
+                                    onClick={() => handleClickCandlesSubcatogry(item)}
                                     className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
                                 >
                                     <Image
@@ -190,7 +209,7 @@ const Page = () => {
                     </div>
 
                     <div className="flex justify-center mt-5">
-                        <button className="relative cursor-pointer bg-gradient-to-r from-[#264757] to-[#1e3744] text-white text-lg px-10 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-2xl">
+                        <button onClick={handleClickCandles} className="relative cursor-pointer bg-gradient-to-r from-[#264757] to-[#1e3744] text-white text-lg px-10 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-2xl">
                             View All
                             <span className="absolute right-4 top-1/2 transform -translate-y-1/2">
 
@@ -230,7 +249,7 @@ const Page = () => {
 
                                 {/* LEFT — CATEGORY IMAGE */}
                                 <div className="col-span-1">
-                                    <div onClick={handleClickHerbs} className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                                    <div onClick={handleClickHerbs} className="cursor-pointer w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
                                         <Image
                                             src={herbsCategory?.image || "/fallback-herbs.jpg"}
                                             alt="Herbs Category"
@@ -247,6 +266,7 @@ const Page = () => {
                                     {herbsProducts?.map((item, i) => (
                                         <div
                                             key={i}
+                                            onClick={() => prdocuPage(item)}
                                             className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
                                         >
                                             <Image
@@ -264,7 +284,7 @@ const Page = () => {
                     })()}
 
                     <div className="flex justify-center mt-5">
-                        <button className="relative cursor-pointer bg-gradient-to-r from-[#264757] to-[#1e3744] text-white text-lg px-10 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-2xl">
+                        <button onClick={handleClickHerbs} className="relative cursor-pointer bg-gradient-to-r from-[#264757] to-[#1e3744] text-white text-lg px-10 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-2xl">
                             View All
                             <span className="absolute right-4 top-1/2 transform -translate-y-1/2">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -301,7 +321,7 @@ const Page = () => {
 
                                 {/* LEFT — CATEGORY IMAGE */}
                                 <div className="col-span-1">
-                                    <div onClick={handleClickOils} className="w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                                    <div onClick={handleClickOils} className="cursor-pointer w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
                                         <Image
                                             src={oilsImage}
                                             alt="Oils Category"
@@ -318,6 +338,7 @@ const Page = () => {
                                     {oilsProducts?.map((item, i) => (
                                         <div
                                             key={i}
+                                            onClick={() => prdocuPage(item)}
                                             className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
                                         >
                                             <Image
@@ -335,7 +356,7 @@ const Page = () => {
                     })()}
 
                     <div className="flex justify-center mt-5">
-                        <button className="relative cursor-pointer bg-gradient-to-r from-[#264757] to-[#1e3744] text-white text-lg px-10 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-2xl">
+                        <button onClick={handleClickOils} className="relative cursor-pointer bg-gradient-to-r from-[#264757] to-[#1e3744] text-white text-lg px-10 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-2xl">
                             View All
                             <span className="absolute right-4 top-1/2 transform -translate-y-1/2">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -47,6 +47,15 @@ const Checkout = () => {
   // const [selected, setSelected] = useState(
   //   user?.country?.toLowerCase() === "india" ? "PayU" : ""
   // );
+  const [donation, setDonation] = useState(0); // selected donation amount
+  const [donationCustom, setDonationCustom] = useState(""); // custom input
+
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("");
+  const [discount, setDiscount] = useState(0);
+
+  // Note state
+  const [note, setNote] = useState("");
   const [selected, setSelected] = useState("");
   const country = useSelector((state) => state.country);
   const { items } = useSelector((state) => state.cart);
@@ -1375,6 +1384,22 @@ const Checkout = () => {
 
   const unitsNeeded = totalUnits >= 10 ? 0 : 10 - totalUnits;
 
+  // Promo code apply function
+  const applyPromo = () => {
+    if (!promoCode) return;
+
+    // Example logic: suppose "SAVE50" gives ₹50 discount
+    if (promoCode.toUpperCase() === "SAVE50") {
+      setDiscount(50);
+    } else if (promoCode.toUpperCase() === "SAVE100") {
+      setDiscount(100);
+    } else {
+      setDiscount(0);
+      alert("Invalid promo code");
+    }
+  };
+
+
   return (
     <div className=" bg-gray-50 py-8 px-4">
 
@@ -1760,6 +1785,31 @@ const Checkout = () => {
             <span>{currency} {currencySymbol}{subtotal.toFixed(2)}
             </span>
           </div>
+
+
+          {/* Promo Code Section */}
+          <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
+            <h4 className="text-lg font-semibold text-gray-800 mb-2">Promo Code</h4>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter promo code"
+                value={promoCode}
+                onChange={e => setPromoCode(e.target.value)}
+                className="flex-1 border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              />
+              <button
+                onClick={applyPromo}
+                className="bg-gray-800 text-white px-4 py-2 rounded-xl hover:scale-105 transition-transform duration-200">
+                Apply
+              </button>
+            </div>
+            {discount > 0 && (
+              <p className="text-green-600 font-semibold mt-2">You saved ₹{discount.toFixed(2)}!</p>
+            )}
+          </div>
+
+
           {!isIncomplete && (
             <div className="space-y-4">
               <span className="flex justify-between font-bold text-lg">Shipping</span>
@@ -1875,7 +1925,40 @@ const Checkout = () => {
             </div>
           )}
 
+          {/* Note Section */}
+          <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
+            <h4 className="text-lg font-semibold text-gray-800 mb-2">Add Note</h4>
+            <textarea
+              rows={3}
+              placeholder="Add a note for your order"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500 resize-none"
+            />
+          </div>
 
+          {/* Donate Section */}
+          <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
+            <h4 className="text-lg font-semibold text-gray-800 mb-2">Donate</h4>
+            <p className="text-sm text-gray-600 mb-3">Support our cause by adding a donation.</p>
+            <div className="flex gap-2 flex-wrap">
+              {[1, 2, 5].map(amount => (
+                <button key={amount}
+                  onClick={() => setDonation(amount)}
+                  className={`px-4 py-2 rounded-xl border transition-all duration-200
+            ${donation === amount ? "bg-gray-800 text-white border-gray-700" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"}`}>
+                  ₹{amount}
+                </button>
+              ))}
+              <input
+                type="number"
+                placeholder="Custom"
+                value={donationCustom}
+                onChange={e => setDonationCustom(Number(e.target.value))}
+                className="border rounded-xl px-3 py-2 w-24 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              />
+            </div>
+          </div>
 
           <div className="flex justify-center items-center">
             <button onClick={handleClick} className="cursor-pointer bg-gradient-to-r from-gray-800 to-gray-600 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:scale-105 hover:shadow-2xl transition-transform duration-300">

@@ -1,129 +1,184 @@
 "use client";
-import React, { useState } from "react";
-import { motion } from "framer-motion"; // Animation library
+import React from "react";
+import { motion } from "framer-motion";
 
 const Page = () => {
-    const [selectedSlot, setSelectedSlot] = useState(null);
-    const [selectedConsultant, setSelectedConsultant] = useState(null);
-
-    const consultants = [
-        {
-            id: 1,
-            name: "John Doe",
-            title: "Business Consultant",
-            experience: "10 years",
-            bio: "Helping startups grow with strategy and financial planning.",
-            image: "https://i.pravatar.cc/150?img=3",
-        },
-        {
-            id: 2,
-            name: "Jane Smith",
-            title: "Marketing Expert",
-            experience: "8 years",
-            bio: "Specialist in marketing strategies for brands and businesses.",
-            image: "https://i.pravatar.cc/150?img=5",
-        },
-    ];
+    const bgImage = "/image/back1.jpg";
 
     const services = [
-        { id: 1, name: "Business Strategy", description: "Comprehensive planning for your business." },
-        { id: 2, name: "Financial Planning", description: "Manage finances for growth." },
-        { id: 3, name: "Marketing Consulting", description: "Grow your brand with effective marketing." },
+        { title: "Birth Chart Reading", desc: "Understand your personality, destiny and life patterns." },
+        { title: "Love & Relationships", desc: "Clarity in love, marriage and emotional connections." },
+        { title: "Career Guidance", desc: "Find direction, purpose and professional growth." },
     ];
 
-    const slots = ["09:00 AM", "11:00 AM", "01:00 PM", "03:00 PM", "05:00 PM"];
+    const consultants = [
+        { name: "Sophia Williams", role: "Senior Astrologer", exp: "12+ Years Experience", img: "/image/Pratiek A jain.jpg" },
+        { name: "Daniel Carter", role: "Vedic Astrology Expert", exp: "9+ Years Experience", img: "/image/koyal.jpeg" },
+    ];
+
+    // Generate stars for background
+    const stars = Array.from({ length: 50 });
 
     return (
-        <div className=" bg-gray-50 p-4 md:p-10">
-            <div className="text-center mb-12">
-                <h1 className="text-5xl font-bold text-gray-800 mb-3">Book a Consultant</h1>
-                <p className="text-gray-600 text-lg">Choose a consultant, select a service, and book your slot</p>
-            </div>
+        <div className="w-full text-white overflow-x-hidden bg-black relative">
+            {/* ================= HERO ================= */}
+            <section
+                className="relative  flex items-center justify-center bg-cover bg-center"
+                style={{ backgroundImage: `url(${bgImage})` }}
+            >
+                {/* Dark overlay */}
+                <div className="absolute inset-0 bg-black/90 z-0" />
 
-            {/* Consultants */}
-            <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 mb-12">
-                {consultants.map((c) => (
-                    <motion.div
-                        key={c.id}
-                        className={`bg-white shadow-lg rounded-xl p-6 cursor-pointer flex flex-col items-center text-center transition-transform ${selectedConsultant?.id === c.id ? "border-4 border-blue-500 scale-105" : "hover:scale-105"
-                            }`}
-                        onClick={() => setSelectedConsultant(c)}
-                        whileHover={{ scale: 1.05 }}
-                    >
-                        <img src={c.image} alt={c.name} className="w-32 h-32 rounded-full mb-4" />
-                        <h2 className="text-2xl font-semibold">{c.name}</h2>
-                        <p className="text-gray-500">{c.title}</p>
-                        <p className="text-gray-500 mb-2">{c.experience} experience</p>
-                        <p className="text-gray-600 text-sm">{c.bio}</p>
-                    </motion.div>
+                {/* Stars */}
+                <div className="absolute inset-0 overflow-hidden">
+                    {stars.map((_, i) => (
+                        <div
+                            key={i}
+                            className="absolute bg-white rounded-full opacity-70 animate-blink"
+                            style={{
+                                width: `${Math.random() * 2 + 1}px`,
+                                height: `${Math.random() * 2 + 1}px`,
+                                top: `${Math.random() * 100}%`,
+                                left: `${Math.random() * 100}%`,
+                                animationDelay: `${Math.random() * 3}s`,
+                            }}
+                        />
+                    ))}
+                </div>
+
+                {/* Floating consultant images */}
+                {consultants.map((c, i) => (
+                    <img
+                        key={i}
+                        src={c.img}
+                        alt={c.name}
+                        className={`absolute w-24 h-24 rounded-full border border-white/20  animate-float`}
+                        style={{
+                            top: `${10 + i * 15}%`,
+                            left: `${i % 2 === 0 ? 5 : 85}%`,
+                            animationDelay: `${i * 1.5}s`,
+                        }}
+                    />
                 ))}
-            </div>
 
-            {/* Services */}
-            {selectedConsultant && (
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="max-w-6xl mx-auto bg-white shadow-lg rounded-xl p-6 mb-8"
-                >
-                    <h2 className="text-3xl font-semibold mb-6 text-center">Services</h2>
-                    <div className="grid md:grid-cols-3 gap-4">
-                        {services.map((s) => (
+                {/* Hero content */}
+                <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
+                    <motion.h1
+                        initial={{ opacity: 0, y: 60 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1 }}
+                        className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-extrabold mb-6 leading-tight"
+                    >
+                        <span className="block text-white/80">Unlock the Secrets of the</span>
+                        <span className="block text-white text-5xl md:text-6xl">Cosmos & Your Life</span>
+                    </motion.h1>
+
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="text-gray-300 max-w-2xl mx-auto text-sm sm:text-base md:text-lg mb-10"
+                    >
+                        Personalized astrology sessions for love, career, and destiny. Explore your cosmic blueprint with our expert guidance.
+                    </motion.p>
+
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-10 py-4 border border-white rounded-full font-medium tracking-wide hover:bg-white hover:text-black transition"
+                    >
+                        Book Consultation
+                    </motion.button>
+                </div>
+            </section>
+
+            {/* ================= SERVICES ================= */}
+            <section className="py-20 px-4 bg-black text-white">
+                <div className="max-w-6xl mx-auto">
+                    <h2 className="text-center text-2xl sm:text-3xl md:text-4xl font-serif mb-14">
+                        Astrology Services
+                    </h2>
+
+                    <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
+                        {services.map((s, i) => (
                             <motion.div
-                                key={s.id}
-                                whileHover={{ scale: 1.05 }}
-                                className="bg-gray-100 p-4 rounded-lg cursor-pointer hover:bg-gray-200 transition"
+                                key={i}
+                                whileHover={{ y: -6 }}
+                                className="border border-white/10 rounded-2xl p-8 text-center hover:shadow-lg hover:shadow-white/20 transition"
                             >
-                                <h3 className="font-semibold text-gray-800">{s.name}</h3>
-                                <p className="text-gray-600 text-sm">{s.description}</p>
+                                <h3 className="text-lg font-semibold mb-3">{s.title}</h3>
+                                <p className="text-gray-300 text-sm leading-relaxed">{s.desc}</p>
                             </motion.div>
                         ))}
                     </div>
-                </motion.div>
-            )}
+                </div>
+            </section>
 
-            {/* Schedule Booking */}
-            {selectedConsultant && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="max-w-6xl mx-auto bg-white shadow-lg rounded-xl p-6"
-                >
-                    <h2 className="text-3xl font-semibold mb-4 text-center">Select a Slot</h2>
-                    <div className="flex flex-wrap gap-4 justify-center">
-                        {slots.map((slot) => (
-                            <motion.button
-                                key={slot}
-                                onClick={() => setSelectedSlot(slot)}
-                                whileTap={{ scale: 0.95 }}
-                                className={`px-6 py-3 rounded-lg border font-medium ${selectedSlot === slot
-                                        ? "bg-blue-600 text-white border-blue-600"
-                                        : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                                    }`}
+            {/* ================= EXPERTS ================= */}
+            <section className="py-20 px-4 bg-black">
+                <div className="max-w-6xl mx-auto">
+                    <h2 className="text-center text-2xl sm:text-3xl md:text-4xl font-serif mb-16">
+                        Meet Our Experts
+                    </h2>
+
+                    <div className="grid gap-12 sm:grid-cols-2">
+                        {consultants.map((c, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 40 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                                className="flex flex-col sm:flex-row items-center gap-8 border border-white/10 rounded-2xl p-8 hover:shadow-lg hover:shadow-white/20 transition"
                             >
-                                {slot}
-                            </motion.button>
+                                <img
+                                    src={c.img}
+                                    alt={c.name}
+                                    className="w-36 h-36 rounded-full object-cover border border-white"
+                                />
+                                <div className="text-center sm:text-left">
+                                    <h3 className="text-xl font-semibold">{c.name}</h3>
+                                    <p className="text-gray-400 text-sm">{c.role}</p>
+                                    <p className="text-gray-500 text-sm mt-1">{c.exp}</p>
+                                    <button className="mt-4 px-6 py-2 border border-white rounded-full hover:bg-white hover:text-black transition">
+                                        Book Session
+                                    </button>
+                                </div>
+                            </motion.div>
                         ))}
                     </div>
+                </div>
+            </section>
 
-                    {selectedSlot && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="mt-6 p-4 bg-green-100 text-green-800 rounded-lg text-center font-semibold"
-                        >
-                            You selected <strong>{selectedSlot}</strong> with <strong>{selectedConsultant.name}</strong>
-                        </motion.div>
-                    )}
+            {/* ================= CTA ================= */}
+            <section className="py-20 px-4 bg-black text-white text-center">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif mb-6">Begin Your Journey</h2>
+                <p className="max-w-xl mx-auto text-gray-300 mb-8 text-sm sm:text-base">
+                    Gain clarity, confidence and cosmic insight with a personal astrology session.
+                </p>
+                <button className="px-10 py-4 border border-white rounded-full hover:bg-white hover:text-black transition">
+                    Get Started
+                </button>
+            </section>
 
-                    <button
-                        className="mt-6 w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
-                        disabled={!selectedSlot}
-                    >
-                        Book Now
-                    </button>
-                </motion.div>
-            )}
+            {/* ================= CSS Animations ================= */}
+            <style jsx>{`
+        @keyframes blink {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; }
+        }
+        .animate-blink {
+          animation: blink 2s infinite;
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-15px); }
+        }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+      `}</style>
         </div>
     );
 };
