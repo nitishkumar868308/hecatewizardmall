@@ -72,12 +72,20 @@ const ProductDetail = () => {
     //     console.log("prod", prod)
     //     setCurrentProduct(prod || null);
     // }, [products, id]);
+    // useEffect(() => {
+    //     const prod = products.find((p) => p.id == id) || null;
+    //     if (prod?.id !== currentProduct?.id) {
+    //         setCurrentProduct(prod);
+    //     }
+    // }, [products, id, currentProduct]);
     useEffect(() => {
         const prod = products.find((p) => p.id == id) || null;
-        if (prod?.id !== currentProduct?.id) {
-            setCurrentProduct(prod);
-        }
-    }, [products, id, currentProduct]);
+        if (!prod) return;
+
+        // Always update currentProduct if country changes
+        setCurrentProduct(prod);
+    }, [products, id, country]); // <-- add `country` here
+
     console.log("currentProduct", currentProduct)
     // const product = products.find((p) => p.id === id);
     const cartItem = userCart?.find(
@@ -2363,6 +2371,7 @@ const ProductDetail = () => {
         // 🔹 Check if cart has different country
         if (userCart?.length > 0) {
             const cartCountry = userCart[0]?.selectedCountry;
+            console.log("cartCountry" , cartCountry)
             if (cartCountry && cartCountry !== selectedCountry) {
                 setNewCountry(selectedCountry);
                 setShowCountryModal(true);
@@ -2409,7 +2418,7 @@ const ProductDetail = () => {
                     userCart?.filter(item => {
                         if (
                             item.productId !== product.id ||
-                            item.purchasePlatform !== purchasePlatform   // ✅
+                            item.purchasePlatform !== purchasePlatform
                         ) return false;
 
                         const itemCoreKey = Object.entries(item.attributes || {})
@@ -3058,10 +3067,48 @@ const ProductDetail = () => {
 
     //     return { original: basePrice };
     // };
+    // const displayedPrice = () => {
+    //     const basePrice = Number(selectedVariation?.price ?? product.price ?? 0);
+    //     const bulkPrice = Number(selectedVariation?.bulkPrice ?? product.bulkPrice ?? 0);
+    //     const minQty = Number(selectedVariation?.minQuantity ?? product.minQuantity ?? 0);
+
+    //     const bulkStatus = computeBulkStatus({
+    //         product,
+    //         selectedVariation,
+    //         selectedAttributes,
+    //         userCart,
+    //         quantity,
+    //     });
+
+    //     // console.log("✅ bulkStatus:", bulkStatus);
+
+    //     // ✅ If bulk offer is eligible
+    //     if (bulkStatus.eligible && bulkPrice) {
+    //         return {
+    //             original: basePrice,
+    //             discounted: bulkPrice, // not `cut`
+    //             label: `Bulk offer: ₹${bulkPrice} per item (Min ${bulkStatus.requiredQty})`,
+    //         };
+    //     }
+
+    //     // ✅ fallback if manually applied
+    //     if (selectedVariation?.offerApplied && bulkPrice) {
+    //         return {
+    //             original: basePrice,
+    //             discounted: bulkPrice,
+    //             label: "Offer Applied",
+    //         };
+    //     }
+
+    //     return { original: basePrice };
+    // };
     const displayedPrice = () => {
+        if (!currentProduct) return { original: 0 };
+
+        const product = currentProduct;
         const basePrice = Number(selectedVariation?.price ?? product.price ?? 0);
         const bulkPrice = Number(selectedVariation?.bulkPrice ?? product.bulkPrice ?? 0);
-        const minQty = Number(selectedVariation?.minQuantity ?? product.minQuantity ?? 0);
+        
 
         const bulkStatus = computeBulkStatus({
             product,
@@ -3071,27 +3118,33 @@ const ProductDetail = () => {
             quantity,
         });
 
-        // console.log("✅ bulkStatus:", bulkStatus);
-
-        // ✅ If bulk offer is eligible
+        // ✅ Bulk offer
         if (bulkStatus.eligible && bulkPrice) {
             return {
                 original: basePrice,
-                discounted: bulkPrice, // not `cut`
-                label: `Bulk offer: ₹${bulkPrice} per item (Min ${bulkStatus.requiredQty})`,
+                discounted: bulkPrice,
+                label: `Bulk offer: ${product.currency} ${product.currencySymbol}${bulkPrice} per item (Min ${bulkStatus.requiredQty})`,
+                currency: product.currency,
+                symbol: product.currencySymbol
             };
         }
 
-        // ✅ fallback if manually applied
+        // ✅ Offer applied fallback
         if (selectedVariation?.offerApplied && bulkPrice) {
             return {
                 original: basePrice,
                 discounted: bulkPrice,
                 label: "Offer Applied",
+                currency: product.currency,
+                symbol: product.currencySymbol
             };
         }
 
-        return { original: basePrice };
+        return {
+            original: basePrice,
+            currency: product.currency,
+            symbol: product.currencySymbol
+        };
     };
 
 
@@ -3275,24 +3328,21 @@ const ProductDetail = () => {
                             })()}
                         </p> */}
 
-                        <p className="text-3xl text-gray-800 mb-4 font-semibold flex flex-wrap items-center gap-2">
+                        {/* <p className="text-3xl text-gray-800 mb-4 font-semibold flex flex-wrap items-center gap-2">
                             {currency + " "}
                             {(() => {
                                 const priceObj = displayedPrice();
 
                                 return priceObj.discounted ? (
                                     <>
-                                        {/* Old price (cut) */}
                                         <span className="line-through text-gray-500 mr-1 text-2xl">
                                             {priceObj.original}
                                         </span>
 
-                                        {/* Discounted / Bulk Price */}
                                         <span className="text-gray-900 text-3xl font-bold">
                                             {priceObj.discounted}
                                         </span>
 
-                                        {/* Offer Label */}
                                         {priceObj.label && (
                                             <span className="ml-2 text-sm bg-green-100 text-green-700 px-2 py-1 rounded-lg font-medium">
                                                 {priceObj.label}
@@ -3305,7 +3355,39 @@ const ProductDetail = () => {
                                     </span>
                                 );
                             })()}
+                        </p> */}
+
+                        <p className="text-3xl text-gray-800 mb-4 font-semibold flex flex-wrap items-center gap-2">
+                            {(() => {
+                                const priceObj = displayedPrice();
+
+                                return priceObj.discounted ? (
+                                    <>
+                                        {/* Old price (cut) */}
+                                        <span className="line-through text-gray-500 mr-1 text-2xl">
+                                            {priceObj.currency} {priceObj.symbol}{priceObj.original}
+                                        </span>
+
+                                        {/* Discounted / Bulk Price */}
+                                        <span className="text-gray-900 text-3xl font-bold">
+                                            {priceObj.currency} {priceObj.symbol}{priceObj.discounted}
+                                        </span>
+
+                                        {/* Offer Label */}
+                                        {priceObj.label && (
+                                            <span className="ml-2 text-sm bg-green-100 text-green-700 px-2 py-1 rounded-lg font-medium">
+                                                {priceObj.label}
+                                            </span>
+                                        )}
+                                    </>
+                                ) : (
+                                    <span className="text-gray-900 text-3xl font-bold">
+                                        {priceObj.currency} {priceObj.symbol}{priceObj.original}
+                                    </span>
+                                );
+                            })()}
                         </p>
+
 
 
                         <p className="text-lg text-gray-600 mb-8 leading-relaxed">
@@ -3591,6 +3673,7 @@ const ProductDetail = () => {
                             bulkStatus={bulkStatus}
                             userCart={userCart}
                             purchasePlatform={purchasePlatform}
+                            country={country}
                         />
                         {/* {(product.offers?.length > 0 || (product.minQuantity && product.bulkPrice)) && (
                             <div className="mt-4 text-sm text-gray-800 space-y-2">

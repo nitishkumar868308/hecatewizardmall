@@ -29,6 +29,17 @@ export const updateDelhiStore = createAsyncThunk(
     }
 );
 
+export const deleteDelhiStore = createAsyncThunk(
+    "delhiStore/deleteDelhiStore",
+    async (id, { rejectWithValue }) => {
+        try {
+            const response = await axios.delete("/api/delhiStore", { data: { id } }); // <-- body
+            return response.data.data;
+        } catch (err) {
+            return rejectWithValue(err.response?.data?.message || "Failed to delete Delhi Store item");
+        }
+    }
+);
 
 
 
@@ -75,7 +86,20 @@ const delhiStoreSlice = createSlice({
             .addCase(updateDelhiStore.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload || action.error.message;
+            })
+
+            .addCase(deleteDelhiStore.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(deleteDelhiStore.fulfilled, (state, action) => {
+                state.loading = false;
+                state.store = state.store.filter((item) => item.id !== action.payload.id);
+            })
+            .addCase(deleteDelhiStore.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || action.error.message;
             });
+
 
     },
 });

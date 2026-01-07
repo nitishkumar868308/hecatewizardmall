@@ -1387,16 +1387,16 @@ const Checkout = () => {
   // Promo code apply function
   const applyPromo = () => {
     if (!promoCode) return;
-
-    // Example logic: suppose "SAVE50" gives ₹50 discount
-    if (promoCode.toUpperCase() === "SAVE50") {
-      setDiscount(50);
-    } else if (promoCode.toUpperCase() === "SAVE100") {
-      setDiscount(100);
-    } else {
-      setDiscount(0);
-      alert("Invalid promo code");
-    }
+    toast.error("Right now no promo code")
+    // // Example logic: suppose "SAVE50" gives ₹50 discount
+    // if (promoCode.toUpperCase() === "SAVE50") {
+    //   setDiscount(50);
+    // } else if (promoCode.toUpperCase() === "SAVE100") {
+    //   setDiscount(100);
+    // } else {
+    //   setDiscount(0);
+    //   alert("Invalid promo code");
+    // }
   };
 
 

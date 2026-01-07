@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchDelhiStore, updateDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
+import { fetchDelhiStore, updateDelhiStore, deleteDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
 import DefaultPageAdmin from "@/components/Admin/Include/DefaultPageAdmin/DefaultPageAdmin";
 import { fetchWarehouses } from "@/app/redux/slices/warehouse/wareHouseSlice";
 import toast from 'react-hot-toast';
@@ -15,19 +15,19 @@ const DelhiStorePage = () => {
     const [modalData, setModalData] = useState(null);
     const [updateData, setUpdateData] = useState(null);
     const [newStock, setNewStock] = useState("");
-
+    const [open, setOpen] = useState(false);
     console.log("store ", store)
     useEffect(() => {
         dispatch(fetchWarehouses())
         dispatch(fetchDelhiStore());
     }, [dispatch]);
     console.log("warehouses", warehouses)
-
+    const [deleteTarget, setDeleteTarget] = useState(null);
     // Flatten all products with units & warehouse from nested entries
     const allProducts = store.flatMap((item) =>
         item.productsSnapshot?.entries.flatMap((prod) =>
             prod.entries?.map((entry) => ({
-                rowId: item.id, 
+                rowId: item.id,
                 id: prod.id,
                 variationId: prod.variationId,
                 productName: prod.productName,
@@ -82,7 +82,7 @@ const DelhiStorePage = () => {
 
         console.log("newStock", newStock);
         console.log("updateData", updateData);
-        
+
         await dispatch(updateDelhiStore({
             id: Number(updateData.rowId),   // ✅ table row id
             productId: updateData.productId,
@@ -95,6 +95,24 @@ const DelhiStorePage = () => {
         setNewStock("");
         setUpdateData(null);
     };
+
+    const handleDelete = () => {
+        if (!deleteTarget) return;
+
+        dispatch(deleteDelhiStore(deleteTarget.rowId))
+            .unwrap() // unwrap promise to access fulfilled/rejected payload
+            .then((data) => {
+                toast.success(data.message || "Deleted successfully!"); // success message from API
+            })
+            .catch((err) => {
+                toast.error(err || "Failed to delete record"); // error message
+            })
+            .finally(() => {
+                setOpen(false);
+                setDeleteTarget(null);
+            });
+    };
+
 
 
 
@@ -163,7 +181,7 @@ const DelhiStorePage = () => {
                                 <th className="p-3">Stock</th>
                                 <th className="p-3">Stock Sold</th>
                                 <th className="p-3">Warehouse</th>
-                                <th className="p-3">Snapshot</th>
+                                <th className="p-3">Action</th>
                             </tr>
                         </thead>
                         {/* <tbody>
@@ -277,8 +295,8 @@ const DelhiStorePage = () => {
 
                                                     <button
                                                         onClick={() => setUpdateData({
-                                                            rowId: prod.rowId, 
-                                                            productId: prod.id,       // ← productsSnapshot id
+                                                            rowId: prod.rowId,
+                                                            productId: prod.id,
                                                             variationId: prod.variationId,
                                                             warehouseId: prod.warehouseId,
                                                             units: prod.units
@@ -287,6 +305,14 @@ const DelhiStorePage = () => {
                                                     >
                                                         Update
                                                     </button>
+
+                                                    <button
+                                                        onClick={() => { setOpen(true); setDeleteTarget(prod); }}
+                                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                                                    >
+                                                        Delete
+                                                    </button>
+
 
                                                 </div>
                                             </td>
@@ -444,7 +470,7 @@ const DelhiStorePage = () => {
 
 
                 {updateData && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
                         <div className="bg-white rounded-xl p-6 w-full max-w-md relative">
                             <button
                                 onClick={() => setUpdateData(null)}
@@ -469,6 +495,30 @@ const DelhiStorePage = () => {
                         </div>
                     </div>
                 )}
+
+                {deleteTarget && open && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 w-96">
+                            <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
+                            <p className="mb-6">Are you sure you want to delete <strong>{deleteTarget.productName}</strong>?</p>
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    onClick={() => { setOpen(false); setDeleteTarget(null); }}
+                                    className="px-4 py-2 rounded border border-gray-300"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    className="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600"
+                                >
+                                    Yes, Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
 
 
             </div>

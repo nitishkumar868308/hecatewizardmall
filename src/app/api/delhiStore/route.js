@@ -110,6 +110,31 @@ export async function PUT(req) {
     }
 }
 
+export async function DELETE(req) {
+    try {
+        const body = await req.json();
+        const { id } = body;
+
+        if (!id) {
+            return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
+        }
+
+        // Hard delete
+        const deletedRecord = await prisma.DelhiWarehouseStock.delete({
+            where: { id: Number(id) },
+        });
+
+        return new Response(
+            JSON.stringify({ message: "Record deleted successfully", data: deletedRecord }),
+            { status: 200 }
+        );
+    } catch (error) {
+        return new Response(
+            JSON.stringify({ message: "Failed to delete record", error: error.message }),
+            { status: 500 }
+        );
+    }
+}
 
 
 

@@ -1216,7 +1216,7 @@ const Header = () => {
 
         // return deep cloned plain object (safe for render)
         return JSON.parse(JSON.stringify(acc));
-    }, [JSON.stringify(userCart)]);
+    }, [JSON.stringify(userCart) , country]);
 
     const findColorVariation = (fullProduct, c, item) => {
         if (!fullProduct?.variations?.length) return null;
@@ -1796,22 +1796,22 @@ const Header = () => {
 
                                                                                                     {paid && (
                                                                                                         <div className="text-gray-700 font-semibold">
-                                                                                                            ₹{fmt(c.pricePerItem)} × {paid.paidQty} =
-                                                                                                            ₹{fmt(c.pricePerItem * paid.paidQty)}
+                                                                                                            {c.currencySymbol}{fmt(c.pricePerItem)} × {paid.paidQty} =
+                                                                                                            {c.currencySymbol}{fmt(c.pricePerItem * paid.paidQty)}
                                                                                                         </div>
                                                                                                     )}
 
                                                                                                     {free && (
                                                                                                         <div className="text-green-700 font-semibold">
-                                                                                                            🎁 {free.freeQty} FREE (Saved ₹
+                                                                                                            🎁 {free.freeQty} FREE (Saved {c.currencySymbol}
                                                                                                             {fmt(c.pricePerItem * free.freeQty)})
                                                                                                         </div>
                                                                                                     )}
 
                                                                                                     {!paid && !free && (
                                                                                                         <div>
-                                                                                                            ₹{fmt(c.pricePerItem)} × {c.quantity} =
-                                                                                                            ₹{fmt(c.pricePerItem * c.quantity)}
+                                                                                                            {c.currencySymbol}{fmt(c.pricePerItem)} × {c.quantity} =
+                                                                                                            {c.currencySymbol}{fmt(c.pricePerItem * c.quantity)}
                                                                                                         </div>
                                                                                                     )}
                                                                                                 </div>
@@ -1821,22 +1821,22 @@ const Header = () => {
                                                                                         <>
                                                                                             <div>
                                                                                                 <span className="line-through text-gray-400">
-                                                                                                    ₹{fmt(colorPrice)} × {c.quantity} =
-                                                                                                    ₹{fmt(originalTotal)}
+                                                                                                    {c.currencySymbol}{fmt(colorPrice)} × {c.quantity} =
+                                                                                                    {c.currencySymbol}{fmt(originalTotal)}
                                                                                                 </span>
                                                                                             </div>
                                                                                             <div className="text-green-700 font-semibold">
-                                                                                                ₹{fmt(bulkPrice)} × {c.quantity} =
-                                                                                                ₹{fmt(discountedTotal)} ✅
+                                                                                                {c.currencySymbol}{fmt(bulkPrice)} × {c.quantity} =
+                                                                                                {c.currencySymbol}{fmt(discountedTotal)} ✅
                                                                                             </div>
                                                                                             <div className="text-xs text-green-600">
-                                                                                                You saved ₹{fmt(saved)} 🎉
+                                                                                                You saved {c.currencySymbol}{fmt(saved)} 🎉
                                                                                             </div>
                                                                                         </>
                                                                                     ) : (
                                                                                         <div>
-                                                                                            ₹{fmt(colorPrice)} × {c.quantity} =
-                                                                                            ₹{fmt(originalTotal)}
+                                                                                            {c.currencySymbol}{fmt(colorPrice)} × {c.quantity} =
+                                                                                            {c.currencySymbol}{fmt(originalTotal)}
                                                                                         </div>
                                                                                     )}
                                                                                 </div>

@@ -20,7 +20,7 @@ const Topbar = () => {
     const dispatch = useDispatch();
     const { countryPricing } = useSelector((state) => state.countryPricing);
     const country = useSelector((state) => state.country);
-    console.log("country", country)
+    console.log("countryPricing", countryPricing)
     const [mounted, setMounted] = useState(false);
     const { items } = useSelector((state) => state.cart);
     const { user } = useSelector((state) => state.me);
@@ -78,7 +78,7 @@ const Topbar = () => {
         const { payload } = await dispatch(fetchCountryTaxes(selectedCountry));
         console.log("Fetched taxes for", selectedCountry, payload);
         const { payload: updatedProducts } = await dispatch(fetchProducts(selectedCountry));
-
+        console.log("updatedProducts" , updatedProducts)
         try {
             // Update each cart item with new price from updatedProducts
             const promises = userCart.map((item) => {
@@ -102,6 +102,7 @@ const Topbar = () => {
                 const newTotal = newPrice * item.quantity;
                 const currencySymbol = variation.currencySymbol || product.currencySymbol;
                 const currency = variation.currency || product.currency;
+                const bulkPrice = variation.bulkPrice;
 
                 return dispatch(updateCart({
                     id: item.id,
@@ -109,7 +110,8 @@ const Topbar = () => {
                     totalPrice: newTotal,
                     currencySymbol,
                     selectedCountry: selectedCountryCode,
-                    currency
+                    currency,
+                    bulkPrice : bulkPrice
                 })).unwrap();
             }).filter(Boolean);
 
