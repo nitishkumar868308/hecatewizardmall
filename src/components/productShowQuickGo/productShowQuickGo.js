@@ -266,7 +266,7 @@ const Page = () => {
                         const herbsProducts = filteredProducts?.filter(
                             item => item.categoryId === herbsCategory?.id
                         );
-
+                        console.log("herbsProducts", herbsProducts)
 
                         return (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -287,6 +287,30 @@ const Page = () => {
                                 </div>
 
                                 {/* RIGHT — FILTERED PRODUCTS GRID */}
+                                {/* <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    {herbsProducts?.map((item, i) => (
+                                        <div
+                                            key={i}
+                                            onClick={() => prdocuPage(item)}
+                                            className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative group"
+                                        >
+                                            <Image
+                                                src={item.image?.[0] || "/no-image.png"}
+                                                alt={item.name}
+                                                fill
+                                                className="object-cover"
+                                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                                                unoptimized
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                <p className="text-white text-center text-sm sm:text-base md:text-lg font-semibold px-2">
+                                                    {item.name}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div> */}
+
                                 <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
                                     {herbsProducts?.map((item, i) => (
                                         <div
@@ -302,9 +326,17 @@ const Page = () => {
                                                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                                                 unoptimized
                                             />
+
+                                            <div className="absolute bottom-0 left-0 w-full bg-black/50 py-2 px-2">
+                                                <p className="text-white text-center text-sm sm:text-base md:text-lg font-semibold ">
+                                                    {item.name}
+                                                </p>
+                                            </div>
+
                                         </div>
                                     ))}
                                 </div>
+
                             </div>
                         );
                     })()}
@@ -376,6 +408,11 @@ const Page = () => {
                                                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                                                 unoptimized
                                             />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                <p className="text-white text-center text-sm sm:text-base md:text-lg font-semibold px-2">
+                                                    {item.name}
+                                                </p>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
