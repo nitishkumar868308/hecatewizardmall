@@ -458,20 +458,28 @@ model WarehouseDispatch {
   shippingId       String? 
 }
 
+
 model DelhiWarehouseStock {
-  id             Int       @id @default(autoincrement())
-  dispatchId     Int?      // optional, sirf reference ke liye
-  productsSnapshot Json    // poora product details snapshot
-  dimensions       Json?   
-  shippingId     String
-  trackingId     String?
-  trackingLink   String?
-  status         String    @default("accepted") // always accepted
-  active    Boolean  @default(true)
-  deleted   Boolean  @default(false)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id            Int      @id @default(autoincrement())
+  dispatchId    Int
+  productId     String
+  variationId   String
+  warehouseId   Int
+  stock         Int
+  shippingId    String
+  trackingId    String?
+  trackingLink  String?
+  status        String   @default("accepted")
+  active        Boolean  @default(true)
+  deleted       Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([dispatchId, productId, variationId])
 }
+
+
+
 
 model ChatMessage {
   id          Int      @id @default(autoincrement())
@@ -522,4 +530,19 @@ model BannerState {
   state  State  @relation(fields: [stateId], references: [id])
 
   @@unique([bannerId, stateId])
+}
+
+
+model PromoCode {
+  id           Int      @id @default(autoincrement())
+  code         String   @unique
+  type         String   // flexible, future me koi bhi type aa sakta hai
+  amount       Float
+  startDate    DateTime
+  endDate      DateTime
+  active       Boolean  @default(true)      // toggle active/inactive
+  deleted      Boolean  @default(false)     // soft delete
+  assignedUsers Json?                             // array of users [{id,name,email}]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

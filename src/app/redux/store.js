@@ -30,7 +30,7 @@ import bannerReducer from "./slices/banners/bannersSlice";
 import selectedStateReducer from './slices/selectedStateSlice';
 import locationModalReducer from './slices/locationModalSlice';
 import warehouseSelectionReducer from "./slices/warehouseSelectionSlice";
-
+import promoCodeReducer from './slices/promoCode/promoCodeSlice';
 
 // import updateUserReducer from './slices/userSlice';
 
@@ -67,6 +67,7 @@ const store = configureStore({
         selectedState: selectedStateReducer,
         locationModal: locationModalReducer,
         warehouseSelection: warehouseSelectionReducer,
+        promoCode: promoCodeReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

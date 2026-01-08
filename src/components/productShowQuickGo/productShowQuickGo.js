@@ -31,6 +31,29 @@ const Page = () => {
     console.log("categories", categories)
     const selectedState = useSelector(state => state.selectedState);
 
+    // Merge store with products, prioritizing variationId
+    const mergedProducts = store
+        ?.map(storeItem => {
+            const product = products.find(p => p.id === storeItem.productId);
+
+            // Take the main product image and name (ignore variation for listing)
+            return {
+                ...storeItem,
+                productName: product?.name || "Unknown Product",
+                variationName: "—", // Variations not needed on listing
+                price: product?.price || product?.MRP || 0,
+                image: product?.image?.[0] || "/no-image.png",
+                FNSKU: product?.barCode || "—",
+                SKU: product?.sku || "—",
+                categoryId: product?.categoryId || null,
+                subcategoryId: product?.subcategoryId || null,
+                warehouseCode: storeItem.warehouseId || "—",
+                stock: storeItem.stock || 0
+            };
+        })
+
+    console.log("mergedProducts", mergedProducts);
+
     const warehouseIdFromRedux = useSelector(
         state => state.warehouseSelection?.warehouseId
     );
@@ -263,8 +286,8 @@ const Page = () => {
                     {(() => {
 
 
-                        const herbsProducts = filteredProducts?.filter(
-                            item => item.categoryId === herbsCategory?.id
+                        const herbsProducts = mergedProducts?.filter(
+                            p => p.categoryId === herbsCategory?.id
                         );
                         console.log("herbsProducts", herbsProducts)
 
@@ -319,17 +342,18 @@ const Page = () => {
                                             className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
                                         >
                                             <Image
-                                                src={item.image?.[0] || "/no-image.png"}
-                                                alt={item.name}
+                                                src={item.image || "/no-image.png"}
+                                                alt={item.name || "Herbs Product"} // fallback if name is missing
                                                 fill
                                                 className="object-cover"
                                                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                                                 unoptimized
                                             />
 
+
                                             <div className="absolute bottom-0 left-0 w-full bg-black/50 py-2 px-2">
                                                 <p className="text-white text-center text-sm sm:text-base md:text-lg font-semibold ">
-                                                    {item.name}
+                                                    {item.productName}
                                                 </p>
                                             </div>
 
@@ -366,13 +390,7 @@ const Page = () => {
 
 
                         // STEP 2: Find all products belonging to this category
-                        const oilsProducts = filteredProducts?.filter(
-                            item => item.categoryId === oilsCategory?.id
-                        );
-
-
-                        // STEP 3: Category image — backend se
-                        const oilsImage = oilsCategory?.image || "/fallback-oils.jpg";
+                        const oilsProducts = mergedProducts?.filter(p => p.categoryId === oilsCategory);
 
                         return (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -381,7 +399,7 @@ const Page = () => {
                                 <div className="col-span-1">
                                     <div onClick={handleClickOils} className="cursor-pointer w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
                                         <Image
-                                            src={oilsImage}
+                                            src={oilsCategory?.image || "/fallback-oils.jpg"}
                                             alt="Oils Category"
                                             fill
                                             className="object-cover"

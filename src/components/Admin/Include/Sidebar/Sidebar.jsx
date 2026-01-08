@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse, ShoppingCart, Image as ImageIcon   } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse, ShoppingCart, Image as ImageIcon, Tag  } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { FiMessageCircle } from "react-icons/fi";
@@ -70,7 +70,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                             className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                         >
                             <span className="flex items-center gap-3">
-                                <FiMessageCircle  className="w-5 h-5" /> Messages
+                                <FiMessageCircle className="w-5 h-5" /> Messages
                             </span>
                             {messages ? (
                                 <ChevronUp className="w-4 h-4" />
@@ -179,6 +179,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                         className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                     >
                         <Users className="w-5 h-5" /> Users
+                    </Link>
+
+                    <Link
+                        href="/admin/promo_code"
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                    >
+                        <Tag  className="w-5 h-5" /> Promo Code
                     </Link>
 
                     <div>

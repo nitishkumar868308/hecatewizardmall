@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "public"."DelhiWarehouseStock" ALTER COLUMN "productId" DROP DEFAULT,
+ALTER COLUMN "productId" SET DATA TYPE TEXT,
+ALTER COLUMN "stock" DROP DEFAULT,
+ALTER COLUMN "variationId" DROP DEFAULT,
+ALTER COLUMN "variationId" SET DATA TYPE TEXT;

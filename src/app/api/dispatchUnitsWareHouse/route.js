@@ -206,72 +206,211 @@ export async function PUT(req) {
 //         return new Response(JSON.stringify({ message: "Failed to finalize dispatch", error: error.message }), { status: 500 });
 //     }
 // }
+// export async function PATCH(req) {
+//     try {
+//         const body = await req.json();
+//         const { dispatchId, dimensions, productsSnapshot, trackingId, trackingLink } = body;
+
+//         if (!dispatchId)
+//             return new Response(JSON.stringify({ message: "Dispatch ID is required" }), { status: 400 });
+
+//         const existing = await prisma.WarehouseDispatch.findUnique({ where: { id: dispatchId } });
+//         if (!existing)
+//             return new Response(JSON.stringify({ message: "Dispatch not found" }), { status: 404 });
+
+//         if (existing.status === "completed")
+//             return new Response(JSON.stringify({ message: "Dispatch already completed" }), { status: 400 });
+
+//         const shippingId = existing.shippingId || `SHIP-${Date.now()}`;
+
+//         // Update main dispatch
+//         const updatedDispatch = await prisma.WarehouseDispatch.update({
+//             where: { id: dispatchId },
+//             data: {
+//                 dimensions: dimensions || existing.dimensions,
+//                 trackingId: trackingId || existing.trackingId,
+//                 trackingLink: trackingLink || existing.trackingLink,
+//                 shippingId,
+//                 status: "completed",
+//             },
+//         });
+
+//         // Get warehouseIds from productsSnapshot
+//         const warehouseIds = productsSnapshot?.entries?.flatMap((p) =>
+//             p.entries?.map((entry) => parseInt(entry.warehouseId)) || []
+//         ) || [];
+//         console.log("warehouseIds", warehouseIds)
+
+//         let isDelhiFulfillment = false;
+
+//         for (const whId of warehouseIds) {
+//             const dispatchWarehouse = await prisma.WareHouse.findUnique({
+//                 where: { id: whId }
+//             });
+
+//             if (!dispatchWarehouse?.fulfillmentWarehouseId) continue;
+
+//             const fulfillmentWarehouse = await prisma.WareHouse.findUnique({
+//                 where: { id: dispatchWarehouse.fulfillmentWarehouseId }
+//             });
+
+//             if (fulfillmentWarehouse?.state?.toLowerCase() === "delhi") {
+//                 isDelhiFulfillment = true;
+//                 break; // ❗ ek mil gaya to bas
+//             }
+//         }
+
+//         // 2️⃣ Sirf ek baar create karo
+//         if (isDelhiFulfillment) {
+//             await prisma.DelhiWarehouseStock.create({
+//                 data: {
+//                     dispatchId,
+//                     productsSnapshot,
+//                     dimensions,
+//                     shippingId,
+//                     trackingId,
+//                     trackingLink,
+//                     status: "accepted",
+//                 },
+//             });
+//         }
+
+//         // for (const whId of warehouseIds) {
+//         //     // 🔹 Use correct Prisma model name
+//         //     const dispatchWarehouse = await prisma.WareHouse.findUnique({ where: { id: whId } });
+//         //     console.log("dispatchWarehouse", dispatchWarehouse);
+
+//         //     const fulfillmentWarehouse = dispatchWarehouse?.fulfillmentWarehouseId
+//         //         ? await prisma.WareHouse.findUnique({ where: { id: dispatchWarehouse.fulfillmentWarehouseId } })
+//         //         : null;
+//         //     console.log("fulfillmentWarehouse", fulfillmentWarehouse);
+
+//         //     if (fulfillmentWarehouse?.state?.toLowerCase() === "delhi") {
+//         //         await prisma.DelhiWarehouseStock.create({
+//         //             data: {
+//         //                 dispatchId,
+//         //                 productsSnapshot,
+//         //                 dimensions,
+//         //                 shippingId,
+//         //                 trackingId,
+//         //                 trackingLink,
+//         //                 status: "accepted",
+//         //             },
+//         //         });
+//         //     }
+//         // }
+
+
+
+//         return new Response(JSON.stringify({ message: "Dispatch finalized successfully", data: updatedDispatch }), { status: 200 });
+
+//     } catch (error) {
+//         console.error("Final dispatch error:", error);
+//         return new Response(JSON.stringify({ message: "Failed to finalize dispatch", error: error.message }), { status: 500 });
+//     }
+// }
+
+
 export async function PATCH(req) {
     try {
         const body = await req.json();
         const { dispatchId, dimensions, productsSnapshot, trackingId, trackingLink } = body;
 
-        if (!dispatchId)
+        if (!dispatchId) {
             return new Response(JSON.stringify({ message: "Dispatch ID is required" }), { status: 400 });
+        }
 
-        const existing = await prisma.WarehouseDispatch.findUnique({ where: { id: dispatchId } });
-        if (!existing)
+        const existingDispatch = await prisma.WarehouseDispatch.findUnique({
+            where: { id: dispatchId }
+        });
+        if (!existingDispatch) {
             return new Response(JSON.stringify({ message: "Dispatch not found" }), { status: 404 });
+        }
 
-        if (existing.status === "completed")
+        if (existingDispatch.status === "completed") {
             return new Response(JSON.stringify({ message: "Dispatch already completed" }), { status: 400 });
+        }
 
-        const shippingId = existing.shippingId || `SHIP-${Date.now()}`;
+        const shippingId = existingDispatch.shippingId || `SHIP-${Date.now()}`;
 
         // Update main dispatch
         const updatedDispatch = await prisma.WarehouseDispatch.update({
             where: { id: dispatchId },
             data: {
-                dimensions: dimensions || existing.dimensions,
-                trackingId: trackingId || existing.trackingId,
-                trackingLink: trackingLink || existing.trackingLink,
+                dimensions: dimensions || existingDispatch.dimensions,
+                trackingId: trackingId || existingDispatch.trackingId,
+                trackingLink: trackingLink || existingDispatch.trackingLink,
                 shippingId,
                 status: "completed",
             },
         });
 
-        // Get warehouseIds from productsSnapshot
-        const warehouseIds = productsSnapshot?.entries?.flatMap((p) =>
-            p.entries?.map((entry) => parseInt(entry.warehouseId)) || []
+        // --- Determine if any warehouse in this dispatch is fulfilled by Delhi ---
+        const warehouseIds = productsSnapshot?.entries?.flatMap(p =>
+            p.entries?.map(e => Number(e.warehouseId)) || []
         ) || [];
-        console.log("warehouseIds" , warehouseIds)
+
+        let isDelhiFulfillment = false;
 
         for (const whId of warehouseIds) {
-            // 🔹 Use correct Prisma model name
-            const dispatchWarehouse = await prisma.WareHouse.findUnique({ where: { id: whId } });
-            console.log("dispatchWarehouse", dispatchWarehouse);
+            const warehouse = await prisma.WareHouse.findUnique({ where: { id: whId } });
+            if (!warehouse?.fulfillmentWarehouseId) continue;
 
-            const fulfillmentWarehouse = dispatchWarehouse?.fulfillmentWarehouseId
-                ? await prisma.WareHouse.findUnique({ where: { id: dispatchWarehouse.fulfillmentWarehouseId } })
-                : null;
-            console.log("fulfillmentWarehouse", fulfillmentWarehouse);
+            const fulfillmentWarehouse = await prisma.WareHouse.findUnique({
+                where: { id: warehouse.fulfillmentWarehouseId }
+            });
 
             if (fulfillmentWarehouse?.state?.toLowerCase() === "delhi") {
-                await prisma.DelhiWarehouseStock.create({
-                    data: {
+                isDelhiFulfillment = true;
+                break;
+            }
+        }
+
+        // --- Save individual product variations to DelhiWarehouseStock ---
+        if (isDelhiFulfillment) {
+            const stockData = [];
+
+            productsSnapshot.entries.forEach(product => {
+                const productId = product.productId;
+                const variationId = product.variationId; // ✅ Correct: read from parent
+
+                product.entries.forEach(entry => {
+                    const stock = Number(entry.units) || 0; // ✅ units from warehouse entry
+                    const warehouseId = Number(entry.warehouseId);
+
+                    stockData.push({
                         dispatchId,
-                        productsSnapshot,
-                        dimensions,
+                        productId,
+                        variationId,
+                        warehouseId,
+                        stock,
                         shippingId,
                         trackingId,
                         trackingLink,
                         status: "accepted",
-                    },
+                    });
+                });
+            });
+
+            if (stockData.length) {
+                await prisma.delhiWarehouseStock.createMany({
+                    data: stockData,
+                    skipDuplicates: true
                 });
             }
         }
 
 
-
-        return new Response(JSON.stringify({ message: "Dispatch finalized successfully", data: updatedDispatch }), { status: 200 });
+        return new Response(
+            JSON.stringify({ message: "Dispatch finalized successfully", data: updatedDispatch }),
+            { status: 200 }
+        );
 
     } catch (error) {
         console.error("Final dispatch error:", error);
-        return new Response(JSON.stringify({ message: "Failed to finalize dispatch", error: error.message }), { status: 500 });
+        return new Response(
+            JSON.stringify({ message: "Failed to finalize dispatch", error: error.message }),
+            { status: 500 }
+        );
     }
 }

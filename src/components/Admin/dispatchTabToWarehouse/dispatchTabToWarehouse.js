@@ -300,6 +300,7 @@ const DispatchTabToWarehouse = ({
         }
     };
 
+
     const fetchMasterProducts = async (transfer) => {
         console.log("Processing transfer entries:", transfer.entries);
         setLoadingIds((prev) => [...prev, transfer.id]);

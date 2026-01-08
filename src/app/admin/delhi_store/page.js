@@ -5,6 +5,7 @@ import { fetchDelhiStore, updateDelhiStore, deleteDelhiStore } from "@/app/redux
 import DefaultPageAdmin from "@/components/Admin/Include/DefaultPageAdmin/DefaultPageAdmin";
 import { fetchWarehouses } from "@/app/redux/slices/warehouse/wareHouseSlice";
 import toast from 'react-hot-toast';
+import { fetchAllProducts } from "@/app/redux/slices/products/productSlice";
 
 const DelhiStorePage = () => {
     const dispatch = useDispatch();
@@ -20,43 +21,54 @@ const DelhiStorePage = () => {
     useEffect(() => {
         dispatch(fetchWarehouses())
         dispatch(fetchDelhiStore());
+        dispatch(fetchAllProducts());
     }, [dispatch]);
     console.log("warehouses", warehouses)
     const [deleteTarget, setDeleteTarget] = useState(null);
     // Flatten all products with units & warehouse from nested entries
-    const allProducts = store.flatMap((item) =>
-        item.productsSnapshot?.entries.flatMap((prod) =>
-            prod.entries?.map((entry) => ({
-                rowId: item.id,
-                id: prod.id,
-                variationId: prod.variationId,
-                productName: prod.productName,
-                variationName: prod.variationName,
-                FNSKU: prod.FNSKU,
-                price: prod.price || prod.MRP,
-                units: entry.units,
-                warehouseId: entry.warehouseId,
-                image: prod.image,
-                dimensions: prod.dimensions,
-            })) || []
-        ) || []
-    );
-    console.log("allProducts", allProducts)
+    const { products } = useSelector((state) => state.products);
+    console.log("products", products)
+    const mergedProducts = store.map(item => {
+        const warehouse = warehouses.find(w => w.id === item.warehouseId);
 
-    const filteredProducts = allProducts.filter((prod) => {
+        // Find the product in your product catalog
+        const product = products.find(p => p.id === item.productId);
+
+        let variation;
+        if (item.variationId && product?.variations) {
+            variation = product.variations.find(v => v.id === item.variationId);
+        }
+
+        return {
+            ...item,
+            productName: variation?.name || product?.name || "Unknown Product",
+            variationName: variation?.variationName || product?.short || "Unknown Variation",
+            price: variation?.price || product?.price || product?.MRP || 0,
+            image: variation?.image?.[0] || product?.image?.[0] || "/placeholder.png",
+            FNSKU: variation?.FNSKU || product?.barCode || "—",
+            SKU: variation?.sku || product?.sku || "—",
+            warehouseCode: warehouse?.code || "—",
+            delhiUnits: item.stock
+        };
+    });
+
+
+    console.log("mergedProducts", mergedProducts);
+
+
+    const filteredProducts = mergedProducts.filter((prod) => {
         // Search match
         const matchesSearch =
             prod.productName?.toLowerCase().includes(search.toLowerCase()) ||
             prod.variationName?.toLowerCase().includes(search.toLowerCase()) ||
             prod.FNSKU?.toLowerCase().includes(search.toLowerCase());
+            prod.SKU?.toLowerCase().includes(search.toLowerCase());
 
-        // Find warehouse for this entry
+        // Check warehouse state if needed
         const warehouse = warehouses.find((w) => w.id.toString() === prod.warehouseId.toString());
+        const matchesState = warehouse?.state === "Delhi" || true; // show all by default
 
-        // Check if warehouse state is Delhi
-        const matchesState = warehouse?.state === "Delhi" || true; // default true to show all if state not yet loaded
-
-        // Optional: Filter by selected warehouse from dropdown
+        // Optional: Filter by selected warehouse
         const matchesSelectedWarehouse = selectedWarehouse
             ? prod.warehouseId === selectedWarehouse
             : true;
@@ -233,28 +245,27 @@ const DelhiStorePage = () => {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={10} className="text-center p-4">
-                                        Loading...
-                                    </td>
+                                    <td colSpan={10} className="text-center p-4">Loading...</td>
                                 </tr>
-                            ) : filteredProducts.length === 0 ? (
+                            ) : mergedProducts.length === 0 ? (
                                 <tr>
-                                    <td colSpan={10} className="text-center p-4 text-gray-500">
-                                        No Data found
-                                    </td>
+                                    <td colSpan={10} className="text-center p-4 text-gray-500">No Data found</td>
                                 </tr>
                             ) : (
-                                filteredProducts.map((prod, idx) => {
-                                    const warehouse = warehouses.find(
-                                        (w) => w.id.toString() === prod.warehouseId.toString()
+                                mergedProducts.map((prod, idx) => {
+                                    const stockItem = store.find(item =>
+                                        item.variationId
+                                            ? item.variationId === prod.variationId
+                                            : item.productId === prod.productId
                                     );
-                                    return (
-                                        <tr
-                                            key={idx}
-                                            className="border-b hover:bg-gray-50 transition"
-                                        >
-                                            <td className="p-3 font-medium">{idx + 1 || "—"}</td>
 
+                                    const warehouse = warehouses.find(
+                                        (w) => w.id === stockItem?.warehouseId
+                                    );
+
+                                    return (
+                                        <tr key={idx} className="border-b hover:bg-gray-50 transition">
+                                            <td className="p-3 font-medium">{idx + 1}</td>
                                             <td className="p-2">
                                                 <img
                                                     src={prod.image || "/placeholder.png"}
@@ -262,28 +273,21 @@ const DelhiStorePage = () => {
                                                     className="w-16 h-16 object-cover rounded border"
                                                 />
                                             </td>
-
-                                            <td className="p-3 font-medium">{prod.productName || "—"}</td>
-                                            <td className="p-3 text-gray-600">{prod.variationName || "—"}</td>
-                                            <td className="p-3">{prod.FNSKU || "—"}</td>
-                                            <td className="p-3">{prod.price || "—"}</td>
-
-                                            {/* 🟡 Low Stock Warning */}
+                                            <td className="p-3 font-medium">{prod.productName}</td>
+                                            <td className="p-3 text-gray-600">{prod.variationName}</td>
+                                            <td className="p-3">{prod.FNSKU}</td>
+                                            <td className="p-3">{prod.price}</td>
                                             <td className="p-3 font-semibold">
-                                                {prod.units < 5 ? (
+                                                {prod.delhiUnits < 5 ? (
                                                     <span className="text-red-600 font-bold">
-                                                        {prod.units} (Low Stock!)
+                                                        {prod.delhiUnits} (Low Stock!)
                                                     </span>
                                                 ) : (
-                                                    prod.units
+                                                    prod.delhiUnits
                                                 )}
                                             </td>
-
                                             <td className="p-3">{prod.unitsSold || 0}</td>
-
                                             <td className="p-3">{warehouse?.code || "—"}</td>
-
-                                            {/* 🟢 Actions */}
                                             <td className="p-3">
                                                 <div className="flex items-center gap-2">
                                                     <button
@@ -292,36 +296,32 @@ const DelhiStorePage = () => {
                                                     >
                                                         View
                                                     </button>
-
                                                     <button
                                                         onClick={() => setUpdateData({
                                                             rowId: prod.rowId,
                                                             productId: prod.id,
                                                             variationId: prod.variationId,
-                                                            warehouseId: prod.warehouseId,
-                                                            units: prod.units
+                                                            warehouseId: stockItem?.warehouseId,
+                                                            units: prod.delhiUnits
                                                         })}
                                                         className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
                                                     >
                                                         Update
                                                     </button>
-
                                                     <button
                                                         onClick={() => { setOpen(true); setDeleteTarget(prod); }}
                                                         className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
                                                     >
                                                         Delete
                                                     </button>
-
-
                                                 </div>
                                             </td>
-
                                         </tr>
                                     );
                                 })
                             )}
                         </tbody>
+
 
                     </table>
                 </div>
