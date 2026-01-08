@@ -102,7 +102,7 @@ const Topbar = () => {
                 const newTotal = newPrice * item.quantity;
                 const currencySymbol = variation.currencySymbol || product.currencySymbol;
                 const currency = variation.currency || product.currency;
-                const bulkPrice = variation.bulkPrice;
+                // const bulkPrice = variation.bulkPrice;
 
                 return dispatch(updateCart({
                     id: item.id,
@@ -111,7 +111,7 @@ const Topbar = () => {
                     currencySymbol,
                     selectedCountry: selectedCountryCode,
                     currency,
-                    bulkPrice : bulkPrice
+                    // bulkPrice : bulkPrice
                 })).unwrap();
             }).filter(Boolean);
 

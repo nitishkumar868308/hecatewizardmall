@@ -207,6 +207,7 @@ const Page = () => {
                                     className="object-cover"
                                     sizes="(max-width: 768px) 100vw, 50vw"
                                     priority
+                                    unoptimized
                                 />
                             </div>
                         </div>
@@ -223,6 +224,7 @@ const Page = () => {
                                         fill
                                         className="object-cover"
                                         sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                                        unoptimized
                                     />
                                 </div>
                             ))}
@@ -279,6 +281,7 @@ const Page = () => {
                                             className="object-cover"
                                             sizes="(max-width: 768px) 100vw, 50vw"
                                             priority
+                                            unoptimized
                                         />
                                     </div>
                                 </div>
@@ -297,6 +300,7 @@ const Page = () => {
                                                 fill
                                                 className="object-cover"
                                                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                                                unoptimized
                                             />
                                         </div>
                                     ))}
@@ -351,6 +355,7 @@ const Page = () => {
                                             className="object-cover"
                                             sizes="(max-width: 768px) 100vw, 50vw"
                                             priority
+                                            unoptimized
                                         />
                                     </div>
                                 </div>
@@ -369,6 +374,7 @@ const Page = () => {
                                                 fill
                                                 className="object-cover"
                                                 sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                                                unoptimized
                                             />
                                         </div>
                                     ))}
