@@ -92,6 +92,38 @@ const Page = () => {
     //         return foundProductId;
     //     })
     //     .filter(Boolean); // remove nulls
+
+    const storeForSelectedWarehouse = store?.filter(
+        item => item.warehouseId?.toString() === warehouseId?.toString()
+    );
+    const uniqueProductIds = [
+        ...new Set(storeForSelectedWarehouse?.map(item => item.productId))
+    ];
+
+    const allowedCategoryIds = React.useMemo(() => {
+        if (!isXpress || !selectedState) return [];
+
+        return categories
+            .filter(
+                cat =>
+                    cat.platform?.includes("xpress") &&
+                    cat.states?.some(
+                        st => st.name.toLowerCase() === selectedState.toLowerCase()
+                    )
+            )
+            .map(cat => cat.id);
+    }, [categories, selectedState, isXpress]);
+
+    console.log("allowedCategoryIds", allowedCategoryIds);
+
+
+    const delhiProducts = uniqueProductIds
+        .map(pid => products.find(p => p.id === pid))
+        .filter(Boolean)
+        .filter(p => !isXpress || p.platform?.includes("xpress"))
+        .filter(p => !isXpress || allowedCategoryIds.includes(p.categoryId));
+
+
     const warehouseProductIds = store
         ?.map(dispatch => {
             let foundProductId = null;
@@ -286,9 +318,11 @@ const Page = () => {
                     {(() => {
 
 
-                        const herbsProducts = mergedProducts?.filter(
+                        const herbsProducts = delhiProducts.filter(
                             p => p.categoryId === herbsCategory?.id
                         );
+
+
                         console.log("herbsProducts", herbsProducts)
 
                         return (
@@ -335,31 +369,29 @@ const Page = () => {
                                 </div> */}
 
                                 <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                    {herbsProducts?.map((item, i) => (
+                                    {herbsProducts?.map((product, i) => (
                                         <div
-                                            key={i}
-                                            onClick={() => prdocuPage(item)}
+                                            key={product.id}
+                                            onClick={() => prdocuPage(product)}
                                             className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
                                         >
                                             <Image
-                                                src={item.image || "/no-image.png"}
-                                                alt={item.name || "Herbs Product"} // fallback if name is missing
+                                                src={product.image?.[0] || "/no-image.png"}
+                                                alt={product.name}
                                                 fill
                                                 className="object-cover"
-                                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                                                 unoptimized
                                             />
 
-
                                             <div className="absolute bottom-0 left-0 w-full bg-black/50 py-2 px-2">
-                                                <p className="text-white text-center text-sm sm:text-base md:text-lg font-semibold ">
-                                                    {item.productName}
+                                                <p className="text-white text-center text-sm font-semibold">
+                                                    {product.name}
                                                 </p>
                                             </div>
-
                                         </div>
                                     ))}
                                 </div>
+
 
                             </div>
                         );
@@ -386,49 +418,50 @@ const Page = () => {
                     </h2>
 
                     {(() => {
-                        // STEP 1: Filter category = Oils
 
-
-                        // STEP 2: Find all products belonging to this category
-                        const oilsProducts = mergedProducts?.filter(p => p.categoryId === oilsCategory);
+                        const oilsProducts = delhiProducts.filter(
+                            p => p.categoryId === oilsCategory?.id
+                        );
 
                         return (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
 
                                 {/* LEFT — CATEGORY IMAGE */}
                                 <div className="col-span-1">
-                                    <div onClick={handleClickOils} className="cursor-pointer w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative">
+                                    <div
+                                        onClick={handleClickOils}
+                                        className="cursor-pointer w-full h-80 md:h-full rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 relative"
+                                    >
                                         <Image
                                             src={oilsCategory?.image || "/fallback-oils.jpg"}
                                             alt="Oils Category"
                                             fill
                                             className="object-cover"
-                                            sizes="(max-width: 768px) 100vw, 50vw"
                                             priority
                                             unoptimized
                                         />
                                     </div>
                                 </div>
 
-                                {/* RIGHT — PRODUCT GRID */}
+                                {/* RIGHT — PRODUCTS */}
                                 <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                    {oilsProducts?.map((item, i) => (
+                                    {oilsProducts?.map(product => (
                                         <div
-                                            key={i}
-                                            onClick={() => prdocuPage(item)}
+                                            key={product.id}
+                                            onClick={() => prdocuPage(product)}
                                             className="w-full aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer relative"
                                         >
                                             <Image
-                                                src={item.image?.[0] || "/no-image.png"}
-                                                alt={item.name}
+                                                src={product.image?.[0] || "/no-image.png"}
+                                                alt={product.name}
                                                 fill
                                                 className="object-cover"
-                                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                                                 unoptimized
                                             />
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                <p className="text-white text-center text-sm sm:text-base md:text-lg font-semibold px-2">
-                                                    {item.name}
+
+                                            <div className="absolute bottom-0 left-0 w-full bg-black/50 py-2 px-2">
+                                                <p className="text-white text-center text-sm font-semibold">
+                                                    {product.name}
                                                 </p>
                                             </div>
                                         </div>
@@ -437,6 +470,7 @@ const Page = () => {
                             </div>
                         );
                     })()}
+
 
                     <div className="flex justify-center mt-5">
                         <button onClick={handleClickOils} className="relative cursor-pointer bg-gradient-to-r from-[#264757] to-[#1e3744] text-white text-lg px-10 py-3 rounded-full font-semibold shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-2xl">

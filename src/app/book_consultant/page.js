@@ -20,7 +20,7 @@ const Page = () => {
     const stars = Array.from({ length: 50 });
 
     return (
-        <div className="w-full text-white overflow-x-hidden bg-black relative">
+        <div className="w-full min-h-screen text-white overflow-x-hidden bg-black relative">
             {/* ================= HERO ================= */}
             <section
                 className="relative  flex items-center justify-center bg-cover bg-center"

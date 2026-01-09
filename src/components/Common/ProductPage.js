@@ -80,6 +80,7 @@ const ProductDetail = () => {
     // }, [products, id, currentProduct]);
     useEffect(() => {
         const prod = products.find((p) => p.id == id) || null;
+        console.log("prodnew", prod)
         if (!prod) return;
 
         // Always update currentProduct if country changes
@@ -137,20 +138,17 @@ const ProductDetail = () => {
     // }, [dispatches, currentProduct?.id, isXpress, selectedWarehouseId]);
     // console.log("allowedVariationIds", allowedVariationIds)
     const allowedVariationIds = useMemo(() => {
-        if (!isXpress || !currentProduct || !store?.length) return null;
+        if (!isXpress || !currentProduct || !store?.length || !selectedWarehouseId) return null;
 
         return store
-            .flatMap(dispatch =>
-                dispatch.productsSnapshot?.entries?.flatMap(product => {
-                    if (product.productId !== currentProduct.id) return [];
-
-                    return product.entries
-                        ?.filter(e => e.warehouseId?.toString() === selectedWarehouseId)
-                        ?.map(() => product.variationId);
-                }) || []
+            .filter(
+                s => s.productId === currentProduct.id &&
+                    s.warehouseId?.toString() === selectedWarehouseId?.toString()
             )
+            .map(s => s.variationId)
             .filter(Boolean);
     }, [store, currentProduct?.id, isXpress, selectedWarehouseId]);
+
 
     console.log("allowedVariationIds", allowedVariationIds);
 
@@ -159,13 +157,18 @@ const ProductDetail = () => {
     useEffect(() => {
         if (!currentProduct) return;
 
-
         // Wait for allowedVariationIds if Xpress
+        setVariationAttributes({});
+        setSelectedAttributes({});
+        setSelectedVariation(null);
         if (isXpress && allowedVariationIds === null) return;
+
+
 
         const variationsToUse = isXpress
             ? currentProduct.variations?.filter(v => allowedVariationIds.includes(v.id))
             : currentProduct.variations;
+        console.log("variationsToUse", variationsToUse)
 
         if (!variationsToUse || variationsToUse.length === 0) {
             setSelectedVariation(null);
@@ -173,7 +176,8 @@ const ProductDetail = () => {
             return;
         }
 
-        // Build attributes
+
+        // Build variation attributes
         const attrs = {};
         variationsToUse.forEach(v => {
             v.variationName.split(" / ").forEach(part => {
@@ -185,7 +189,6 @@ const ProductDetail = () => {
 
         const finalAttrs = {};
         Object.entries(attrs).forEach(([k, v]) => finalAttrs[k] = Array.from(v));
-
         setVariationAttributes(finalAttrs);
 
         // Initial selected attributes
@@ -197,7 +200,7 @@ const ProductDetail = () => {
         const matchedVariation = variationsToUse.find(v => {
             const parts = parseVariationName(v.variationName);
             return Object.entries(initialSelected).every(
-                ([k, val]) => parts[k.toLowerCase()] === val.toLowerCase()
+                ([k, val]) => parts[k.toLowerCase()] === val
             );
         }) || variationsToUse[0];
 
@@ -215,6 +218,7 @@ const ProductDetail = () => {
             setMainImage(null);
         }
     }, [currentProduct, isXpress, allowedVariationIds]);
+
 
 
     // const variationStockMap = useMemo(() => {
@@ -238,59 +242,51 @@ const ProductDetail = () => {
     //     return map;
     // }, [dispatches, selectedWarehouseId]);
     const variationStockMap = useMemo(() => {
-        if (!store?.length) return {};
+        if (!store?.length || !selectedWarehouseId) return {};
 
         const map = {};
 
-        store.forEach(dispatch => {
-            dispatch.productsSnapshot?.entries?.forEach(product => {
-                product.entries?.forEach(e => {
-                    // Only selected warehouse
-                    if (e.warehouseId?.toString() !== selectedWarehouseId?.toString()) return;
-
-                    const variationId = product.variationId;
-                    const units = Number(e.units) || 0;
-
-                    map[variationId] = (map[variationId] || 0) + units;
-                });
-            });
+        store.forEach(s => {
+            if (s.warehouseId?.toString() !== selectedWarehouseId?.toString()) return;
+            map[s.variationId] = (map[s.variationId] || 0) + Number(s.stock || 0);
         });
 
         return map;
     }, [store, selectedWarehouseId]);
 
+
     console.log("variationStockMap", variationStockMap);
 
 
 
-    const getAttributeStock = (attrKey, attrValue) => {
-        if (!currentProduct?.variations) return 0;
+    // const getAttributeStock = (attrKey, attrValue) => {
+    //     if (!currentProduct?.variations) return 0;
 
-        return currentProduct.variations.reduce((sum, v) => {
-            const parts = parseVariationName(v.variationName);
+    //     return currentProduct.variations.reduce((sum, v) => {
+    //         const parts = parseVariationName(v.variationName);
 
-            // check all selected attributes
-            const isMatch = Object.entries(selectedAttributes).every(
-                ([key, selectedVal]) => {
-                    if (key === attrKey) {
-                        // is attribute ke liye current value match karo
-                        return parts[key.toLowerCase()]?.toLowerCase() ===
-                            attrValue.toLowerCase();
-                    }
-                    // baaki attributes already selected hone chahiye
-                    return (
-                        !selectedVal ||
-                        parts[key.toLowerCase()]?.toLowerCase() ===
-                        selectedVal.toLowerCase()
-                    );
-                }
-            );
+    //         // check all selected attributes
+    //         const isMatch = Object.entries(selectedAttributes).every(
+    //             ([key, selectedVal]) => {
+    //                 if (key === attrKey) {
+    //                     // is attribute ke liye current value match karo
+    //                     return parts[key.toLowerCase()]?.toLowerCase() ===
+    //                         attrValue.toLowerCase();
+    //                 }
+    //                 // baaki attributes already selected hone chahiye
+    //                 return (
+    //                     !selectedVal ||
+    //                     parts[key.toLowerCase()]?.toLowerCase() ===
+    //                     selectedVal.toLowerCase()
+    //                 );
+    //             }
+    //         );
 
-            if (!isMatch) return sum;
+    //         if (!isMatch) return sum;
 
-            return sum + (variationStockMap[v.id] || 0);
-        }, 0);
-    };
+    //         return sum + (variationStockMap[v.id] || 0);
+    //     }, 0);
+    // };
 
 
     const selectedStock =
@@ -453,26 +449,49 @@ const ProductDetail = () => {
     }, [items, user]);
 
 
+    // useEffect(() => {
+    //     if (!product?.variations?.length) return;
+
+    //     const attrs = {};
+
+    //     product.variations.forEach(v => {
+    //         const parts = v.variationName.split(" / ");
+    //         parts.forEach(part => {
+    //             const [key, val] = part.split(":").map(p => p.trim());
+    //             if (!attrs[key]) attrs[key] = new Set();
+    //             attrs[key].add(val);
+    //         });
+    //     });
+
+    //     // Convert sets to arrays
+    //     const finalAttrs = {};
+    //     Object.entries(attrs).forEach(([k, v]) => finalAttrs[k] = Array.from(v));
+
+    //     setVariationAttributes(finalAttrs);
+    // }, [product?.variations]);
     useEffect(() => {
         if (!product?.variations?.length) return;
 
-        const attrs = {};
+        // Agar Xpress mode hai, allowedVariationIds hai → sirf allowed variations use karo
+        const variationsToUse = isXpress && allowedVariationIds
+            ? product.variations.filter(v => allowedVariationIds.includes(v.id))
+            : product.variations;
 
-        product.variations.forEach(v => {
-            const parts = v.variationName.split(" / ");
-            parts.forEach(part => {
+        const attrs = {};
+        variationsToUse.forEach(v => {
+            v.variationName.split(" / ").forEach(part => {
                 const [key, val] = part.split(":").map(p => p.trim());
                 if (!attrs[key]) attrs[key] = new Set();
                 attrs[key].add(val);
             });
         });
 
-        // Convert sets to arrays
         const finalAttrs = {};
         Object.entries(attrs).forEach(([k, v]) => finalAttrs[k] = Array.from(v));
-
         setVariationAttributes(finalAttrs);
-    }, [product?.variations]);
+
+    }, [product?.variations, isXpress, allowedVariationIds]);
+
 
     // useEffect(() => {
     //     if (!product?.variations?.length || !variationAttributes || !Object.keys(variationAttributes).length) return;
@@ -2371,7 +2390,7 @@ const ProductDetail = () => {
         // 🔹 Check if cart has different country
         if (userCart?.length > 0) {
             const cartCountry = userCart[0]?.selectedCountry;
-            console.log("cartCountry" , cartCountry)
+            console.log("cartCountry", cartCountry)
             if (cartCountry && cartCountry !== selectedCountry) {
                 setNewCountry(selectedCountry);
                 setShowCountryModal(true);
@@ -3108,7 +3127,7 @@ const ProductDetail = () => {
         const product = currentProduct;
         const basePrice = Number(selectedVariation?.price ?? product.price ?? 0);
         const bulkPrice = Number(selectedVariation?.bulkPrice ?? product.bulkPrice ?? 0);
-        
+
 
         const bulkStatus = computeBulkStatus({
             product,

@@ -1439,17 +1439,18 @@ const Categories = () => {
     const warehouseProductIds = useMemo(() => {
         if (!isXpress || !store?.length || !selectedWarehouseId) return [];
 
-        return store
-            .flatMap(ds =>
-                ds.productsSnapshot?.entries?.flatMap(p =>
-                    p.entries
-                        ?.filter(e => e.warehouseId?.toString() === selectedWarehouseId.toString())
-                        ?.map(e => p.productId)  // return productId if matched
-                ) || []
+        return [
+            ...new Set(
+                store
+                    .filter(
+                        s => s.warehouseId?.toString() === selectedWarehouseId.toString()
+                    )
+                    .map(s => s.productId)
             )
-            .filter(Boolean);
+        ];
     }, [store, selectedWarehouseId, isXpress]);
-    console.log("warehouseProductIds", warehouseProductIds)
+
+    console.log("warehouseProductIds", warehouseProductIds);
 
 
     useEffect(() => {
