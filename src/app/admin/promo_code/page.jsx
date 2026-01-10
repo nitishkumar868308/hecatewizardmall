@@ -1,403 +1,412 @@
-// "use client";
-// import React, { useState, useEffect } from "react";
-// import { useDispatch, useSelector } from "react-redux";
-// import DefaultPageAdmin from "@/components/Admin/Include/DefaultPageAdmin/DefaultPageAdmin";
+"use client";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import DefaultPageAdmin from "@/components/Admin/Include/DefaultPageAdmin/DefaultPageAdmin";
 
-// import { fetchAllUsers } from "@/app/redux/slices/getAllUser/getAllUser";
-// import {
-//     fetchPromoCodes,
-//     createPromoCode,
-//     updatePromoCode,
-//     deletePromoCode,
-// } from "@/app/redux/slices/promoCode";
+import { fetchAllUsers } from "@/app/redux/slices/getAllUser/getAllUser";
+import {
+  fetchPromoCodes,
+  createPromoCode,
+  updatePromoCode,
+  deletePromoCode
+} from "@/app/redux/slices/promoCode/promoCodeSlice";
 
-// const Page = () => {
-//     const dispatch = useDispatch();
-
-//     // ===== Redux state =====
-//     const { list: usersList = [] } = useSelector((state) => state.getAllUser);
-//     const { promoCodes, loading: promoLoading } = useSelector((state) => state.promoCode);
-
-//     // ===== Local states =====
-//     const [modalOpen, setModalOpen] = useState(false);
-//     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-//     const [selectedPromo, setSelectedPromo] = useState(null);
-//     const [search, setSearch] = useState("");
-//     const [newPromo, setNewPromo] = useState({
-//         id: null,
-//         code: "",
-//         type: "Flat",
-//         amount: "",
-//         startDate: "",
-//         endDate: "",
-//         forAll: true,
-//         selectedUsers: [],
-//         userSearch: "",
-//     });
-
-//     // ===== Fetch data on load =====
-//     useEffect(() => {
-//         dispatch(fetchAllUsers());
-//         dispatch(fetchPromoCodes());
-//     }, [dispatch]);
-
-//     // ===== Filter promo codes =====
-//     const filteredPromoCodes = promoCodes.filter((p) =>
-//         p.code.toLowerCase().includes(search.toLowerCase())
-//     );
-
-//     // ===== Filter users for selection =====
-//     const filteredUsers = usersList.filter(
-//         (u) =>
-//             u.name.toLowerCase().includes(newPromo.userSearch.toLowerCase()) ||
-//             u.email.toLowerCase().includes(newPromo.userSearch.toLowerCase())
-//     );
-
-//     // ===== Save / Add promo =====
-//     const handleSavePromo = async () => {
-//         if (!newPromo.code || !newPromo.amount || !newPromo.startDate || !newPromo.endDate)
-//             return alert("All fields are required");
-
-//         const payload = {
-//             id: newPromo.id,
-//             code: newPromo.code,
-//             type: newPromo.type,
-//             amount: Number(newPromo.amount),
-//             validity: `${newPromo.startDate} to ${newPromo.endDate}`,
-//             users: newPromo.forAll
-//                 ? []
-//                 : usersList
-//                     .filter((u) => newPromo.selectedUsers.includes(u.id))
-//                     .map((u) => u.id),
-//             active: true,
-//         };
-
-//         try {
-//             if (newPromo.id) {
-//                 await dispatch(updatePromoCode(payload));
-//             } else {
-//                 await dispatch(createPromoCode(payload));
-//             }
-//             setModalOpen(false);
-//             setNewPromo({
-//                 id: null,
-//                 code: "",
-//                 type: "Flat",
-//                 amount: "",
-//                 startDate: "",
-//                 endDate: "",
-//                 forAll: true,
-//                 selectedUsers: [],
-//                 userSearch: "",
-//             });
-//         } catch (err) {
-//             console.error(err);
-//         }
-//     };
-
-//     // ===== Delete promo =====
-//     const handleDeletePromo = async () => {
-//         if (!selectedPromo) return;
-//         try {
-//             await dispatch(deletePromoCode(selectedPromo.id));
-//             setSelectedPromo(null);
-//             setDeleteModalOpen(false);
-//         } catch (err) {
-//             console.error(err);
-//         }
-//     };
-
-//     // ===== Toggle active / inactive =====
-//     const handleToggleActive = async (promo) => {
-//         try {
-//             await dispatch(
-//                 updatePromoCode({ ...promo, active: !promo.active })
-//             );
-//         } catch (err) {
-//             console.error(err);
-//         }
-//     };
-
-//     // ===== Edit promo =====
-//     const handleEdit = (promo) => {
-//         setNewPromo({
-//             id: promo.id,
-//             code: promo.code,
-//             type: promo.type,
-//             amount: promo.amount,
-//             startDate: promo.validity.split(" to ")[0],
-//             endDate: promo.validity.split(" to ")[1],
-//             forAll: promo.users.length === 0,
-//             selectedUsers: promo.users.map((u) => u.id),
-//             userSearch: "",
-//         });
-//         setModalOpen(true);
-//     };
-
-//     return (
-//         <DefaultPageAdmin>
-//             <div className="space-y-6">
-//                 {/* Header */}
-//                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-//                     <h1 className="text-2xl font-bold text-black">Promo Codes</h1>
-//                     <div className="flex flex-col md:flex-row gap-2">
-//                         <input
-//                             type="text"
-//                             placeholder="Search Promo Codes..."
-//                             className="border border-black rounded px-3 py-2 w-full md:w-64"
-//                             value={search}
-//                             onChange={(e) => setSearch(e.target.value)}
-//                         />
-//                         <button
-//                             className="border bg-black border-black px-4 py-2 rounded text-white hover:bg-gray-900 transition"
-//                             onClick={() => {
-//                                 setNewPromo({
-//                                     id: null,
-//                                     code: "",
-//                                     type: "Flat",
-//                                     amount: "",
-//                                     startDate: "",
-//                                     endDate: "",
-//                                     forAll: true,
-//                                     selectedUsers: [],
-//                                     userSearch: "",
-//                                 });
-//                                 setModalOpen(true);
-//                             }}
-//                         >
-//                             Add Promo Code
-//                         </button>
-//                     </div>
-//                 </div>
-
-//                 {/* Promo Codes Table */}
-//                 <div className="overflow-x-auto">
-//                     <table className="min-w-full border border-black bg-white text-sm">
-//                         <thead className="bg-gray-100">
-//                             <tr>
-//                                 <th className="px-4 py-2 border-b border-black text-left">Code</th>
-//                                 <th className="px-4 py-2 border-b border-black text-left">Type</th>
-//                                 <th className="px-4 py-2 border-b border-black text-left">Amount</th>
-//                                 <th className="px-4 py-2 border-b border-black text-left">Validity</th>
-//                                 <th className="px-4 py-2 border-b border-black text-left">Actions</th>
-//                             </tr>
-//                         </thead>
-//                         <tbody>
-//                             {filteredPromoCodes.length ? (
-//                                 filteredPromoCodes.map((promo) => (
-//                                     <tr key={promo.id} className="hover:bg-gray-50 transition">
-//                                         <td className="px-4 py-2 border-b border-black">{promo.code}</td>
-//                                         <td className="px-4 py-2 border-b border-black">{promo.type}</td>
-//                                         <td className="px-4 py-2 border-b border-black">{promo.amount}</td>
-//                                         <td className="px-4 py-2 border-b border-black">{promo.validity}</td>
-//                                         <td className="px-4 py-2 border-b border-black flex gap-2">
-//                                             <button
-//                                                 className={`px-2 py-1 border border-black rounded text-sm ${promo.active ? "bg-black text-white" : "bg-white text-black"
-//                                                     }`}
-//                                                 onClick={() => handleToggleActive(promo)}
-//                                             >
-//                                                 {promo.active ? "Active" : "Inactive"}
-//                                             </button>
-//                                             <button
-//                                                 className="px-2 py-1 border border-black rounded text-sm"
-//                                                 onClick={() => handleEdit(promo)}
-//                                             >
-//                                                 Edit
-//                                             </button>
-//                                             <button
-//                                                 className="px-2 py-1 border border-black rounded text-sm text-red-600"
-//                                                 onClick={() => {
-//                                                     setSelectedPromo(promo);
-//                                                     setDeleteModalOpen(true);
-//                                                 }}
-//                                             >
-//                                                 Delete
-//                                             </button>
-//                                         </td>
-//                                     </tr>
-//                                 ))
-//                             ) : (
-//                                 <tr>
-//                                     <td colSpan={5} className="text-center py-4 text-gray-500">
-//                                         {promoLoading ? "Loading..." : "No promo codes found."}
-//                                     </td>
-//                                 </tr>
-//                             )}
-//                         </tbody>
-//                     </table>
-//                 </div>
-
-//                 {/* Add/Edit Modal */}
-//                 {modalOpen && (
-//                     <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-//                         <div className="bg-white border border-black rounded-lg w-full max-w-3xl p-4 relative">
-//                             <button
-//                                 className="absolute top-3 right-3 text-black hover:text-gray-600"
-//                                 onClick={() => setModalOpen(false)}
-//                             >
-//                                 ✕
-//                             </button>
-
-//                             <h2 className="text-xl font-semibold mb-4">
-//                                 {newPromo.id ? "Edit Promo" : "Add Promo"}
-//                             </h2>
-
-//                             <div className="space-y-3">
-//                                 <input
-//                                     type="text"
-//                                     placeholder="Promo Code"
-//                                     className="border border-black px-3 py-2 rounded w-full"
-//                                     value={newPromo.code}
-//                                     onChange={(e) => setNewPromo({ ...newPromo, code: e.target.value })}
-//                                 />
-
-//                                 <div className="flex gap-2">
-//                                     <select
-//                                         className="border border-black px-3 py-2 rounded w-full"
-//                                         value={newPromo.type}
-//                                         onChange={(e) => setNewPromo({ ...newPromo, type: e.target.value })}
-//                                     >
-//                                         <option value="Flat">Flat</option>
-//                                         <option value="Percentage">Percentage</option>
-//                                     </select>
-
-//                                     <input
-//                                         type="number"
-//                                         placeholder="Amount"
-//                                         className="border border-black px-3 py-2 rounded w-full"
-//                                         value={newPromo.amount}
-//                                         onChange={(e) => setNewPromo({ ...newPromo, amount: e.target.value })}
-//                                     />
-//                                 </div>
-
-//                                 <div className="flex gap-2">
-//                                     <input
-//                                         type="date"
-//                                         className="border border-black px-3 py-2 rounded w-full"
-//                                         value={newPromo.startDate}
-//                                         onChange={(e) => setNewPromo({ ...newPromo, startDate: e.target.value })}
-//                                     />
-//                                     <input
-//                                         type="date"
-//                                         className="border border-black px-3 py-2 rounded w-full"
-//                                         value={newPromo.endDate}
-//                                         onChange={(e) => setNewPromo({ ...newPromo, endDate: e.target.value })}
-//                                     />
-//                                 </div>
-
-//                                 {/* All / Specific Users */}
-//                                 <div className="flex items-center gap-4">
-//                                     <label className="flex items-center gap-2">
-//                                         <input
-//                                             type="radio"
-//                                             checked={newPromo.forAll}
-//                                             onChange={() =>
-//                                                 setNewPromo({ ...newPromo, forAll: true, selectedUsers: [] })
-//                                             }
-//                                         />
-//                                         All Users
-//                                     </label>
-//                                     <label className="flex items-center gap-2">
-//                                         <input
-//                                             type="radio"
-//                                             checked={!newPromo.forAll}
-//                                             onChange={() => setNewPromo({ ...newPromo, forAll: false })}
-//                                         />
-//                                         Specific Users
-//                                     </label>
-//                                 </div>
-
-//                                 {!newPromo.forAll && (
-//                                     <div className="space-y-2 border border-black rounded p-2 max-h-60 overflow-y-auto">
-//                                         <input
-//                                             type="text"
-//                                             placeholder="Search by name or email"
-//                                             className="border border-black px-3 py-1 rounded w-full"
-//                                             value={newPromo.userSearch}
-//                                             onChange={(e) =>
-//                                                 setNewPromo({ ...newPromo, userSearch: e.target.value })
-//                                             }
-//                                         />
-//                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-//                                             {filteredUsers.map((user) => (
-//                                                 <label key={user.id} className="flex items-center gap-2">
-//                                                     <input
-//                                                         type="checkbox"
-//                                                         checked={newPromo.selectedUsers.includes(user.id)}
-//                                                         onChange={(e) => {
-//                                                             if (e.target.checked) {
-//                                                                 setNewPromo({
-//                                                                     ...newPromo,
-//                                                                     selectedUsers: [...newPromo.selectedUsers, user.id],
-//                                                                 });
-//                                                             } else {
-//                                                                 setNewPromo({
-//                                                                     ...newPromo,
-//                                                                     selectedUsers: newPromo.selectedUsers.filter(
-//                                                                         (id) => id !== user.id
-//                                                                     ),
-//                                                                 });
-//                                                             }
-//                                                         }}
-//                                                     />
-//                                                     {user.name} ({user.email})
-//                                                 </label>
-//                                             ))}
-//                                         </div>
-//                                     </div>
-//                                 )}
-
-//                                 <button
-//                                     className="border border-black px-6 py-2 rounded hover:bg-gray-100 transition"
-//                                     onClick={handleSavePromo}
-//                                 >
-//                                     Save
-//                                 </button>
-//                             </div>
-//                         </div>
-//                     </div>
-//                 )}
-
-//                 {/* Delete Confirmation Modal */}
-//                 {deleteModalOpen && selectedPromo && (
-//                     <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-//                         <div className="bg-white border border-black rounded-lg w-full max-w-md p-4">
-//                             <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
-//                             <p className="mb-4">
-//                                 Are you sure you want to delete promo{" "}
-//                                 <strong>{selectedPromo.code}</strong>?
-//                             </p>
-//                             <div className="flex justify-end gap-2">
-//                                 <button
-//                                     className="border border-black px-4 py-2 rounded hover:bg-gray-100"
-//                                     onClick={() => setDeleteModalOpen(false)}
-//                                 >
-//                                     Cancel
-//                                 </button>
-//                                 <button
-//                                     className="border border-black px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
-//                                     onClick={handleDeletePromo}
-//                                 >
-//                                     Delete
-//                                 </button>
-//                             </div>
-//                         </div>
-//                     </div>
-//                 )}
-//             </div>
-//         </DefaultPageAdmin>
-//     );
-// };
-
-// export default Page;
+const emptyPromo = {
+  id: null,
+  code: "",
+  discountType: "FLAT",
+  discountValue: "",
+  validFrom: "",
+  validTill: "",
+  appliesTo: "ALL_USERS",
 
 
-import React from 'react'
+  usageLimit: "",
+  users: [],
 
-const page = () => {
+  userSearch: ""
+};
+
+
+export default function Page() {
+  const dispatch = useDispatch();
+
+  const { list: users = [] } = useSelector((s) => s.getAllUser);
+  const { promoCodes = [], loading } = useSelector((s) => s.promoCode);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [selectedPromo, setSelectedPromo] = useState(null);
+  const [search, setSearch] = useState("");
+  const [promo, setPromo] = useState(emptyPromo);
+
+  useEffect(() => {
+    dispatch(fetchAllUsers());
+    dispatch(fetchPromoCodes());
+  }, [dispatch]);
+
+  const filteredPromos = (promoCodes || []).filter((p) =>
+    p?.code?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const filteredUsers = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(promo.userSearch.toLowerCase()) ||
+      u.email.toLowerCase().includes(promo.userSearch.toLowerCase())
+  );
+
+  // ================= SAVE PROMO =================
+  const handleSave = async () => {
+    if (!promo.code || !promo.discountValue || !promo.validFrom || !promo.validTill)
+      return alert("All fields required");
+
+    const payload = {
+      id: promo.id,
+      code: promo.code,
+      discountType: promo.discountType,
+      discountValue: Number(promo.discountValue),
+      validFrom: promo.validFrom,
+      validTill: promo.validTill,
+      usageLimit: promo.usageLimit ? Number(promo.usageLimit) : null,
+      appliesTo: promo.appliesTo,
+      users: promo.appliesTo === "SPECIFIC_USERS" ? promo.users : []
+    };
+
+    promo.id
+      ? await dispatch(updatePromoCode(payload))
+      : await dispatch(createPromoCode(payload));
+
+    setModalOpen(false);
+    setPromo(emptyPromo);
+  };
+
+  // ================= EDIT =================
+  const handleEdit = (p) => {
+    setPromo({
+      id: p.id,
+      code: p.code,
+      discountType: p.discountType,
+      discountValue: p.discountValue,
+      validFrom: p.validFrom.split("T")[0],
+      validTill: p.validTill.split("T")[0],
+      usageLimit: p.usageLimit || "",
+      appliesTo: p.appliesTo,
+      users: p.users?.map(u => ({
+        userId: u.userId,
+        usageLimit: u.usageLimit || ""
+      })) || [],
+      userSearch: ""
+    });
+    setModalOpen(true);
+  };
+
+  // ================= DELETE =================
+  const confirmDelete = async () => {
+    await dispatch(deletePromoCode(selectedPromo.id));
+    setDeleteModal(false);
+    setSelectedPromo(null);
+  };
+
+  // ================= TOGGLE ACTIVE =================
+  const toggleActive = async (p) => {
+    console.log("activeid", p)
+    await dispatch(updatePromoCode({ ...p, active: !p.active }));
+  };
+
   return (
-    <div>page</div>
-  )
-}
+    <DefaultPageAdmin>
+      <div className="space-y-6">
+        {/* HEADER */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Promo Codes</h1>
+          <div className="flex gap-2">
+            <input
+              className="border px-3 py-2"
+              placeholder="Search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button
+              className="bg-black text-white px-4 py-2"
+              onClick={() => {
+                setPromo(emptyPromo);
+                setModalOpen(true);
+              }}
+            >
+              Add Promo
+            </button>
+          </div>
+        </div>
 
-export default page
+        {/* TABLE */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full border border-gray-200 rounded-lg shadow-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">#</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Code</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Discount</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Validity</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Usage</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">User</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Status</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {(filteredPromos || []).map((p, idx) => (
+                <tr key={p.id} className="hover:bg-gray-50 transition">
+                  <td className="px-4 py-3 text-sm font-medium text-gray-800">{idx + 1}. </td>
+                  <td className="px-4 py-3 text-sm font-medium text-gray-800">{p.code || "-"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{p.discountType} {p.discountValue}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {p.validFrom ? new Date(p.validFrom).toLocaleDateString() : "-"} →{" "}
+                    {p.validTill ? new Date(p.validTill).toLocaleDateString() : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{p.usedCount || 0}/{p.usageLimit || "∞"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{p.appliesTo}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${p.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                      {p.active ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 flex gap-2">
+                    {/* Modern toggle switch */}
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={p.active}
+                        onChange={() => toggleActive(p)}
+                      />
+                      <div
+                        className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${p.active ? "bg-green-500" : "bg-gray-300"
+                          }`}
+                      >
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ${p.active ? "translate-x-6" : "translate-x-0"
+                            }`}
+                        />
+                      </div>
+                    </label>
+
+                    <button
+                      onClick={() => handleEdit(p)}
+                      className="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 rounded transition"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedPromo(p);
+                        setDeleteModal(true);
+                      }}
+                      className="px-3 py-1 text-sm bg-red-100 hover:bg-red-200 text-red-800 rounded transition"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {!(filteredPromos || []).length && (
+                <tr>
+                  <td colSpan="6" className="text-center py-6 text-gray-500">
+                    {loading ? "Loading..." : "No promo codes found."}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+
+        {/* ADD / EDIT MODAL */}
+        {modalOpen && (
+          <div className="fixed inset-0 bg-black/40 flex justify-center items-center p-4 z-50">
+            <div className="bg-white w-full max-w-2xl rounded-lg p-4">
+              <h2 className="text-xl font-semibold mb-4">
+                {promo.id ? "Edit Promo" : "Add Promo"}
+              </h2>
+
+              {/* Code */}
+              <input
+                className="border w-full mb-2 p-2 rounded"
+                placeholder="Promo Code"
+                value={promo.code}
+                onChange={(e) => setPromo({ ...promo, code: e.target.value })}
+              />
+
+              {/* Discount */}
+              <div className="flex gap-2 mb-2">
+                <select
+                  className="border p-2 w-full rounded"
+                  value={promo.discountType}
+                  onChange={(e) =>
+                    setPromo({ ...promo, discountType: e.target.value })
+                  }
+                >
+                  <option value="FLAT">Flat</option>
+                  <option value="PERCENTAGE">Percentage</option>
+                </select>
+
+                <input
+                  type="number"
+                  className="border p-2 w-full rounded"
+                  placeholder="Discount Value"
+                  value={promo.discountValue}
+                  onChange={(e) =>
+                    setPromo({ ...promo, discountValue: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Validity */}
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="date"
+                  className="border p-2 w-full rounded"
+                  value={promo.validFrom}
+                  onChange={(e) =>
+                    setPromo({ ...promo, validFrom: e.target.value })
+                  }
+                />
+                <input
+                  type="date"
+                  className="border p-2 w-full rounded"
+                  value={promo.validTill}
+                  onChange={(e) =>
+                    setPromo({ ...promo, validTill: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Applies To */}
+              <select
+                className="border p-2 w-full mb-2 rounded"
+                value={promo.appliesTo}
+                onChange={(e) =>
+                  setPromo({
+                    ...promo,
+                    appliesTo: e.target.value,
+                    users: [],
+                    usageLimit: ""
+                  })
+                }
+              >
+                <option value="ALL_USERS">All Users</option>
+                <option value="SPECIFIC_USERS">Specific Users</option>
+              </select>
+
+              {/* GLOBAL USAGE LIMIT */}
+              {promo.appliesTo === "ALL_USERS" && (
+                <input
+                  type="number"
+                  className="border p-2 w-full mb-2 rounded"
+                  placeholder="Usage limit (blank = unlimited)"
+                  value={promo.usageLimit}
+                  onChange={(e) =>
+                    setPromo({ ...promo, usageLimit: e.target.value })
+                  }
+                />
+              )}
+
+              {/* SPECIFIC USERS */}
+              {promo.appliesTo === "SPECIFIC_USERS" && (
+                <div className="border rounded p-2 max-h-56 overflow-y-auto">
+                  <input
+                    className="border p-1 w-full mb-2 rounded"
+                    placeholder="Search user"
+                    value={promo.userSearch}
+                    onChange={(e) =>
+                      setPromo({ ...promo, userSearch: e.target.value })
+                    }
+                  />
+
+                  {filteredUsers.map((u) => {
+                    const selected = promo.users.find(x => x.userId === u.id);
+
+                    return (
+                      <div key={u.id} className="flex items-center justify-between mb-1">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={!!selected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setPromo({
+                                  ...promo,
+                                  users: [...promo.users, { userId: u.id, usageLimit: "" }]
+                                });
+                              } else {
+                                setPromo({
+                                  ...promo,
+                                  users: promo.users.filter(x => x.userId !== u.id)
+                                });
+                              }
+                            }}
+                          />
+                          {u.name} ({u.email})
+                        </label>
+
+                        {selected && (
+                          <input
+                            type="number"
+                            className="border p-1 w-24 rounded"
+                            placeholder="Limit"
+                            value={selected.usageLimit}
+                            onChange={(e) => {
+                              setPromo({
+                                ...promo,
+                                users: promo.users.map(x =>
+                                  x.userId === u.id
+                                    ? { ...x, usageLimit: e.target.value }
+                                    : x
+                                )
+                              });
+                            }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  className="border px-4 py-2 rounded"
+                  onClick={() => setModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="bg-black text-white px-4 py-2 rounded"
+                  onClick={handleSave}
+                >
+                  Save Promo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+        {/* DELETE MODAL */}
+        {deleteModal && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+            <div className="bg-white p-4">
+              <p>Delete promo <b>{selectedPromo.code}</b>?</p>
+              <div className="flex justify-end gap-2 mt-2">
+                <button onClick={() => setDeleteModal(false)}>Cancel</button>
+                <button className="text-red-600" onClick={confirmDelete}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </DefaultPageAdmin>
+  );
+}

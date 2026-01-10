@@ -1,169 +1,109 @@
 import { PrismaClient } from "@prisma/client";
-
 const prisma = new PrismaClient();
 
 // =============================
-// GET — All Promo Codes
+// GET – LIST PROMOS
 // =============================
-export async function GET(req) {
+export async function GET() {
     try {
-        const promoCodes = await prisma.promoCode.findMany({
+        const promos = await prisma.promoCode.findMany({
             where: { deleted: false },
-            orderBy: { createdAt: "desc" },
+            include: {
+                users: {
+                    include: {
+                        promo: false
+                    }
+                }
+            },
+            orderBy: { createdAt: "desc" }
         });
 
-        return new Response(
-            JSON.stringify({
-                message: "Promo codes fetched successfully",
-                data: promoCodes,
-            }),
-            { status: 200 }
-        );
-    } catch (error) {
-        return new Response(
-            JSON.stringify({
-                message: "Failed to fetch promo codes",
-                error: error.message,
-            }),
-            { status: 500 }
-        );
+        return Response.json({ data: promos });
+    } catch (e) {
+        return Response.json({ error: e.message }, { status: 500 });
     }
 }
 
-// =============================
-// POST — Create Promo Code
-// =============================
+
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { code, type, amount, startDate, endDate, active = true } = body;
 
-        // Validation
-        if (!code || typeof code !== "string") {
-            return new Response(
-                JSON.stringify({ message: "Promo code is required and must be a string" }),
-                { status: 400 }
-            );
-        }
-        if (!amount || typeof amount !== "number") {
-            return new Response(
-                JSON.stringify({ message: "Amount is required and must be a number" }),
-                { status: 400 }
-            );
-        }
-
-        const created = await prisma.promoCode.create({
+        const promo = await prisma.promoCode.create({
             data: {
-                code,
-                type,
-                amount,
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
-                active,
-            },
+                code: body.code,
+                discountType: body.discountType,
+                discountValue: body.discountValue,
+                validFrom: new Date(body.validFrom),
+                validTill: new Date(body.validTill),
+                usageLimit: body.usageLimit || null,
+                appliesTo: body.appliesTo,
+                users: body.appliesTo === "SPECIFIC_USERS"
+                    ? {
+                        create: body.users.map(u => ({
+                            userId: u.userId,
+                            usageLimit: u.usageLimit || null
+                        }))
+                    }
+                    : undefined
+            }
         });
 
-        return new Response(
-            JSON.stringify({
-                message: "Promo code created successfully",
-                data: created,
-            }),
-            { status: 201 }
-        );
-    } catch (error) {
-        return new Response(
-            JSON.stringify({
-                message: "Failed to create promo code",
-                error: error.message,
-            }),
-            { status: 500 }
-        );
+        return Response.json({ message: "Promo created", promo });
+    } catch (e) {
+        return Response.json({ error: e.message }, { status: 500 });
     }
 }
 
-// =============================
-// PUT — Update Promo Code
-// =============================
+
 export async function PUT(req) {
     try {
         const body = await req.json();
-        const { id, code, type, amount, startDate, endDate, active } = body;
 
-        if (!id) {
-            return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
-        }
-
-        const existing = await prisma.promoCode.findUnique({ where: { id } });
-        if (!existing) {
-            return new Response(JSON.stringify({ message: "Promo code not found" }), { status: 404 });
-        }
-
-        const updated = await prisma.promoCode.update({
-            where: { id },
-            data: {
-                code: code ?? existing.code,
-                type: type ?? existing.type,
-                amount: amount ?? existing.amount,
-                startDate: startDate ? new Date(startDate) : existing.startDate,
-                endDate: endDate ? new Date(endDate) : existing.endDate,
-                active: active ?? existing.active,
-            },
+        await prisma.promoUser.deleteMany({
+            where: { promoId: body.id }
         });
 
-        return new Response(
-            JSON.stringify({
-                message: "Promo code updated successfully",
-                data: updated,
-            }),
-            { status: 200 }
-        );
-    } catch (error) {
-        return new Response(
-            JSON.stringify({
-                message: "Failed to update promo code",
-                error: error.message,
-            }),
-            { status: 500 }
-        );
+        const updated = await prisma.promoCode.update({
+            where: { id: body.id },
+            data: {
+                code: body.code,
+                discountType: body.discountType,
+                discountValue: body.discountValue,
+                validFrom: new Date(body.validFrom),
+                validTill: new Date(body.validTill),
+                usageLimit: body.usageLimit || null,
+                appliesTo: body.appliesTo,
+                active: body.active,
+                users: body.appliesTo === "SPECIFIC_USERS"
+                    ? {
+                        create: body.users.map(u => ({
+                            userId: u.userId,
+                            usageLimit: u.usageLimit || null
+                        }))
+                    }
+                    : undefined
+            }
+        });
+
+        return Response.json({
+            message: "Updated",
+            data: updated // Redux slice ko ye chahiye
+        });
+
+    } catch (e) {
+        return Response.json({ error: e.message }, { status: 500 });
     }
 }
 
-// =============================
-// DELETE — Soft Delete
-// =============================
+
 export async function DELETE(req) {
-    try {
-        const body = await req.json();
-        const { id } = body;
+    const { id } = await req.json();
 
-        if (!id) {
-            return new Response(JSON.stringify({ message: "ID is required" }), { status: 400 });
-        }
+    await prisma.promoCode.update({
+        where: { id },
+        data: { deleted: true }
+    });
 
-        const existing = await prisma.promoCode.findUnique({ where: { id } });
-        if (!existing) {
-            return new Response(JSON.stringify({ message: "Promo code not found" }), { status: 404 });
-        }
-
-        const deletedData = await prisma.promoCode.update({
-            where: { id },
-            data: { deleted: true },
-        });
-
-        return new Response(
-            JSON.stringify({
-                message: "Promo code deleted successfully",
-                data: deletedData,
-            }),
-            { status: 200 }
-        );
-    } catch (error) {
-        return new Response(
-            JSON.stringify({
-                message: "Failed to delete promo code",
-                error: error.message,
-            }),
-            { status: 500 }
-        );
-    }
+    return Response.json({ message: "Deleted" });
 }

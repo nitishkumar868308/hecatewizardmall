@@ -29,6 +29,17 @@ enum PaymentStatus {
   FAILED
 }
 
+enum PromoDiscountType {
+  FLAT
+  PERCENTAGE
+}
+
+enum PromoAppliesTo {
+  ALL_USERS
+  SPECIFIC_USERS
+}
+
+
 model User {
   id                Int      @id @default(autoincrement())
   name              String
@@ -534,15 +545,36 @@ model BannerState {
 
 
 model PromoCode {
-  id           Int      @id @default(autoincrement())
-  code         String   @unique
-  type         String   // flexible, future me koi bhi type aa sakta hai
-  amount       Float
-  startDate    DateTime
-  endDate      DateTime
-  active       Boolean  @default(true)      // toggle active/inactive
-  deleted      Boolean  @default(false)     // soft delete
-  assignedUsers Json?                             // array of users [{id,name,email}]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  code            String   @unique
+  discountType    PromoDiscountType
+  discountValue   Float
+
+  validFrom       DateTime
+  validTill       DateTime
+
+  usageLimit      Int?     // null = unlimited
+  usedCount       Int      @default(0)
+
+  appliesTo       PromoAppliesTo // ALL_USERS | SPECIFIC_USERS
+  active          Boolean  @default(true)
+  deleted         Boolean  @default(false)
+
+  users           PromoUser[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
+
+
+model PromoUser {
+  id         Int      @id @default(autoincrement())
+  promoId    Int
+  userId     Int
+
+  usedCount  Int      @default(0)
+  usageLimit Int?     // per-user limit
+
+  promo      PromoCode @relation(fields: [promoId], references: [id])
+}
+

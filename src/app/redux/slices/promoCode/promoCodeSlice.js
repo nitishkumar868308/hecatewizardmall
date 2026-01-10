@@ -104,10 +104,14 @@ const promoCodeSlice = createSlice({
         builder
             .addCase(updatePromoCode.fulfilled, (state, action) => {
                 state.loading = false;
-                state.promoCodes = state.promoCodes.map((p) =>
-                    p.id === action.payload.id ? action.payload : p
-                );
+                const updatedPromo = action.payload; // action.payload = { id, code, ... }
+                if (updatedPromo?.id) {
+                    state.promoCodes = state.promoCodes.map((p) =>
+                        p.id === updatedPromo.id ? updatedPromo : p
+                    );
+                }
             });
+
 
         // Delete
         builder
