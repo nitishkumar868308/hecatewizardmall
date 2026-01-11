@@ -61,6 +61,21 @@ export const deletePromoCode = createAsyncThunk(
     }
 );
 
+// =============================
+// Apply a promo code for a user
+// =============================
+export const applyPromoCode = createAsyncThunk(
+    "promoCode/applyPromoCode",
+    async ({ code, userId }, { rejectWithValue }) => {
+        try {
+            const response = await axios.post("/api/promo_code/apply", { code, userId });
+            return response.data.promo; // API returns { promo }
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to apply promo code");
+        }
+    }
+);
+
 const promoCodeSlice = createSlice({
     name: "promoCode",
     initialState: {
@@ -121,6 +136,21 @@ const promoCodeSlice = createSlice({
                     (p) => p.id !== action.payload.id
                 );
             });
+
+        builder
+            .addCase(applyPromoCode.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(applyPromoCode.fulfilled, (state, action) => {
+                state.loading = false;
+                state.appliedPromo = action.payload; // save applied promo in state
+            })
+            .addCase(applyPromoCode.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || action.error.message;
+            });
+
     },
 });
 

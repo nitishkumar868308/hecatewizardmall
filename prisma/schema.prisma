@@ -578,3 +578,25 @@ model PromoUser {
   promo      PromoCode @relation(fields: [promoId], references: [id])
 }
 
+
+
+model DonationCampaign {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String
+  amounts        Float[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  userDonations UserDonation[] // relation to track who donated
+}
+
+model UserDonation {
+  id               Int              @id @default(autoincrement())
+  userName         String
+  amount           Float
+  donatedAt        DateTime         @default(now())
+  
+
+  donationCampaignId Int
+  donationCampaign   DonationCampaign @relation(fields: [donationCampaignId], references: [id])
+}

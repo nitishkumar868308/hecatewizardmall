@@ -31,7 +31,7 @@ import selectedStateReducer from './slices/selectedStateSlice';
 import locationModalReducer from './slices/locationModalSlice';
 import warehouseSelectionReducer from "./slices/warehouseSelectionSlice";
 import promoCodeReducer from './slices/promoCode/promoCodeSlice';
-
+import donationReducer from './slices/donate/donateSlice';
 // import updateUserReducer from './slices/userSlice';
 
 const store = configureStore({
@@ -68,6 +68,7 @@ const store = configureStore({
         locationModal: locationModalReducer,
         warehouseSelection: warehouseSelectionReducer,
         promoCode: promoCodeReducer,
+        donation: donationReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

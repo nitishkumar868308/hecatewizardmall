@@ -25,6 +25,7 @@ import {
   fetchShippingPricing,
 } from "@/app/redux/slices/shippingPricing/shippingPricingSlice";
 import { usePathname } from "next/navigation";
+import { applyPromoCode, fetchPromoCodes } from "@/app/redux/slices/promoCode/promoCodeSlice";
 
 const getPhoneYup = (countryCode) =>
   Yup.string()
@@ -51,8 +52,11 @@ const Checkout = () => {
   const [donationCustom, setDonationCustom] = useState(""); // custom input
 
   // Promo code state
+  const { promoCodes } = useSelector((s) => s.promoCode);
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [appliedCode, setAppliedCode] = useState(null);
+  console.log("promoCodes", promoCodes)
 
   // Note state
   const [note, setNote] = useState("");
@@ -258,6 +262,7 @@ const Checkout = () => {
   };
 
   useEffect(() => {
+    dispatch(fetchPromoCodes());
     dispatch(fetchCart());
     dispatch(fetchMe());
     dispatch(fetchProducts());
@@ -855,7 +860,8 @@ const Checkout = () => {
     ? 99
     : (selectedShippingOption?.price || 0);
 
-  const grandTotal = subtotal + shipping;
+  // const grandTotal = subtotal + shipping;
+const grandTotal = subtotal + shipping - discount;
 
 
   const firstSelectedItem =
@@ -1384,22 +1390,33 @@ const Checkout = () => {
 
   const unitsNeeded = totalUnits >= 10 ? 0 : 10 - totalUnits;
 
-  // Promo code apply function
   const applyPromo = () => {
-    if (!promoCode) return;
-    toast.error("Right now no promo code")
-    // // Example logic: suppose "SAVE50" gives ₹50 discount
-    // if (promoCode.toUpperCase() === "SAVE50") {
-    //   setDiscount(50);
-    // } else if (promoCode.toUpperCase() === "SAVE100") {
-    //   setDiscount(100);
-    // } else {
-    //   setDiscount(0);
-    //   alert("Invalid promo code");
-    // }
+    if (!promoCode) return toast.error("Please enter a promo code");
+
+    const code = promoCodes.find(
+      (p) => p.code.toUpperCase() === promoCode.toUpperCase() && p.active
+    );
+
+    if (!code) {
+      setDiscount(0);
+      setAppliedCode(null);
+      return toast.error("Invalid or inactive promo code");
+    }
+
+    let discountAmount = 0;
+
+    if (code.discountType === "FLAT") {
+      discountAmount = code.discountValue;
+    } else if (code.discountType === "PERCENTAGE") {
+      discountAmount = (subtotal * code.discountValue) / 100;
+    }
+
+    setDiscount(discountAmount);
+    setAppliedCode(code.code);
+    toast.success(`Promo code ${code.code} applied! You saved ₹${discountAmount.toFixed(2)}`);
   };
 
-
+  const total = subtotal - discount;
   return (
     <div className=" bg-gray-50 py-8 px-4">
 
@@ -1788,25 +1805,50 @@ const Checkout = () => {
 
 
           {/* Promo Code Section */}
-          <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
-            <h4 className="text-lg font-semibold text-gray-800 mb-2">Promo Code</h4>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter promo code"
-                value={promoCode}
-                onChange={e => setPromoCode(e.target.value)}
-                className="flex-1 border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
-              />
-              <button
-                onClick={applyPromo}
-                className="bg-gray-800 text-white px-4 py-2 rounded-xl hover:scale-105 transition-transform duration-200">
-                Apply
-              </button>
-            </div>
-            {discount > 0 && (
-              <p className="text-green-600 font-semibold mt-2">You saved ₹{discount.toFixed(2)}!</p>
-            )}
+          <div className="space-y-4">
+
+              {/* Available Promo Codes */}
+              {promoCodes.length > 0 && (
+                <div className="bg-gray-100 p-3 rounded-xl">
+                  <h4 className="font-semibold mb-2">Available Promo Codes:</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    {promoCodes.map((p) => (
+                      <span
+                        key={p.code}
+                        className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
+                      >
+                        {p.code} {p.discountType === "PERCENTAGE" ? `(${p.discountValue}%)` : `(₹${p.discountValue})`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Promo Code Input */}
+              <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
+                <h4 className="text-lg font-semibold text-gray-800 mb-2">Apply Promo Code</h4>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Enter promo code"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                    className="flex-1 border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  />
+                  <button
+                    onClick={applyPromo}
+                    className="bg-gray-800 text-white px-4 py-2 rounded-xl hover:scale-105 transition-transform duration-200"
+                  >
+                    Apply
+                  </button>
+                </div>
+                {discount > 0 && (
+                  <p className="text-green-600 font-semibold mt-2">
+                    You saved ₹{discount.toFixed(2)} with code {appliedCode}!
+                  </p>
+                )}
+              </div>
+
           </div>
 
 

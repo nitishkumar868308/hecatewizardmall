@@ -45,7 +45,7 @@ const DelhiStorePage = () => {
             variationName: variation?.variationName || product?.short || "Unknown Variation",
             price: variation?.price || product?.price || product?.MRP || 0,
             image: variation?.image?.[0] || product?.image?.[0] || "/placeholder.png",
-            FNSKU: variation?.FNSKU || product?.barCode || "—",
+            FNSKU: variation?.barCode || product?.barCode || "—",
             SKU: variation?.sku || product?.sku || "—",
             warehouseCode: warehouse?.code || "—",
             delhiUnits: item.stock
