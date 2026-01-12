@@ -25,6 +25,36 @@ export async function GET() {
 }
 
 
+// export async function POST(req) {
+//     try {
+//         const body = await req.json();
+
+//         const promo = await prisma.promoCode.create({
+//             data: {
+//                 code: body.code,
+//                 discountType: body.discountType,
+//                 discountValue: body.discountValue,
+//                 validFrom: new Date(body.validFrom),
+//                 validTill: new Date(body.validTill),
+//                 usageLimit: body.usageLimit || null,
+//                 appliesTo: body.appliesTo,
+//                 users: body.appliesTo === "SPECIFIC_USERS"
+//                     ? {
+//                         create: body.users.map(u => ({
+//                             userId: u.userId,
+//                             usageLimit: u.usageLimit || null
+//                         }))
+//                     }
+//                     : undefined
+//             }
+//         });
+
+//         return Response.json({ message: "Promo created", promo });
+//     } catch (e) {
+//         return Response.json({ error: e.message }, { status: 500 });
+//     }
+// }
+
 export async function POST(req) {
     try {
         const body = await req.json();
@@ -36,24 +66,30 @@ export async function POST(req) {
                 discountValue: body.discountValue,
                 validFrom: new Date(body.validFrom),
                 validTill: new Date(body.validTill),
-                usageLimit: body.usageLimit || null,
+                usageLimit: body.usageLimit ? Number(body.usageLimit) : null,
                 appliesTo: body.appliesTo,
-                users: body.appliesTo === "SPECIFIC_USERS"
+
+                eligibleUsers: body.appliesTo === "SPECIFIC_USERS"
                     ? {
                         create: body.users.map(u => ({
-                            userId: u.userId,
-                            usageLimit: u.usageLimit || null
+                            userId: u.userId, // ✅ only userId, limit not here
                         }))
                     }
-                    : undefined
+                    : undefined, // null for ALL_USERS
+
+                users: {
+                    create: [] // usage tracking
+                }
             }
         });
+
 
         return Response.json({ message: "Promo created", promo });
     } catch (e) {
         return Response.json({ error: e.message }, { status: 500 });
     }
 }
+
 
 
 export async function PUT(req) {

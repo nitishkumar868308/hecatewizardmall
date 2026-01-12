@@ -1,4 +1,4 @@
-export function orderConfirmationTemplate({ name, orderId, total,currency, downloadLink }) {
+export function orderConfirmationTemplate({ shippingName, orderId, total,currency, downloadLink }) {
     const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/image/logo PNG.png`;
   return `
   <div style="margin:0;padding:0;background-color:#f5f5f5;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
@@ -18,7 +18,7 @@ export function orderConfirmationTemplate({ name, orderId, total,currency, downl
       <tbody>
         <tr>
           <td style="padding:30px;">
-            <p style="font-size:16px;color:#000;margin:0 0 10px 0;">Hi <strong>${name}</strong>,</p>
+            <p style="font-size:16px;color:#000;margin:0 0 10px 0;">Hi <strong>${shippingName}</strong>,</p>
             <p style="font-size:15px;color:#333;margin:0 0 20px 0;">
               Thank you for your order! We’ve received it and it’s now being processed.
             </p>

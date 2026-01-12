@@ -15,6 +15,7 @@ export async function POST(req) {
         if (!orderId) return new Response("Order ID missing", { status: 400 });
 
         const orderRecord = await prisma.orders.findUnique({ where: { orderNumber: orderId } });
+        console.log("orderRecord", orderRecord)
         if (!orderRecord) return new Response("Order not found", { status: 404 });
 
         let userEmail = "kumarnitish4383@gmail.com";
@@ -26,6 +27,58 @@ export async function POST(req) {
             });
             if (user?.email) userEmail = user.email;
         }
+
+        const handlePromoAndDonation = async () => {
+            // ===== PROMO =====
+            if (orderRecord.promoCode && orderRecord.userId) {
+                const promo = await prisma.promoCode.findUnique({
+                    where: { code: orderRecord.promoCode },
+                });
+
+                if (promo) {
+                    // ❌ same order pe already applied?
+                    const alreadyUsed = await prisma.promoUser.findFirst({
+                        where: {
+                            promoId: promo.id,
+                            orderId: orderRecord.id,
+                        },
+                    });
+
+                    if (!alreadyUsed) {
+                        // ✅ save order-wise promo usage
+                        await prisma.promoUser.create({
+                            data: {
+                                promoId: promo.id,
+                                userId: orderRecord.userId,
+                                orderId: orderRecord.id,
+                                usedCount: 1,
+                            },
+                        });
+
+                        // ✅ increment global promo count
+                        await prisma.promoCode.update({
+                            where: { id: promo.id },
+                            data: { usedCount: { increment: 1 } },
+                        });
+                    }
+                }
+            }
+
+
+            // ===== DONATION =====
+            if (orderRecord.donationAmount && orderRecord.donationCampaignId) {
+                await prisma.userDonation.create({
+                    data: {
+                        userName: orderRecord.shippingName,
+                        userId: orderRecord.userId,
+                        orderId: orderRecord.id,
+                        donationCampaignId: orderRecord.donationCampaignId,
+                        amount: orderRecord.donationAmount,
+                    },
+                });
+            }
+
+        };
 
         if (orderBy === "website") {
             if (status === "success") {
@@ -44,6 +97,8 @@ export async function POST(req) {
                         data: { is_buy: true },
                     });
                 }
+
+                await handlePromoAndDonation();
 
                 // Send confirmation email to user
                 await sendMail({
@@ -90,6 +145,8 @@ export async function POST(req) {
                         data: { is_buy: true },
                     });
                 }
+
+                await handlePromoAndDonation();
 
                 // Send confirmation email to user
                 await sendMail({

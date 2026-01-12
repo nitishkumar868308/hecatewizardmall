@@ -33,6 +33,7 @@ export default function Page() {
 
   const { list: users = [] } = useSelector((s) => s.getAllUser);
   const { promoCodes = [], loading } = useSelector((s) => s.promoCode);
+  console.log("promoCodes", promoCodes)
 
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -76,6 +77,7 @@ export default function Page() {
       ? await dispatch(updatePromoCode(payload))
       : await dispatch(createPromoCode(payload));
 
+    dispatch(fetchPromoCodes());
     setModalOpen(false);
     setPromo(emptyPromo);
   };
@@ -148,6 +150,7 @@ export default function Page() {
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Discount</th>
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Validity</th>
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Usage</th>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Applies To</th>
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">User</th>
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Status</th>
                 <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Actions</th>
@@ -163,8 +166,25 @@ export default function Page() {
                     {p.validFrom ? new Date(p.validFrom).toLocaleDateString() : "-"} →{" "}
                     {p.validTill ? new Date(p.validTill).toLocaleDateString() : "-"}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{p.usedCount || 0}/{p.usageLimit || "∞"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{p.usageLimit || "∞"}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{p.appliesTo}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {p.appliesTo === "ALL_USERS" ? (
+                      "All Users"
+                    ) : (
+                      <div className="space-y-1 max-h-24 overflow-y-auto">
+                        {(Array.isArray(p.eligibleUsers?.create) ? p.eligibleUsers.create : []).map((eu) => {
+                          const matchedUser = users.find(u => u.id === eu.userId);
+                          return matchedUser ? (
+                            <div key={eu.userId} className="flex justify-between gap-2">
+                              <span className="font-medium">{matchedUser.name}</span>
+                              <span className="text-gray-500 text-xs">{matchedUser.email}</span>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${p.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                       {p.active ? "Active" : "Inactive"}
@@ -218,6 +238,20 @@ export default function Page() {
             </tbody>
           </table>
         </div>
+
+        {/* SPECIFIC USERS (Read-only view) */}
+        {promo.appliesTo === "SPECIFIC_USERS" && (
+          <div className="border rounded p-2 max-h-56 overflow-y-auto mb-2">
+            <h3 className="font-medium mb-2">Eligible Users:</h3>
+            {promo.users.map((u) => (
+              <div key={u.userId} className="flex justify-between px-2 py-1 border-b last:border-b-0">
+                <span className="font-medium">{u.name}</span>
+                <span className="text-gray-600 text-sm truncate">{u.email}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
 
 
         {/* ADD / EDIT MODAL */}
@@ -297,18 +331,7 @@ export default function Page() {
                 <option value="SPECIFIC_USERS">Specific Users</option>
               </select>
 
-              {/* GLOBAL USAGE LIMIT */}
-              {promo.appliesTo === "ALL_USERS" && (
-                <input
-                  type="number"
-                  className="border p-2 w-full mb-2 rounded"
-                  placeholder="Usage limit (blank = unlimited)"
-                  value={promo.usageLimit}
-                  onChange={(e) =>
-                    setPromo({ ...promo, usageLimit: e.target.value })
-                  }
-                />
-              )}
+
 
               {/* SPECIFIC USERS */}
               {promo.appliesTo === "SPECIFIC_USERS" && (
@@ -326,7 +349,7 @@ export default function Page() {
                     const selected = promo.users.find(x => x.userId === u.id);
 
                     return (
-                      <div key={u.id} className="flex items-center justify-between mb-1">
+                      <div key={u.id} className="flex items-center gap-2 mb-1">
                         <label className="flex items-center gap-2">
                           <input
                             type="checkbox"
@@ -335,7 +358,7 @@ export default function Page() {
                               if (e.target.checked) {
                                 setPromo({
                                   ...promo,
-                                  users: [...promo.users, { userId: u.id, usageLimit: "" }]
+                                  users: [...promo.users, { userId: u.id }]
                                 });
                               } else {
                                 setPromo({
@@ -347,30 +370,25 @@ export default function Page() {
                           />
                           {u.name} ({u.email})
                         </label>
-
-                        {selected && (
-                          <input
-                            type="number"
-                            className="border p-1 w-24 rounded"
-                            placeholder="Limit"
-                            value={selected.usageLimit}
-                            onChange={(e) => {
-                              setPromo({
-                                ...promo,
-                                users: promo.users.map(x =>
-                                  x.userId === u.id
-                                    ? { ...x, usageLimit: e.target.value }
-                                    : x
-                                )
-                              });
-                            }}
-                          />
-                        )}
                       </div>
                     );
                   })}
                 </div>
               )}
+
+              {/* GLOBAL USAGE LIMIT */}
+              <div className="mb-2">
+                <input
+                  type="number"
+                  className="border p-2 w-full rounded"
+                  placeholder="Usage limit (blank = unlimited)"
+                  value={promo.usageLimit}
+                  onChange={(e) =>
+                    setPromo({ ...promo, usageLimit: e.target.value })
+                  }
+                />
+              </div>
+
 
               {/* Actions */}
               <div className="flex justify-end gap-2 mt-4">

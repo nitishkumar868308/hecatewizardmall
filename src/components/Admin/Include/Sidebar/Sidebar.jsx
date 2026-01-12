@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse, ShoppingCart, Image as ImageIcon, Tag } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse, ShoppingCart, Image as ImageIcon, Tag, HandCoins   } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { FiMessageCircle } from "react-icons/fi";
@@ -192,7 +192,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                         href="/admin/donate"
                         className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                     >
-                        <Tag className="w-5 h-5" /> Donate
+                        <HandCoins className="w-5 h-5" /> Donate
                     </Link>
 
                     <div>

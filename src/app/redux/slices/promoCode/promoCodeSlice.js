@@ -62,24 +62,26 @@ export const deletePromoCode = createAsyncThunk(
 );
 
 // =============================
-// Apply a promo code for a user
+// Get Apply a promo code for a user
 // =============================
-export const applyPromoCode = createAsyncThunk(
-    "promoCode/applyPromoCode",
-    async ({ code, userId }, { rejectWithValue }) => {
+export const getApplyPromoCode = createAsyncThunk(
+    "promoCode/getApplyPromoCode",
+    async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.post("/api/promo_code/apply", { code, userId });
-            return response.data.promo; // API returns { promo }
+            const response = await axios.get("/api/promo_code/apply");
+            return response.data.data;
         } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to apply promo code");
+            return rejectWithValue(
+                err.response?.data || "Failed to fetch applied promo codes"
+            );
         }
     }
 );
-
 const promoCodeSlice = createSlice({
     name: "promoCode",
     initialState: {
         promoCodes: [],
+        appliedPromoCodes: [],
         loading: false,
         error: null,
     },
@@ -138,18 +140,19 @@ const promoCodeSlice = createSlice({
             });
 
         builder
-            .addCase(applyPromoCode.pending, (state) => {
+            .addCase(getApplyPromoCode.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(applyPromoCode.fulfilled, (state, action) => {
+            .addCase(getApplyPromoCode.fulfilled, (state, action) => {
                 state.loading = false;
-                state.appliedPromo = action.payload; // save applied promo in state
+                state.appliedPromoCodes = action.payload; // 👈 array
             })
-            .addCase(applyPromoCode.rejected, (state, action) => {
+            .addCase(getApplyPromoCode.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload || action.error.message;
             });
+
 
     },
 });

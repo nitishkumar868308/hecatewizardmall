@@ -25,7 +25,10 @@ import {
   fetchShippingPricing,
 } from "@/app/redux/slices/shippingPricing/shippingPricingSlice";
 import { usePathname } from "next/navigation";
-import { applyPromoCode, fetchPromoCodes } from "@/app/redux/slices/promoCode/promoCodeSlice";
+import { fetchPromoCodes, getApplyPromoCode } from "@/app/redux/slices/promoCode/promoCodeSlice";
+import {
+  fetchDonations,
+} from "@/app/redux/slices/donate/donateSlice";
 
 const getPhoneYup = (countryCode) =>
   Yup.string()
@@ -45,6 +48,7 @@ const Checkout = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.me);
+  console.log("user", user)
   // const [selected, setSelected] = useState(
   //   user?.country?.toLowerCase() === "india" ? "PayU" : ""
   // );
@@ -57,6 +61,14 @@ const Checkout = () => {
   const [discount, setDiscount] = useState(0);
   const [appliedCode, setAppliedCode] = useState(null);
   console.log("promoCodes", promoCodes)
+
+  // Apply Promo Code
+  const { appliedPromoCodes } = useSelector((s) => s.promoCode);
+  console.log("appliedPromoCodes", appliedPromoCodes)
+
+  // Donate 
+  const { campaigns, userDonations, loading } = useSelector((state) => state.donation);
+  console.log("campaigns", campaigns)
 
   // Note state
   const [note, setNote] = useState("");
@@ -262,6 +274,8 @@ const Checkout = () => {
   };
 
   useEffect(() => {
+    dispatch(getApplyPromoCode())
+    dispatch(fetchDonations());
     dispatch(fetchPromoCodes());
     dispatch(fetchCart());
     dispatch(fetchMe());
@@ -791,6 +805,10 @@ const Checkout = () => {
       })),
       subtotal: `${userCart[0]?.currencySymbol || '₹'}${subtotal.toFixed(2)}`,
       shipping: `${userCart[0]?.currencySymbol || '₹'}${shipping}`,
+      promoCode: appliedCode || null, // optional
+      donation: donationCustom || donation || null, // optional
+      donationCampaignId: campaigns?.[0]?.id || null, // optional
+      note: note || null,
       total: `${userCart[0]?.currencySymbol || '₹'}${grandTotal.toFixed(2)}`,
       paymentMethod: selected,
       isXpress,
@@ -847,6 +865,24 @@ const Checkout = () => {
           },
         });
       }
+
+      // if (data.success) {
+      //   if (orderData.promoCode) {
+      //     await axios.post("/api/promo_user/create", {
+      //       userId: user.id,
+      //       promoCode: orderData.promoCode,
+      //     });
+      //   }
+
+
+      //   if (orderData.donation && orderData.donationCampaignId) {
+      //     await axios.post("/api/user_donation/create", {
+      //       userName: user.name,
+      //       donationCampaignId: orderData.donationCampaignId,
+      //       amount: orderData.donation,
+      //     });
+      //   }
+      // }
     } catch (err) {
       console.error("Checkout error:", err);
       toast.error(err?.message || "Payment failed");
@@ -860,8 +896,10 @@ const Checkout = () => {
     ? 99
     : (selectedShippingOption?.price || 0);
 
+  const currentDonation = donationCustom || donation || 0;
+
   // const grandTotal = subtotal + shipping;
-const grandTotal = subtotal + shipping - discount;
+  const grandTotal = subtotal + shipping - discount + currentDonation;
 
 
   const firstSelectedItem =
@@ -1403,8 +1441,28 @@ const grandTotal = subtotal + shipping - discount;
       return toast.error("Invalid or inactive promo code");
     }
 
-    let discountAmount = 0;
+    // 🔥 Check if user is eligible
+    if (code.appliesTo === "SPECIFIC_USERS") {
+      const eligibleUserIds = code.eligibleUsers?.create?.map(u => u.userId) || [];
+      if (!eligibleUserIds.includes(currentUser.id)) {
+        return toast.error("This promo code is not applicable for you");
+      }
+    }
 
+    // 🔥 Count how many times user already used this promo
+    const usedTimes = appliedPromoCodes.filter(
+      (ap) => ap.promoId === code.id && ap.userId === currentUser.id
+    ).length;
+
+    // 🔥 If usageLimit exists & exceeded
+    if (code.usageLimit !== null && usedTimes >= code.usageLimit) {
+      return toast.error("Promo code usage limit reached");
+    }
+
+    // ======================
+    // CALCULATE DISCOUNT
+    // ======================
+    let discountAmount = 0;
     if (code.discountType === "FLAT") {
       discountAmount = code.discountValue;
     } else if (code.discountType === "PERCENTAGE") {
@@ -1413,10 +1471,37 @@ const grandTotal = subtotal + shipping - discount;
 
     setDiscount(discountAmount);
     setAppliedCode(code.code);
-    toast.success(`Promo code ${code.code} applied! You saved ₹${discountAmount.toFixed(2)}`);
-  };
 
-  const total = subtotal - discount;
+    toast.success(
+      `Promo code ${code.code} applied! You saved ₹${discountAmount.toFixed(2)}`
+    );
+  };
+  const currentUser = user;
+
+  const visiblePromoCodes = promoCodes.filter((p) => {
+    if (!p.active) return false;
+
+    const today = new Date();
+    const from = new Date(p.validFrom);
+    const till = new Date(p.validTill);
+    till.setHours(23, 59, 59, 999);
+
+    if (today < from || today > till) return false;
+
+    if (p.appliesTo === "ALL_USERS") return true;
+
+    if (p.appliesTo === "SPECIFIC_USERS") {
+      const eligibleUserIds = p.eligibleUsers?.create?.map(u => u.userId) || [];
+      return eligibleUserIds.includes(currentUser.id);
+    }
+
+    return false;
+  });
+
+
+
+
+
   return (
     <div className=" bg-gray-50 py-8 px-4">
 
@@ -1807,47 +1892,48 @@ const grandTotal = subtotal + shipping - discount;
           {/* Promo Code Section */}
           <div className="space-y-4">
 
-              {/* Available Promo Codes */}
-              {promoCodes.length > 0 && (
-                <div className="bg-gray-100 p-3 rounded-xl">
-                  <h4 className="font-semibold mb-2">Available Promo Codes:</h4>
-                  <div className="flex gap-2 flex-wrap">
-                    {promoCodes.map((p) => (
-                      <span
-                        key={p.code}
-                        className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
-                      >
-                        {p.code} {p.discountType === "PERCENTAGE" ? `(${p.discountValue}%)` : `(₹${p.discountValue})`}
-                      </span>
-                    ))}
-                  </div>
+            {/* Available Promo Codes */}
+            {visiblePromoCodes.length > 0 && (
+              <div className="bg-gray-100 p-3 rounded-xl">
+                <h4 className="font-semibold mb-2">Available Promo Codes:</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {visiblePromoCodes.map((p) => (
+                    <span
+                      key={p.code}
+                      className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
+                    >
+                      {p.code} {p.discountType === "PERCENTAGE" ? `(${p.discountValue}%)` : `(₹${p.discountValue})`}
+                    </span>
+                  ))}
                 </div>
-              )}
-
-              {/* Promo Code Input */}
-              <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">Apply Promo Code</h4>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Enter promo code"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
-                    className="flex-1 border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                  />
-                  <button
-                    onClick={applyPromo}
-                    className="bg-gray-800 text-white px-4 py-2 rounded-xl hover:scale-105 transition-transform duration-200"
-                  >
-                    Apply
-                  </button>
-                </div>
-                {discount > 0 && (
-                  <p className="text-green-600 font-semibold mt-2">
-                    You saved ₹{discount.toFixed(2)} with code {appliedCode}!
-                  </p>
-                )}
               </div>
+            )}
+
+
+            {/* Promo Code Input */}
+            <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
+              <h4 className="text-lg font-semibold text-gray-800 mb-2">Apply Promo Code</h4>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                  className="flex-1 border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                />
+                <button
+                  onClick={applyPromo}
+                  className="bg-gray-800 text-white px-4 py-2 rounded-xl hover:scale-105 transition-transform duration-200"
+                >
+                  Apply
+                </button>
+              </div>
+              {discount > 0 && (
+                <p className="text-green-600 font-semibold mt-2">
+                  You saved ₹{discount.toFixed(2)} with code {appliedCode}!
+                </p>
+              )}
+            </div>
 
           </div>
 
@@ -1980,27 +2066,55 @@ const grandTotal = subtotal + shipping - discount;
           </div>
 
           {/* Donate Section */}
-          <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
-            <h4 className="text-lg font-semibold text-gray-800 mb-2">Donate</h4>
-            <p className="text-sm text-gray-600 mb-3">Support our cause by adding a donation.</p>
-            <div className="flex gap-2 flex-wrap">
-              {[1, 2, 5].map(amount => (
-                <button key={amount}
-                  onClick={() => setDonation(amount)}
-                  className={`px-4 py-2 rounded-xl border transition-all duration-200
-            ${donation === amount ? "bg-gray-800 text-white border-gray-700" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"}`}>
-                  ₹{amount}
-                </button>
-              ))}
+          {campaigns?.length > 0 && (
+            <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl shadow-sm w-full">
+
+              {/* Title */}
+              <h4 className="text-lg sm:text-xl font-semibold text-gray-800 mb-1">
+                {campaigns[0].title}
+              </h4>
+
+              {/* Description */}
+              <p className="text-sm sm:text-base text-gray-600 mb-4">
+                {campaigns[0].description}
+              </p>
+
+              {/* Amount Buttons */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 mb-3">
+                {campaigns[0].amounts.map((amount) => (
+                  <button
+                    key={amount}
+                    onClick={() => {
+                      setDonation(amount);
+                      setDonationCustom("");
+                    }}
+                    className={`px-4 py-2 rounded-xl border text-sm sm:text-base transition-all duration-200
+            ${donation === amount
+                        ? "bg-gray-800 text-white border-gray-800"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                      }`}
+                  >
+                    ₹{amount}
+                  </button>
+                ))}
+              </div>
+
+              {/* Custom Amount - Full Width */}
               <input
                 type="number"
-                placeholder="Custom"
+                placeholder="Custom Amount"
                 value={donationCustom}
-                onChange={e => setDonationCustom(Number(e.target.value))}
-                className="border rounded-xl px-3 py-2 w-24 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                onChange={(e) => {
+                  setDonation(null);
+                  setDonationCustom(Number(e.target.value));
+                }}
+                className="w-full border rounded-xl px-3 py-2 text-sm sm:text-base
+        focus:outline-none focus:ring-2 focus:ring-gray-500"
               />
+
             </div>
-          </div>
+          )}
+
 
           <div className="flex justify-center items-center">
             <button onClick={handleClick} className="cursor-pointer bg-gradient-to-r from-gray-800 to-gray-600 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:scale-105 hover:shadow-2xl transition-transform duration-300">

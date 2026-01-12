@@ -157,6 +157,12 @@ export async function POST(req) {
                 status: "PENDING",
                 paymentStatus: "PENDING",
                 orderBy: body.isXpress ? "hecate-quickGo" : "website",
+
+                // ⭐ Optional fields
+                promoCode: body.promoCode || null,
+                donationAmount: body.donation || null,
+                donationCampaignId: body.donationCampaignId || null,
+                note: body.note || null,
             },
         });
 

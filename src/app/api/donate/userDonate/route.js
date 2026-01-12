@@ -5,23 +5,19 @@ const prisma = new PrismaClient();
 // POST – USER DONATES TO A CAMPAIGN
 // =============================
 export async function POST_USER_DONATION(req) {
-    try {
-        const body = await req.json();
-        // body: { donationCampaignId, userName, amount }
+    const { userName, donationCampaignId, amount } = await req.json();
 
-        const donation = await prisma.userDonation.create({
-            data: {
-                userName: body.userName,
-                amount: parseFloat(body.amount),
-                donationCampaignId: body.donationCampaignId,
-            },
-        });
+    const donation = await prisma.userDonation.create({
+        data: {
+            userName,
+            donationCampaignId,
+            amount: parseFloat(amount),
+        },
+    });
 
-        return Response.json({ message: "Donation recorded", data: donation });
-    } catch (e) {
-        return Response.json({ error: e.message }, { status: 500 });
-    }
+    return Response.json({ message: "Donation recorded", data: donation });
 }
+
 
 // =============================
 // GET – LIST USER DONATIONS

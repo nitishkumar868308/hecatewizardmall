@@ -380,6 +380,10 @@ model Orders {
   paymentCurrency String?
   status          OrderStatus   @default(PENDING)   // order status
   paymentStatus   PaymentStatus @default(PENDING)   // payment status
+  promoCode           String?  // ✅ optional
+  donationAmount      Float?   // ✅ optional
+  donationCampaignId  Int?     // ✅ optional
+  note                String?  // ✅ optional
 
   active          Boolean  @default(true)
   deleted         Int      @default(0)
@@ -560,6 +564,8 @@ model PromoCode {
   active          Boolean  @default(true)
   deleted         Boolean  @default(false)
 
+  eligibleUsers      Json?    // 🔥 SPECIFIC_USERS ke liye
+
   users           PromoUser[]
 
   createdAt       DateTime @default(now())
@@ -568,15 +574,19 @@ model PromoCode {
 
 
 model PromoUser {
-  id         Int      @id @default(autoincrement())
-  promoId    Int
-  userId     Int
+  id        Int @id @default(autoincrement())
 
-  usedCount  Int      @default(0)
-  usageLimit Int?     // per-user limit
+  promoId   Int
+  userId    Int
+  orderId   Int   // 🔥 REQUIRED
 
-  promo      PromoCode @relation(fields: [promoId], references: [id])
+  usedCount Int @default(1) // har order = 1 usage
+
+  promo     PromoCode @relation(fields: [promoId], references: [id])
+
+  @@unique([promoId, orderId]) // 🔥 SAME ORDER ME SAME PROMO 2 BAAR NA LAGE
 }
+
 
 
 
@@ -591,12 +601,13 @@ model DonationCampaign {
 }
 
 model UserDonation {
-  id               Int              @id @default(autoincrement())
-  userName         String
-  amount           Float
-  donatedAt        DateTime         @default(now())
+  id                 Int              @id @default(autoincrement())
+  userName           String
+  userId             Int? 
+  orderId            Int?             // ✅ Added orderId
+  amount             Float
+  donatedAt          DateTime         @default(now())
   
-
   donationCampaignId Int
   donationCampaign   DonationCampaign @relation(fields: [donationCampaignId], references: [id])
 }
