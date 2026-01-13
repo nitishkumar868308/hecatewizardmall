@@ -31,6 +31,7 @@ export async function POST(req) {
                 title: body.title,
                 description: body.description,
                 amounts: body.amounts.map(Number),
+                active: true,
             },
         });
 

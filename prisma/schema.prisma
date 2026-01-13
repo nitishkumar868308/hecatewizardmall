@@ -578,9 +578,15 @@ model PromoUser {
 
   promoId   Int
   userId    Int
-  orderId   Int   // 🔥 REQUIRED
+  orderId   Int  
 
-  usedCount Int @default(1) // har order = 1 usage
+  usedCount Int @default(1) 
+  subtotal      Float? 
+  discountAmount Float? 
+
+  createdAt      DateTime @default(now()) 
+  updatedAt      DateTime? @updatedAt       
+
 
   promo     PromoCode @relation(fields: [promoId], references: [id])
 
@@ -595,6 +601,7 @@ model DonationCampaign {
   title       String
   description String
   amounts        Float[]
+  active        Boolean          @default(true) 
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   userDonations UserDonation[] // relation to track who donated

@@ -9,15 +9,19 @@ import {
     deleteDonation,
     donateToCampaign,
     fetchUserDonations,
+    toggleCampaignStatus
 } from "@/app/redux/slices/donate/donateSlice";
 import toast from "react-hot-toast";
 
 const DonationPage = () => {
     const dispatch = useDispatch();
     const { campaigns, userDonations, loading } = useSelector((state) => state.donation);
+    console.log("userDonations", userDonations)
+    console.log("campaigns", campaigns)
 
     const [activeTab, setActiveTab] = useState("campaigns");
     const [form, setForm] = useState({ id: null, title: "", description: "", amounts: "" });
+
 
     // Fetch campaigns and user donations on mount
     useEffect(() => {
@@ -88,6 +92,31 @@ const DonationPage = () => {
             .then(() => toast.success("Donation successful"))
             .catch((err) => toast.error(err.message || "Donation failed"));
     };
+
+    const sortedDonations = [...userDonations].sort(
+        (a, b) => new Date(b.donatedAt) - new Date(a.donatedAt)
+    );
+
+    const ITEMS_PER_PAGE = 12;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const totalPages = Math.ceil(sortedDonations.length / ITEMS_PER_PAGE);
+
+    const paginatedDonations = sortedDonations.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const formatDate = (date) => {
+        return new Date(date).toLocaleString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
+
 
     return (
         <DefaultPageAdmin>
@@ -167,17 +196,34 @@ const DonationPage = () => {
                                     <th className="border border-gray-300 px-4 py-2">Title</th>
                                     <th className="border border-gray-300 px-4 py-2">Description</th>
                                     <th className="border border-gray-300 px-4 py-2">Amount</th>
+                                    <th className="border border-gray-300 px-4 py-2">status</th>
+                                    <th className="border border-gray-300 px-4 py-2">Created At</th>
                                     <th className="border border-gray-300 px-4 py-2">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {campaigns.map((don, idx) => (
                                     <tr key={don.id}>
-                                        <td className="border border-gray-300 px-4 py-2 text-center">{idx+1}</td>
+                                        <td className="border border-gray-300 px-4 py-2 text-center">{idx + 1}</td>
                                         <td className="border border-gray-300 px-4 py-2 text-center">{don.title}</td>
                                         <td className="border border-gray-300 px-4 py-2 text-center">{don.description}</td>
                                         <td className="border border-gray-300 px-4 py-2 text-center">
                                             {don.amounts?.join(", ")}
+                                        </td>
+                                        <td className="border border-gray-300 px-4 py-2 text-center">
+                                            <span
+                                                className={`px-3 py-1 rounded-full text-xs font-semibold
+        ${don.active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                                            >
+                                                {don.active ? "Active" : "Inactive"}
+                                            </span>
+                                        </td>
+                                        <td className="border border-gray-300 px-4 py-2 text-center">
+                                            {new Date(don.createdAt).toLocaleDateString("en-IN", {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                            })}
                                         </td>
 
                                         <td className="border border-gray-300 px-4 py-2">
@@ -188,6 +234,19 @@ const DonationPage = () => {
                                                 >
                                                     Donate
                                                 </button> */}
+
+                                                <button
+                                                    onClick={() => dispatch(toggleCampaignStatus(don.id))}
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition cursor-pointer
+    ${don.active ? "bg-green-500" : "bg-gray-400"}`}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition cursor-pointer
+        ${don.active ? "translate-x-6" : "translate-x-1"}`}
+                                                    />
+                                                </button>
+
+
 
                                                 <button
                                                     className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
@@ -222,33 +281,72 @@ const DonationPage = () => {
                 {/* User Donations Table */}
                 {activeTab === "users" && (
                     <div className="overflow-x-auto">
+
                         <table className="w-full border-collapse border border-gray-300">
                             <thead className="bg-gray-100">
                                 <tr>
-                                    <th className="border border-gray-300 px-4 py-2">User</th>
-                                    <th className="border border-gray-300 px-4 py-2">Donation Campaign</th>
-                                    <th className="border border-gray-300 px-4 py-2">Amount</th>
+                                    <th className="border px-4 py-2">#</th>
+                                    <th className="border px-4 py-2">User</th>
+                                    <th className="border px-4 py-2">Campaign</th>
+                                    <th className="border px-4 py-2">Amount</th>
+                                    <th className="border px-4 py-2">Donated At</th>
                                 </tr>
                             </thead>
+
                             <tbody>
-                                {userDonations.map((ud) => (
+                                {paginatedDonations.map((ud, idx) => (
                                     <tr key={ud.id}>
-                                        <td className="border border-gray-300 px-4 py-2">{ud.userName}</td>
-                                        <td className="border border-gray-300 px-4 py-2">{ud.donationCampaign?.title}</td>
-                                        <td className="border border-gray-300 px-4 py-2">{ud.amount}</td>
+                                        <td className="border px-4 py-2 text-center">
+                                            {(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}
+                                        </td>
+                                        <td className="border px-4 py-2 text-center">{ud.userName}</td>
+                                        <td className="border px-4 py-2 text-center">
+                                            {ud.donationCampaign?.title}
+                                        </td>
+                                        <td className="border px-4 py-2 text-center">₹{ud.amount}</td>
+                                        <td className="border px-4 py-2 text-center">
+                                            {formatDate(ud.donatedAt)}
+                                        </td>
                                     </tr>
                                 ))}
-                                {userDonations.length === 0 && (
+
+                                {paginatedDonations.length === 0 && (
                                     <tr>
-                                        <td colSpan={3} className="text-center py-4 text-gray-500">
+                                        <td colSpan={5} className="text-center py-4 text-gray-500">
                                             No donations yet
                                         </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex justify-center gap-2 mt-4">
+                                <button
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(p => p - 1)}
+                                    className="px-3 py-1 border rounded disabled:opacity-50"
+                                >
+                                    Prev
+                                </button>
+
+                                <span className="px-3 py-1">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+
+                                <button
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(p => p + 1)}
+                                    className="px-3 py-1 border rounded disabled:opacity-50"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
+
             </div>
         </DefaultPageAdmin>
     );

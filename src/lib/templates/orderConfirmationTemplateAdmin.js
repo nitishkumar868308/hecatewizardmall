@@ -1,7 +1,7 @@
 // lib/templates/orderConfirmationTemplateAdmin.js
 
 export function orderConfirmationTemplateAdmin({ orderId, total, currency }) {
-        const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/image/logo PNG.png`;
+         const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/image/logo.png`;
     return `
   <div style="margin:0;padding:0;background-color:#f5f5f5;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" 
@@ -46,7 +46,7 @@ export function orderConfirmationTemplateAdmin({ orderId, total, currency }) {
       <tfoot>
         <tr>
           <td style="background:#fafafa;text-align:center;padding:15px;font-size:12px;color:#666;border-top:1px solid #e5e5e5;">
-            © ${new Date().getFullYear()} Your Store. All rights reserved.<br/>
+            © ${new Date().getFullYear()} Hecate Wizard Mall. All rights reserved.<br/>
             <a href="#" style="color:#000;text-decoration:none;">Go to Dashboard</a>
           </td>
         </tr>

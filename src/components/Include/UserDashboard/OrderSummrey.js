@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchOrders } from "@/app/redux/slices/order/orderSlice";
 import { FiEye, FiX } from "react-icons/fi";
 import OrderDetail from "@/components/Custom/OrderDetailUser";
+import { getApplyPromoCode } from "@/app/redux/slices/promoCode/promoCodeSlice";
 
 const statusStyles = {
     PENDING: "text-yellow-700 bg-yellow-100",
@@ -22,8 +23,11 @@ const OrderSummary = () => {
     const { orders } = useSelector((state) => state.order);
     const [openModal, setOpenModal] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const { appliedPromoCodes } = useSelector((s) => s.promoCode);
+
 
     useEffect(() => {
+        dispatch(getApplyPromoCode())
         dispatch(fetchOrders());
     }, [dispatch]);
 
@@ -114,6 +118,7 @@ const OrderSummary = () => {
                     onClose={() => setOpenModal(false)}
                     handleUpdateDetail={handleUpdateDetail}
                     generateInvoiceNumber={generateInvoiceNumber}
+                    appliedPromoCodes={appliedPromoCodes}
                 />
             )}
         </>

@@ -1456,8 +1456,11 @@ const Checkout = () => {
 
     // 🔥 If usageLimit exists & exceeded
     if (code.usageLimit !== null && usedTimes >= code.usageLimit) {
-      return toast.error("Promo code usage limit reached");
+      return toast.error(
+        `Uh-oh! "${code.code}" has done its job — it can’t be used again.`
+      );
     }
+
 
     // ======================
     // CALCULATE DISCOUNT
@@ -1500,6 +1503,7 @@ const Checkout = () => {
 
 
 
+  const activeCampaigns = campaigns?.filter(c => c.active);
 
 
   return (
@@ -2066,54 +2070,59 @@ const Checkout = () => {
           </div>
 
           {/* Donate Section */}
-          {campaigns?.length > 0 && (
-            <div className="bg-gray-50 p-4 sm:p-6 rounded-2xl shadow-sm w-full">
+          {activeCampaigns?.length > 0 &&
+            activeCampaigns.map((campaign) => (
+              <div
+                key={campaign.id}
+                className="bg-gray-50 p-4 sm:p-6 rounded-2xl shadow-sm w-full mb-6"
+              >
 
-              {/* Title */}
-              <h4 className="text-lg sm:text-xl font-semibold text-gray-800 mb-1">
-                {campaigns[0].title}
-              </h4>
+                {/* Title */}
+                <h4 className="text-lg sm:text-xl font-semibold text-gray-800 mb-1">
+                  {campaign.title}
+                </h4>
 
-              {/* Description */}
-              <p className="text-sm sm:text-base text-gray-600 mb-4">
-                {campaigns[0].description}
-              </p>
+                {/* Description */}
+                <p className="text-sm sm:text-base text-gray-600 mb-4">
+                  {campaign.description}
+                </p>
 
-              {/* Amount Buttons */}
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 mb-3">
-                {campaigns[0].amounts.map((amount) => (
-                  <button
-                    key={amount}
-                    onClick={() => {
-                      setDonation(amount);
-                      setDonationCustom("");
-                    }}
-                    className={`px-4 py-2 rounded-xl border text-sm sm:text-base transition-all duration-200
-            ${donation === amount
-                        ? "bg-gray-800 text-white border-gray-800"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      }`}
-                  >
-                    ₹{amount}
-                  </button>
-                ))}
-              </div>
+                {/* Amount Buttons */}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 mb-3">
+                  {campaign.amounts.map((amount) => (
+                    <button
+                      key={amount}
+                      onClick={() => {
+                        setDonation(amount);
+                        setDonationCustom("");
+                      }}
+                      className={`px-4 py-2 rounded-xl border text-sm sm:text-base transition-all duration-200
+              ${donation === amount
+                          ? "bg-gray-800 text-white border-gray-800"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                        }`}
+                    >
+                      ₹{amount}
+                    </button>
+                  ))}
+                </div>
 
-              {/* Custom Amount - Full Width */}
-              <input
-                type="number"
-                placeholder="Custom Amount"
-                value={donationCustom}
-                onChange={(e) => {
-                  setDonation(null);
-                  setDonationCustom(Number(e.target.value));
-                }}
-                className="w-full border rounded-xl px-3 py-2 text-sm sm:text-base
+                {/* Custom Amount */}
+                <input
+                  type="number"
+                  placeholder="Custom Amount"
+                  value={donationCustom}
+                  onChange={(e) => {
+                    setDonation(null);
+                    setDonationCustom(Number(e.target.value));
+                  }}
+                  className="w-full border rounded-xl px-3 py-2 text-sm sm:text-base
         focus:outline-none focus:ring-2 focus:ring-gray-500"
-              />
+                />
+              </div>
+            ))}
 
-            </div>
-          )}
+
 
 
           <div className="flex justify-center items-center">

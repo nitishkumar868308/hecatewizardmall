@@ -77,20 +77,30 @@ export const donateToCampaign = createAsyncThunk(
     }
 );
 
+export const toggleCampaignStatus = createAsyncThunk(
+    "donation/toggleCampaignStatus",
+    async (id, { rejectWithValue }) => {
+        try {
+            const res = await axios.patch("/api/donate/toggle", { id });
+            return res.data.data;
+        } catch (err) {
+            return rejectWithValue("Failed to toggle campaign");
+        }
+    }
+);
+
+
 // =============================
 // Fetch user donations
 // =============================
 export const fetchUserDonations = createAsyncThunk(
     "donation/fetchUserDonations",
-    async (_, { rejectWithValue }) => {
-        try {
-            const response = await axios.get("/api/user-donations");
-            return response.data.data; // array of user donations with campaign info
-        } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to fetch user donations");
-        }
+    async () => {
+        const response = await axios.get("/api/donate/userDonate");
+        return response.data.data;
     }
 );
+
 
 const donationSlice = createSlice({
     name: "donation",
@@ -172,6 +182,15 @@ const donationSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload || action.error.message;
             });
+
+        builder
+            .addCase(toggleCampaignStatus.fulfilled, (state, action) => {
+                const updated = action.payload;
+                state.campaigns = state.campaigns.map(c =>
+                    c.id === updated.id ? updated : c
+                );
+            });
+
     },
 });
 

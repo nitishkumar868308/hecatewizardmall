@@ -8,6 +8,8 @@ import { FiEdit, FiTrash2, FiEye } from "react-icons/fi";
 import EditOrderModal from "@/components/Admin/OrdersEdit/OrdersEdit";
 import OrderDetail from "@/components/Admin/OrdersEdit/OrdersDetail";
 import toast from 'react-hot-toast';
+import { getApplyPromoCode } from "@/app/redux/slices/promoCode/promoCodeSlice";
+import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 
 const Page = () => {
     const dispatch = useDispatch();
@@ -16,15 +18,17 @@ const Page = () => {
     const { list: users } = useSelector(
         (state) => state.getAllUser
     );
-
+    const { products } = useSelector((state) => state.products);
     const [searchQuery, setSearchQuery] = useState("");
     const [filterSource, setFilterSource] = useState("ALL");
     const [openModal, setOpenModal] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
-
+    const { appliedPromoCodes } = useSelector((s) => s.promoCode);
     const [openModalEdit, setOpenModalEdit] = useState(false);
-
+    console.log("products", products)
     useEffect(() => {
+        dispatch(fetchProducts());
+        dispatch(getApplyPromoCode())
         dispatch(fetchAllUsers());
         dispatch(fetchOrders());
     }, [dispatch]);
@@ -335,6 +339,8 @@ const Page = () => {
                         onClose={() => setOpenModal(false)}
                         handleUpdateDetail={handleUpdateDetail}
                         generateInvoiceNumber={generateInvoiceNumber}
+                        appliedPromoCodes={appliedPromoCodes}
+                        products={products}
                     />
                 )}
 

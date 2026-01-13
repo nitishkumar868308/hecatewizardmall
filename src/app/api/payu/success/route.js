@@ -45,6 +45,14 @@ export async function POST(req) {
                     });
 
                     if (!alreadyUsed) {
+                        const subtotal = orderRecord.subtotal;
+                        let discountAmount = 0;
+
+                        if (promo.discountType === "FLAT") {
+                            discountAmount = promo.discountValue;
+                        } else if (promo.discountType === "PERCENTAGE") {
+                            discountAmount = (subtotal * promo.discountValue) / 100;
+                        }
                         // ✅ save order-wise promo usage
                         await prisma.promoUser.create({
                             data: {
@@ -52,6 +60,8 @@ export async function POST(req) {
                                 userId: orderRecord.userId,
                                 orderId: orderRecord.id,
                                 usedCount: 1,
+                                subtotal: subtotal,           // store subtotal
+                                discountAmount: discountAmount, // store actual discount
                             },
                         });
 
@@ -104,23 +114,30 @@ export async function POST(req) {
                 await sendMail({
                     to: userEmail,
                     subject: `Order Confirmation - ${orderId}`,
-                    html: orderConfirmationTemplate(orderRecord),
+                    html: orderConfirmationTemplate({
+                        shippingName: orderRecord.shippingName,
+                        orderId: orderRecord.orderNumber,
+                        total: orderRecord.totalAmount,
+                        currency: orderRecord.currency || "₹",
+                        downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/invoice/${orderRecord.orderNumber}`
+                    }),
                 });
 
                 //Send notification email to admin
                 await sendMail({
                     to: process.env.ADMIN_EMAIL,
                     subject: `New Order Received - ${orderId}`,
-                    html: orderConfirmationTemplateAdmin(orderRecord),
+                    html: orderConfirmationTemplateAdmin({
+                        orderId: orderRecord.orderNumber,
+                        total: orderRecord.totalAmount,
+                        currency: orderRecord.currency || "₹",
+                    }),
                 });
 
                 const baseUrl = new URL(req.url).origin;
                 return Response.redirect(`${baseUrl}/payment-success?order_id=${orderId}`);
             } else {
-                // ❌ If status is anything else, delete the order
-                // await prisma.orders.delete({ where: { id: orderRecord.id } });
                 if (status === "failure" || status === "userCancelled") {
-                    // Update order as failed
                     await prisma.orders.update({
                         where: { id: orderRecord.id },
                         data: { status: "Failed", paymentStatus: "Failed" },
@@ -132,14 +149,12 @@ export async function POST(req) {
             }
         } else {
             if (status === "success") {
-                // ✅ Update order as confirmed
                 await prisma.orders.update({
                     where: { id: orderRecord.id },
                     data: { status: "PENDING", paymentStatus: "PAID" },
                 });
 
                 if (orderRecord.userId) {
-                    // ❌ Do NOT delete cart. Instead, mark is_buy = true
                     await prisma.cart.updateMany({
                         where: { userId: orderRecord.userId },
                         data: { is_buy: true },
@@ -152,14 +167,25 @@ export async function POST(req) {
                 await sendMail({
                     to: userEmail,
                     subject: `Order Confirmation - ${orderId}`,
-                    html: orderConfirmationTemplate(orderRecord),
+                    html: orderConfirmationTemplate({
+                        shippingName: orderRecord.shippingName,
+                        orderId: orderRecord.orderNumber,
+                        total: orderRecord.totalAmount,
+                        currency: orderRecord.currency || "₹",
+                        downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/invoice/${orderRecord.orderNumber}`
+
+                    }),
                 });
 
                 // Send notification email to admin
                 await sendMail({
                     to: process.env.ADMIN_EMAIL,
                     subject: `New Order Received - ${orderId}`,
-                    html: orderConfirmationTemplateAdmin(orderRecord),
+                    html: orderConfirmationTemplateAdmin({
+                        orderId: orderRecord.orderNumber,
+                        total: orderRecord.totalAmount,
+                        currency: orderRecord.currency || "₹",
+                    }),
                 });
 
                 const baseUrl = new URL(req.url).origin;
