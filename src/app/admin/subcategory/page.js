@@ -16,9 +16,12 @@ import { fetchOffers } from '@/app/redux/slices/offer/offerSlice'
 import {
     fetchStates,
 } from "@/app/redux/slices/state/addStateSlice";
+import Pagination from "@/components/Pagination";
 
 const AddSubcategory = () => {
     const dispatch = useDispatch();
+    const [currentPage, setCurrentPage] = useState(1);
+    const subCategoryPerPage = 7;
     const { subcategories, loading } = useSelector((state) => state.subcategory);
     const { categories } = useSelector((state) => state.category);
     console.log("subcategories", subcategories)
@@ -188,6 +191,17 @@ const AddSubcategory = () => {
         s.name.toLowerCase().includes(search.toLowerCase())
     );
 
+    const totalPages = Math.ceil(filteredSubcategories.length / subCategoryPerPage);
+
+    const indexOfLastsubCategory = currentPage * subCategoryPerPage;
+    const indexOfFirstsubCategory = indexOfLastsubCategory - subCategoryPerPage;
+    const currentsubCategory = filteredSubcategories.slice(indexOfFirstsubCategory, indexOfLastsubCategory);
+
+    const handlePageChange = (page) => {
+        if (page < 1 || page > totalPages) return;
+        setCurrentPage(page);
+    };
+
 
     console.log("filteredSubcategories", filteredSubcategories)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -247,16 +261,16 @@ const AddSubcategory = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredSubcategories.map((s, idx) => (
+                            {currentsubCategory.map((s, idx) => (
                                 <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4">{idx + 1}</td>
+                                    <td className="px-6 py-4">{indexOfFirstsubCategory + idx + 1}</td>
                                     {/* <td className="px-6 py-4 whitespace-nowrap">
                                         {s.image ? (
                                             <div className="relative w-15 h-15">
@@ -345,7 +359,7 @@ const AddSubcategory = () => {
                                     </td>
                                 </tr>
                             ))}
-                            {filteredSubcategories.length === 0 && (
+                            {currentsubCategory.length === 0 && (
                                 <tr>
                                     <td colSpan={5} className="text-center py-6 text-gray-400 italic">
                                         No subcategories found
@@ -355,7 +369,15 @@ const AddSubcategory = () => {
                         </tbody>
                     </table>
                 </div>
+
             </div>
+            {totalPages > 1 && (
+                <Pagination
+                    totalPages={totalPages}
+                    currentPage={currentPage}
+                    onPageChange={handlePageChange}
+                />
+            )}
 
             {/* Add Modal */}
             {modalOpen && (

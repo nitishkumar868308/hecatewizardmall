@@ -7,10 +7,10 @@ export async function GET(req) {
     try {
         const subcategories = await prisma.subcategory.findMany({
             where: { deleted: 0 },
-            orderBy: { createdAt: "desc" },
+            orderBy: { createdAt: "asc" },
             include: { category: true, states: true, }
         });
-        // console.log("subcategories" , subcategories)
+      
 
         return new Response(
             JSON.stringify({ message: "Subcategories fetched successfully", data: subcategories }),

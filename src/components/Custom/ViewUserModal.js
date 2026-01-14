@@ -26,7 +26,7 @@ export default function ViewUserModal({ user, isOpen, onClose }) {
                 </div>
 
                 {/* Basic Info & Addresses */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     {/* Basic Info */}
                     <div className="p-4 border rounded-xl bg-gray-50">
                         <h3 className="font-semibold mb-2 text-gray-700">Basic Info</h3>
@@ -47,7 +47,7 @@ export default function ViewUserModal({ user, isOpen, onClose }) {
                     </div>
 
                     {/* Shipping Address */}
-                    <div className="p-4 border rounded-xl bg-gray-50">
+                    {/* <div className="p-4 border rounded-xl bg-gray-50">
                         <h3 className="font-semibold mb-2 text-gray-700">Shipping Address</h3>
                         <p>{user.shippingAddress || user.address || "-"}</p>
                         <p>
@@ -55,7 +55,7 @@ export default function ViewUserModal({ user, isOpen, onClose }) {
                             {user.shippingPincode || user.pincode || "-"}
                         </p>
                         <p>{user.shippingCountry || user.country || "-"}</p>
-                    </div>
+                    </div> */}
 
                     {/* Extra Info */}
                     <div className="p-4 border rounded-xl bg-gray-50">

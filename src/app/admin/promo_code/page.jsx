@@ -48,6 +48,11 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState("PROMOS");
   const [usageSearch, setUsageSearch] = useState("");
 
+  const ITEMS_PER_PAGE = 10;
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+
 
   useEffect(() => {
     dispatch(getApplyPromoCode())
@@ -133,6 +138,18 @@ export default function Page() {
     );
   });
 
+  const totalPages = Math.ceil(filteredUsage.length / ITEMS_PER_PAGE);
+
+  const paginatedUsage = filteredUsage.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [usageSearch]);
+
+
   const isExpired = (validTill) => {
     if (!validTill) return false;
 
@@ -152,6 +169,47 @@ export default function Page() {
     from.setHours(0, 0, 0, 0);
 
     return now < from;
+  };
+  const getPageNumbers = () => {
+    // agar sirf 1 page hai
+    if (totalPages === 1) return [1];
+
+    // PAGE 1 ya 2
+    if (currentPage <= 2) {
+      return [1, 2, "...", totalPages];
+    }
+
+    // LAST ya LAST-1
+    if (currentPage >= totalPages - 1) {
+      return [1, "...", totalPages - 1, totalPages];
+    }
+
+    // MIDDLE PAGES
+    return [
+      1,
+      "...",
+      currentPage,
+      currentPage + 1,
+      "...",
+      totalPages
+    ];
+  };
+
+
+  const totalDiscount = filteredUsage.reduce(
+    (acc, u) => acc + (u.discountAmount || 0),
+    0
+  );
+
+  const totalSubtotal = filteredUsage.reduce(
+    (acc, u) => acc + (u.subtotal || 0),
+    0
+  );
+
+  const getPromoStatus = (promo) => {
+    if (isExpired(promo.validTill)) return "EXPIRED";
+    if (!isExpired(promo.validTill) && isLiveSoon(promo.validFrom)) return "LIVE_SOON";
+    return "RUNNING";
   };
 
 
@@ -223,7 +281,15 @@ export default function Page() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {(filteredPromos || []).map((p, idx) => (
-                    <tr key={p.id} className="hover:bg-gray-50 transition">
+                    <tr
+                      key={p.id}
+                      className={`transition
+                          ${getPromoStatus(p) === "EXPIRED" ? "bg-red-50 hover:bg-red-100" : ""}
+                          ${getPromoStatus(p) === "LIVE_SOON" ? "bg-yellow-50 hover:bg-yellow-100" : ""}
+                          ${getPromoStatus(p) === "RUNNING" ? "bg-green-50 hover:bg-green-100" : ""}
+                        `}
+                    >
+
                       <td className="px-4 py-3 text-sm font-medium text-gray-800">{idx + 1}. </td>
                       <td className="px-4 py-3 text-sm font-medium text-gray-800">{p.code || "-"}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">{p.discountType} {p.discountValue}</td>
@@ -324,21 +390,45 @@ export default function Page() {
         {/* TABLE User Promo usage */}
         {activeTab === "USAGE" && (
           <>
-            <div className="flex flex-col sm:flex-row justify-between mb-4 gap-2">
-              <h2 className="text-xl font-semibold">Promo Usage Analytics</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
 
-              {/* Total discount display */}
-              <div className="text-sm font-semibold text-green-700">
-                Total Discount: ₹{filteredUsage.reduce((acc, u) => acc + (u.discountAmount || 0), 0)}
+              {/* TITLE */}
+              <div className="sm:col-span-3 flex flex-col sm:flex-row justify-between gap-3">
+                <h2 className="text-xl font-semibold">Promo Usage Analytics</h2>
+
+                <input
+                  className="border px-3 py-2 rounded-lg w-full sm:w-64"
+                  placeholder="Search user / promo"
+                  value={usageSearch}
+                  onChange={(e) => setUsageSearch(e.target.value)}
+                />
               </div>
 
-              <input
-                className="border px-3 py-2 rounded w-full sm:w-64"
-                placeholder="Search user / promo"
-                value={usageSearch}
-                onChange={(e) => setUsageSearch(e.target.value)}
-              />
+              {/* TOTAL SUBTOTAL */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-xs text-blue-600 font-medium">Total Order Amount</p>
+                <p className="text-2xl font-bold text-blue-800">
+                  ₹{totalSubtotal.toLocaleString()}
+                </p>
+              </div>
+
+              {/* TOTAL DISCOUNT */}
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <p className="text-xs text-green-600 font-medium">Total Discount Given</p>
+                <p className="text-2xl font-bold text-green-800">
+                  ₹{totalDiscount.toLocaleString()}
+                </p>
+              </div>
+
+              {/* TOTAL RECORDS */}
+              <div className="bg-gray-50 border rounded-xl p-4">
+                <p className="text-xs text-gray-500 font-medium">Total Promo Uses</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {filteredUsage.length}
+                </p>
+              </div>
             </div>
+
 
             <div className="overflow-x-auto">
               <table className="min-w-full border rounded-xl shadow-sm">
@@ -354,8 +444,8 @@ export default function Page() {
                 </thead>
 
                 <tbody>
-                  {filteredUsage.length > 0 ? (
-                    filteredUsage.map((u) => {
+                  {paginatedUsage.length > 0 ? (
+                    paginatedUsage.map((u) => {
                       const user = users.find(x => x.id === u.userId);
 
                       return (
@@ -403,6 +493,65 @@ export default function Page() {
                   )}
                 </tbody>
               </table>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 flex-wrap gap-3">
+
+                  {/* INFO */}
+                  <p className="text-sm text-gray-500">
+                    Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+                    {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsage.length)} of{" "}
+                    {filteredUsage.length}
+                  </p>
+
+                  {/* BUTTONS */}
+                  <div className="flex items-center gap-1">
+
+                    {/* PREV */}
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(p => p - 1)}
+                      className={`px-3 py-1.5 rounded-lg border text-sm 
+          ${currentPage === 1
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "hover:bg-gray-100"}`}
+                    >
+                      Prev
+                    </button>
+
+                    {/* PAGE NUMBERS */}
+                    {getPageNumbers().map((page, idx) =>
+                      page === "..." ? (
+                        <span key={idx} className="px-2 text-gray-400">…</span>
+                      ) : (
+                        <button
+                          key={`ellipsis-${idx}`}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-3 py-1.5 rounded-lg border text-sm font-medium
+              ${currentPage === page
+                              ? "bg-black text-white border-black"
+                              : "hover:bg-gray-100"}`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    )}
+
+                    {/* NEXT */}
+                    <button
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(p => p + 1)}
+                      className={`px-3 py-1.5 rounded-lg border text-sm
+          ${currentPage === totalPages
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "hover:bg-gray-100"}`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
           </>
         )}

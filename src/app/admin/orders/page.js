@@ -10,6 +10,7 @@ import OrderDetail from "@/components/Admin/OrdersEdit/OrdersDetail";
 import toast from 'react-hot-toast';
 import { getApplyPromoCode } from "@/app/redux/slices/promoCode/promoCodeSlice";
 import { fetchProducts } from "@/app/redux/slices/products/productSlice";
+import Pagination from "@/components/Pagination";
 
 const Page = () => {
     const dispatch = useDispatch();
@@ -25,6 +26,8 @@ const Page = () => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const { appliedPromoCodes } = useSelector((s) => s.promoCode);
     const [openModalEdit, setOpenModalEdit] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ordersPerPage = 7;
     console.log("products", products)
     useEffect(() => {
         dispatch(fetchProducts());
@@ -53,6 +56,17 @@ const Page = () => {
         });
     }, [orders, searchQuery, filterSource]);
     console.log("filteredOrders", filteredOrders)
+
+    const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+
+    const indexOfLastOrder = currentPage * ordersPerPage;
+    const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+    const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+
+    const handlePageChange = (page) => {
+        if (page < 1 || page > totalPages) return;
+        setCurrentPage(page);
+    };
 
     const generateInvoiceNumber = (orderId, createdAt) => {
         const year = new Date(createdAt).getFullYear();
@@ -137,13 +151,13 @@ const Page = () => {
                             </thead>
 
                             <tbody className="text-gray-800 text-sm">
-                                {filteredOrders?.map((order, idx) => (
+                                {currentOrders?.map((order, idx) => (
                                     <tr
                                         key={order.id}
                                         className="border-b hover:bg-gray-50 transition-all"
                                     >
                                         {/* S.No */}
-                                        <td className="p-4 text-center font-medium">{idx + 1}.</td>
+                                        <td className="p-4 text-center font-medium">{indexOfFirstOrder + idx + 1}.</td>
 
 
                                         {/* First Item Image */}
@@ -228,13 +242,13 @@ const Page = () => {
                                                 </button>
 
                                                 {/* DELETE BUTTON */}
-                                                <button
+                                                {/* <button
                                                     onClick={() => handleDeleteOrder(order.id)}
                                                     className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-800 transition cursor-pointer"
                                                     title="Delete"
                                                 >
                                                     <FiTrash2 size={16} />
-                                                </button>
+                                                </button> */}
                                             </div>
                                         </td>
 
@@ -252,8 +266,16 @@ const Page = () => {
                         </table>
                     </div>
 
+                    {totalPages > 1 && (
+                        <Pagination
+                            totalPages={totalPages}
+                            currentPage={currentPage}
+                            onPageChange={handlePageChange}
+                        />
+                    )}
+
                     {/* MOBILE VIEW STACKED CARDS */}
-                    <div className="md:hidden mt-4 space-y-4">
+                    {/* <div className="md:hidden mt-4 space-y-4">
                         {filteredOrders?.map((order, idx) => (
                             <div
                                 key={order.id}
@@ -295,7 +317,6 @@ const Page = () => {
                                     </span>
 
                                     <div className="flex gap-2">
-                                        {/* VIEW */}
                                         <button
                                             onClick={() => handleEditOrder(order)}
                                             className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs"
@@ -304,7 +325,6 @@ const Page = () => {
                                             View
                                         </button>
 
-                                        {/* EDIT */}
                                         <button
                                             onClick={() => handleEditOrder(order)}
                                             className="p-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition"
@@ -313,19 +333,18 @@ const Page = () => {
                                             <FiEdit size={14} />
                                         </button>
 
-                                        {/* DELETE */}
-                                        <button
+                                        button
                                             onClick={() => handleDeleteOrder(order.id)}
                                             className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
                                             title="Delete"
                                         >
                                             <FiTrash2 size={14} />
-                                        </button>
+                                        </button> 
                                     </div>
                                 </div>
                             </div>
                         ))}
-                    </div>
+                    </div> */}
 
                 </div>
 

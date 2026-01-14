@@ -21,6 +21,7 @@ enum OrderStatus {
   CANCELLED
   COMPLETED
   FAILED
+  REFUND
 }
 
 enum PaymentStatus {
@@ -618,3 +619,24 @@ model UserDonation {
   donationCampaignId Int
   donationCampaign   DonationCampaign @relation(fields: [donationCampaignId], references: [id])
 }
+
+
+model Reviews {
+  id        Int      @id @default(autoincrement())
+
+  userId    Int
+  userName  String
+
+  productId String?  // 👈 OPTIONAL for now
+
+  comment   String
+  rating    Int
+
+  status    String   @default("pending")
+  active    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+

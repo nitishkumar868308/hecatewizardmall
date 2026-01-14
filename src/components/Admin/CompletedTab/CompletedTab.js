@@ -299,6 +299,7 @@
 "use client";
 import React, { useState, useMemo } from "react";
 import { Eye } from "lucide-react";
+import Pagination from "@/components/Pagination";
 
 const CompletedTab = ({ dispatches, warehouses }) => {
     const [modalData, setModalData] = useState(null);
@@ -306,6 +307,8 @@ const CompletedTab = ({ dispatches, warehouses }) => {
     const [selectedState, setSelectedState] = useState("");
     const [selectedWarehouse, setSelectedWarehouse] = useState("");
     const [activeTab, setActiveTab] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
+    const productsPerPage = 7;
     // resolve warehouse info
     const getWarehouseInfo = (id) => {
         const w = warehouses.find((x) => x.id.toString() === id.toString());
@@ -358,6 +361,17 @@ const CompletedTab = ({ dispatches, warehouses }) => {
 
         return result;
     }, [dispatches, searchTerm, selectedState, selectedWarehouse, warehouses]);
+
+    const totalPages = Math.ceil(filteredDispatches.length / productsPerPage);
+
+    const indexOfLastProduct = currentPage * productsPerPage;
+    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+    const currentProduct = filteredDispatches.slice(indexOfFirstProduct, indexOfLastProduct);
+
+    const handlePageChange = (page) => {
+        if (page < 1 || page > totalPages) return;
+        setCurrentPage(page);
+    };
 
     // unique states for dropdown
     const states = useMemo(() => {
@@ -415,6 +429,7 @@ const CompletedTab = ({ dispatches, warehouses }) => {
                 <table className="w-full text-left text-sm">
                     <thead className="bg-gray-100 text-gray-700 text-sm">
                         <tr>
+                            <th className="p-3">#</th>
                             <th className="p-3">Dispatch ID</th>
                             <th className="p-3">Shipping ID</th>
                             <th className="p-3">Created At</th>
@@ -426,8 +441,9 @@ const CompletedTab = ({ dispatches, warehouses }) => {
                     </thead>
 
                     <tbody>
-                        {filteredDispatches.map((item) => (
+                        {currentProduct.map((item, idx) => (
                             <tr key={item.id} className="border-b hover:bg-gray-50 transition">
+                                <td className="p-4  font-medium">{indexOfFirstProduct + idx + 1}.</td>
                                 <td className="p-3 font-semibold text-gray-700">#{item.id}</td>
                                 <td className="p-3">{item.shippingId || "—"}</td>
                                 {/* <td className="p-2">
@@ -467,7 +483,7 @@ const CompletedTab = ({ dispatches, warehouses }) => {
                     </tbody>
                 </table>
 
-                {filteredDispatches.length === 0 && (
+                {currentProduct.length === 0 && (
                     <div className="p-6 text-center text-gray-500">No dispatches found</div>
                 )}
             </div>
@@ -646,7 +662,13 @@ const CompletedTab = ({ dispatches, warehouses }) => {
                     </div>
                 </div>
             )} */}
-
+            {totalPages > 1 && (
+                <Pagination
+                    totalPages={totalPages}
+                    currentPage={currentPage}
+                    onPageChange={handlePageChange}
+                />
+            )}
 
             {modalData && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">

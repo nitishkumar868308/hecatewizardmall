@@ -1,6 +1,7 @@
 "use client"
-import React from "react";
+import React,{useState} from "react";
 import { View, Edit, Trash2 } from "lucide-react";
+import Pagination from "@/components/Pagination";
 
 const ProductTable = ({
     products,
@@ -13,6 +14,17 @@ const ProductTable = ({
     setDeleteProductId,
     setDeleteModalOpen,
 }) => {
+    const [currentPage, setCurrentPage] = useState(1);
+    const productsPerPage = 10;
+    const totalPages = Math.ceil(products.length / productsPerPage);
+    const indexOfLastProduct = currentPage * productsPerPage;
+    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+    const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
+
+    const handlePageChange = (page) => {
+        if (page < 1 || page > totalPages) return;
+        setCurrentPage(page);
+    };
     console.log("products", products)
     return (
         <div className="overflow-x-auto">
@@ -21,7 +33,7 @@ const ProductTable = ({
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sub Category</th>
@@ -32,10 +44,10 @@ const ProductTable = ({
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {products.map((p, idx) => (
+                        {currentProducts.map((p, idx) => (
                             <tr key={`${p.id}-${idx}`} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4">{idx + 1}</td>
-                                 <td className="px-6 py-4">
+                                <td className="px-6 py-4">{indexOfFirstProduct + idx + 1}</td>
+                                <td className="px-6 py-4">
                                     {p.image && p.image.length > 0 ? (
                                         <img src={p.image[0]} alt={p.name} className="w-12 h-12 object-cover rounded" />
                                     ) : (
@@ -46,7 +58,7 @@ const ProductTable = ({
                                 <td className="px-6 py-4">{categories.find(s => s.id === p.categoryId)?.name || "-"}</td>
                                 <td className="px-6 py-4">{subcategories.find(s => s.id === p.subcategoryId)?.name || "-"}</td>
                                 <td className="px-6 py-4">{p.price}</td>
-                                <td className="px-6 py-4">{p.stock}</td>                             
+                                <td className="px-6 py-4">{p.stock}</td>
 
                                 <td className="px-6 py-4">
                                     <label className="inline-flex items-center cursor-pointer">
@@ -97,6 +109,14 @@ const ProductTable = ({
                     </tbody>
                 </table>
             </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <Pagination
+                    totalPages={totalPages}
+                    currentPage={currentPage}
+                    onPageChange={handlePageChange}
+                />
+            )}
         </div>
     );
 };

@@ -932,11 +932,12 @@ const Checkout = () => {
         return;
       }
 
+      setShowConfirm(false);
       // Refresh cart
       const freshCart = await dispatch(fetchCart()).unwrap();
 
       toast.success("Item(s) deleted successfully");
-      setShowConfirm(false);
+
       // 🔄 Recalculate offers, bulk, range, free qty
       for (const item of freshCart) {
         const fullProduct = products.find((p) => p.id === item.productId);

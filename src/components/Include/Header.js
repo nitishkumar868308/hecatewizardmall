@@ -513,9 +513,9 @@ const Header = () => {
             let id;
 
             if (typeof selectedItemId === "object" && selectedItemId?.itemIds?.length) {
-                id = selectedItemId.itemIds; // multiple delete
+                id = selectedItemId.itemIds;
             } else if (typeof selectedItemId === "string") {
-                id = selectedItemId; // single delete
+                id = selectedItemId;
             }
 
             if (!id || (Array.isArray(id) && id.length === 0)) {
@@ -526,8 +526,10 @@ const Header = () => {
             const result = await dispatch(deleteCartItem({ id })).unwrap();
             console.log("result", result);
 
+            setIsConfirmOpen(false);
             toast.success(result.message || "Item(s) deleted successfully");
             await dispatch(fetchCart());
+
 
             // 🔄 Re-evaluate all offers after delete
             const freshCart = await dispatch(fetchCart()).unwrap();
@@ -553,7 +555,7 @@ const Header = () => {
                 await updateGroupBulkStatus(newBulkStatus, isBulkEligible, item.quantity, item, fullProduct);
             }
 
-            setIsConfirmOpen(false);
+
         } catch (err) {
             toast.error(err.message || "Failed to delete item(s)");
         }
@@ -1216,7 +1218,7 @@ const Header = () => {
 
         // return deep cloned plain object (safe for render)
         return JSON.parse(JSON.stringify(acc));
-    }, [JSON.stringify(userCart) , country]);
+    }, [JSON.stringify(userCart), country]);
 
     const findColorVariation = (fullProduct, c, item) => {
         if (!fullProduct?.variations?.length) return null;

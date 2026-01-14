@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import ViewUserModal from "@/components/Custom/ViewUserModal";
 import { fetchCart } from "@/app/redux/slices/addToCart/addToCartSlice";
 import { fetchOrders } from "@/app/redux/slices/order/orderSlice";
+import Pagination from "@/components/Pagination";
 
 const Page = () => {
     const dispatch = useDispatch();
@@ -28,8 +29,10 @@ const Page = () => {
     const [email, setEmail] = useState("");
     const [search, setSearch] = useState("");
     const { items } = useSelector((state) => state.cart);
+    const [currentPage, setCurrentPage] = useState(1);
+    const userPerPage = 10;
     console.log("items", items)
-    console.log("users" , users)
+    console.log("users", users)
     // Fetch users
     useEffect(() => {
         dispatch(fetchOrders())
@@ -73,6 +76,17 @@ const Page = () => {
             (user.phone || "").toLowerCase().includes(search.toLowerCase())
     );
 
+    const totalPages = Math.ceil(filteredUsers.length / userPerPage);
+
+    const indexOfLastUser = currentPage * userPerPage;
+    const indexOfFirstUser = indexOfLastUser - userPerPage;
+    const currentUser = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+
+    const handlePageChange = (page) => {
+        if (page < 1 || page > totalPages) return;
+        setCurrentPage(page);
+    };
+
     return (
         <DefaultPageAdmin>
             <div className="flex flex-col gap-6">
@@ -108,7 +122,7 @@ const Page = () => {
                 {error && <p className="text-red-500">{error}</p>}
 
                 {/* Users Table */}
-                {filteredUsers.length > 0 ? (
+                {currentUser.length > 0 ? (
                     <div className="overflow-x-auto">
                         <div className="min-w-full align-middle">
                             <div className="shadow overflow-hidden border border-gray-200 rounded-lg">
@@ -139,14 +153,14 @@ const Page = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {filteredUsers.map((user, idx) => (
+                                        {currentUser.map((user, idx) => (
                                             <tr
                                                 key={user.id}
                                                 className={`transition transform hover:scale-[1.01] hover:bg-gray-100 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"
                                                     }`}
                                             >
                                                 <td className="px-4 py-4 whitespace-nowrap text-gray-800 font-medium">
-                                                    {idx + 1}
+                                                    {indexOfFirstUser + idx + 1}.
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-900 font-medium">
                                                     {user.name}
@@ -209,6 +223,14 @@ const Page = () => {
                     </div>
                 ) : (
                     <p className="text-gray-500 mt-4">No users found.</p>
+                )}
+
+                {totalPages > 1 && (
+                    <Pagination
+                        totalPages={totalPages}
+                        currentPage={currentPage}
+                        onPageChange={handlePageChange}
+                    />
                 )}
 
                 {/* Add User Modal */}

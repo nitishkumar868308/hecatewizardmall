@@ -22,6 +22,11 @@ import Link from "next/link";
 import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
 import { fetchDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
 import { useCart } from "@/utils/CartContext";
+import {
+    fetchAttributes,
+} from "@/app/redux/slices/attribute/attributeSlice";
+import { createReview, fetchReviews } from "@/app/redux/slices/reviews/reviewsSlice";
+import { fetchOrders } from "@/app/redux/slices/order/orderSlice";
 
 const ProductDetail = () => {
     const { isOpen } = useCart();
@@ -46,18 +51,24 @@ const ProductDetail = () => {
     const [currentImages, setCurrentImages] = useState(
         selectedVariation?.image || product?.image || []
     );
+    const { attributes } = useSelector((state) => state.attributes);
+    console.log("attributes", attributes)
     const [mainImage, setMainImage] = useState(
         selectedVariation?.image?.[0] || product?.image?.[0] || "/image/logo PNG.png"
     );
     const [reviewForm, setReviewForm] = useState({
-        name: "",
+        // name: "",
         rating: 0,
         comment: "",
     });
+    const { reviews } = useSelector((state) => state.reviews);
     const [showCountryModal, setShowCountryModal] = useState(false);
     const [newCountry, setNewCountry] = useState("");
     const [selectedAttributes, setSelectedAttributes] = useState({});
     const { user } = useSelector((state) => state.me);
+    const { orders } = useSelector((state) => state.order);
+    console.log("orders", orders)
+    console.log("user", user)
     const { items } = useSelector((state) => state.cart);
     const country = useSelector((state) => state.country);
     console.log("products", products)
@@ -108,6 +119,9 @@ const ProductDetail = () => {
     }, [cartItem, selectedVariation]);
 
     useEffect(() => {
+        dispatch(fetchReviews())
+        dispatch(fetchOrders())
+        dispatch(fetchAttributes())
         dispatch(fetchCart());
         dispatch(fetchMe());
         dispatch(fetchProducts()); // always fetch for current country
@@ -469,10 +483,32 @@ const ProductDetail = () => {
 
     //     setVariationAttributes(finalAttrs);
     // }, [product?.variations]);
+    // useEffect(() => {
+    //     if (!product?.variations?.length) return;
+
+    //     // Agar Xpress mode hai, allowedVariationIds hai → sirf allowed variations use karo
+    //     const variationsToUse = isXpress && allowedVariationIds
+    //         ? product.variations.filter(v => allowedVariationIds.includes(v.id))
+    //         : product.variations;
+
+    //     const attrs = {};
+    //     variationsToUse.forEach(v => {
+    //         v.variationName.split(" / ").forEach(part => {
+    //             const [key, val] = part.split(":").map(p => p.trim());
+    //             if (!attrs[key]) attrs[key] = new Set();
+    //             attrs[key].add(val);
+    //         });
+    //     });
+
+    //     const finalAttrs = {};
+    //     Object.entries(attrs).forEach(([k, v]) => finalAttrs[k] = Array.from(v));
+    //     setVariationAttributes(finalAttrs);
+
+    // }, [product?.variations, isXpress, allowedVariationIds]);
+
     useEffect(() => {
         if (!product?.variations?.length) return;
 
-        // Agar Xpress mode hai, allowedVariationIds hai → sirf allowed variations use karo
         const variationsToUse = isXpress && allowedVariationIds
             ? product.variations.filter(v => allowedVariationIds.includes(v.id))
             : product.variations;
@@ -487,10 +523,51 @@ const ProductDetail = () => {
         });
 
         const finalAttrs = {};
-        Object.entries(attrs).forEach(([k, v]) => finalAttrs[k] = Array.from(v));
+        Object.entries(attrs).forEach(([k, v]) => {
+            const masterAttr = attributes.find(a => a.name.toLowerCase() === k.toLowerCase());
+            if (masterAttr) {
+                // Preserve master order
+                finalAttrs[k] = masterAttr.values.filter(val => v.has(val));
+            } else {
+                finalAttrs[k] = Array.from(v);
+            }
+        });
+
         setVariationAttributes(finalAttrs);
 
-    }, [product?.variations, isXpress, allowedVariationIds]);
+        // Step 2: Set initial selectedAttributes based on master order + default
+        const initialSelected = {};
+        Object.entries(finalAttrs).forEach(([attr, vals]) => {
+            const defaultVal = product?.isDefault?.[attr];
+            initialSelected[attr] = defaultVal && vals.includes(defaultVal) ? defaultVal : vals[0];
+        });
+
+        setSelectedAttributes(initialSelected);
+
+        // Step 3: Match variation
+        const matchedVariation = variationsToUse.find(v => {
+            const parts = v.variationName.split(" / ").reduce((acc, part) => {
+                const [k, val] = part.split(":").map(p => p.trim());
+                acc[k] = val;
+                return acc;
+            }, {});
+            return Object.entries(initialSelected).every(([k, val]) => parts[k] === val);
+        }) || variationsToUse[0];
+
+        setSelectedVariation(matchedVariation);
+
+        // Set images
+        if (matchedVariation?.image?.length) {
+            setCurrentImages(matchedVariation.image);
+            setMainImage(matchedVariation.image[0]);
+        } else if (product.image?.length) {
+            setCurrentImages(product.image);
+            setMainImage(product.image[0]);
+        } else {
+            setCurrentImages([]);
+            setMainImage(null);
+        }
+    }, [product?.variations, attributes, isXpress, allowedVariationIds]);
 
 
     // useEffect(() => {
@@ -3057,13 +3134,6 @@ const ProductDetail = () => {
     //         setLoading(false);
     //     }
     // };
-
-    const handleSubmitReview = () => {
-        console.log("Submitted review:", reviewForm);
-        // You can call your API here to save the review
-        // After submission, reset the form
-        setReviewForm({ name: "", rating: 0, comment: "" });
-    };
     const bulkStatus = computeBulkStatus({
         product,
         selectedVariation,
@@ -3214,6 +3284,57 @@ const ProductDetail = () => {
         : selectedVariation?.currency ?? product.currency ?? "INR";
 
     console.log("selectedVariation", selectedVariation)
+
+    const hasOrderedProduct = orders?.some(
+        (order) =>
+            order.userId === user?.id &&
+            order.paymentStatus === "paid" && // ✅ sirf paid orders
+            order.items?.some((item) => item.productId === product.id)
+    );
+
+    console.log("hasOrderedProduct", hasOrderedProduct)
+
+
+    const handleSubmitReview = async () => {
+        if (!user) {
+            toast.error("Please login to submit a review");
+            return;
+        }
+
+        if (!hasOrderedProduct) {
+            toast.error("You can review only products you have purchased");
+            return;
+        }
+
+        if (!reviewForm.comment || reviewForm.rating === 0) {
+            toast.error("All fields are required");
+            return;
+        }
+
+        const payload = {
+            userId: user.id,
+            userName: user.name,
+            productId: product.id,
+            comment: reviewForm.comment,
+            rating: reviewForm.rating,
+        };
+
+        try {
+            await dispatch(createReview(payload)).unwrap();
+            toast.success("Review submitted...");
+
+            setReviewForm({ comment: "", rating: 0 });
+        } catch (err) {
+            toast.error(err.message || "Failed to submit review");
+        }
+    };
+
+    // Filter only approved reviews for this product
+    const productReviews = reviews?.filter(
+        (r) => r.productId === product.id && r.status === "approved"
+    );
+
+
 
     return (
         <>
@@ -3527,7 +3648,7 @@ const ProductDetail = () => {
 
 
 
-                        {Object.entries(variationAttributes).map(([attrKey, values]) => {
+                        {/* {Object.entries(variationAttributes).map(([attrKey, values]) => {
                             const keyLower = attrKey.toLowerCase();
                             let sortedValues = [...values];
                             const defaultVal = product?.isDefault?.[attrKey];
@@ -3578,7 +3699,7 @@ const ProductDetail = () => {
                                                     key={`${attrKey}-${val}`}
                                                     className="relative flex flex-col items-center"
                                                 >
-                                                    {/* 🛒 Quantity badge (fixed height to prevent layout shift) */}
+                                                  
                                                     <div className="h-5 flex items-center justify-center mb-1">
                                                         {keyLower === "color" && attributeQty > 0 && (
                                                             <span
@@ -3607,7 +3728,95 @@ const ProductDetail = () => {
                                     </div>
                                 </div>
                             );
+                        })} */}
+
+                        {Object.entries(variationAttributes).map(([attrKey, values]) => {
+                            const keyLower = attrKey.toLowerCase();
+
+                            // Get attribute master order
+                            const masterAttr = attributes.find(a => a.name.toLowerCase() === keyLower);
+                            let sortedValues = values;
+
+                            if (masterAttr) {
+                                sortedValues = masterAttr.values.filter(v => values.includes(v));
+                            }
+
+                            // Place default value top (if exists)
+                            const defaultVal = product?.isDefault?.[attrKey];
+                            if (defaultVal && sortedValues.includes(defaultVal)) {
+                                sortedValues = [defaultVal, ...sortedValues.filter(v => v !== defaultVal)];
+                            }
+
+                            // ✅ Update selectedAttributes AFTER default/top value arrangement
+                            if (!selectedAttributes[attrKey] || !sortedValues.includes(selectedAttributes[attrKey])) {
+                                selectedAttributes[attrKey] = sortedValues[0]; // top value highlight
+                            }
+
+                            return (
+                                <div key={attrKey} className="mb-6">
+                                    <h3 className="mb-3 text-lg font-semibold text-gray-700 capitalize">{attrKey}</h3>
+                                    <div className="flex gap-3 flex-wrap">
+                                        {sortedValues.map(val => {
+                                            let attributeQty = 0;
+
+                                            if (keyLower === "color") {
+                                                attributeQty = Array.isArray(userCart)
+                                                    ? userCart.reduce((sum, item) => {
+                                                        const sameProduct = item?.productId === product?.id;
+                                                        const colorMatch =
+                                                            item?.attributes?.color?.trim().toLowerCase() ===
+                                                            val.trim().toLowerCase();
+                                                        const selectedWax =
+                                                            selectedAttributes["Type of wax"]?.toLowerCase();
+                                                        const itemWax =
+                                                            item?.attributes?.["type of wax"]?.toLowerCase();
+                                                        const waxMatch =
+                                                            !selectedWax || (itemWax && itemWax === selectedWax);
+                                                        if (
+                                                            sameProduct &&
+                                                            colorMatch &&
+                                                            waxMatch &&
+                                                            item.purchasePlatform === purchasePlatform
+                                                        ) {
+                                                            return sum + (Number(item?.quantity) || 0);
+                                                        }
+                                                        return sum;
+                                                    }, 0)
+                                                    : 0;
+                                            }
+
+                                            return (
+                                                <div
+                                                    key={`${attrKey}-${val}`}
+                                                    className="relative flex flex-col items-center"
+                                                >
+                                                    <div className="h-5 flex items-center justify-center mb-1">
+                                                        {keyLower === "color" && attributeQty > 0 && (
+                                                            <span className="flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-white bg-gray-800 px-2 py-[2px] rounded-full shadow-sm hover:bg-gray-700 transition-all duration-200">
+                                                                <ShoppingCart size={12} className="text-white" />
+                                                                {attributeQty}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => handleAttributeSelect(attrKey, val)}
+                                                        className={`px-4 py-2 cursor-pointer rounded-lg text-sm font-semibold transition-all duration-300 transform
+                                    ${selectedAttributes[attrKey] === val
+                                                                ? "bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 text-white shadow-lg scale-105"
+                                                                : "bg-gray-100 text-gray-800 hover:bg-gray-200 hover:scale-105"
+                                                            }`}
+                                                    >
+                                                        {val}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
                         })}
+
 
                         {isXpress && (
                             <p
@@ -4066,98 +4275,100 @@ const ProductDetail = () => {
                                     className="flex flex-col space-y-4 h-[650px]"
                                 >
                                     {/* Fixed form at top */}
-                                    <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                                        <h4 className="font-semibold text-gray-800 mb-4 text-center">Add Your Review</h4>
-                                        <form
-                                            onSubmit={(e) => {
-                                                e.preventDefault();
-                                                handleSubmitReview();
-                                            }}
-                                            className="space-y-4"
-                                        >
-                                            {/* Name */}
-                                            <input
-                                                type="text"
-                                                placeholder="Your Name"
-                                                value={reviewForm.name}
-                                                onChange={(e) =>
-                                                    setReviewForm({ ...reviewForm, name: e.target.value })
-                                                }
-                                                className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                                                required
-                                            />
+                                    {user && hasOrderedProduct ? (
+                                        <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
+                                            <h4 className="font-semibold text-gray-800 mb-4 text-center">
+                                                Add Your Review
+                                            </h4>
 
-                                            {/* Message */}
-                                            <textarea
-                                                placeholder="Write your review..."
-                                                value={reviewForm.comment}
-                                                onChange={(e) =>
-                                                    setReviewForm({ ...reviewForm, comment: e.target.value })
-                                                }
-                                                className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                                                rows={4}
-                                                required
-                                            ></textarea>
+                                            <form
+                                                onSubmit={(e) => {
+                                                    e.preventDefault();
+                                                    handleSubmitReview();
+                                                }}
+                                                className="space-y-4"
+                                            >
+                                                {/* Message */}
+                                                <textarea
+                                                    placeholder="Write your review..."
+                                                    value={reviewForm.comment}
+                                                    onChange={(e) =>
+                                                        setReviewForm({ ...reviewForm, comment: e.target.value })
+                                                    }
+                                                    className="w-full border rounded-md px-3 py-2"
+                                                    rows={4}
+                                                />
 
-                                            {/* Rating */}
-                                            <div className="flex items-center gap-3 mt-2">
-                                                <span className="font-semibold text-gray-800">Rating:</span>
-                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                {/* Rating */}
+                                                <div className="flex items-center gap-3">
+                                                    <span className="font-semibold">Rating:</span>
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <button
+                                                            type="button"
+                                                            key={star}
+                                                            onClick={() =>
+                                                                setReviewForm({ ...reviewForm, rating: star })
+                                                            }
+                                                            className={`text-3xl  ${reviewForm.rating >= star
+                                                                ? "text-yellow-400"
+                                                                : "text-gray-300"
+                                                                }`}
+                                                        >
+                                                            ★
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="flex justify-center">
                                                     <button
-                                                        type="button"
-                                                        key={star}
-                                                        onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                                                        className={`text-3xl md:text-4xl cursor-pointer transition-all duration-200 ${reviewForm.rating >= star ? "text-yellow-400 scale-110" : "text-gray-300 hover:text-yellow-300"
-                                                            }`}
+                                                        type="submit"
+                                                        className="bg-gray-600 text-white px-5 py-2 rounded-md cursor-pointer"
                                                     >
-                                                        ★
+                                                        Submit Review
                                                     </button>
-                                                ))}
-                                            </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-yellow-50 border border-yellow-300 p-4 rounded-md text-center">
+                                            <p className="text-yellow-800">
+                                                {user ? "Please purchase this product to write a review." : "Please login to submit a review."}
+                                            </p>
+                                        </div>
+                                    )}
 
 
-                                            {/* Submit Button */}
-                                            <div className="flex justify-center ">
-                                                <button
-                                                    type="submit"
-                                                    className="bg-gray-600 cursor-pointer text-white px-5 py-2 rounded-md hover:bg-gray-700 transition"
-                                                >
-                                                    Submit Review
-                                                </button>
-                                            </div>
-
-                                        </form>
-                                    </div>
 
                                     {/* Reviews list - scrollable */}
                                     <div className="overflow-y-auto flex-1 space-y-4 pr-2 mt-2">
-                                        {(product.reviews && product.reviews.length > 0
-                                            ? product.reviews
-                                            : Array.from({ length: 10 }, (_, i) => ({
-                                                user: `User ${i + 1}`,
-                                                rating: Math.floor(Math.random() * 5) + 1,
-                                                comment: "This is a dummy review for testing purposes.",
-                                            }))
-                                        ).map((review, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="border rounded-lg p-4 bg-gray-50 shadow-sm"
-                                            >
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <h4 className="font-semibold text-gray-800">{review.user}</h4>
-                                                    <span className="text-yellow-500">{'⭐'.repeat(review.rating)}</span>
+                                        {productReviews.length > 0 ? (
+                                            productReviews.map((review, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="border rounded-lg p-4 bg-gray-50 shadow-sm"
+                                                >
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h4 className="font-semibold text-gray-800">{review.userName}</h4>
+                                                        <span className="text-yellow-500">{'⭐'.repeat(review.rating)}</span>
+                                                    </div>
+                                                    <p className="text-gray-600">{review.comment}</p>
                                                 </div>
-                                                <p className="text-gray-600">{review.comment}</p>
+                                            ))
+                                        ) : (
+                                            <div className="text-center text-gray-500 py-10">
+                                                <p className="text-lg font-medium">No reviews yet for this product.</p>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
+
+
                                 </motion.div>
                             )}
 
                         </AnimatePresence>
                     </div>
                 </div>
-            </div>
+            </div >
 
             {showCountryModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -4201,7 +4412,8 @@ const ProductDetail = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
 
 

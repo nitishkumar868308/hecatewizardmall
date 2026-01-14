@@ -5,6 +5,7 @@ import { fetchOrders } from "@/app/redux/slices/order/orderSlice";
 import { FiEye, FiX } from "react-icons/fi";
 import OrderDetail from "@/components/Custom/OrderDetailUser";
 import { getApplyPromoCode } from "@/app/redux/slices/promoCode/promoCodeSlice";
+import Pagination from "@/components/Pagination";
 
 const statusStyles = {
     PENDING: "text-yellow-700 bg-yellow-100",
@@ -25,6 +26,10 @@ const OrderSummary = () => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const { appliedPromoCodes } = useSelector((s) => s.promoCode);
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5; // ek page me kitne orders
+
 
     useEffect(() => {
         dispatch(getApplyPromoCode())
@@ -33,6 +38,13 @@ const OrderSummary = () => {
 
     const userOrders = orders.filter((order) => order.userId === user.id);
     console.log("userOrders", userOrders)
+
+    const totalPages = Math.ceil(userOrders.length / itemsPerPage);
+
+    const paginatedOrders = userOrders.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     const generateInvoiceNumber = (orderId, createdAt) => {
         const year = new Date(createdAt).getFullYear();
@@ -55,54 +67,61 @@ const OrderSummary = () => {
                 <h2 className="text-3xl font-bold text-gray-800">Your Orders</h2>
 
                 {userOrders.length > 0 ? (
-                    <ul className="space-y-4">
-                        {userOrders.map((order) => (
-                            <li
-                                key={order.id}
-                                className="border rounded-xl shadow-sm hover:shadow-lg transition bg-white p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center"
-                            >
-                                <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-3 sm:mb-0">
-                                    <span className="font-semibold text-lg text-gray-800">
-                                        Order Id : {order.orderNumber || "N/A"}
-                                        {/* (ID: {order.id}) */}
-                                    </span>
-                                    <span
-                                        className={`mt-2 sm:mt-0 px-3 py-1 rounded-full font-medium text-sm ${statusStyles[order.status] || "text-gray-700 bg-gray-100"
-                                            }`}
-                                    >
-                                        Order status : {order.status || "PENDING"}
-                                    </span>
-                                </div>
-
-                                <p className="text-gray-500 text-sm mb-3 sm:mb-0">
-                                    Order Date: {order.createdAt
-                                        ? new Date(order.createdAt).toLocaleString("en-IN", {
-                                            day: "2-digit",
-                                            month: "short",
-                                            year: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                            second: "2-digit",
-                                            hour12: true,
-                                        })
-                                        : "-"}
-                                </p>
-
-                                <p className="text-gray-500 text-sm mb-3 sm:mb-0">
-                                    Order From: {order.orderBy === "website" ? "Hecate Wizard Mall ( Website )" : "Hecate QuickGo"}
-                                </p>
-
-
-                                {/* View Button */}
-                                <button
-                                    onClick={() => handleViewOrder(order)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 transition self-start sm:self-auto cursor-pointer"
+                    <>
+                        <ul className="space-y-4">
+                            {paginatedOrders.map((order) => (
+                                <li
+                                    key={order.id}
+                                    className="border rounded-xl shadow-sm hover:shadow-lg transition bg-white p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center"
                                 >
-                                    <FiEye /> View
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
+                                    <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-3 sm:mb-0">
+                                        <span className="font-semibold text-lg text-gray-800">
+                                            Order Id : {order.orderNumber || "N/A"}
+                                            {/* (ID: {order.id}) */}
+                                        </span>
+                                        <span
+                                            className={`mt-2 sm:mt-0 px-3 py-1 rounded-full font-medium text-sm ${statusStyles[order.status] || "text-gray-700 bg-gray-100"
+                                                }`}
+                                        >
+                                            Order status : {order.status || "PENDING"}
+                                        </span>
+                                    </div>
+
+                                    <p className="text-gray-500 text-sm mb-3 sm:mb-0">
+                                        Order Date: {order.createdAt
+                                            ? new Date(order.createdAt).toLocaleString("en-IN", {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                                second: "2-digit",
+                                                hour12: true,
+                                            })
+                                            : "-"}
+                                    </p>
+
+                                    <p className="text-gray-500 text-sm mb-3 sm:mb-0">
+                                        Order From: {order.orderBy === "website" ? "Hecate Wizard Mall ( Website )" : "Hecate QuickGo"}
+                                    </p>
+
+
+                                    {/* View Button */}
+                                    <button
+                                        onClick={() => handleViewOrder(order)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 transition self-start sm:self-auto cursor-pointer"
+                                    >
+                                        <FiEye /> View
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={(page) => setCurrentPage(page)}
+                        />
+                    </>
                 ) : (
                     <p className="text-gray-500">You have no orders yet.</p>
                 )}

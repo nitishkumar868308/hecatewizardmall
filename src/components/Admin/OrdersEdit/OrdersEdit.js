@@ -85,19 +85,21 @@ export default function EditOrderModal({ order, isOpen, onClose, onUpdateStatus 
         { ssr: false }
     );
 
+    console.log("orderEdit", order)
+
     useEffect(() => {
         if (!order) return;
 
         const map = {};
         order.items?.forEach(item => {
             const canvas = document.createElement("canvas");
-            JsBarcode(canvas, item.FNSKU, {
+            JsBarcode(canvas, item.barCode, {
                 format: "CODE128",
                 displayValue: false,
                 width: 2,
                 height: 50,
             });
-            map[item.FNSKU || item.productName] = canvas.toDataURL("image/png");
+            map[item.barCode || item.productName] = canvas.toDataURL("image/png");
 
         });
         setBarcodeMap(map);
@@ -136,26 +138,44 @@ export default function EditOrderModal({ order, isOpen, onClose, onUpdateStatus 
                             </tr>
                         </thead>
                         <tbody className="text-gray-800">
-                            {order.items?.map((item, idx) =>
-                                item.colors?.map((c, i) => (
-                                    <tr key={`${idx}-${i}`} className="border-b hover:bg-gray-50 transition">
-                                        <td className="p-3 text-center">{idx + 1}</td>
-                                        <td className="p-3 text-center">
-                                            <img src={c.image} alt="item" className="w-16 h-16 object-cover rounded-md mx-auto" />
-                                        </td>
-                                        <td className="p-3 text-center">{item.productName}</td>
-                                        <td className="p-3 text-center">{c.quantity}</td>
-                                        <td className="p-3 text-center">₹{c.pricePerItem}</td>
-                                        <td className="p-3 text-center font-bold">₹{c.totalPrice}</td>
-                                        <td className="p-3 text-center">
-                                            <span className={`px-3 py-1 rounded-lg text-xs font-semibold 
-                                                ${order.status === "PENDING" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>
-                                                {order.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
+                            {order.items?.map((item, idx) => (
+                                <tr key={item.itemId} className="border-b hover:bg-gray-50 transition">
+                                    <td className="p-3 text-center">{idx + 1}</td>
+
+                                    <td className="p-3 text-center">
+                                        <img
+                                            src={item.image}
+                                            alt="item"
+                                            className="w-16 h-16 object-cover rounded-md mx-auto"
+                                        />
+                                    </td>
+
+                                    <td className="p-3 text-center">
+                                        {item.productName}
+                                        {item.attributes && (
+                                            <div className="text-xs text-gray-500">
+                                                {Object.entries(item.attributes).map(([k, v]) => (
+                                                    <div key={k}>{k}: {v}</div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </td>
+
+                                    <td className="p-3 text-center">{item.quantity}</td>
+                                    <td className="p-3 text-center">₹{item.pricePerItem}</td>
+                                    <td className="p-3 text-center font-bold">₹{item.totalPrice}</td>
+
+                                    <td className="p-3 text-center">
+                                        <span className={`px-3 py-1 rounded-lg text-xs font-semibold 
+        ${order.status === "PENDING"
+                                                ? "bg-yellow-100 text-yellow-700"
+                                                : "bg-green-100 text-green-700"}`}>
+                                            {order.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+
                         </tbody>
                     </table>
                 </div>
@@ -163,13 +183,13 @@ export default function EditOrderModal({ order, isOpen, onClose, onUpdateStatus 
                 {/* Status Change + Print */}
                 <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     {/* PDF Download */}
-                    <PDFDownloadLinkNoSSR
+                    {/* <PDFDownloadLinkNoSSR
                         document={<LabelsPDF items={order.items} barcodes={barcodeMap} />}
                         fileName={`Dispatch_${order.orderNumber}_Labels.pdf`}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 justify-center cursor-pointer"
                     >
                         {({ loading }) => (loading ? "Generating PDF..." : <><FiPrinter /> Print Labels</>)}
-                    </PDFDownloadLinkNoSSR>
+                    </PDFDownloadLinkNoSSR> */}
 
 
                     {/* Status Update */}
@@ -185,6 +205,9 @@ export default function EditOrderModal({ order, isOpen, onClose, onUpdateStatus 
                             <option value="PROCESSING">Processing</option>
                             <option value="COMPLETED">Completed</option>
                             <option value="CANCELLED">Cancelled</option>
+                            <option value="SHIPPED">Shipped</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="REFUND">Refund</option>
                         </select>
                         <button
                             onClick={() => onUpdateStatus(order.id, status)}

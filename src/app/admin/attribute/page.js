@@ -87,7 +87,7 @@ const AttributePage = () => {
                     />
                     <button
                         onClick={openAddModal}
-                        className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow cursor-pointer"
+                        className="flex items-center gap-2 bg-gray-700 hover:bg-gray-900 text-white px-4 py-2 rounded-lg shadow cursor-pointer"
                     >
                         <Plus className="w-5 h-5" /> Add Attribute
                     </button>
@@ -188,7 +188,7 @@ const AttributePage = () => {
                                     />
                                     <div className="flex justify-end gap-2">
                                         <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded cursor-pointer">Cancel</button>
-                                        <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer">
+                                        <button onClick={handleSave} className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-900 cursor-pointer">
                                             {modalType === "add" ? "Add" : "Save"}
                                         </button>
                                     </div>

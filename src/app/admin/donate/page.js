@@ -117,6 +117,11 @@ const DonationPage = () => {
         });
     };
 
+    const totalDonationAmount = userDonations.reduce(
+        (acc, d) => acc + (d.amount || 0),
+        0
+    );
+
 
     return (
         <DefaultPageAdmin>
@@ -281,6 +286,31 @@ const DonationPage = () => {
                 {/* User Donations Table */}
                 {activeTab === "users" && (
                     <div className="overflow-x-auto">
+
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+
+                            <h3 className="text-lg font-semibold">User Donations</h3>
+
+                            <div className="flex gap-3">
+                                {/* TOTAL DONATION */}
+                                <div className="bg-green-50 border border-green-200 rounded-lg px-8 py-2">
+                                    <p className="text-xs text-green-600 font-medium">Total Donated</p>
+                                    <p className="text-lg font-bold text-green-800">
+                                        ₹{totalDonationAmount.toLocaleString()}
+                                    </p>
+                                </div>
+
+                                {/* TOTAL RECORDS */}
+                                <div className="bg-gray-50 border rounded-lg px-8 py-2">
+                                    <p className="text-xs text-gray-500 font-medium">Total User</p>
+                                    <p className="text-lg font-bold text-gray-800">
+                                        {userDonations.length}
+                                    </p>
+
+                                </div>
+                            </div>
+                        </div>
+
 
                         <table className="w-full border-collapse border border-gray-300">
                             <thead className="bg-gray-100">
