@@ -119,4 +119,6 @@ const OrderDetailPrint = forwardRef(({ selectedOrder, generateInvoiceNumber, pro
     );
 });
 
+OrderDetailPrint.displayName = "OrderDetailPrint";
+
 export default OrderDetailPrint;
