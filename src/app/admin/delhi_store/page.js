@@ -77,6 +77,10 @@ const DelhiStorePage = () => {
         return matchesSearch && matchesWarehouse;
     });
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, selectedWarehouse]);
+
     const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
     const indexOfLastProduct = currentPage * productsPerPage;
