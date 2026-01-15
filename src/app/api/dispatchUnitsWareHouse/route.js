@@ -315,6 +315,7 @@ export async function PATCH(req) {
     try {
         const body = await req.json();
         const { dispatchId, dimensions, productsSnapshot, trackingId, trackingLink } = body;
+        console.log("productsSnapshot" , productsSnapshot)
 
         if (!dispatchId) {
             return new Response(JSON.stringify({ message: "Dispatch ID is required" }), { status: 400 });
@@ -397,6 +398,106 @@ export async function PATCH(req) {
                     data: stockData,
                     skipDuplicates: true
                 });
+            }
+        }
+
+
+        // =================================================
+        // 🟢 BANGALORE LOGIC (NEW – DELHI NOT TOUCHED)
+        // =================================================
+        let isBangaloreFulfillment = false;
+        let bangaloreLocationCode = null;
+        let bangalorePayloadToSave = null;
+
+
+        for (const whId of warehouseIds) {
+
+            const warehouse = await prisma.WareHouse.findUnique({
+                where: { id: whId }
+            });
+
+            if (!warehouse?.fulfillmentWarehouseId) continue;
+
+            const fulfillmentWarehouse = await prisma.WareHouse.findUnique({
+                where: { id: warehouse.fulfillmentWarehouseId }
+            });
+
+            const state = fulfillmentWarehouse?.state?.toLowerCase();
+
+            if (
+                state === "karnataka" ||
+                state === "bengaluru" ||
+                state === "bangalore"
+            ) {
+                isBangaloreFulfillment = true;
+                bangaloreLocationCode = fulfillmentWarehouse.code;
+                break;
+            }
+        }
+
+        // -----------------------------
+        // 🟢 INCReff API HIT (Bangalore)
+        // -----------------------------
+        if (isBangaloreFulfillment && bangaloreLocationCode) {
+
+            const increffPayload = {
+                orderTime: new Date().toISOString(),
+                orderType: "PO",
+                orderCode: `PO-${dispatchId}`,
+                locationCode: bangaloreLocationCode,
+                partnerCode: "Delhi_23",
+                partnerLocationCode: "Delhi_23",
+                orderItems: []
+            };
+
+            productsSnapshot.entries.forEach(product => {
+                product.entries.forEach(entry => {
+                    increffPayload.orderItems.push({
+                        channelSkuCode: product.sku,   // ✅ SKU
+                        orderItemCode: product.sku,
+                        quantity: Number(entry.units),
+                        sellingPricePerUnit: Number(product.price || 0)
+                    });
+                });
+            });
+
+            bangalorePayloadToSave = increffPayload;
+
+            console.log("Bangalore Payload:", JSON.stringify(increffPayload, null, 2));
+            const increffRes = await fetch(
+                "https://staging-common.omni.increff.com/assure-magic2/orders/inward",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "authusername": "HECATE_ERP-1200063404",
+                        "authpassword": "9381c0d5-6884-4e40-8ded-588faf983eca"
+                    },
+                    body: JSON.stringify(increffPayload)
+                }
+            );
+
+            const responseText = await increffRes.text();
+            console.log("Increff Status:", increffRes.status);
+            console.log("Increff Response Body:", responseText);
+
+
+            // ✅ Only save if 200 OK
+            if (increffRes.status === 200) {
+                await prisma.BangaloreIncreffOrder.create({
+                    data: {
+                        dispatchId,
+                        orderCode: increffPayload.orderCode,
+                        locationCode: bangaloreLocationCode,
+                        payload: increffPayload,
+                        response: {
+                            status: increffRes.status,
+                            message: "OK (No response body from Increff)"
+                        }
+                    }
+                });
+            } else {
+                console.error("Increff failed:", increffRes.status);
             }
         }
 

@@ -43,6 +43,7 @@ export async function POST(req) {
             price,
             MRP,
             FNSKU,
+            sku,
             entries,
             image
         } = body;
@@ -65,6 +66,7 @@ export async function POST(req) {
                 price,
                 MRP,
                 FNSKU,
+                sku,
                 entries,
                 image,
                 status: "pending"
@@ -146,6 +148,7 @@ export async function PUT(req) {
             price,
             MRP,
             FNSKU,
+            sku,
             entries,
             image,
             status
@@ -179,6 +182,7 @@ export async function PUT(req) {
                 price: price ?? existingTransfer.price,
                 MRP: MRP ?? existingTransfer.MRP,
                 FNSKU: FNSKU ?? existingTransfer.FNSKU,
+                sku: sku ?? existingTransfer.sku,
                 entries: entries ?? existingTransfer.entries,
                 image: image ?? existingTransfer.image,
                 status: status ?? existingTransfer.status

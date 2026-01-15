@@ -447,7 +447,7 @@ model WarehouseTransfer {
   FNSKU          String
   entries        Json
   image          String?
-
+  sku            String?
   status         String    @default("pending")
   active         Boolean   @default(true)
   deleted        Boolean   @default(false)
@@ -640,3 +640,12 @@ model Reviews {
 }
 
 
+model BangaloreIncreffOrder {
+  id               Int      @id @default(autoincrement())
+  dispatchId       Int
+  orderCode        String
+  locationCode     String
+  payload          Json
+  response         Json
+  createdAt        DateTime @default(now())
+}

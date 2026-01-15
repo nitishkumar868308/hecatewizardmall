@@ -8,6 +8,9 @@ import HomeSlider from "@/components/HomeSlider/HomeSlider";
 import ProductSlider from "@/components/Product/Product";
 import TestMonial from "@/components/Testmonial/TestMonial";
 import StorySection from "@/components/StorySection/StorySection";
+import Section1 from "@/components/HomePage/Section1";
+import ProductHomePage from "@/components/HomePage/prdouctHomePage";
+import Section2 from "@/components/HomePage/Section2";
 
 export default function Home() {
   const dispatch = useDispatch();
@@ -64,8 +67,11 @@ export default function Home() {
     <>
       <HomeSlider />
       <StorySection />
-      <ProductSlider showSection={["featured", "new"]} />
-      <TestMonial />
+      <Section1 />
+      <ProductHomePage />
+      <Section2 />
+      {/* <ProductSlider showSection={["featured", "new"]} />
+      <TestMonial /> */}
     </>
   );
 }

@@ -166,6 +166,7 @@ const PendingTabSendToWarehouse = ({
           price: t.price,
           MRP: t.MRP,
           FNSKU: t.FNSKU,
+          sku: t.sku,
           entries: t.entries,
           image: t.image,
           status: "dispatched"

@@ -201,7 +201,7 @@ const Warehouse = () => {
                                         {w.code}
                                     </td>
 
-                                    <td className="px-6 py-4 whitespace-normal break-words text-gray-800">
+                                    <td className="px-6 py-4 max-w-[200px] break-all whitespace-normal text-gray-800">
                                         {w.pincode}
                                     </td>
 

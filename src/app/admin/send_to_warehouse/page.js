@@ -232,8 +232,9 @@ const SendToWarehousePage = () => {
             price: selectedVariation ? selectedVariation.price : selectedProduct.price,
             MRP: selectedVariation ? selectedVariation.MRP : selectedProduct.MRP,
             FNSKU: selectedVariation ? selectedVariation.barCode : selectedProduct.barCode,
+            sku: selectedVariation ? selectedVariation.sku : selectedProduct.sku,
             image: selectedVariation ? selectedVariation.image?.[0] || null : selectedProduct.image?.[0] || null,
-            entries: [{ warehouseId: entry.warehouseId, units: entry.units }], // ✅ Only 1 warehouse per record
+            entries: [{ warehouseId: entry.warehouseId, units: entry.units }],
             status: "pending"
         }));
 
