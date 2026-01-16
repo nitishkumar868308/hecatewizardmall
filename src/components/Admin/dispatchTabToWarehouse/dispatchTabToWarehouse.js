@@ -309,6 +309,7 @@ const DispatchTabToWarehouse = ({
 
             // Use first entry (or loop through entries if multiple)
             const entry = transfer.entries[0];
+            console.log("entryMasterProduct", entry)
             if (!entry) {
                 console.error("No entries found in transfer:", transfer);
                 return;
@@ -323,19 +324,23 @@ const DispatchTabToWarehouse = ({
             const category = product.category;
 
             const payload = [{
-                barcode: product.barCode || entry.FNSKU,
+                // barcode: product.barCode || entry.FNSKU,
+                barcode: entry.FNSKU,
                 brand: "Heacte Wizard Mall",
                 category: category?.name || "",
                 channelSerialNo: entry.productId,
-                channelSkuCode: product.barCode || entry.FNSKU,
-                clientSkuId: entry.productId,
+                // channelSkuCode: product.barCode || entry.FNSKU,
+                // clientSkuId: entry.productId,
+                channelSkuCode: entry.sku,
+                clientSkuId: entry.sku,
                 color: entry.variationName || "",
                 hsn: category?.hsn || "",
                 imageUrl: product.image[0] || "",
                 mrp: entry.MRP || 0,
                 name: entry.productName,
                 size: "",
-                styleCode: product.barCode || entry.productId,
+                // styleCode: product.barCode || entry.productId,
+                styleCode: product.sku || product.id,
                 taxRule: "",
             }];
 

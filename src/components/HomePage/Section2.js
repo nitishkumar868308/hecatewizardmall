@@ -119,7 +119,7 @@ const Section2 = () => {
                             >
                                 <Image
                                     src={activeCat?.image || "/placeholder.jpg"}
-                                    alt={activeCat?.name}
+                                    alt={activeCat?.name || "Image"}
                                     fill
                                     className="object-cover transition-transform duration-[3s] group-hover:scale-110"
                                     priority

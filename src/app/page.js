@@ -11,6 +11,9 @@ import StorySection from "@/components/StorySection/StorySection";
 import Section1 from "@/components/HomePage/Section1";
 import ProductHomePage from "@/components/HomePage/prdouctHomePage";
 import Section2 from "@/components/HomePage/Section2";
+import SectionDivider from "@/components/Custom/SectionDivider";
+import Consultant from "@/components/HomePage/consultant";
+import BlogPage from "@/components/HomePage/blog";
 
 export default function Home() {
   const dispatch = useDispatch();
@@ -65,11 +68,27 @@ export default function Home() {
 
   return (
     <>
-      <HomeSlider />
-      <StorySection />
-      <Section1 />
-      <ProductHomePage />
-      <Section2 />
+      <main className="bg-[#080808]">
+        <HomeSlider />
+
+        <SectionDivider /> {/* Divider 1 */}
+        <StorySection />
+
+        <SectionDivider /> {/* Divider 2 */}
+        <Section1 />
+
+        <SectionDivider /> {/* Divider 3 */}
+        <ProductHomePage />
+
+        <SectionDivider />
+        <Consultant />
+
+        <SectionDivider /> {/* Divider 4 */}
+        <Section2 />
+
+        <SectionDivider />
+        <BlogPage />
+      </main>
       {/* <ProductSlider showSection={["featured", "new"]} />
       <TestMonial /> */}
     </>
