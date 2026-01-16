@@ -18,7 +18,7 @@ const ConsultantSection = () => {
 
             <div className="max-w-[1400px] mx-auto px-6 mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <motion.span initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="text-amber-500 text-[10px] font-black uppercase tracking-[0.6em] block mb-4">Divine Wisdom</motion.span>
+                    <motion.span initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="text-[#66FCF1] text-[10px] font-black uppercase tracking-[0.6em] block mb-4">Divine Wisdom</motion.span>
                     <motion.h2 initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} className="text-5xl md:text-8xl font-light text-white tracking-tighter leading-none">
                         Consult the <span className="font-serif italic text-gray-500">Stars</span>
                     </motion.h2>
@@ -62,9 +62,10 @@ const ConsultantSection = () => {
                     className="inline-block relative"
                 >
                     {/* Outer Pulsing Glow */}
-                    <div className="absolute inset-0 bg-amber-500 blur-2xl opacity-20 animate-pulse rounded-full" />
+                    <div className="absolute inset-0 bg-[#66FCF1] blur-2xl opacity-20 animate-pulse rounded-full" />
 
-                    <button className="relative z-10 px-16 py-6 bg-gradient-to-r from-amber-600 to-amber-400 text-black text-[12px] font-black uppercase tracking-[0.5em] rounded-full shadow-[0_10px_40px_rgba(245,158,11,0.3)] hover:shadow-[0_15px_60px_rgba(245,158,11,0.5)] hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
+                    {/* <button className="relative z-10 px-16 py-6 bg-gradient-to-r from-amber-600 to-amber-400 text-black text-[12px] font-black uppercase tracking-[0.5em] rounded-full shadow-[0_10px_40px_rgba(245,158,11,0.3)] hover:shadow-[0_15px_60px_rgba(245,158,11,0.5)] hover:-translate-y-1 transition-all duration-300 group overflow-hidden"> */}
+                         <button className="relative z-10 px-16 py-6 bg-[#66FCF1] text-black text-[12px] font-black uppercase tracking-[0.5em] rounded-full shadow-[0_10px_40px_rgba(245,158,11,0.3)] hover:shadow-[0_15px_60px_rgba(245,158,11,0.5)] hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
                         <span className="relative z-10 flex items-center gap-4">
                             Book Your Sacred Session
                             <span className="group-hover:translate-x-2 transition-transform duration-300">→</span>

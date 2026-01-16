@@ -195,6 +195,206 @@
 // export default StorySection;
 
 
+// "use client";
+// import React, { useState, useEffect } from "react";
+// import { fetchVideos } from "@/app/redux/slices/videoStory/videoStorySlice";
+// import { useDispatch, useSelector } from "react-redux";
+// import { motion, AnimatePresence } from "framer-motion";
+
+// const StorySection = () => {
+//     const dispatch = useDispatch();
+//     const { videos } = useSelector((state) => state.videoStory);
+//     const [activeStory, setActiveStory] = useState(null);
+//     const [modalOpen, setModalOpen] = useState(false);
+
+//     useEffect(() => {
+//         dispatch(fetchVideos());
+//     }, [dispatch]);
+
+//     const openModal = (story) => {
+//         setActiveStory(story);
+//         setModalOpen(true);
+//     };
+
+//     const closeModal = () => {
+//         setActiveStory(null);
+//         setModalOpen(false);
+//     };
+
+//     const activeVideos = videos.filter((video) => video.active);
+
+//     return (
+//         <section className="bg-[#050505] py-16 transition-colors duration-500 overflow-hidden">
+//             <div className="max-w-[1400px] mx-auto px-6">
+
+//                 {/* Section Header */}
+//                 <div className="flex items-end justify-between mb-12">
+//                     <div className="space-y-1">
+//                         <span className="text-amber-500 text-[10px] font-black uppercase tracking-[0.4em]">Inside the lab</span>
+//                         <h2 className="text-3xl md:text-5xl font-light tracking-tighter text-white">
+//                             Visual <span className="font-serif italic text-gray-500">Journal</span>
+//                         </h2>
+//                     </div>
+//                     <div className="hidden md:flex items-center gap-4">
+//                         <span className="text-[9px] font-bold uppercase tracking-widest text-gray-500">Slide to view</span>
+//                         <div className="w-12 h-[1px] bg-white/20"></div>
+//                     </div>
+//                 </div>
+
+//                 {/* Stories Horizontal Container */}
+//                 <div className="flex gap-6 sm:gap-10 overflow-x-auto scrollbar-hide pb-8 px-2 snap-x select-none">
+//                     {activeVideos.map((story, i) => (
+//                         <motion.div
+//                             key={story.id}
+//                             initial={{ opacity: 0, scale: 0.9 }}
+//                             whileInView={{ opacity: 1, scale: 1 }}
+//                             viewport={{ once: true }}
+//                             transition={{ delay: i * 0.1 }}
+//                             className="flex flex-col items-center flex-shrink-0 snap-start group"
+//                         >
+//                             {/* Story Ring - Premium Aesthetic */}
+//                             <div
+//                                 className="relative p-[2.5px] rounded-full bg-gradient-to-tr from-amber-200 via-amber-500 to-amber-800 cursor-pointer active:scale-95 transition-transform duration-300 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
+//                                 onClick={() => openModal(story)}
+//                             >
+//                                 <div className="bg-[#050505] p-[3px] rounded-full">
+//                                     <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden relative border border-white/5">
+//                                         <video
+//                                             src={story.url}
+//                                             className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
+//                                             muted
+//                                             playsInline
+//                                             autoPlay
+//                                             loop
+//                                         />
+//                                         <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+//                                     </div>
+//                                 </div>
+
+//                                 {/* Status Tag */}
+//                                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-amber-500 text-[8px] text-black px-3 py-0.5 rounded-full font-black uppercase tracking-tighter border-2 border-[#050505]">
+//                                     Live
+//                                 </div>
+//                             </div>
+
+//                             <span className="mt-5 text-[10px] font-bold text-white/70 group-hover:text-amber-500 uppercase tracking-[0.2em] transition-colors">
+//                                 {story.title}
+//                             </span>
+//                         </motion.div>
+//                     ))}
+
+//                     {activeVideos.length === 0 && (
+//                         <div className="w-full text-center py-20 text-gray-600 font-light tracking-widest uppercase text-xs">
+//                             No Stories active.
+//                         </div>
+//                     )}
+//                 </div>
+//             </div>
+
+//             {/* Cinematic Modal */}
+//             <AnimatePresence>
+//                 {modalOpen && activeStory && (
+//                     <motion.div
+//                         initial={{ opacity: 0 }}
+//                         animate={{ opacity: 1 }}
+//                         exit={{ opacity: 0 }}
+//                         className="fixed inset-0 z-[999] flex items-center justify-center bg-black/95 backdrop-blur-xl"
+//                     >
+//                         {/* Desktop Background Blur */}
+//                         <div className="absolute inset-0 overflow-hidden opacity-30 hidden lg:block">
+//                             <video
+//                                 src={activeStory.url}
+//                                 className="w-full h-full object-cover blur-[120px] scale-150"
+//                                 muted autoPlay loop
+//                             />
+//                         </div>
+
+//                         {/* Top Close Button */}
+//                         <button
+//                             onClick={closeModal}
+//                             className="absolute top-6 right-6 lg:top-10 lg:right-10 text-white/50 hover:text-white transition-all z-[1010] bg-white/5 hover:bg-white/10 p-4 rounded-full"
+//                         >
+//                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+//                         </button>
+
+//                         {/* Story Phone Frame */}
+//                         <motion.div
+//                             initial={{ scale: 0.8, y: 50, opacity: 0 }}
+//                             animate={{ scale: 1, y: 0, opacity: 1 }}
+//                             exit={{ scale: 0.9, opacity: 0 }}
+//                             className="relative w-full h-full lg:h-[92vh] lg:max-w-[420px] bg-black lg:rounded-[3rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.9)] lg:border lg:border-white/10"
+//                         >
+//                             {/* Header Info Overlay */}
+//                             <div className="absolute top-0 inset-x-0 z-50 p-6 bg-gradient-to-b from-black/90 via-black/20 to-transparent">
+//                                 {/* Progress Bar */}
+//                                 <div className="h-[2px] w-full bg-white/20 rounded-full mb-6 overflow-hidden">
+//                                     <motion.div
+//                                         initial={{ width: "0%" }}
+//                                         animate={{ width: "100%" }}
+//                                         transition={{ duration: 15, ease: "linear" }}
+//                                         onAnimationComplete={closeModal}
+//                                         className="h-full bg-amber-500 shadow-[0_0_10px_#f59e0b]"
+//                                     />
+//                                 </div>
+
+//                                 <div className="flex items-center gap-4">
+//                                     <div className="w-12 h-12 rounded-full border border-amber-500/50 p-0.5 shadow-lg shadow-amber-500/10">
+//                                         <div className="w-full h-full rounded-full overflow-hidden bg-zinc-900">
+//                                             <video src={activeStory.url} className="w-full h-full object-cover" muted autoPlay loop />
+//                                         </div>
+//                                     </div>
+//                                     <div className="flex flex-col">
+//                                         <h4 className="text-white text-sm font-black tracking-wide uppercase italic font-serif">
+//                                             {activeStory.title}
+//                                         </h4>
+//                                         <p className="text-amber-500/80 text-[9px] uppercase tracking-[0.3em] font-bold">
+//                                             Official Story
+//                                         </p>
+//                                     </div>
+//                                 </div>
+//                             </div>
+
+//                             {/* Center Content */}
+//                             <div className="w-full h-full flex items-center justify-center bg-zinc-950">
+//                                 <video
+//                                     src={activeStory.url}
+//                                     autoPlay
+//                                     playsInline
+//                                     onEnded={closeModal}
+//                                     className="w-full h-full object-cover lg:object-contain"
+//                                 />
+//                             </div>
+
+//                             {/* Bottom CTA Overlay */}
+//                             <div className="absolute bottom-0 inset-x-0 z-50 p-10 bg-gradient-to-t from-black via-black/60 to-transparent flex flex-col items-center">
+//                                 <motion.button
+//                                     whileHover={{ scale: 1.05 }}
+//                                     whileTap={{ scale: 0.95 }}
+//                                     className="px-10 py-4 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl hover:bg-amber-500 hover:text-white transition-all duration-500"
+//                                 >
+//                                     Explore Piece
+//                                 </motion.button>
+//                                 <p className="mt-6 text-white/30 text-[8px] uppercase tracking-[0.5em] animate-pulse">Swipe up to shop</p>
+//                             </div>
+//                         </motion.div>
+//                     </motion.div>
+//                 )}
+//             </AnimatePresence>
+
+//             <style jsx global>{`
+//                 .scrollbar-hide::-webkit-scrollbar { display: none; }
+//                 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+//                 /* Smooth snapping for mobile */
+//                 .snap-x { scroll-snap-type: x mandatory; }
+//                 .snap-start { scroll-snap-align: start; }
+//             `}</style>
+//         </section>
+//     );
+// };
+
+// export default StorySection;
+
+
 "use client";
 import React, { useState, useEffect } from "react";
 import { fetchVideos } from "@/app/redux/slices/videoStory/videoStorySlice";
@@ -224,68 +424,65 @@ const StorySection = () => {
     const activeVideos = videos.filter((video) => video.active);
 
     return (
-        <section className="bg-[#050505] py-16 transition-colors duration-500 overflow-hidden">
+        <section className="bg-[#050505] py-20 transition-colors duration-500 overflow-hidden">
             <div className="max-w-[1400px] mx-auto px-6">
 
                 {/* Section Header */}
-                <div className="flex items-end justify-between mb-12">
-                    <div className="space-y-1">
-                        <span className="text-amber-500 text-[10px] font-black uppercase tracking-[0.4em]">Inside the lab</span>
-                        <h2 className="text-3xl md:text-5xl font-light tracking-tighter text-white">
-                            Visual <span className="font-serif italic text-gray-500">Journal</span>
+                <div className="flex items-end justify-between mb-16">
+                    <div className="space-y-2">
+                        <span className="text-[#66FCF1] text-[10px] font-black uppercase tracking-[0.5em]">Digital Archive</span>
+                        <h2 className="text-4xl md:text-6xl font-light tracking-tighter text-white">
+                            Motion <span className="font-serif italic text-gray-400">Stories</span>
                         </h2>
                     </div>
                     <div className="hidden md:flex items-center gap-4">
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-gray-500">Slide to view</span>
-                        <div className="w-12 h-[1px] bg-white/20"></div>
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-[#66FCF1]/60">Scroll Archive</span>
+                        <div className="w-16 h-[1px] bg-[#66FCF1]/30"></div>
                     </div>
                 </div>
 
                 {/* Stories Horizontal Container */}
-                <div className="flex gap-6 sm:gap-10 overflow-x-auto scrollbar-hide pb-8 px-2 snap-x select-none">
+                <div className="flex gap-8 sm:gap-12 overflow-x-auto scrollbar-hide pb-10 px-2 snap-x select-none">
                     {activeVideos.map((story, i) => (
                         <motion.div
                             key={story.id}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: i * 0.1 }}
                             className="flex flex-col items-center flex-shrink-0 snap-start group"
                         >
-                            {/* Story Ring - Premium Aesthetic */}
+                            {/* Story Ring - Cyber Cyan Theme */}
                             <div
-                                className="relative p-[2.5px] rounded-full bg-gradient-to-tr from-amber-200 via-amber-500 to-amber-800 cursor-pointer active:scale-95 transition-transform duration-300 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
+                                className="relative p-[3px] rounded-full bg-gradient-to-tr from-[#66FCF1] via-[#45a29e] to-zinc-800 cursor-pointer active:scale-95 transition-transform duration-500 shadow-[0_0_30px_rgba(102,252,241,0.1)] group-hover:shadow-[0_0_40px_rgba(102,252,241,0.25)]"
                                 onClick={() => openModal(story)}
                             >
-                                <div className="bg-[#050505] p-[3px] rounded-full">
-                                    <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden relative border border-white/5">
+                                <div className="bg-[#050505] p-[4px] rounded-full">
+                                    <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full overflow-hidden relative border border-white/5">
                                         <video
                                             src={story.url}
-                                            className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
-                                            muted
-                                            playsInline
-                                            autoPlay
-                                            loop
+                                            className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000"
+                                            muted playsInline autoPlay loop
                                         />
-                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                                        <div className="absolute inset-0 bg-[#66FCF1]/5 group-hover:bg-transparent transition-colors" />
                                     </div>
                                 </div>
 
-                                {/* Status Tag */}
-                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-amber-500 text-[8px] text-black px-3 py-0.5 rounded-full font-black uppercase tracking-tighter border-2 border-[#050505]">
-                                    Live
+                                {/* Live Indicator */}
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-[#66FCF1] text-[8px] text-black px-4 py-1 rounded-full font-black uppercase tracking-widest border-2 border-[#050505] shadow-lg">
+                                    Archive
                                 </div>
                             </div>
 
-                            <span className="mt-5 text-[10px] font-bold text-white/70 group-hover:text-amber-500 uppercase tracking-[0.2em] transition-colors">
+                            <span className="mt-6 text-[11px] font-bold text-gray-500 group-hover:text-[#66FCF1] uppercase tracking-[0.3em] transition-all duration-300">
                                 {story.title}
                             </span>
                         </motion.div>
                     ))}
 
                     {activeVideos.length === 0 && (
-                        <div className="w-full text-center py-20 text-gray-600 font-light tracking-widest uppercase text-xs">
-                            No Stories active.
+                        <div className="w-full text-center py-20 text-[#66FCF1]/20 font-light tracking-[0.5em] uppercase text-xs">
+                            No active feeds found.
                         </div>
                     )}
                 </div>
@@ -298,83 +495,77 @@ const StorySection = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[999] flex items-center justify-center bg-black/95 backdrop-blur-xl"
+                        className="fixed inset-0 z-[999] flex items-center justify-center bg-black/98 backdrop-blur-2xl"
                     >
-                        {/* Desktop Background Blur */}
-                        <div className="absolute inset-0 overflow-hidden opacity-30 hidden lg:block">
-                            <video
-                                src={activeStory.url}
-                                className="w-full h-full object-cover blur-[120px] scale-150"
-                                muted autoPlay loop
-                            />
+                        {/* Background Ambient Glow */}
+                        <div className="absolute inset-0 overflow-hidden opacity-20 hidden lg:block">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[#66FCF1]/10 blur-[150px] rounded-full" />
                         </div>
 
-                        {/* Top Close Button */}
+                        {/* Close Button */}
                         <button
                             onClick={closeModal}
-                            className="absolute top-6 right-6 lg:top-10 lg:right-10 text-white/50 hover:text-white transition-all z-[1010] bg-white/5 hover:bg-white/10 p-4 rounded-full"
+                            className="absolute top-6 right-6 lg:top-10 lg:right-10 text-white/40 hover:text-[#66FCF1] transition-all z-[1010] p-4 group"
                         >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <svg className="group-hover:rotate-90 transition-transform duration-500" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
 
                         {/* Story Phone Frame */}
                         <motion.div
-                            initial={{ scale: 0.8, y: 50, opacity: 0 }}
-                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="relative w-full h-full lg:h-[92vh] lg:max-w-[420px] bg-black lg:rounded-[3rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.9)] lg:border lg:border-white/10"
+                            className="relative w-full h-full lg:h-[90vh] lg:max-w-[420px] bg-black lg:rounded-[3rem] overflow-hidden shadow-[0_0_80px_rgba(0,0,0,1)] lg:border lg:border-[#66FCF1]/10"
                         >
-                            {/* Header Info Overlay */}
-                            <div className="absolute top-0 inset-x-0 z-50 p-6 bg-gradient-to-b from-black/90 via-black/20 to-transparent">
+                            {/* Header Info */}
+                            <div className="absolute top-0 inset-x-0 z-50 p-8 bg-gradient-to-b from-black via-black/40 to-transparent">
                                 {/* Progress Bar */}
-                                <div className="h-[2px] w-full bg-white/20 rounded-full mb-6 overflow-hidden">
+                                <div className="h-[2px] w-full bg-white/10 rounded-full mb-8 overflow-hidden">
                                     <motion.div
                                         initial={{ width: "0%" }}
                                         animate={{ width: "100%" }}
                                         transition={{ duration: 15, ease: "linear" }}
                                         onAnimationComplete={closeModal}
-                                        className="h-full bg-amber-500 shadow-[0_0_10px_#f59e0b]"
+                                        className="h-full bg-[#66FCF1] shadow-[0_0_15px_#66FCF1]"
                                     />
                                 </div>
 
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-full border border-amber-500/50 p-0.5 shadow-lg shadow-amber-500/10">
+                                    <div className="w-12 h-12 rounded-full border border-[#66FCF1]/30 p-0.5 shadow-lg">
                                         <div className="w-full h-full rounded-full overflow-hidden bg-zinc-900">
                                             <video src={activeStory.url} className="w-full h-full object-cover" muted autoPlay loop />
                                         </div>
                                     </div>
                                     <div className="flex flex-col">
-                                        <h4 className="text-white text-sm font-black tracking-wide uppercase italic font-serif">
+                                        <h4 className="text-white text-sm font-bold tracking-widest uppercase italic">
                                             {activeStory.title}
                                         </h4>
-                                        <p className="text-amber-500/80 text-[9px] uppercase tracking-[0.3em] font-bold">
-                                            Official Story
+                                        <p className="text-[#66FCF1]/60 text-[8px] uppercase tracking-[0.4em] font-black">
+                                            Digital Content
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Center Content */}
-                            <div className="w-full h-full flex items-center justify-center bg-zinc-950">
+                            {/* Video Display */}
+                            <div className="w-full h-full flex items-center justify-center bg-black">
                                 <video
                                     src={activeStory.url}
-                                    autoPlay
-                                    playsInline
-                                    onEnded={closeModal}
-                                    className="w-full h-full object-cover lg:object-contain"
+                                    autoPlay playsInline onEnded={closeModal}
+                                    className="w-full h-full object-cover"
                                 />
                             </div>
 
-                            {/* Bottom CTA Overlay */}
-                            <div className="absolute bottom-0 inset-x-0 z-50 p-10 bg-gradient-to-t from-black via-black/60 to-transparent flex flex-col items-center">
+                            {/* CTA Button */}
+                            <div className="absolute bottom-0 inset-x-0 z-50 p-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col items-center">
                                 <motion.button
-                                    whileHover={{ scale: 1.05 }}
+                                    whileHover={{ scale: 1.05, backgroundColor: "#66FCF1", color: "#000" }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="px-10 py-4 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl hover:bg-amber-500 hover:text-white transition-all duration-500"
+                                    className="px-12 py-4 border border-[#66FCF1] text-[#66FCF1] rounded-full font-black text-[10px] uppercase tracking-[0.4em] transition-all duration-300 shadow-[0_0_20px_rgba(102,252,241,0.1)]"
                                 >
-                                    Explore Piece
+                                    Full Experience
                                 </motion.button>
-                                <p className="mt-6 text-white/30 text-[8px] uppercase tracking-[0.5em] animate-pulse">Swipe up to shop</p>
+                                <p className="mt-8 text-white/20 text-[8px] uppercase tracking-[0.6em] animate-pulse">Vertical View</p>
                             </div>
                         </motion.div>
                     </motion.div>
@@ -384,7 +575,6 @@ const StorySection = () => {
             <style jsx global>{`
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
                 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-                /* Smooth snapping for mobile */
                 .snap-x { scroll-snap-type: x mandatory; }
                 .snap-start { scroll-snap-align: start; }
             `}</style>

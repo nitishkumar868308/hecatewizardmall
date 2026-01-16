@@ -245,7 +245,7 @@ const ProductHomePage = () => {
 
             <style jsx global>{`
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;700;900&family=Playfair+Display:italic@100;400&display=swap');
-                
+
                 .custom-scrollbar::-webkit-scrollbar { width: 2px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
                     background: rgba(245, 158, 11, 0.4);
@@ -315,3 +315,7 @@ const ProductCard = ({ product, loading, i, getProductImage, isSlider = false })
 );
 
 export default ProductHomePage;
+
+
+
+

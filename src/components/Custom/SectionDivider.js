@@ -16,7 +16,7 @@ const SectionDivider = () => {
                     whileInView={{ width: "50%", opacity: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 1.5, ease: "easeOut" }}
-                    className="h-[1px] bg-gradient-to-r from-transparent via-amber-500/50 to-amber-500"
+                    className="h-[1px] bg-[#66FCF1]"
                 />
 
                 {/* Center Element - Luxury Diamond */}
@@ -28,9 +28,9 @@ const SectionDivider = () => {
                     className="relative z-10 mx-4"
                 >
                     {/* Diamond Outer Glow */}
-                    <div className="absolute inset-0 w-3 h-3 bg-amber-500 blur-[6px] opacity-50" />
+                    <div className="absolute inset-0 w-3 h-3 bg-[#66FCF1] blur-[6px] opacity-50" />
                     {/* Diamond Core */}
-                    <div className="w-3 h-3 bg-black border border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.6)]" />
+                    <div className="w-3 h-3 bg-black border border-[#66FCF1] shadow-[0_0_10px_rgba(245,158,11,0.6)]" />
                 </motion.div>
 
                 {/* Right Side Line */}
@@ -39,7 +39,7 @@ const SectionDivider = () => {
                     whileInView={{ width: "50%", opacity: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 1.5, ease: "easeOut" }}
-                    className="h-[1px] bg-gradient-to-l from-transparent via-amber-500/50 to-amber-500"
+                    className="h-[1px] bg-[#66FCF1] "
                 />
             </div>
 
