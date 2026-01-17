@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import { motion } from 'framer-motion';
+import Link from "next/link";
 
 const ConsultantSection = () => {
     const services = [
@@ -14,7 +15,7 @@ const ConsultantSection = () => {
     return (
         <section className="relative bg-[#080808] py-28 overflow-hidden">
             {/* Background Ambient Light */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/10 blur-[150px] rounded-full pointer-events-none" />
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#66FCF1]/10 blur-[150px] rounded-full pointer-events-none" />
 
             <div className="max-w-[1400px] mx-auto px-6 mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
@@ -43,7 +44,7 @@ const ConsultantSection = () => {
                             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
                             <div className="absolute inset-0 p-8 flex flex-col justify-end">
-                                <span className="text-amber-500 text-3xl mb-4">{service.icon}</span>
+                                <span className="text-[#66FCF1] text-3xl mb-4">{service.icon}</span>
                                 <h3 className="text-2xl md:text-3xl font-serif italic text-white mb-2">{service.title}</h3>
                                 <p className="text-gray-400 text-sm font-light max-w-[280px] opacity-0 group-hover/card:opacity-100 transition-opacity duration-500">
                                     {service.desc}
@@ -65,12 +66,15 @@ const ConsultantSection = () => {
                     <div className="absolute inset-0 bg-[#66FCF1] blur-2xl opacity-20 animate-pulse rounded-full" />
 
                     {/* <button className="relative z-10 px-16 py-6 bg-gradient-to-r from-amber-600 to-amber-400 text-black text-[12px] font-black uppercase tracking-[0.5em] rounded-full shadow-[0_10px_40px_rgba(245,158,11,0.3)] hover:shadow-[0_15px_60px_rgba(245,158,11,0.5)] hover:-translate-y-1 transition-all duration-300 group overflow-hidden"> */}
-                         <button className="relative z-10 px-16 py-6 bg-[#66FCF1] text-black text-[12px] font-black uppercase tracking-[0.5em] rounded-full shadow-[0_10px_40px_rgba(245,158,11,0.3)] hover:shadow-[0_15px_60px_rgba(245,158,11,0.5)] hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
-                        <span className="relative z-10 flex items-center gap-4">
-                            Book Your Sacred Session
-                            <span className="group-hover:translate-x-2 transition-transform duration-300">→</span>
-                        </span>
-
+                    <button className="relative z-10 px-16 py-6 bg-[#66FCF1] text-black text-[12px] font-black uppercase tracking-[0.5em] rounded-full shadow-[0_10px_40px_rgba(245,158,11,0.3)] hover:shadow-[0_15px_60px_rgba(245,158,11,0.5)] hover:-translate-y-1 transition-all duration-300 group overflow-hidden cursor-pointer">
+                        <Link href="/book_consultant">
+                            <span className="relative z-10 flex items-center gap-4 ">
+                                Book Your Sacred Session
+                                <span className="group-hover:translate-x-2 transition-transform duration-300">
+                                    →
+                                </span>
+                            </span>
+                        </Link>
                         {/* Shine effect on hover */}
                         <div className="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[25deg] group-hover:left-[100%] transition-all duration-1000" />
                     </button>

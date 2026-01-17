@@ -48,8 +48,8 @@ const Section2 = () => {
                         whileInView={{ opacity: 1, y: 0 }}
                         className="inline-flex items-center gap-3 mb-8"
                     >
-                        <span className="w-8 h-[1px] bg-blue-600"></span>
-                        <span className="text-blue-500 uppercase tracking-[0.4em] text-[10px] font-black">
+                        <span className="w-8 h-[1px] bg-[#66FCF1]"></span>
+                        <span className="text-[#66FCF1] uppercase tracking-[0.4em] text-[10px] font-black">
                             Aura Selection 2026
                         </span>
                     </motion.div>
@@ -81,10 +81,10 @@ const Section2 = () => {
                         className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-8"
                     >
                         <button className="group relative px-10 py-4 bg-white rounded-full overflow-hidden transition-all duration-500 active:scale-95 shadow-xl shadow-white/5">
-                            <span className="relative z-10 text-black text-[10px] font-black uppercase tracking-widest group-hover:text-white transition-colors">
+                            <span className="relative z-10 text-black text-[10px] font-black uppercase tracking-widest group-hover:text-black transition-colors">
                                 Explore Edition
                             </span>
-                            <div className="absolute inset-0 bg-blue-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500 rounded-full"></div>
+                            <div className="absolute inset-0 bg-[#66FCF1] translate-y-full group-hover:translate-y-0 transition-transform duration-500 rounded-full"></div>
                         </button>
 
                         {/* Slide Counters */}
@@ -96,7 +96,7 @@ const Section2 = () => {
                                     initial={{ width: "0%" }}
                                     animate={{ width: "100%" }}
                                     transition={{ duration: 5, ease: "linear" }}
-                                    className="h-full bg-blue-600"
+                                    className="h-full bg-[#66FCF1]"
                                 />
                             </div>
                             <span className="text-white/30 text-xs font-mono">0{subcategories?.length || 0}</span>
@@ -150,7 +150,7 @@ const Section2 = () => {
                     initial={{ x: "-100%" }}
                     animate={{ x: "0%" }}
                     transition={{ duration: 5, ease: "linear" }}
-                    className="w-full h-full bg-blue-600 shadow-[0_0_15px_#2563eb]"
+                    className="w-full h-full bg-[#66FCF1] shadow-[0_0_15px_#2563eb]"
                 />
             </div>
 
