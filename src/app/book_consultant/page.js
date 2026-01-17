@@ -87,7 +87,7 @@ const Page = () => {
                     </motion.h1>
 
                     <p className="text-zinc-400 max-w-xl mx-auto text-sm md:text-base mb-12 uppercase tracking-[0.2em] font-light leading-loose">
-                        Decode the cosmic blueprint of your life with India's most accurate predictors.
+                        Decode the cosmic blueprint of your life with India&apos;s most accurate predictors.
                     </p>
 
                     <div className="relative inline-block group">
@@ -214,7 +214,7 @@ const Page = () => {
             <section className="py-24 px-6 relative z-10">
                 <div className="max-w-5xl mx-auto rounded-[4rem] p-1 bg-gradient-to-r from-transparent via-[#66FCF1]/50 to-transparent">
                     <div className="bg-[#080808] rounded-[3.9rem] p-12 md:p-24 text-center">
-                        <h2 className="text-4xl md:text-6xl font-black uppercase mb-8">Don't Wait For <br /> <span className="text-[#66FCF1]">A Miracle.</span></h2>
+                        <h2 className="text-4xl md:text-6xl font-black uppercase mb-8">Don&apos;t Wait For <br /> <span className="text-[#66FCF1]">A Miracle.</span></h2>
                         <p className="text-zinc-500 mb-12 max-w-lg mx-auto uppercase text-xs tracking-[0.3em]">Make it happen with expert celestial guidance.</p>
                         <button className="px-16 py-6 bg-white text-black font-black text-xs uppercase tracking-[0.3em] rounded-full hover:bg-[#66FCF1] transition-all hover:scale-105 active:scale-95">
                             Book Today
