@@ -1,109 +1,109 @@
 "use client";
 import { useState, useEffect } from "react";
 import { FiX, FiPrinter } from "react-icons/fi";
-import { PDFDownloadLink, Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import JsBarcode from "jsbarcode";
-import dynamic from "next/dynamic";
+// import { PDFDownloadLink, Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
+// import JsBarcode from "jsbarcode";
+// import dynamic from "next/dynamic";
 
-const styles = StyleSheet.create({
-    page: {
-        width: 595,
-        height: 842,
-        paddingTop: 15,
-        paddingLeft: 11,
-        paddingRight: 11,
-        flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "flex-start",
-    },
-    labelsContainer: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "flex-start",
-        gap: 7,
-    },
-    label: {
-        width: 180,
-        height: 128,
-        padding: 8,
-        marginRight: 5,
-        marginBottom: 3,
-        flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "center",
-    },
-    productName: { fontWeight: 'bold', fontSize: 11, textAlign: 'center' },
-    variation: { fontSize: 9, color: '#555', textAlign: 'center', lineHeight: 1.2, maxWidth: 170 },
-    price: { fontSize: 9, marginTop: 2 },
-    barcode: { marginTop: 2, width: 130, height: 40 },
-    fnsku: { marginTop: 2, fontSize: 10, textAlign: "center", lineHeight: 1.0 },
-});
+// const styles = StyleSheet.create({
+//     page: {
+//         width: 595,
+//         height: 842,
+//         paddingTop: 15,
+//         paddingLeft: 11,
+//         paddingRight: 11,
+//         flexDirection: "row",
+//         flexWrap: "wrap",
+//         justifyContent: "flex-start",
+//     },
+//     labelsContainer: {
+//         flexDirection: "row",
+//         flexWrap: "wrap",
+//         justifyContent: "flex-start",
+//         gap: 7,
+//     },
+//     label: {
+//         width: 180,
+//         height: 128,
+//         padding: 8,
+//         marginRight: 5,
+//         marginBottom: 3,
+//         flexDirection: "column",
+//         justifyContent: "flex-start",
+//         alignItems: "center",
+//     },
+//     productName: { fontWeight: 'bold', fontSize: 11, textAlign: 'center' },
+//     variation: { fontSize: 9, color: '#555', textAlign: 'center', lineHeight: 1.2, maxWidth: 170 },
+//     price: { fontSize: 9, marginTop: 2 },
+//     barcode: { marginTop: 2, width: 130, height: 40 },
+//     fnsku: { marginTop: 2, fontSize: 10, textAlign: "center", lineHeight: 1.0 },
+// });
 
-const LabelsPDF = ({ items, barcodes }) => {
-    const flatLabels = [];
-    items.forEach(item => {
-        item.colors?.forEach(c => {
-            for (let i = 0; i < (c.units || c.quantity || 1); i++) {
-                flatLabels.push({ ...item, colorObj: c });
-            }
-        });
-    });
+// const LabelsPDF = ({ items, barcodes }) => {
+//     const flatLabels = [];
+//     items.forEach(item => {
+//         item.colors?.forEach(c => {
+//             for (let i = 0; i < (c.units || c.quantity || 1); i++) {
+//                 flatLabels.push({ ...item, colorObj: c });
+//             }
+//         });
+//     });
 
-    const pages = [];
-    const maxLabelsPerPage = 18;
-    for (let i = 0; i < flatLabels.length; i += maxLabelsPerPage) {
-        pages.push(flatLabels.slice(i, i + maxLabelsPerPage));
-    }
+//     const pages = [];
+//     const maxLabelsPerPage = 18;
+//     for (let i = 0; i < flatLabels.length; i += maxLabelsPerPage) {
+//         pages.push(flatLabels.slice(i, i + maxLabelsPerPage));
+//     }
 
-    return (
-        <Document>
-            {pages.map((pageEntries, idx) => (
-                <Page size="A4" style={styles.page} key={idx}>
-                    <View style={styles.labelsContainer}>
-                        {pageEntries.map((entry, i) => (
-                            <View key={`${entry.colorObj.FNSKU}-${i}`} style={styles.label}>
-                                <Text style={styles.productName}>{entry.productName}</Text>
-                                {entry.colorObj.color && <Text style={styles.variation}>{entry.colorObj.color}</Text>}
-                                <Text style={styles.price}>MRP: ₹{entry.colorObj.pricePerItem}</Text>
-                                {barcodes[entry.colorObj.FNSKU] && <Image src={barcodes[entry.colorObj.FNSKU]} style={styles.barcode} />}
-                                <Text style={styles.fnsku}>{entry.colorObj.FNSKU}</Text>
-                            </View>
-                        ))}
-                    </View>
-                </Page>
-            ))}
-        </Document>
-    );
-};
+//     return (
+//         <Document>
+//             {pages.map((pageEntries, idx) => (
+//                 <Page size="A4" style={styles.page} key={idx}>
+//                     <View style={styles.labelsContainer}>
+//                         {pageEntries.map((entry, i) => (
+//                             <View key={`${entry.colorObj.FNSKU}-${i}`} style={styles.label}>
+//                                 <Text style={styles.productName}>{entry.productName}</Text>
+//                                 {entry.colorObj.color && <Text style={styles.variation}>{entry.colorObj.color}</Text>}
+//                                 <Text style={styles.price}>MRP: ₹{entry.colorObj.pricePerItem}</Text>
+//                                 {barcodes[entry.colorObj.FNSKU] && <Image src={barcodes[entry.colorObj.FNSKU]} style={styles.barcode} />}
+//                                 <Text style={styles.fnsku}>{entry.colorObj.FNSKU}</Text>
+//                             </View>
+//                         ))}
+//                     </View>
+//                 </Page>
+//             ))}
+//         </Document>
+//     );
+// };
 
 export default function EditOrderModal({ order, isOpen, onClose, onUpdateStatus }) {
     const [status, setStatus] = useState(order?.status || "");
-    const [barcodeMap, setBarcodeMap] = useState({});
+    // const [barcodeMap, setBarcodeMap] = useState({});
 
-    const PDFDownloadLinkNoSSR = dynamic(
-        () => import("@react-pdf/renderer").then(mod => mod.PDFDownloadLink),
-        { ssr: false }
-    );
+    // const PDFDownloadLinkNoSSR = dynamic(
+    //     () => import("@react-pdf/renderer").then(mod => mod.PDFDownloadLink),
+    //     { ssr: false }
+    // );
 
     console.log("orderEdit", order)
 
-    useEffect(() => {
-        if (!order) return;
+    // useEffect(() => {
+    //     if (!order) return;
 
-        const map = {};
-        order.items?.forEach(item => {
-            const canvas = document.createElement("canvas");
-            JsBarcode(canvas, item.barCode, {
-                format: "CODE128",
-                displayValue: false,
-                width: 2,
-                height: 50,
-            });
-            map[item.barCode || item.productName] = canvas.toDataURL("image/png");
+    //     const map = {};
+    //     order.items?.forEach(item => {
+    //         const canvas = document.createElement("canvas");
+    //         JsBarcode(canvas, item.barCode, {
+    //             format: "CODE128",
+    //             displayValue: false,
+    //             width: 2,
+    //             height: 50,
+    //         });
+    //         map[item.barCode || item.productName] = canvas.toDataURL("image/png");
 
-        });
-        setBarcodeMap(map);
-    }, [order]);
+    //     });
+    //     setBarcodeMap(map);
+    // }, [order]);
 
     if (!isOpen || !order) return null;
     return (
