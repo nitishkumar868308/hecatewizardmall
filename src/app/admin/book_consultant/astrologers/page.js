@@ -143,7 +143,7 @@ const AstrologerPage = () => {
                     {astro.description && (
                         <div className="p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2">About Astrologer</p>
-                            <p className="text-sm text-gray-600 leading-relaxed italic">"{astro.description}"</p>
+                            <p className="text-sm text-gray-600 leading-relaxed italic"> &ldquo;{astro.description}&rdquo;</p>
                         </div>
                     )}
 
