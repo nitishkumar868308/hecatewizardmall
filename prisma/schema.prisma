@@ -40,6 +40,12 @@ enum PromoAppliesTo {
   SPECIFIC_USERS
 }
 
+enum ReviewStatusBlog {
+  pending
+  approved
+  rejected
+}
+
 
 model User {
   id                Int      @id @default(autoincrement())
@@ -649,3 +655,121 @@ model BangaloreIncreffOrder {
   response         Json
   createdAt        DateTime @default(now())
 }
+
+model Duration {
+  id          Int      @id @default(autoincrement())
+
+  minutes     Int      // 15, 30, 60, ya custom minutes
+  description String?  // optional description
+
+  active      Boolean  @default(true)
+  deleted     Boolean  @default(false)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  servicePrices ServiceDuration[]
+}
+
+
+model Service {
+  id          Int                  @id @default(autoincrement())
+  title       String
+  shortDesc   String?              // optional short description
+  longDesc    String?              // optional long description
+  image       String?              // URL of the service image
+  active      Boolean              @default(true)
+  deleted     Boolean              @default(false)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  // Relation to prices per duration
+  prices      ServiceDuration[]    // one-to-many relation
+}
+
+model ServiceDuration {
+  id         Int       @id @default(autoincrement())
+  service    Service   @relation(fields: [serviceId], references: [id])
+  serviceId  Int
+  duration   Duration  @relation(fields: [durationId], references: [id])
+  durationId Int
+  price      Float     // price for this service for this duration
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+
+model Astrologer {
+  id           Int                 @id @default(autoincrement())
+  userId       Int?                // optional link to a User
+  fullName     String
+  displayName  String?
+  phone        String?
+  service      String?             // Service assigned
+  specialty    String?             // Specialty assigned
+  description  String?
+  profileImage String?
+  active       Boolean             @default(true)
+  deleted      Boolean             @default(false)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  documents    AstrologerDocument[]
+}
+
+model AstrologerDocument {
+  id           Int         @id @default(autoincrement())
+  astrologer   Astrologer  @relation(fields: [astrologerId], references: [id])
+  astrologerId Int
+  fileUrl      String
+  createdAt    DateTime    @default(now())
+}
+
+
+model Blog {
+  id           Int      @id @default(autoincrement())
+
+  title        String
+  slug         String   @unique
+
+  authorName   String
+  authorImage  String?
+
+  category     String
+
+  description  String   @db.Text
+  excerpt      String?  @db.Text
+
+  image        String?
+  readTime     Int? 
+
+  isPublished  Boolean  @default(false)
+  active       Boolean  @default(true)
+  deleted      Boolean  @default(false)
+
+  views        Int      @default(0)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+
+model BlogReviews {
+  id        Int      @id @default(autoincrement())
+
+  userId    Int
+  userName  String
+
+  blogId    Int
+
+  comment   String
+  rating    Int
+
+  status    ReviewStatusBlog @default(pending)
+  active    Boolean      @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, blogId])
+}
+

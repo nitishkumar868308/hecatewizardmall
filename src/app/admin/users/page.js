@@ -15,12 +15,15 @@ import ViewUserModal from "@/components/Custom/ViewUserModal";
 import { fetchCart } from "@/app/redux/slices/addToCart/addToCartSlice";
 import { fetchOrders } from "@/app/redux/slices/order/orderSlice";
 import Pagination from "@/components/Pagination";
+import { registerUser } from "@/app/redux/slices/authSlice";
 
 const Page = () => {
     const dispatch = useDispatch();
     const { list: users, loading, error } = useSelector(
         (state) => state.getAllUser
     );
+    const [role, setRole] = useState("USER");
+
     const { orders } = useSelector((state) => state.order);
     console.log("orders", orders)
     const [modalOpen, setModalOpen] = useState(false);
@@ -54,20 +57,21 @@ const Page = () => {
     // Add user
     const handleAddUser = async (e) => {
         e.preventDefault();
-        const resultAction = await dispatch({
-            type: "auth/registerUser",
-            payload: { name, email, password: generateRandomPassword() },
-        });
+        const password = generateRandomPassword();
+        const resultAction = await dispatch(registerUser({ name, email, role, password }));
+        console.log("resultAction", resultAction);
+
         if (resultAction?.payload?.success) {
             toast.success(resultAction.payload.message || "User added successfully");
             setName("");
             setEmail("");
+            setRole("USER");
             setModalOpen(false);
+            dispatch(fetchAllUsers())
         } else {
             toast.error(resultAction.payload?.message || "Registration failed");
         }
     };
-
     // Filter users
     const filteredUsers = users.filter(
         (user) =>
@@ -261,6 +265,15 @@ const Page = () => {
                                     required
                                     className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black w-full"
                                 />
+                                <select
+                                    value={role}
+                                    onChange={(e) => setRole(e.target.value)}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black w-full"
+                                >
+                                    <option value="USER">User</option>
+                                    <option value="ASTROLOGER">Astrologer</option>
+                                </select>
+
                                 <button
                                     type="submit"
                                     className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition cursor-pointer"

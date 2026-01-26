@@ -430,15 +430,15 @@ const StorySection = () => {
                 {/* Section Header */}
                 <div className="flex items-end justify-between mb-16">
                     <div className="space-y-2">
-                        <span className="text-[#66FCF1] text-[10px] font-black uppercase tracking-[0.5em]">Digital Archive</span>
+                        {/* <span className="text-[#66FCF1] text-[10px] font-black uppercase tracking-[0.5em]">Digital Archive</span> */}
                         <h2 className="text-4xl md:text-6xl font-light tracking-tighter text-white">
-                            Motion <span className="font-serif italic text-gray-400">Stories</span>
+                            Our <span className="font-serif italic text-gray-400">Stories</span>
                         </h2>
                     </div>
-                    <div className="hidden md:flex items-center gap-4">
+                    {/* <div className="hidden md:flex items-center gap-4">
                         <span className="text-[9px] font-bold uppercase tracking-widest text-[#66FCF1]/60">Scroll Archive</span>
                         <div className="w-16 h-[1px] bg-[#66FCF1]/30"></div>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Stories Horizontal Container */}

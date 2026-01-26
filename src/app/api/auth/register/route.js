@@ -6,7 +6,7 @@ import { welcomeEmailTemplate } from "@/lib/templates/welcomeEmail";
 
 export async function POST(req) {
     try {
-        const { name, email, password } = await req.json();
+        const { name, email, password, role } = await req.json();
 
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
@@ -15,8 +15,11 @@ export async function POST(req) {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        const allowedRoles = ["USER", "ASTROLOGER"];
+        const finalRole = allowedRoles.includes(role) ? role : "USER";
+
         const user = await prisma.user.create({
-            data: { name, email, password: hashedPassword },
+            data: { name, email, password: hashedPassword, role: finalRole, },
         });
 
         const token = jwt.sign(
@@ -34,10 +37,10 @@ export async function POST(req) {
         });
 
         return Response.json(
-            { message: "User registered", user: { id: user.id, name: user.name, email: user.email }, token },
+            { success: true, message: "User registered", user: { id: user.id, name: user.name, email: user.email }, token },
             { status: 201 }
         );
     } catch (error) {
-        return Response.json({ message: error.message }, { status: 500 });
+        return Response.json({ success: false, message: error.message }, { status: 500 });
     }
 }

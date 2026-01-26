@@ -33,6 +33,12 @@ import warehouseSelectionReducer from "./slices/warehouseSelectionSlice";
 import promoCodeReducer from './slices/promoCode/promoCodeSlice';
 import donationReducer from './slices/donate/donateSlice';
 import reviewsReducer from './slices/reviews/reviewsSlice';
+import durationReducer from "./slices/book_consultant/duration/durationSlice";
+import serviceReducer from "./slices/book_consultant/services/serviceSlice"
+import astrologerReducer from "./slices/book_consultant/astrologer/astrologerSlice";
+import blogReducer from './slices/blog/blogSlice';
+import blogReviewsReducer from './slices/blogReviews/blogReviewsSlice';
+
 
 // import updateUserReducer from './slices/userSlice';
 
@@ -72,6 +78,12 @@ const store = configureStore({
         promoCode: promoCodeReducer,
         donation: donationReducer,
         reviews: reviewsReducer,
+        duration: durationReducer,
+        services: serviceReducer,
+        astrologers: astrologerReducer,
+        blogs: blogReducer,
+        blogReviews: blogReviewsReducer,
+
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

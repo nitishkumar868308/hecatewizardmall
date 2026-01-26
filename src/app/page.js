@@ -80,8 +80,8 @@ export default function Home() {
         <SectionDivider /> {/* Divider 3 */}
         <ProductHomePage />
 
-        <SectionDivider />
-        <Consultant />
+        {/* <SectionDivider />
+        <Consultant /> */}
 
         <SectionDivider /> {/* Divider 4 */}
         <Section2 />

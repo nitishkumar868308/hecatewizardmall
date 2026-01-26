@@ -3,8 +3,11 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
+
 
 const Section2 = () => {
+    const router = useRouter();
     const { subcategories } = useSelector((state) => state.subcategory);
     const [index, setIndex] = useState(0);
 
@@ -20,145 +23,132 @@ const Section2 = () => {
     const activeCat = subcategories?.[index];
 
     return (
-        <section className="relative w-full h-[100vh] min-h-[650px] flex items-center justify-center bg-[#050505] overflow-hidden">
+        <section className="relative w-full h-screen min-h-[700px] flex items-center justify-center bg-[#050505] overflow-hidden px-4 md:px-10">
 
-            {/* 1. Ultra-Large Background Text (Desktop Only) */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+            {/* 1. Background Text (Re-sized & Balanced) */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
                 <AnimatePresence mode="wait">
                     <motion.h2
                         key={`bg-${index}`}
-                        initial={{ opacity: 0, scale: 1.1, filter: "blur(20px)" }}
-                        animate={{ opacity: 0.05, scale: 1, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, scale: 0.9, filter: "blur(20px)" }}
-                        transition={{ duration: 1.5, ease: "circOut" }}
-                        className="text-[25vw] font-black text-white uppercase leading-none whitespace-nowrap hidden lg:block"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 0.03, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 1 }}
+                        className="text-[8vw] font-black text-white uppercase leading-none hidden lg:block tracking-tighter"
                     >
-                        {activeCat?.name || "Aura"}
+                        {activeCat?.name || "AD-TOLOGY"}
                     </motion.h2>
                 </AnimatePresence>
             </div>
 
-            {/* 2. Main Layout Grid */}
-            <div className="relative z-10 w-full h-full max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-0 items-center">
+            {/* 2. Content Grid */}
+            <div className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
 
-                {/* Left Content (Text) */}
-                <div className="lg:col-span-6 px-8 md:px-16 lg:px-24 z-20 mt-20 lg:mt-0 order-2 lg:order-1">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        className="inline-flex items-center gap-3 mb-8"
-                    >
-                        <span className="w-8 h-[1px] bg-[#66FCF1]"></span>
-                        <span className="text-[#66FCF1] uppercase tracking-[0.4em] text-[10px] font-black">
-                            Aura Selection 2026
-                        </span>
-                    </motion.div>
-
-                    <div className="relative overflow-hidden h-[150px] sm:h-[200px] md:h-[250px]">
+                {/* Left Side: Text Details */}
+                <div className="order-2 lg:order-1 space-y-8">
+                    <div className="overflow-hidden">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={index}
-                                initial={{ y: "100%" }}
-                                animate={{ y: "0%" }}
-                                exit={{ y: "-100%" }}
-                                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                                className="absolute inset-0"
+                                initial={{ y: 50, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: -50, opacity: 0 }}
+                                transition={{ duration: 0.6, ease: "easeOut" }}
                             >
-                                <h1 className="text-5xl sm:text-7xl lg:text-[6.5vw] text-white font-light leading-[0.9] tracking-tighter">
-                                   
-                                    <span className="font-serif italic text-gray-400">
-                                        {activeCat?.name || "Minimalism"}
-                                    </span>
+                                <span className="text-[#66FCF1] font-mono text-sm tracking-[0.3em] uppercase mb-4 block">
+                                    Featured SubCategory
+                                </span>
+                                <h1 className="text-4xl md:text-7xl lg:text-7xl font-black text-white leading-tight uppercase italic">
+                                    {activeCat?.name}
                                 </h1>
+                                {/* <p className="text-gray-400 max-w-md mt-4 text-sm md:text-base leading-relaxed">
+                                    Discover the next generation of creative excellence through our {activeCat?.name} collection.
+                                </p> */}
                             </motion.div>
                         </AnimatePresence>
                     </div>
 
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6 }}
-                        className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-8"
-                    >
-                        <button className="group relative px-10 py-4 bg-white rounded-full overflow-hidden transition-all duration-500 active:scale-95 shadow-xl shadow-white/5">
-                            <span className="relative z-10 text-black text-[10px] font-black uppercase tracking-widest group-hover:text-black transition-colors">
-                                Explore Edition
-                            </span>
-                            <div className="absolute inset-0 bg-[#66FCF1] translate-y-full group-hover:translate-y-0 transition-transform duration-500 rounded-full"></div>
+                    <div className="flex items-center gap-6 pt-4">
+                        <button
+                            onClick={() => {
+                                if (!activeCat?.name || !activeCat?.category?.name) return;
+
+                                router.push(
+                                    `/categories?category=${encodeURIComponent(
+                                        activeCat.category.name
+                                    )}&subcategory=${encodeURIComponent(activeCat.name)}`
+                                );
+                            }}
+                            className="px-8 py-3 bg-[#66FCF1] text-black font-bold uppercase text-xs tracking-widest rounded-full hover:bg-white transition-all active:scale-95"
+                        >
+                            Explore Now
                         </button>
 
-                        {/* Slide Counters */}
-                        <div className="flex items-center gap-3">
-                            <span className="text-white text-xs font-mono">0{index + 1}</span>
-                            <div className="w-12 h-[1px] bg-white/20">
+
+                        {/* Slide Indicator */}
+                        <div className="flex flex-col">
+                            <span className="text-white font-mono text-xs">0{index + 1} / 0{subcategories?.length}</span>
+                            <div className="w-24 h-[2px] bg-white/10 mt-2 relative">
                                 <motion.div
                                     key={index}
-                                    initial={{ width: "0%" }}
+                                    initial={{ width: 0 }}
                                     animate={{ width: "100%" }}
                                     transition={{ duration: 5, ease: "linear" }}
-                                    className="h-full bg-[#66FCF1]"
+                                    className="absolute inset-0 bg-[#66FCF1]"
                                 />
                             </div>
-                            <span className="text-white/30 text-xs font-mono">0{subcategories?.length || 0}</span>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
 
-                {/* Right Content (Visual) */}
-                <div className="lg:col-span-6 h-[50vh] lg:h-[80vh] w-full relative order-1 lg:order-2 px-4 lg:px-0">
-                    <div className="relative w-full h-full lg:rounded-l-[4rem] overflow-hidden group">
+                {/* Right Side: Image (No Cut - Contain Strategy) */}
+                <div className="order-1 lg:order-2 flex justify-center items-center">
+                    <div className="relative w-full aspect-square md:aspect-[4/5] max-h-[70vh] group">
 
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={index}
-                                initial={{ scale: 1.2, filter: "brightness(0)" }}
-                                animate={{ scale: 1, filter: "brightness(1)" }}
-                                exit={{ scale: 1.1, opacity: 0 }}
-                                transition={{ duration: 1.2, ease: "circOut" }}
-                                className="w-full h-full relative"
-                            >
-                                <Image
-                                    src={activeCat?.image || "/placeholder.jpg"}
-                                    alt={activeCat?.name || "Image"}
-                                    fill
-                                    className="object-cover transition-transform duration-[3s] group-hover:scale-110"
-                                    priority
-                                />
-                                {/* Modern Glass Gradient Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent lg:bg-gradient-to-l lg:from-[#050505]/80 lg:to-transparent"></div>
-                            </motion.div>
-                        </AnimatePresence>
+                        {/* Decorative Frame */}
+                        <div className="absolute inset-0 border border-white/10 rounded-[2rem] -m-4 group-hover:border-[#66FCF1]/30 transition-colors duration-500" />
 
-                        {/* Floating Badge */}
+                        <div className="relative w-full h-full overflow-hidden rounded-[2rem] bg-zinc-900/50 flex items-center justify-center">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 1.1 }}
+                                    transition={{ duration: 0.8 }}
+                                    className="relative w-full h-full p-4" // Padding ensures image doesn't touch borders
+                                >
+                                    <Image
+                                        src={activeCat?.image || "/placeholder.jpg"}
+                                        alt={activeCat?.name}
+                                        fill
+                                        className="object-contain p-2 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" // Use object-contain here
+                                        priority
+                                    />
+                                </motion.div>
+                            </AnimatePresence>
+
+                            {/* Inner Shadows for Depth */}
+                            <div className="absolute inset-0 pointer-events-none shadow-inner bg-gradient-to-t from-black/20 to-transparent" />
+                        </div>
+
+                        {/* Tagline Badge */}
                         <motion.div
-                            initial={{ x: 100, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.8 }}
-                            className="absolute bottom-10 right-10 bg-white/10 backdrop-blur-xl border border-white/20 p-6 rounded-3xl hidden md:block"
+                            className="absolute -bottom-5 -right-5 bg-white p-4 rounded-2xl hidden md:block shadow-2xl"
+                            initial={{ rotate: 10, opacity: 0 }}
+                            animate={{ rotate: -5, opacity: 1 }}
+                            transition={{ delay: 0.5 }}
                         >
-                            <p className="text-white/50 text-[9px] uppercase tracking-widest mb-1 font-bold">Category Details</p>
-                            <h3 className="text-white text-xl font-serif italic">{activeCat?.name}</h3>
+                            {/* <p className="text-black font-black text-[10px] uppercase tracking-tighter italic">Studio Quality</p> */}
                         </motion.div>
                     </div>
                 </div>
+
             </div>
 
-            {/* Bottom Global Progress */}
-            <div className="absolute bottom-0 left-0 w-full h-[1px] bg-white/5 overflow-hidden">
-                <motion.div
-                    key={`progress-${index}`}
-                    initial={{ x: "-100%" }}
-                    animate={{ x: "0%" }}
-                    transition={{ duration: 5, ease: "linear" }}
-                    className="w-full h-full bg-[#66FCF1] shadow-[0_0_15px_#2563eb]"
-                />
-            </div>
-
-            <style jsx>{`
-                @media (max-width: 1024px) {
-                    section { height: 100vh; }
-                }
-            `}</style>
+            {/* Background Gradient Orbs */}
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#66FCF1]/5 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
         </section>
     );
 };
