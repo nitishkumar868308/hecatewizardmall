@@ -10,6 +10,7 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchBanners } from "@/app/redux/slices/banners/bannersSlice";
+import Loader from "../Include/Loader";
 
 const HomeSlider = () => {
     const dispatch = useDispatch();
@@ -17,7 +18,7 @@ const HomeSlider = () => {
     const isXpress = pathname.includes("/hecate-quickGo");
     const country = useSelector((state) => state.country);
     const selectedState = useSelector(state => state.selectedState);
-    const { banners = [] } = useSelector((state) => state.banner);
+    const { banners = [], loading } = useSelector((state) => state.banner);
     console.log("banners", banners)
 
     /* ================= FETCH ================= */
@@ -114,6 +115,13 @@ const HomeSlider = () => {
         return slidesArray;
     }, [banners, isXpress, country, selectedState]);
 
+    if (loading) {
+        return (
+            <div className="w-full">
+                <Loader />
+            </div>
+        );
+    }
 
 
     if (!slides.length) return null;
@@ -149,19 +157,19 @@ const SlideContent = ({ slide }) => (
             className="object-cover"
             priority
             unoptimized
-        /> 
+        />
 
 
         {
-    slide.text && (
-        <div className="absolute inset-0 flex items-center justify-center px-4">
-            <h2 className="text-white font-bold text-center drop-shadow-lg 
+            slide.text && (
+                <div className="absolute inset-0 flex items-center justify-center px-4">
+                    <h2 className="text-white font-bold text-center drop-shadow-lg 
                        text-lg sm:text-2xl md:text-3xl lg:text-5xl xl:text-6xl">
-                {slide.text}
-            </h2>
-        </div>
-    )
-}
+                        {slide.text}
+                    </h2>
+                </div>
+            )
+        }
     </div >
 
 );

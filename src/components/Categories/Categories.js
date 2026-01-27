@@ -1315,6 +1315,8 @@ import { fetchTags } from "@/app/redux/slices/tag/tagSlice";
 import { usePathname } from "next/navigation";
 import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
 import { fetchDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
+import Loader from "../Include/Loader";
+import ImageWithSkeleton from "../Common/ImageWithSkeleton";
 
 const sortOptions = ["Price: Low to High", "Price: High to Low"];
 
@@ -1323,10 +1325,10 @@ const Categories = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const dispatch = useDispatch();
-    const { products } = useSelector((state) => state.products);
-    const { subcategories } = useSelector((state) => state.subcategory);
-    const { categories } = useSelector((state) => state.category);
-    const { tags } = useSelector((state) => state.tags);
+    const { products, loading: productsLoading } = useSelector((state) => state.products);
+    const { subcategories, loading: subcategoriesLoading } = useSelector((state) => state.subcategory);
+    const { categories, loading: categoriesLoading } = useSelector((state) => state.category);
+    const { tags, loading: tagsLoading } = useSelector((state) => state.tags);
     const [selectedTag, setSelectedTag] = useState("All");
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [selectedSubcategory, setSelectedSubcategory] = useState("All");
@@ -1340,7 +1342,7 @@ const Categories = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const productsPerPage = 6;
     const [selectedAlphabet, setSelectedAlphabet] = useState(null);
-    const { dispatches } = useSelector((state) => state.dispatchWarehouse);
+    const { dispatches, loading: dispatchLoading } = useSelector((state) => state.dispatchWarehouse);
     const [categoryVariations, setCategoryVariations] = useState({});
     const [selectedVariations, setSelectedVariations] = useState({});
     // const [selectedWarehouseId, setSelectedWarehouseId] = useState(null);
@@ -1362,7 +1364,7 @@ const Categories = () => {
     }, []);
     const selectedState = useSelector(state => state.selectedState) || (hydrated ? localStorage.getItem("state") : null);
 
-    const { store } = useSelector((state) => state.delhiStore);
+    const { store, loading: storeLoading } = useSelector((state) => state.delhiStore);
     console.log("store", store)
     const isXpress = pathname.includes("/hecate-quickGo");
 
@@ -2056,6 +2058,18 @@ const Categories = () => {
     console.log("displayedItems.length", displayedItems.length);
 
 
+    const isPageLoading =
+        productsLoading ||
+        categoriesLoading ||
+        subcategoriesLoading ||
+        tagsLoading ||
+        storeLoading ||
+        dispatchLoading;
+
+    if (isPageLoading) {
+        return <Loader />;
+    }
+
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro relative">
             {!isDesktop && (
@@ -2409,20 +2423,24 @@ const Categories = () => {
                         </div>
                     ) : currentProducts.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 cursor-pointer">
-                            {currentProducts.map((product) => (
-                                <div
-                                    key={product.id}
-                                    className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition transform hover:scale-105"
-                                    // onClick={() => router.push(`/product/${product.id}`)}
-                                    onClick={() => {
-                                        if (isXpress) {
-                                            router.push(`/hecate-quickGo/product/${product.id}`);
-                                        } else {
-                                            router.push(`/product/${product.id}`);
-                                        }
-                                    }}
-                                >
-                                    <div className="h-72 relative mb-4 rounded overflow-hidden">
+                            {currentProducts.map((product) => {
+                                const imageSrc = Array.isArray(product.image)
+                                    ? product.image[0]
+                                    : product.image;
+                                return (
+                                    <div
+                                        key={product.id}
+                                        className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition transform hover:scale-105"
+                                        // onClick={() => router.push(`/product/${product.id}`)}
+                                        onClick={() => {
+                                            if (isXpress) {
+                                                router.push(`/hecate-quickGo/product/${product.id}`);
+                                            } else {
+                                                router.push(`/product/${product.id}`);
+                                            }
+                                        }}
+                                    >
+                                        {/* <div className="h-72 relative mb-4 rounded overflow-hidden">
                                         {Array.isArray(product.image) && product.image[0] ? (
                                             <Image
                                                 src={product.image[0]}
@@ -2444,20 +2462,37 @@ const Categories = () => {
                                                 No Image
                                             </div>
                                         )}
+                                    </div> */}
+                                        <div className="h-72 mb-4 rounded overflow-hidden">
+                                            {imageSrc ? (
+                                                <ImageWithSkeleton
+                                                    src={imageSrc}
+                                                    alt={product.name || "Product Image"}
+                                                    containerClass="h-full w-full relative"
+                                                />
+                                            ) : (
+                                                <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                                    No Image
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex flex-col">
+                                            <h3 className="text-lg font-semibold text-gray-900">
+                                                {product.name}
+                                            </h3>
+                                            <p className="text-sm text-gray-500">
+                                                Price:{" "}
+                                                <span className="text-xl font-bold text-gray-600">
+                                                    {product.currency} {product.currencySymbol}{product.price}
+                                                </span>
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col">
-                                        <h3 className="text-lg font-semibold text-gray-900">
-                                            {product.name}
-                                        </h3>
-                                        <p className="text-sm text-gray-500">
-                                            Price:{" "}
-                                            <span className="text-xl font-bold text-gray-600">
-                                                {product.currency} {product.currencySymbol}{product.price}
-                                            </span>
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
+                                )
+                            }
+
+                            )}
                         </div>
                     ) : (
                         <div className="w-full h-64 flex flex-col items-center justify-center bg-gray-50 rounded-lg border border-gray-200">

@@ -15,6 +15,7 @@ import SectionDivider from "@/components/Custom/SectionDivider";
 import Consultant from "@/components/HomePage/consultant";
 import BlogPage from "@/components/HomePage/blog";
 
+
 export default function Home() {
   const dispatch = useDispatch();
   const { countries } = useCountries();

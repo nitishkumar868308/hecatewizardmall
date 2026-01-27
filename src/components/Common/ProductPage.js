@@ -37,7 +37,7 @@ const ProductDetail = () => {
     const { countries } = useCountries();
     console.log("countries", countries)
     const [loading, setLoading] = useState(false);
-    const { products } = useSelector((state) => state.products);
+    const { products, loading: productsLoading } = useSelector((state) => state.products);
     const [userCart, setUserCart] = useState([]);
     const { offers } = useSelector((state) => state.offers);
     const params = useParams();
@@ -3347,7 +3347,9 @@ const ProductDetail = () => {
 
             </div>
             <div className="max-w-7xl mx-auto p-8 flex flex-col md:flex-row gap-12">
-                {loading && <Loader />}
+                {/* {loading && <Loader />} */}
+                {productsLoading && <Loader />}
+
                 {/* Product Images */}
                 <div className="md:w-1/2">
                     <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px]">

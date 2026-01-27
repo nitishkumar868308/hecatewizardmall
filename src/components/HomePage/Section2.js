@@ -120,7 +120,7 @@ const Section2 = () => {
                                 >
                                     <Image
                                         src={activeCat?.image || "/placeholder.jpg"}
-                                        alt={activeCat?.name}
+                                        alt={activeCat?.name || "no image"}
                                         fill
                                         className="object-contain p-2 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" // Use object-contain here
                                         priority
