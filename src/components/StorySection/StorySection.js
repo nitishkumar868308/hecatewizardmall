@@ -461,7 +461,7 @@ const StorySection = () => {
                                     <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full overflow-hidden relative border border-white/5">
                                         <video
                                             src={story.url}
-                                            className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000"
+                                            className="w-full h-full object-cover  group-hover:scale-110 transition-all duration-1000"
                                             muted playsInline autoPlay loop
                                         />
                                         <div className="absolute inset-0 bg-[#66FCF1]/5 group-hover:bg-transparent transition-colors" />
@@ -474,7 +474,7 @@ const StorySection = () => {
                                 </div>
                             </div>
 
-                            <span className="mt-6 text-[11px] font-bold text-gray-500 group-hover:text-[#66FCF1] uppercase tracking-[0.3em] transition-all duration-300">
+                            <span className="mt-6 text-[11px] font-bold text-gray-100 group-hover:text-[#66FCF1] uppercase tracking-[0.3em] transition-all duration-300">
                                 {story.title}
                             </span>
                         </motion.div>
@@ -540,9 +540,9 @@ const StorySection = () => {
                                         <h4 className="text-white text-sm font-bold tracking-widest uppercase italic">
                                             {activeStory.title}
                                         </h4>
-                                        <p className="text-[#66FCF1]/60 text-[8px] uppercase tracking-[0.4em] font-black">
+                                        {/* <p className="text-[#66FCF1]/60 text-[8px] uppercase tracking-[0.4em] font-black">
                                             Digital Content
-                                        </p>
+                                        </p> */}
                                     </div>
                                 </div>
                             </div>
@@ -557,7 +557,7 @@ const StorySection = () => {
                             </div>
 
                             {/* CTA Button */}
-                            <div className="absolute bottom-0 inset-x-0 z-50 p-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col items-center">
+                            {/* <div className="absolute bottom-0 inset-x-0 z-50 p-12 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col items-center">
                                 <motion.button
                                     whileHover={{ scale: 1.05, backgroundColor: "#66FCF1", color: "#000" }}
                                     whileTap={{ scale: 0.95 }}
@@ -566,7 +566,7 @@ const StorySection = () => {
                                     Full Experience
                                 </motion.button>
                                 <p className="mt-8 text-white/20 text-[8px] uppercase tracking-[0.6em] animate-pulse">Vertical View</p>
-                            </div>
+                            </div> */}
                         </motion.div>
                     </motion.div>
                 )}

@@ -161,11 +161,11 @@ const SideContent = ({ activeCat, subcategories, onClose }) => {
                         className="group flex items-center gap-5 p-4 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-[#66FCF1]/20 transition-all cursor-pointer"
                     >
                         <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0">
-                            <img src={sub.image} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+                            <img src={sub.image} className="w-full h-full object-cover  transition-all" />
                         </div>
                         <div className="flex-1">
-                            <h4 className="text-[12px] font-black text-gray-400 group-hover:text-[#66FCF1] uppercase tracking-widest">{sub.name}</h4>
-                            <p className="text-[9px] text-gray-600 mt-1 uppercase">Unit 0{idx + 1}</p>
+                            <h4 className="text-[12px] font-black text-gray-100 group-hover:text-[#66FCF1] uppercase tracking-widest">{sub.name}</h4>
+                            <p className="text-[9px] text-gray-400 mt-1 uppercase">Unit 0{idx + 1}</p>
                         </div>
                         <svg className="text-gray-700 group-hover:text-[#66FCF1]" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7l7 7-7 7" /></svg>
                     </div>
