@@ -27,7 +27,8 @@ export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
   const isHome = pathname === "/";
-  const hideLayout = pathname.startsWith("/admin") || pathname.startsWith("/payment-success");
+  const isJyotish = pathname.startsWith("/jyotish");
+  const hideLayout = pathname.startsWith("/admin") || pathname.startsWith("/payment-success") || isJyotish;
 
 
   return (
@@ -38,7 +39,7 @@ export default function RootLayout({ children }) {
             <CartProvider>
               {!hideLayout && <DefaultPage />}
               {/* <main className="pt-[60px] md:pt-0 sm:pt-0"> */}
-              <main className=" md:pt-0 pt-[160px]">
+              <main className={`${isJyotish ? 'md:pt-0 pt-[40px]' : 'md:pt-0 pt-[160px]'}`}>
                 {children}
               </main>
               {!hideLayout && <Footer />}

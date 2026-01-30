@@ -102,9 +102,9 @@ const Loader = () => {
                         className="relative w-28 h-28 md:w-36 md:h-36 z-30 rounded-full overflow-hidden border-2 border-white/10 p-1 bg-black/40 backdrop-blur-sm"
                     >
                         <img
-                            src="/image/logo.jpg"
+                            src="/image/logo.png"
                             alt="Logo"
-                            className="w-full h-full object-cover rounded-full"
+                             className="w-38 h-28 md:w-36 md:h-36 object-contain rounded-md"
                             loading="eager"
                         />
                     </motion.div>
