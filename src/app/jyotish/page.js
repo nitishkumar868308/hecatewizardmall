@@ -13,7 +13,7 @@ const AstrologyHome = () => {
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#66FCF1] opacity-5 blur-[120px] rounded-full"></div>
 
                         <h1 className="text-4xl md:text-6xl font-extrabold mb-6">
-                            Consult India's Best <br />
+                            Consult Indias Best <br />
                             <span className="text-[#66FCF1]">Astrologers Live</span>
                         </h1>
                         <p className="text-gray-400 max-w-2xl mx-auto mb-10">
