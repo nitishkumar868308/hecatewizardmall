@@ -81,6 +81,7 @@ const Header = () => {
         ? "/hecate-quickGo/categories"
         : "/categories";
     const purchasePlatform = isXpress ? "xpress" : "website";
+
     // useEffect(() => {
     //     setUserCartState(prev => {
     //         // Only update if different length or different ids
@@ -2081,13 +2082,24 @@ const Header = () => {
 
                             {/* NORMAL MENU ITEMS */}
                             {menuItems.map(item => {
+                                console.log("itemMobile", item)
                                 if (item === "Enter The Mall") return null;
 
-                                const itemPath = isXpress
-                                    ? `/hecate-quickGo/${item.toLowerCase()}`
-                                    : `/${item.toLowerCase()}`;
 
-                                const isActive = isXpress
+                                const isQuickGoRoute = pathname.startsWith("/hecate-quickGo");
+
+                                const itemPath = isQuickGoRoute
+                                    ? item === "Home"
+                                        ? "/hecate-quickGo/home"
+                                        : `/hecate-quickGo/${item.toLowerCase()}`
+                                    : item === "Home"
+                                        ? "/"
+                                        : `/${item.toLowerCase()}`;
+                                console.log("itemPath", itemPath)
+
+                                console.log("ITEM Mobile:", item, "PATH:", itemPath);
+
+                                const isActive = isQuickGoRoute
                                     ? pathname === itemPath
                                     : activeMenuItem === item;
 
@@ -2096,7 +2108,7 @@ const Header = () => {
                                         key={item}
                                         href={itemPath}
                                         onClick={() => {
-                                            if (!isXpress) setActiveMenuItem(item); // only set state for normal site
+                                            if (!isQuickGoRoute) setActiveMenuItem(item);
                                             setOpenCategory(null);
                                             setActiveSub(null);
                                             setMobileMenuOpen(false);
