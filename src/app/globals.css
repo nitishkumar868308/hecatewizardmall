@@ -56,3 +56,21 @@ body,
   scrollbar-width: none;
 }
 
+
+.shimmer {
+  background: linear-gradient(
+    110deg,
+    #0d0d0d 25%,
+    #1a1a1a 37%,
+    #0d0d0d 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite linear;
+}
+
+@keyframes shimmer {
+  to {
+    background-position-x: -200%;
+  }
+}
+

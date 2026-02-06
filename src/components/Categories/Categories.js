@@ -1318,6 +1318,7 @@ import { fetchDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
 import Loader from "../Include/Loader";
 import ImageWithSkeleton from "../Common/ImageWithSkeleton";
 
+
 const sortOptions = ["Price: Low to High", "Price: High to Low"];
 
 const Categories = () => {
@@ -1453,7 +1454,7 @@ const Categories = () => {
     }, [store, selectedWarehouseId, isXpress]);
 
     console.log("warehouseProductIds", warehouseProductIds);
-
+    console.log("fastproducts", products)
 
     useEffect(() => {
         setPriceRange(highestPrice);
@@ -1469,29 +1470,40 @@ const Categories = () => {
         dispatch(fetchDelhiStore())
     }, [dispatch]);
 
+    console.log("store", store)
 
+    // const stateProductIds = useMemo(() => {
+    //     if (!isXpress || !store?.length || !selectedState) return [];
+
+    //     return store
+    //         .map(ds => {
+    //             let foundProductId = null;
+
+    //             ds.entries?.forEach(dim => {
+    //                 dim.entries?.forEach(e => {
+    //                     if (
+    //                         e.state?.toLowerCase() === selectedState.toLowerCase()
+    //                     ) {
+    //                         foundProductId = dim.productId;
+    //                     }
+    //                 });
+    //             });
+
+    //             return foundProductId;
+    //         })
+    //         .filter(Boolean);
+    // }, [store, selectedState, isXpress]);
+    // console.log("stateProductIds", stateProductIds)
     const stateProductIds = useMemo(() => {
-        if (!isXpress || !store?.length || !selectedState) return [];
+        if (!isXpress || !store?.length || !selectedWarehouseId) return [];
 
         return store
-            .map(ds => {
-                let foundProductId = null;
+            .filter(s => s.warehouseId === selectedWarehouseId)
+            .map(s => s.productId);
+    }, [store, selectedWarehouseId, isXpress]);
 
-                ds.entries?.forEach(dim => {
-                    dim.entries?.forEach(e => {
-                        if (
-                            e.state?.toLowerCase() === selectedState.toLowerCase()
-                        ) {
-                            foundProductId = dim.productId;
-                        }
-                    });
-                });
+    console.log("stateProductIds (warehouse based)", stateProductIds);
 
-                return foundProductId;
-            })
-            .filter(Boolean);
-    }, [store, selectedState, isXpress]);
-    console.log("stateProductIds", stateProductIds)
 
     // const variationBaseProducts = useMemo(() => {
     //     return products.filter((p) => {
@@ -1534,8 +1546,9 @@ const Categories = () => {
 
     const variationBaseProducts = useMemo(() => {
         return products.filter(p => {
+
             if (isXpress) {
-                if (!selectedState) return false;
+                // if (!selectedState) return false;
                 if (!warehouseProductIds.includes(p.id)) return false;
             }
 
@@ -1548,6 +1561,7 @@ const Categories = () => {
             const matchPlatform = isXpress
                 ? p.platform.includes("xpress")
                 : p.platform.includes("website");
+
 
             return (
                 p.active &&
@@ -1810,6 +1824,11 @@ const Categories = () => {
 
             const shouldApplyVariations = selectedSubcategory !== "All";
 
+            // const matchState = isXpress
+            //     ? selectedState && stateProductIds?.includes(p.id)
+            //     : true;
+
+
             const matchVariations = shouldApplyVariations
                 ? Object.entries(selectedVariations).every(([varName, value]) => {
                     if (!value) return true;
@@ -1828,13 +1847,12 @@ const Categories = () => {
                 : true;
 
 
-            return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && matchWarehouse && selectedState &&
-                stateProductIds && matchVariations && p.price <= priceRange;
+            return p.active && matchCategory && matchSubcategory && matchTag && matchPlatform && matchWarehouse && matchVariations && p.price <= priceRange;
         })
         .sort((a, b) =>
             sortBy === "Price: Low to High" ? a.price - b.price : b.price - a.price
         );
-    // console.log("baseFiltered", baseFiltered)
+    console.log("baseFiltered", baseFiltered)
 
     // Determine if we should show subcategory cards instead of products
     const showSubcategoryCards =
@@ -2069,6 +2087,8 @@ const Categories = () => {
     if (isPageLoading) {
         return <Loader />;
     }
+
+
 
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro relative">
@@ -2424,6 +2444,13 @@ const Categories = () => {
                     ) : currentProducts.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 cursor-pointer">
                             {currentProducts.map((product) => {
+                                console.log("STATE CHECK", {
+                                    selectedCategory,
+                                    selectedSubcategory,
+                                    selectedSubcategoryName:
+                                        subcategories.find(s => s.id === selectedSubcategory)?.name
+                                });
+
                                 const imageSrc = Array.isArray(product.image)
                                     ? product.image[0]
                                     : product.image;

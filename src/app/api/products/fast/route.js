@@ -99,7 +99,8 @@ export async function GET(req) {
                 image: true,
                 active: true,
                 createdAt: true,
-                platform : true
+                platform : true,
+                
             },
         });
 

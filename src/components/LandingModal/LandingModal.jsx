@@ -18,6 +18,7 @@ export default function LandingModal() {
     const [showDropdown, setShowDropdown] = useState(false);
     const open = reduxOpen || localOpen;
     const selectedState = useSelector(state => state.selectedState);
+    console.log("warehouses", warehouses)
 
     useEffect(() => {
         dispatch(fetchWarehouses());
@@ -88,16 +89,44 @@ export default function LandingModal() {
     const statesList = [...new Set(warehouses.map((w) => w.state))];
 
     // Find selected warehouse's multiple pincodes
-    const selectedWarehouse = warehouses.find(w => w.state === selectedStateLocal);
-    const pincodeList = selectedWarehouse
-        ? selectedWarehouse.pincode
-            .split(",")
-            .map((p) => p.trim())
+    // const selectedWarehouse = warehouses.find(w => w.state === selectedStateLocal);
+    // const selectedWarehouse = warehouses.filter(
+    //     w => w.state === selectedStateLocal
+    // );
+
+    // console.log("selectedWarehouse", selectedWarehouse)
+    // const pincodeList = selectedWarehouse
+    //     ? selectedWarehouse.pincode
+    //         .split(",")
+    //         .map((p) => p.trim())
+    //     : [];
+    // console.log("pincodeList", pincodeList)
+
+    // const filteredPincodes = pincodeList.filter((p) =>
+    //     p.includes(search)
+    // );
+    const stateWarehouses = warehouses.filter(
+        w => w.state === selectedStateLocal
+    );
+
+    console.log("stateWarehouses", stateWarehouses);
+
+    const pincodeList = stateWarehouses.length
+        ? stateWarehouses.flatMap(w =>
+            (w.pincode || "")
+                .split(",")
+                .map(p => p.trim())
+                .filter(Boolean)
+        )
         : [];
 
-    const filteredPincodes = pincodeList.filter((p) =>
+    console.log("pincodeList", pincodeList);
+
+    const filteredPincodes = pincodeList.filter(p =>
         p.includes(search)
     );
+
+    console.log("filteredPincodes", filteredPincodes)
 
     return (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">

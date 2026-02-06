@@ -145,13 +145,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-
+import ImageWithSkeleton from "../Common/ImageWithSkeleton";
 
 const ProductHomePage = () => {
     const router = useRouter();
     const dispatch = useDispatch();
     const { products, loading } = useSelector((state) => state.products);
     const [activeCatIndex, setActiveCatIndex] = useState(0);
+    const [loadedImages, setLoadedImages] = useState({});
+
 
     useEffect(() => {
         dispatch(fetchProducts());
@@ -285,14 +287,31 @@ const ProductHomePage = () => {
                                 >
                                     {/* Image Container */}
                                     <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-[#0d0d0d]">
+                                        {!loadedImages[product?.id] && (
+                                            <div className="absolute inset-0 shimmer" />
+                                        )}
+
+
+
                                         {!loading && product ? (
                                             <>
-                                                <Image
+                                                {/* <Image
                                                     src={getProductImage(product.image)}
                                                     alt={product.name}
                                                     fill
                                                     sizes="(max-width: 768px) 50vw, 25vw"
-                                                    className="object-cover transition-transform duration-1000 group-hover:scale-110 opacity-90"
+                                                    priority={i < 2}
+                                                    onLoad={() =>
+                                                        setLoadedImages(prev => ({ ...prev, [product.id]: true }))
+                                                    }
+                                                    className={`object-cover transition-opacity duration-700 ${loadedImages[product?.id] ? "opacity-100" : "opacity-0"
+                                                        }`}
+                                                /> */}
+                                                <ImageWithSkeleton
+                                                    src={getProductImage(product.image)}
+                                                    alt={product.name}
+                                                    containerClass="aspect-[4/5] w-full rounded-xl"
+                                                    priority={i < 2}
                                                 />
                                                 {/* Hover Overlay */}
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4 backdrop-blur-[2px]">
