@@ -12,10 +12,10 @@ const Header = () => {
     }, []);
 
     const navLinks = [
-        { name: 'Horoscope', href: '#' },
-        { name: 'Kundli', href: '#' },
-        { name: 'Live Chat', href: '#' },
-        { name: 'Vastu', href: '#' }
+        { name: 'Home', href: '#' },
+        { name: 'Our Atrologer', href: '#' },        
+        { name: 'About', href: '#' },
+        { name: 'Contact Us', href: '#' }
     ];
 
     return (
@@ -59,7 +59,7 @@ const Header = () => {
                             ))}
                         </div>
                         <button className="bg-[#66FCF1] text-[#0B0C10] px-7 py-2.5 rounded-full text-xs font-black hover:scale-105 transition-all">
-                            CONSULT NOW
+                            Login
                         </button>
                     </div>
 
