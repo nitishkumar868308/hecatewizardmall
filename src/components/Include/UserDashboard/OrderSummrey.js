@@ -2,10 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchOrders } from "@/app/redux/slices/order/orderSlice";
-import { FiEye, FiX } from "react-icons/fi";
+import { FiEye, FiX, FiTruck } from "react-icons/fi";
 import OrderDetail from "@/components/Custom/OrderDetailUser";
 import { getApplyPromoCode } from "@/app/redux/slices/promoCode/promoCodeSlice";
 import Pagination from "@/components/Pagination";
+import { RxCross2 } from "react-icons/rx";
+
 
 const statusStyles = {
     PENDING: "text-yellow-700 bg-yellow-100",
@@ -107,12 +109,33 @@ const OrderSummary = () => {
 
 
                                     {/* View Button */}
-                                    <button
-                                        onClick={() => handleViewOrder(order)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 transition self-start sm:self-auto cursor-pointer"
-                                    >
-                                        <FiEye /> View
-                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => handleViewOrder(order)}
+                                            className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 transition"
+                                        >
+                                            <FiEye /> View
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                if (order?.trackingLink) {
+                                                    window.open(order.trackingLink, "_blank", "noopener,noreferrer");
+                                                }
+                                            }}
+                                            disabled={!order?.trackingLink}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition 
+                                                    ${order?.trackingLink
+                                                    ? "bg-gray-700 text-white hover:bg-gray-900 cursor-pointer"
+                                                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                }`}
+                                        >
+                                            {order?.trackingLink ? <FiTruck /> : <FiTruck />}
+                                            {order?.trackingLink ? "Track" : "Track"}
+                                        </button>
+                                    </div>
+
+
                                 </li>
                             ))}
                         </ul>

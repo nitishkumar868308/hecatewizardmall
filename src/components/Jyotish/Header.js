@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Link from "next/link";
 
 const Header = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -12,17 +13,19 @@ const Header = () => {
     }, []);
 
     const navLinks = [
-        { name: 'Home', href: '#' },
-        { name: 'Our Atrologer', href: '#' },        
-        { name: 'About', href: '#' },
-        { name: 'Contact Us', href: '#' }
+        { name: 'Home', href: '/jyotish' },
+        { name: 'Our Atrologer', href: 'consult-now' },
+        { name: 'About', href: 'about' },
+        { name: 'Contact Us', href: 'contact' },
+        { name: 'Join as Astrologer', href: 'join-astrologer' }
+
     ];
 
     return (
         <nav
             className={`w-full transition-all duration-300 border-b mt-10 md:mt-0 ${scrolled
-                    ? "bg-[#0B0C10] border-transparent"
-                    : "bg-[#0B0C10] border-transparent"
+                ? "bg-[#0B0C10] border-transparent"
+                : "bg-[#0B0C10] border-transparent"
                 }`}
         >
 
@@ -31,31 +34,37 @@ const Header = () => {
                 <div className="flex justify-between h-16 md:h-20 items-center">
 
                     {/* --- Premium Logo --- */}
-                    <div className="flex items-center gap-3 md:gap-4 group cursor-pointer">
-                        <div className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
-                            <div className="absolute inset-0 border border-[#66FCF1]/30 rounded-full animate-[spin_15s_linear_infinite]"></div>
-                            <div className="w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-[#66FCF1] to-[#45A29E] rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(102,252,241,0.4)]">
-                                <span className="text-[#0B0C10] text-[10px] md:text-sm font-bold">ॐ</span>
+                    <Link href="/jyotish" className=" cursor-pointer">
+                        <div className="flex items-center gap-3 md:gap-4 group cursor-pointer">
+                            <div className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
+                                <div className="absolute inset-0 border border-[#66FCF1]/30 rounded-full animate-[spin_15s_linear_infinite]"></div>
+                                <div className="w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-[#66FCF1] to-[#45A29E] rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(102,252,241,0.4)]">
+                                    <span className="text-[#0B0C10] text-[10px] md:text-sm font-bold">ॐ</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col">
+                                <h1 className="text-lg md:text-2xl font-black text-white tracking-tight uppercase leading-none">
+                                    Jyotish<span className="text-[#66FCF1] animate-pulse">Veda</span>
+                                </h1>
+                                <p className="text-[7px] md:text-[9px] text-[#45A29E] tracking-[0.4em] font-bold uppercase mt-1">
+                                    Divine Wisdom
+                                </p>
                             </div>
                         </div>
-                        <div className="flex flex-col">
-                            <h1 className="text-lg md:text-2xl font-black text-white tracking-tight uppercase leading-none">
-                                Jyotish<span className="text-[#66FCF1] animate-pulse">Veda</span>
-                            </h1>
-                            <p className="text-[7px] md:text-[9px] text-[#45A29E] tracking-[0.4em] font-bold uppercase mt-1">
-                                Divine Wisdom
-                            </p>
-                        </div>
-                    </div>
+                    </Link>
 
                     {/* --- Desktop Navigation --- */}
                     <div className="hidden md:flex items-center gap-10">
                         <div className="flex items-center gap-8">
                             {navLinks.map((link) => (
-                                <a key={link.name} href={link.href} className="text-[11px] font-bold uppercase tracking-widest text-gray-400 hover:text-[#66FCF1] transition-all relative group">
+                                <Link
+                                    key={link.name}
+                                    href={link.href}
+                                    className="text-[11px] font-bold uppercase tracking-widest text-gray-400 hover:text-[#66FCF1] transition-all relative group"
+                                >
                                     {link.name}
                                     <span className="absolute -bottom-2 left-0 w-0 h-[2px] bg-[#66FCF1] transition-all duration-300 group-hover:w-full"></span>
-                                </a>
+                                </Link>
                             ))}
                         </div>
                         <button className="bg-[#66FCF1] text-[#0B0C10] px-7 py-2.5 rounded-full text-xs font-black hover:scale-105 transition-all">

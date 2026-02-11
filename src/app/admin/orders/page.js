@@ -83,8 +83,8 @@ const Page = () => {
         setOpenModal(true);
     };
 
-    const handleUpdateStatus = (orderId, newStatus) => {
-        dispatch(updateOrder({ id: orderId, status: newStatus }))
+    const handleUpdateStatus = (orderId, newStatus, trackingLink) => {
+        dispatch(updateOrder({ id: orderId, status: newStatus, trackingLink: trackingLink }))
             .unwrap()
             .then((res) => {
                 const message = res?.message || "Status updated successfully!";

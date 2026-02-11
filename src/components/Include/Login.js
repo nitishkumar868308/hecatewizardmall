@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 import { GoogleLogin } from "@react-oauth/google";
+import Link from "next/link";
 
 const AuthPage = ({ onClose }) => {
     const [isLogin, setIsLogin] = useState(true);
@@ -64,6 +65,33 @@ const AuthPage = ({ onClose }) => {
     };
 
 
+    const handleForgotPassword = async (email) => {
+        if (!email) {
+            toast.error("Please enter your email");
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/auth/forgot-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                toast.success(data.message || "Password reset link sent to your email");
+            } else {
+                toast.error(data.message || "Failed to send password reset email");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Something went wrong!");
+        }
+    };
     return (
 
         <div className="w-full">
@@ -206,6 +234,17 @@ const AuthPage = ({ onClose }) => {
                     {isLogin ? 'Create account' : 'Sign in'}
                 </button>
             </p>
+
+            <p className="text-center mt-2 text-sm text-gray-500">
+                <button
+                    onClick={() => handleForgotPassword(document.querySelector('input[name="email"]').value)}
+                    className="text-blue-500 hover:underline"
+                >
+                    Forgot Password?
+                </button>
+            </p>
+
+
         </div>
 
 

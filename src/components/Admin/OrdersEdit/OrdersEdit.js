@@ -78,6 +78,8 @@ import { FiX, FiPrinter } from "react-icons/fi";
 
 export default function EditOrderModal({ order, isOpen, onClose, onUpdateStatus }) {
     const [status, setStatus] = useState(order?.status || "");
+    const [trackingLink, setTrackingLink] = useState(order?.trackingLink || "");
+
     // const [barcodeMap, setBarcodeMap] = useState({});
 
     // const PDFDownloadLinkNoSSR = dynamic(
@@ -181,18 +183,19 @@ export default function EditOrderModal({ order, isOpen, onClose, onUpdateStatus 
                 </div>
 
                 {/* Status Change + Print */}
-                <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    {/* PDF Download */}
-                    {/* <PDFDownloadLinkNoSSR
+                {/* <div className="mt-6 flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
+
+                
+                   PDFDownloadLinkNoSSR
                         document={<LabelsPDF items={order.items} barcodes={barcodeMap} />}
                         fileName={`Dispatch_${order.orderNumber}_Labels.pdf`}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 justify-center cursor-pointer"
                     >
                         {({ loading }) => (loading ? "Generating PDF..." : <><FiPrinter /> Print Labels</>)}
-                    </PDFDownloadLinkNoSSR> */}
+                    </PDFDownloadLinkNoSSR> 
 
 
-                    {/* Status Update */}
+                   
                     <div className="flex flex-col md:flex-row md:items-center gap-3">
                         <label className="font-semibold text-gray-700">Order Status:</label>
                         <select
@@ -216,7 +219,77 @@ export default function EditOrderModal({ order, isOpen, onClose, onUpdateStatus 
                             Update Status
                         </button>
                     </div>
+
+                    <input
+                        type="text"
+                        placeholder="Enter Tracking Link"
+                        value={trackingLink}
+                        onChange={(e) => setTrackingLink(e.target.value)}
+                        className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 w-full md:w-64 justify-end"
+                    />
+
+                 
+                    <button
+                        onClick={() => onUpdateStatus(order.id, status, trackingLink)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition cursor-pointer"
+                    >
+                        Save Tracking
+                    </button>
+
+                </div> */}
+
+
+                <div className="mt-6 flex flex-col md:flex-row md:items-center gap-4">
+
+                    {/* LEFT SIDE - Status Section */}
+                    <div className="flex flex-col md:flex-row md:items-center gap-3">
+                        <label className="font-semibold text-gray-700 whitespace-nowrap">
+                            Order Status:
+                        </label>
+
+                        <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="PENDING">Pending</option>
+                            <option value="FAILED">FAILED</option>
+                            <option value="PROCESSING">Processing</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="CANCELLED">Cancelled</option>
+                            <option value="SHIPPED">Shipped</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="REFUND">Refund</option>
+                        </select>
+
+                        {/* <button
+                            onClick={() => onUpdateStatus(order.id, status)}
+                            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 transition cursor-pointer"
+                        >
+                            Update Status
+                        </button> */}
+                    </div>
+
+                    {/* RIGHT SIDE - Tracking Section */}
+                    <div className="flex items-center gap-3 ml-auto">
+                        <input
+                            type="text"
+                            placeholder="Enter Tracking Link"
+                            value={trackingLink}
+                            onChange={(e) => setTrackingLink(e.target.value)}
+                            className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 w-64"
+                        />
+
+                        <button
+                            onClick={() => onUpdateStatus(order.id, status, trackingLink)}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition cursor-pointer"
+                        >
+                            Update
+                        </button>
+                    </div>
+
                 </div>
+
             </div>
         </div>
     );

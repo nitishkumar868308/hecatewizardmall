@@ -60,6 +60,7 @@ export async function POST(req) {
             { status: 201 }
         );
     } catch (error) {
+        console.error("Create Category Error:", error);
         return new Response(
             JSON.stringify({ message: "Failed to create category", error: error.message }),
             { status: 500 }

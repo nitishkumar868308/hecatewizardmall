@@ -373,6 +373,9 @@ export async function PUT(req) {
                 orderBy: body.orderBy || existingOrder.orderBy,
                 active: body.active !== undefined ? body.active : existingOrder.active,
                 deleted: body.deleted !== undefined ? body.deleted : existingOrder.deleted,
+                trackingLink: body.trackingLink !== undefined
+                    ? body.trackingLink
+                    : existingOrder.trackingLink,
             },
         });
 

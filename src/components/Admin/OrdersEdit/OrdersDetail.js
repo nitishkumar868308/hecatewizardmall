@@ -322,6 +322,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 import OrderChat from "@/components/Common/OrderChat";
 import OrderDetailPrint from "./OrderDetailPrint";
+import { useReactToPrint } from "react-to-print";
 
 export default function OrderDetail({
     selectedOrder,

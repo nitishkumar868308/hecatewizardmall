@@ -385,18 +385,20 @@ model Orders {
   totalAmount     Float?
   paymentMethod   String?
   paymentCurrency String?
-  status          OrderStatus   @default(PENDING)   // order status
-  paymentStatus   PaymentStatus @default(PENDING)   // payment status
-  promoCode           String?  // ✅ optional
-  donationAmount      Float?   // ✅ optional
-  donationCampaignId  Int?     // ✅ optional
-  note                String?  // ✅ optional
+  status          OrderStatus   @default(PENDING)  
+  paymentStatus   PaymentStatus @default(PENDING)  
+  promoCode           String?
+  donationAmount      Float? 
+  donationCampaignId  Int? 
+  note                String? 
 
   active          Boolean  @default(true)
   deleted         Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   orderBy         String? 
+
+  trackingLink     String? 
 }
 
 model ShippingPricing {
@@ -773,3 +775,10 @@ model BlogReviews {
   @@unique([userId, blogId])
 }
 
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+}

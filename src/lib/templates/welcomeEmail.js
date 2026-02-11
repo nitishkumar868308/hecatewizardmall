@@ -1,5 +1,5 @@
 export function welcomeEmailTemplate({ name, email, password }) {
-    const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/image/logo PNG.png`;
+    const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/image/logo.png`;
 
     return `
     <div style="font-family: 'Helvetica Neue', Arial, sans-serif; background: #f5f5f5; padding: 40px 0;">
