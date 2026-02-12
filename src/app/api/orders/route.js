@@ -118,6 +118,8 @@
 import { PrismaClient } from "@prisma/client";
 import axios from "axios";
 import crypto from "crypto";
+import { createPayGlocalTokens } from '@/lib/payglocal';
+
 
 const prisma = new PrismaClient();
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -267,6 +269,60 @@ export async function POST(req) {
                     gateway: "cashfree",
                     sessionId: response.data.payment_session_id,
                     orderNumber: orderRecord.orderNumber,
+                }),
+                { status: 200 }
+            );
+        }
+
+        // **************************
+        // ⭐ PAYGLOCAL PAYMENT METHOD
+        // **************************
+        if (body.paymentMethod === "PayGlocal") {
+            // const payload = {
+            //     merchantId: process.env.PAYGLOCAL_MERCHANT_ID,
+            //     merchantReferenceId: orderNumber,
+            //     amount: {
+            //         value: orderRecord.totalAmount * 100,
+            //         currency: "INR"
+            //     },
+            //     customer: {
+            //         id: `user_${body.user?.id}`,
+            //         email: body.user?.email,
+            //         phone: body.user?.phone
+            //     },
+            //     returnUrl: `${baseUrl}/payment-success?order_id=${orderNumber}`,
+            //     notifyUrl: `${baseUrl}/api/payglocal/webhook`
+            // };
+            const payload = {
+                "merchantTxnId": "23AEE8CB6B62EE2AF07",
+                "paymentData": {
+                    "totalAmount": "1",
+                    "txnCurrency": "INR"
+                },
+                "merchantCallbackURL": "https://api.uat.payglocal.in/gl/v1/payments/merchantCallback"
+            }
+            console.log("payload", payload)
+
+            // Generate tokens using official JS client
+            const tokens = await createPayGlocalTokens(payload);
+            console.log("tokens", tokens)
+
+            const pgResponse = await axios.post(
+                "https://api.uat.payglocal.in/gl/v1/payments/initiate/paycollect",
+                tokens.jweToken,
+                {
+                    headers: {
+                        "Content-Type": "text/plain",
+                        "x-gl-token-external": tokens.jwsToken,
+                    },
+                }
+            );
+            console.log("response.data", pgResponse);
+
+            return new Response(
+                JSON.stringify({
+                    gateway: "payglocal",
+                    redirectUrl: pgResponse.data?.data?.redirectUrl
                 }),
                 { status: 200 }
             );

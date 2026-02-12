@@ -246,8 +246,10 @@ const Checkout = () => {
 
 
   const methods = [
+    // { name: "PayGlocal", href: "/image/payglocal-logo.png" },
     { name: "PayU", href: "/image/new-payu-logo.svg" },
     // { name: "CashFree", href: "/image/cashfree_logo.svg" },
+
   ];
 
 
@@ -842,6 +844,13 @@ const Checkout = () => {
         form.submit();
         return;
       }
+
+      // PayGlocal Payment
+      if (data.gateway === "payglocal") {
+        window.location.href = data.redirectUrl;
+        return;
+      }
+
 
       // ⭐ CASHFREE PAYMENT
       if (data.gateway === "CashFree") {
@@ -1553,7 +1562,7 @@ const Checkout = () => {
               <>
                 <p className="text-sm sm:text-base">
                   Standard delivery within{" "}
-                  <span className="font-bold text-gray-900">4–5 days</span>.
+                  <span className="font-bold text-gray-900">2–3 days</span>.
                 </p>
               </>
             )}
@@ -1980,7 +1989,7 @@ const Checkout = () => {
                         />
                         <div className="flex-1">
                           <div className="flex justify-between items-center">
-                            <span className="font-semibold">{option.type}</span>
+                            <span className="font-semibold">{option.name}</span>
                             {option.price ? (
                               <span className="font-medium">
                                 {option.currencySymbol}

@@ -8,11 +8,62 @@ import toast from 'react-hot-toast';
 import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 import { GoogleLogin } from "@react-oauth/google";
 import Link from "next/link";
+import Loader from './Loader';
+import { CheckCircle, XCircle } from 'lucide-react';
+
+const PasswordCriteria = ({ password }) => {
+    const criteria = [
+        {
+            label: "At least 8 characters",
+            valid: password.length >= 8,
+        },
+        {
+            label: "1 uppercase letter",
+            valid: /[A-Z]/.test(password),
+        },
+        {
+            label: "1 lowercase letter",
+            valid: /[a-z]/.test(password),
+        },
+        {
+            label: "1 number",
+            valid: /\d/.test(password),
+        },
+        {
+            label: "1 special character (@$!%*?&)",
+            valid: /[@$!%*?&]/.test(password),
+        },
+    ];
+
+    return (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+            {criteria.map((item, index) => (
+                <div
+                    key={index}
+                    className="flex items-center gap-2 text-sm"
+                >
+                    {item.valid ? (
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                    ) : (
+                        <XCircle className="w-4 h-4 text-red-500" />
+                    )}
+                    <span
+                        className={item.valid ? "text-green-600" : "text-red-500"}
+                    >
+                        {item.label}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+};
 
 const AuthPage = ({ onClose }) => {
     const [isLogin, setIsLogin] = useState(true);
     const dispatch = useDispatch();
     const { user, loading, error } = useSelector((state) => state.auth);
+    const [loadingForgetPassword, setLoadingForgetPassword] = useState(false);
+
 
     // Login validation schema
     const loginValidation = Yup.object().shape({
@@ -24,7 +75,13 @@ const AuthPage = ({ onClose }) => {
     const signupValidation = Yup.object().shape({
         name: Yup.string().required('Name is required'),
         email: Yup.string().email('Invalid email').required('Email is required'),
-        password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+        password: Yup.string()
+            .required("Password is required")            
+            .matches(/[A-Z]/, "Must contain at least 1 uppercase letter")
+            .matches(/[a-z]/, "Must contain at least 1 lowercase letter")
+            .matches(/\d/, "Must contain at least 1 number")
+            .matches(/[@$!%*?&]/, "Must contain at least 1 special character")
+            .min(8, "Password must be at least 8 characters"),
         confirmPassword: Yup.string()
             .oneOf([Yup.ref('password'), null], 'Passwords must match')
             .required('Confirm Password is required'),
@@ -72,6 +129,7 @@ const AuthPage = ({ onClose }) => {
         }
 
         try {
+            setLoadingForgetPassword(true);
             const res = await fetch("/api/auth/forgot-password", {
                 method: "POST",
                 headers: {
@@ -91,7 +149,12 @@ const AuthPage = ({ onClose }) => {
             console.error(error);
             toast.error("Something went wrong!");
         }
+        finally {
+            setLoadingForgetPassword(false); // 🔥 stop loader
+        }
     };
+
+
     return (
 
         <div className="w-full">
@@ -150,7 +213,7 @@ const AuthPage = ({ onClose }) => {
                 onSubmit={handleSubmit}
                 enableReinitialize
             >
-                {({ isSubmitting }) => (
+                {({ isSubmitting, values }) => (
                     <Form className="space-y-4">
                         {!isLogin && (
                             <div>
@@ -190,6 +253,11 @@ const AuthPage = ({ onClose }) => {
                                 placeholder="••••••••"
                                 className="w-full px-3 py-2.5 text-sm rounded-md border border-gray-300 focus:outline-none focus:border-black transition"
                             />
+
+                            {!isLogin && (
+                                <PasswordCriteria password={values.password} />
+                            )}
+
                             <ErrorMessage name="password" component="div" className="text-xs text-red-500 mt-1" />
                         </div>
 
@@ -235,14 +303,30 @@ const AuthPage = ({ onClose }) => {
                 </button>
             </p>
 
-            <p className="text-center mt-2 text-sm text-gray-500">
+            {/* <p className="text-center mt-2 text-sm text-gray-500">
                 <button
                     onClick={() => handleForgotPassword(document.querySelector('input[name="email"]').value)}
                     className="text-blue-500 hover:underline"
                 >
                     Forgot Password?
                 </button>
-            </p>
+            </p> */}
+            <div className="text-center mt-2 text-sm text-gray-500">
+                {loadingForgetPassword ? (
+                    <Loader />
+                ) : (
+                    <button
+                        onClick={() =>
+                            handleForgotPassword(
+                                document.querySelector('input[name="email"]').value
+                            )
+                        }
+                        className="text-blue-500 hover:underline"
+                    >
+                        Forgot Password?
+                    </button>
+                )}
+            </div>
 
 
         </div>

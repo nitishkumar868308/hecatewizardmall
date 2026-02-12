@@ -6,7 +6,57 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import toast from "react-hot-toast";
 import Loader from "@/components/Include/Loader";
-import { AlertCircle, ArrowLeft, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Lock, Eye, EyeOff, Loader2, CheckCircle, XCircle } from 'lucide-react';
+
+const PasswordCriteria = ({ password }) => {
+    const criteria = [
+        {
+            label: "At least 8 characters",
+            valid: password.length >= 8,
+        },
+        {
+            label: "1 uppercase letter",
+            valid: /[A-Z]/.test(password),
+        },
+        {
+            label: "1 lowercase letter",
+            valid: /[a-z]/.test(password),
+        },
+        {
+            label: "1 number",
+            valid: /\d/.test(password),
+        },
+        {
+            label: "1 special character (@$!%*?&)",
+            valid: /[@$!%*?&]/.test(password),
+        },
+    ];
+
+    return (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+            {criteria.map((item, index) => (
+                <div
+                    key={index}
+                    className="flex items-center gap-2 text-sm"
+                >
+                    {item.valid ? (
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                    ) : (
+                        <XCircle className="w-4 h-4 text-red-500" />
+                    )}
+                    <span
+                        className={item.valid ? "text-green-600" : "text-red-500"}
+                    >
+                        {item.label}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+
+
 
 const ResetPasswordPage = () => {
     const searchParams = useSearchParams();
@@ -64,19 +114,11 @@ const ResetPasswordPage = () => {
                     {/* Action Buttons */}
                     <div className="space-y-3">
                         <a
-                            href="/forgot-password"
+                            href="/"
                             className="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg transition-colors duration-200 shadow-md outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                         >
                             Request New Link
                         </a>
-
-                        {/* <a
-                            href="/login"
-                            className="flex items-center justify-center text-sm text-gray-400 hover:text-gray-600 font-medium py-2 transition-colors"
-                        >
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Back to Login
-                        </a> */}
                     </div>
                 </div>
             </div>
@@ -108,7 +150,7 @@ const ResetPasswordPage = () => {
 
             if (res.ok) {
                 toast.success(data.message || "Password updated successfully");
-                router.push("/login");
+                router.push("/");
             } else {
                 toast.error(data.message || "Failed to reset password");
             }
@@ -142,22 +184,35 @@ const ResetPasswordPage = () => {
                     validationSchema={validationSchema}
                     onSubmit={handleSubmit}
                 >
-                    {({ isSubmitting, errors, touched }) => (
+                    {({ isSubmitting, errors, touched, values }) => (
                         <Form className="space-y-6">
                             {/* New Password Field */}
                             <div className="space-y-1.5">
-                                <label className="text-sm font-semibold text-gray-700 ml-1">New Password</label>
+                                <label className="text-sm font-semibold text-gray-700 ml-1">
+                                    New Password
+                                </label>
+
                                 <div className="relative group">
                                     <Field
                                         type="password"
                                         name="password"
                                         placeholder="••••••••"
-                                        className={`w-full pl-4 pr-4 py-3 bg-gray-50 border ${errors.password && touched.password ? 'border-red-400' : 'border-gray-200'
-                                            } rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-200 placeholder:text-gray-300`}
+                                        className={`w-full pl-4 pr-4 py-3 bg-gray-50 border ${errors.password && touched.password
+                                            ? "border-red-400"
+                                            : "border-gray-200"
+                                            } rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-200`}
                                     />
                                 </div>
-                                <ErrorMessage name="password" component="div" className="text-xs font-medium text-red-500 ml-1 mt-1" />
+
+                                <PasswordCriteria password={values.password} />
+
+                                <ErrorMessage
+                                    name="password"
+                                    component="div"
+                                    className="text-xs font-medium text-red-500 ml-1 mt-1"
+                                />
                             </div>
+
 
                             {/* Confirm Password Field */}
                             <div className="space-y-1.5">
