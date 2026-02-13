@@ -246,7 +246,7 @@ const Checkout = () => {
 
 
   const methods = [
-    // { name: "PayGlocal", href: "/image/payglocal-logo.png" },
+    { name: "PayGlocal", href: "/image/payglocal-logo.png" },
     { name: "PayU", href: "/image/new-payu-logo.svg" },
     // { name: "CashFree", href: "/image/cashfree_logo.svg" },
 

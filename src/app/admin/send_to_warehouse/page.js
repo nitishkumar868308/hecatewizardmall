@@ -43,33 +43,85 @@ const SendToWarehousePage = () => {
 
 
     const s = search.toLowerCase().trim();
+    console.log("search", s)
+
+    // Exact match first
+    const exactProductMatches = products.filter(
+        (p) => p.name.toLowerCase() === s || p.sku?.toLowerCase() === s || p.barCode?.toLowerCase() === s
+    );
+    console.log("exactProductMatches", exactProductMatches)
+
+    const exactVariationMatches = products
+        .flatMap((p) =>
+            p.variations?.map((v) => ({
+                parent: p,
+                variation: v,
+            })) || []
+        )
+        .filter(
+            (v) =>
+                v.variation.variationName?.toLowerCase() === s ||
+                v.variation.sku?.toLowerCase() === s ||
+                v.variation.barCode?.toLowerCase() === s
+        );
+    console.log("exactVariationMatches", exactVariationMatches)
 
     const productResults =
-        s === ""
-            ? []
-            : products.filter(
-                (p) =>
-                    p.name.toLowerCase().includes(s) ||
-                    p.sku?.toLowerCase().includes(s) ||
-                    p.barCode?.toLowerCase().includes(s)
-            );
+        exactProductMatches.length > 0
+            ? exactProductMatches
+            : s === ""
+                ? []
+                : products.filter(
+                    (p) =>
+                        p.name.toLowerCase().includes(s) ||
+                        p.sku?.toLowerCase().includes(s) ||
+                        p.barCode?.toLowerCase().includes(s)
+                );
+    console.log("productResults", productResults)
 
     const variationResults =
-        s === ""
-            ? []
-            : products
-                .flatMap((p) =>
-                    p.variations?.map((v) => ({
-                        parent: p,
-                        variation: v,
-                    }))
-                )
-                .filter(
-                    (v) =>
-                        v.variation.variationName?.toLowerCase().includes(s) ||
-                        v.variation.sku?.toLowerCase().includes(s) ||
-                        v.variation.barCode?.toLowerCase().includes(s)
-                );
+        exactVariationMatches.length > 0
+            ? exactVariationMatches
+            : s === ""
+                ? []
+                : products
+                    .flatMap((p) =>
+                        p.variations?.map((v) => ({ parent: p, variation: v })) || []
+                    )
+                    .filter(
+                        (v) =>
+                            v.variation.variationName?.toLowerCase().includes(s) ||
+                            v.variation.sku?.toLowerCase().includes(s) ||
+                            v.variation.barCode?.toLowerCase().includes(s)
+                    );
+    console.log("variationResults", variationResults)
+
+    // const productResults =
+    //     s === ""
+    //         ? []
+    //         : products.filter(
+    //             (p) =>
+    //                 p.name.toLowerCase().includes(s) ||
+    //                 p.sku?.toLowerCase().includes(s) ||
+    //                 p.barCode?.toLowerCase().includes(s)
+    //         );
+
+    // const variationResults =
+    //     s === ""
+    //         ? []
+    //         : products
+    //             .flatMap((p) =>
+    //                 p.variations?.map((v) => ({
+    //                     parent: p,
+    //                     variation: v,
+    //                 }))
+    //             )
+    //             .filter(
+    //                 (v) =>
+    //                     v.variation.variationName?.toLowerCase().includes(s) ||
+    //                     v.variation.sku?.toLowerCase().includes(s) ||
+    //                     v.variation.barCode?.toLowerCase().includes(s)
+    //             );
 
     useEffect(() => {
         if (search === "") return;

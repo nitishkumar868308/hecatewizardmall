@@ -58,29 +58,11 @@ const SearchPage = () => {
         };
     }, [open]);
 
-    // Combine and filter results
-    // const combinedResults = [
-    //     ...(products || []).map((item) => ({ ...item, type: "Product" })),
-    //     ...(subcategories || []).map((item) => ({ ...item, type: "Subcategory" })),
-    //     ...(categories || []).map((item) => ({ ...item, type: "Category" })),
-    //     ...(tags || []).map((item) => ({ ...item, type: "Tag" })),
-    // ];
-
-    // const normalizedQuery = query.trim().replace(/\s+/g, " ").toLowerCase();
-
-    // const filtered =
-    //     normalizedQuery === ""
-    //         ? []
-    //         : combinedResults.filter((item) =>
-    //             item.name.toLowerCase().includes(normalizedQuery)
-    //         );
-    // Combine and filter results
     const combinedResults = [
         ...(tags || []).map((item) => ({ ...item, type: "Tag" })),
         ...(products || []).map((item) => ({ ...item, type: "Product" })),
         ...(subcategories || []).map((item) => ({ ...item, type: "Subcategory" })),
         ...(categories || []).map((item) => ({ ...item, type: "Category" })),
-        
     ];
 
     // Normalize query
@@ -88,34 +70,69 @@ const SearchPage = () => {
     const queryWords = normalizedQuery.split(" ").filter(Boolean);
 
     // Smart match function 🔍
+    // const matchesQuery = (item) => {
+    //     const itemName = item.name.toLowerCase();
+    //     const textFields = [
+    //         item.name,
+    //         item.description,
+    //         item.category?.name,
+    //         item.subcategory?.name,
+    //         Array.isArray(item.tags)
+    //             ? item.tags.map((t) => (typeof t === "string" ? t : t.name)).join(" ")
+    //             : "",
+    //     ]
+    //         .filter(Boolean)
+    //         .join(" ")
+    //         .toLowerCase();
+
+    //     if (itemName === normalizedQuery) return true;
+
+    //     // ✅ Flexible matching — allows partial but strong relevance
+    //     const matchCount = queryWords.filter((word) =>
+    //         textFields.includes(word)
+    //     ).length;
+
+    //     // at least half the words should match
+    //     return matchCount >= Math.ceil(queryWords.length / 2);
+    // };
     const matchesQuery = (item) => {
+        const normalizedQueryTrimmed = normalizedQuery.trim();
+        const itemName = item.name.toLowerCase();
+
+        // 1️⃣ Exact match
+        if (itemName === normalizedQueryTrimmed) return true;
+
+        // 2️⃣ Flexible match (partial) only on name + description
         const textFields = [
             item.name,
             item.description,
-            item.category?.name,
-            item.subcategory?.name,
-            Array.isArray(item.tags)
-                ? item.tags.map((t) => (typeof t === "string" ? t : t.name)).join(" ")
-                : "",
         ]
             .filter(Boolean)
             .join(" ")
             .toLowerCase();
 
-        // ✅ Flexible matching — allows partial but strong relevance
+        // Split query into words
         const matchCount = queryWords.filter((word) =>
             textFields.includes(word)
         ).length;
 
-        // at least half the words should match
+        // At least half words should match
         return matchCount >= Math.ceil(queryWords.length / 2);
     };
 
-    // Apply filter
+    // First, check exact matches
+    const exactMatches = combinedResults.filter(
+        (item) => item.name.toLowerCase() === normalizedQuery
+    );
+
+    // Apply filter: exact match ko priority do
     const filtered =
         normalizedQuery === ""
             ? []
-            : combinedResults.filter((item) => matchesQuery(item));
+            : exactMatches.length > 0
+                ? exactMatches
+                : combinedResults.filter((item) => matchesQuery(item));
+
 
 
     console.log("filtered", filtered)

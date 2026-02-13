@@ -278,37 +278,54 @@ export async function POST(req) {
         // ⭐ PAYGLOCAL PAYMENT METHOD
         // **************************
         if (body.paymentMethod === "PayGlocal") {
-            // const payload = {
-            //     merchantId: process.env.PAYGLOCAL_MERCHANT_ID,
-            //     merchantReferenceId: orderNumber,
-            //     amount: {
-            //         value: orderRecord.totalAmount * 100,
-            //         currency: "INR"
-            //     },
-            //     customer: {
-            //         id: `user_${body.user?.id}`,
-            //         email: body.user?.email,
-            //         phone: body.user?.phone
-            //     },
-            //     returnUrl: `${baseUrl}/payment-success?order_id=${orderNumber}`,
-            //     notifyUrl: `${baseUrl}/api/payglocal/webhook`
-            // };
-            const payload = {
-                "merchantTxnId": "23AEE8CB6B62EE2AF07",
-                "paymentData": {
-                    "totalAmount": "1",
-                    "txnCurrency": "INR"
-                },
-                "merchantCallbackURL": "https://api.uat.payglocal.in/gl/v1/payments/merchantCallback"
-            }
-            console.log("payload", payload)
 
-            // Generate tokens using official JS client
+            const merchantTxnId = orderNumber; // ✅ unique order number
+
+            const payload = {
+                merchantTxnId,
+                paymentData: {
+                    totalAmount: orderRecord.totalAmount.toString(), // ✅ dynamic
+                    txnCurrency: "INR",
+                    billingData: {
+                        firstName: body.user?.name?.split(" ")[0] || "Customer",
+                        lastName: body.user?.name?.split(" ")[1] || "",
+                        addressStreet1: body.billingAddress?.address || "NA",
+                        addressStreet2: "",
+                        addressCity: body.billingAddress?.city || "NA",
+                        addressState: body.billingAddress?.state || "NA",
+                        addressPostalCode: body.billingAddress?.pincode || "000000",
+                        addressCountry: "IN",
+                        emailId: body.user?.email || "example@gmail.com"
+                    }
+                },
+                riskData: {
+                    shippingData: {
+                        firstName: body.shippingAddress?.name?.split(" ")[0] || "Customer",
+                        lastName: body.shippingAddress?.name?.split(" ")[1] || "",
+                        addressStreet1: body.shippingAddress?.address || "NA",
+                        addressStreet2: "",
+                        addressCity: body.shippingAddress?.city || "NA",
+                        addressState: body.shippingAddress?.state || "NA",
+                        addressPostalCode: body.shippingAddress?.pincode || "000000",
+                        addressCountry: "IN",
+                        emailId: body.user?.email || "example@gmail.com",
+                        callingCode: "+91",
+                        phoneNumber: customerPhone
+                    }
+                },
+
+                merchantCallbackURL: `${baseUrl}/api/payglocal/callback`
+                // merchantCallbackURL: 'https://hecatewizardmall.com/api/payglocal/callback'
+            };
+
+            console.log("PayGlocal Payload:", payload);
+
+            // Generate JWE + JWS
             const tokens = await createPayGlocalTokens(payload);
             console.log("tokens", tokens)
 
             const pgResponse = await axios.post(
-                "https://api.uat.payglocal.in/gl/v1/payments/initiate/paycollect",
+                "https://api.prod.payglocal.in/gl/v1/payments/initiate/paycollect",
                 tokens.jweToken,
                 {
                     headers: {
@@ -317,7 +334,7 @@ export async function POST(req) {
                     },
                 }
             );
-            console.log("response.data", pgResponse);
+            console.log("pgResponse", pgResponse)
 
             return new Response(
                 JSON.stringify({
@@ -327,6 +344,7 @@ export async function POST(req) {
                 { status: 200 }
             );
         }
+
 
 
         return new Response(JSON.stringify({ message: "Payment method missing" }), {

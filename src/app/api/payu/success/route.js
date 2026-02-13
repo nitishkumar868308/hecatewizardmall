@@ -113,12 +113,12 @@ export async function POST(req) {
                 // Send confirmation email to user
                 await sendMail({
                     to: userEmail,
-                    subject: `Order Confirmation - ${orderId}`,
+                    subject: `Order Confirmation - ${orderRecord.orderNumber}`,
                     html: orderConfirmationTemplate({
                         shippingName: orderRecord.shippingName,
                         orderId: orderRecord.orderNumber,
                         total: orderRecord.totalAmount,
-                        currency: orderRecord.currency || "₹",
+                        currency: orderRecord.paymentCurrency || "₹",
                         downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/invoice/${orderRecord.orderNumber}`
                     }),
                 });
@@ -126,11 +126,11 @@ export async function POST(req) {
                 //Send notification email to admin
                 await sendMail({
                     to: process.env.ADMIN_EMAIL,
-                    subject: `New Order Received - ${orderId}`,
+                    subject: `New Order Received - ${orderRecord.orderNumber}`,
                     html: orderConfirmationTemplateAdmin({
                         orderId: orderRecord.orderNumber,
                         total: orderRecord.totalAmount,
-                        currency: orderRecord.currency || "₹",
+                        currency: orderRecord.paymentCurrency || "₹",
                     }),
                 });
 
