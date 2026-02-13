@@ -58,7 +58,7 @@ const AboutUs = () => {
                         transition={{ delay: 0.3 }}
                         className="text-zinc-500 max-w-2xl mx-auto text-lg md:text-xl font-medium leading-relaxed"
                     >
-                        We are a digital sanctuary for spiritual seekers, blending centuries-old Vedic tradition with the speed of tomorrow's technology.
+                        We are a digital sanctuary for spiritual seekers, blending centuries-old Vedic tradition with the speed of tomorrow&apos;s technology.
                     </motion.p>
                 </div>
             </section>
@@ -101,7 +101,7 @@ const AboutUs = () => {
                                 Empowering Lives <br />Through <span className="text-[#66FCF1]">Cosmic Clarity.</span>
                             </h2>
                             <p className="text-zinc-400 text-lg font-light leading-relaxed">
-                                Founded with the vision to democratize spiritual guidance, our platform serves as a bridge between world-class Vedic experts and seekers across the globe. We believe that astrology is not just about predictions—it's about preparation.
+                                Founded with the vision to democratize spiritual guidance, our platform serves as a bridge between world-class Vedic experts and seekers across the globe. We believe that astrology is not just about predictions—it&apos;s about preparation.
                             </p>
                         </div>
 

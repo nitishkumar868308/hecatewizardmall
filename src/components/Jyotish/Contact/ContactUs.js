@@ -39,7 +39,7 @@ const ContactUs = () => {
                 >
                     <span className="text-[#66FCF1] font-black uppercase tracking-[0.4em] text-[10px] mb-4 block">Get In Touch</span>
                     <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">
-                        We're Here To <br /> <span className="italic bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">Guide Your Way</span>
+                        We&apos;re Here To <br /> <span className="italic bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">Guide Your Way</span>
                     </h1>
                     <p className="text-zinc-500 max-w-xl mx-auto text-lg">
                         Have questions about your stars? Our team and experts are available round the clock to assist you.

@@ -22,7 +22,7 @@ const HeroSection = () => {
                 </span>
 
                 <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight text-white">
-                    Consult India's Best <br />
+                    Consult India&apos;s Best <br />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#66FCF1] to-[#45A29E]">
                         <Typewriter
                             words={[
