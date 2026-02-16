@@ -105,6 +105,18 @@ const Page = () => {
         console.log("handleUpdateDetail")
     }
 
+    const statusStyles = {
+        PENDING: "bg-yellow-100 text-yellow-700",
+        PROCESSING: "bg-blue-100 text-blue-700",
+        SHIPPED: "bg-indigo-100 text-indigo-700",
+        DELIVERED: "bg-green-100 text-green-700",
+        COMPLETED: "bg-emerald-100 text-emerald-700",
+        FAILED: "bg-red-100 text-red-700",
+        CANCELED: "bg-gray-200 text-gray-700",
+        REFUND: "bg-purple-100 text-purple-700",
+    };
+
+
     return (
         <DefaultPageAdmin>
             <div className="p-5">
@@ -179,7 +191,20 @@ const Page = () => {
 
 
                                         {/* Order Number */}
-                                        <td className="p-4 font-semibold text-center">{order.orderNumber}</td>
+                                        <td className="p-4 font-semibold text-center">
+                                            <div>{order.orderNumber}</div>
+                                            <div className="text-sm text-gray-500 font-normal">
+                                                ({new Date(order.createdAt).toLocaleString("en-IN", {
+                                                    day: "2-digit",
+                                                    month: "short",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                    second: "2-digit",
+                                                })})
+                                            </div>
+                                        </td>
+
 
                                         {/* User Name and Email */}
                                         <td className="p-4 font-semibold text-center">
@@ -199,16 +224,31 @@ const Page = () => {
                                         {/* <td className="p-4 text-center font-semibold">{order.paymentMethod || "-"}</td> */}
                                         {/* Status */}
                                         <td className="p-4 text-center">
-                                            <span
-                                                className={`px-3 py-1 rounded-lg text-xs font-semibold 
-                                                        ${order.status === "PENDING"
-                                                        ? "bg-yellow-100 text-yellow-700"
-                                                        : "bg-green-100 text-green-700"
-                                                    }`}
-                                            >
-                                                {order.status}
-                                            </span>
+                                            <div>
+                                                <span
+                                                    className={`px-3 py-1 rounded-lg text-xs font-semibold ${statusStyles[order.status] ||
+                                                        "bg-gray-100 text-gray-700"
+                                                        }`}
+                                                >
+                                                    {order.status}
+                                                </span>
+                                            </div>
+
+
+                                            {/* Updated Date */}
+                                            {order.updatedAt && (
+                                                <div className="text-xs text-gray-500 mt-2">
+                                                    ({new Date(order.updatedAt).toLocaleString("en-IN", {
+                                                        day: "2-digit",
+                                                        month: "short",
+                                                        year: "numeric",
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                    })})
+                                                </div>
+                                            )}
                                         </td>
+
 
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
                                             <div className="flex justify-center">

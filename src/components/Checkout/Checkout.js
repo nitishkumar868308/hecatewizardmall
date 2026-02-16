@@ -145,15 +145,18 @@ const Checkout = () => {
     return () => clearInterval(timer);
   }, [isXpress]);
 
-  useEffect(() => {
-    if (!selected) {  // only if user hasn't chosen anything
-      if (user?.country?.toLowerCase() === "india") {
-        setSelected("PayU");
-      } else {
-        setSelected("PayU");
-      }
-    }
-  }, [user?.country]);
+  // useEffect(() => {
+  //   if (!selected) {
+  //     if (user?.country?.toLowerCase() === "india") {
+  //       setSelected("PayU");
+  //     } else {
+  //       setSelected("PayU");
+  //     }
+  //   }
+  // }, [user?.country]);
+
+
+
 
   const validationSchema = Yup.object().shape({
     gender: Yup.string().required("Gender is required"),
@@ -176,6 +179,7 @@ const Checkout = () => {
   ];
   const { shippingPricings } = useSelector((state) => state.shippingPricing);
   console.log("shippingPricings", shippingPricings)
+  console.log("user", user)
 
   const isIncomplete = requiredFields.some(
     (field) => !user?.[field] || user[field].toString().trim() === ""
@@ -245,12 +249,49 @@ const Checkout = () => {
   }, [country, dispatch]);
 
 
-  const methods = [
-    { name: "PayGlocal", href: "/image/payglocal-logo.png" },
-    { name: "PayU", href: "/image/new-payu-logo.svg" },
-    // { name: "CashFree", href: "/image/cashfree_logo.svg" },
+  // const methods = [
+  //   { name: "PayGlocal", href: "/image/payglocal-logo.png" },
+  //   { name: "PayU", href: "/image/new-payu-logo.svg" },
+  //   // { name: "CashFree", href: "/image/cashfree_logo.svg" },
 
-  ];
+  // ];
+
+  // maan lo tumhare paas selectedShippingId ya selectedAddress state hai
+  const selectedShippingAddress =
+    user?.addresses?.find((addr) => addr.id === selectedShipping) || null;
+
+  // agar shipping address selected nahi hai ya empty hai
+  const finalCountry =
+    selectedShippingAddress?.country || user?.country;
+
+
+  const isIndia = finalCountry?.toLowerCase() === "india";
+
+  console.log("isIndia", isIndia)
+
+  const methods = isIndia
+    ? [
+      { name: "PayU", href: "/image/new-payu-logo.svg" },
+      { name: "PayGlocal", href: "/image/payglocal-logo.png" },
+    ]
+    : [
+      { name: "PayGlocal", href: "/image/payglocal-logo.png" },
+      { name: "PayU", href: "/image/new-payu-logo.svg" },
+    ];
+
+
+  console.log("methods", methods)
+
+  useEffect(() => {
+    if (!finalCountry) return;
+
+    const isIndia = finalCountry.toLowerCase() === "india";
+
+    setSelected(isIndia ? "PayU" : "PayGlocal");
+
+  }, [finalCountry]);
+
+
 
 
   const getTypeIcon = (addr) => {

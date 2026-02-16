@@ -96,18 +96,23 @@ const Loader = () => {
           </svg>
 
           {/* Logo Glass Frame */}
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="relative w-28 h-28 md:w-36 md:h-36 z-30 rounded-full overflow-hidden border-2 border-white/10 p-1 bg-black/40 backdrop-blur-sm"
-          >
-            <img
-              src="/image/logo.png"
-              alt="Logo"
-              className="w-38 h-28 md:w-36 md:h-36 object-contain rounded-md"
-              loading="eager"
-            />
-          </motion.div>
+          <div className="flex flex-col items-center text-center">
+
+            {/* Logo */}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="relative w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-2 border-white/10 p-1 bg-black/40 backdrop-blur-sm"
+            >
+              <img
+                src="/image/logo.png"
+                alt="Logo"
+                className="w-[80%] h-[80%] object-contain mx-auto"
+              />
+
+            </motion.div>
+
+          </div>
         </div>
 
         {/* 5. Progress & Status */}

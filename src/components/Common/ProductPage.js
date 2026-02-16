@@ -4255,7 +4255,7 @@ const ProductDetail = () => {
                                             <div
                                                 className="text-gray-700 text-base leading-loose font-medium tracking-normal italic"
                                                 dangerouslySetInnerHTML={{
-                                                    __html: DOMPurify.sanitize(product.description)
+                                                    __html: DOMPurify.sanitize(selectedVariation.description) // ✅ correct
                                                 }}
                                             />
 
