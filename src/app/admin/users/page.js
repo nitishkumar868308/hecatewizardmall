@@ -152,6 +152,9 @@ const Page = () => {
                                                 Provider
                                             </th>
                                             <th className="px-6 py-3 text-left text-white text-sm font-semibold uppercase tracking-wider">
+                                                Created At
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-white text-sm font-semibold uppercase tracking-wider">
                                                 Actions
                                             </th>
                                         </tr>
@@ -188,6 +191,26 @@ const Page = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-700">
                                                     {user.provider || "LOCAL"}
                                                 </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-700 text-sm">
+                                                    {user.createdAt ? (
+                                                        <div className="flex flex-col">
+                                                            <span>
+                                                                {new Date(user.createdAt).toLocaleDateString("en-IN", {
+                                                                    day: "2-digit",
+                                                                    month: "short",
+                                                                    year: "numeric",
+                                                                })}
+                                                            </span>
+                                                            <span className="text-xs text-gray-500">
+                                                                {new Date(user.createdAt).toLocaleTimeString("en-IN")}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-gray-400">No Data</span>
+                                                    )}
+                                                </td>
+
+
                                                 <td className="px-6 py-4 whitespace-nowrap flex gap-2">
                                                     <button
                                                         onClick={() => {

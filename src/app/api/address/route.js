@@ -83,7 +83,7 @@ export async function POST(req) {
         const { name, mobile, pincode, address, city, state, landmark, type, userId, customType, isDefault, country } = body;
 
         // 🧩 Required fields
-        if (!name || !mobile || !pincode || !address || !city || !state || !type || !country) {
+        if (!name || !mobile  || !address || !city || !state || !type || !country) {
             return new Response(
                 JSON.stringify({ message: "All required fields must be provided" }),
                 { status: 400 }

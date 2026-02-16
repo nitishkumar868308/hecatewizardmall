@@ -444,7 +444,8 @@ export default function OrderDetail({
                     <div>
                         <h2 className="text-3xl font-bold">Order Invoice</h2>
                         <p className="text-sm text-gray-600 mt-1">
-                            Invoice No: <b>{generateInvoiceNumber(selectedOrder.id, selectedOrder.createdAt)}</b>
+                            {/* Invoice No: <b>{generateInvoiceNumber(selectedOrder.id, selectedOrder.createdAt)}</b> */}
+                            Invoice No: <b>{selectedOrder.invoiceNumber || "No Invoice Number"}</b>
                         </p>
                         <p className="text-sm text-gray-500">Order Number: {selectedOrder.orderNumber}</p>
                     </div>

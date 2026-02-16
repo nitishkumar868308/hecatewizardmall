@@ -399,6 +399,8 @@ model Orders {
   orderBy         String? 
 
   trackingLink     String? 
+  invoiceNumber String? @unique
+  invoiceDate   DateTime?
 }
 
 model ShippingPricing {

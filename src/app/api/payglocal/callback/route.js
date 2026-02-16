@@ -3,6 +3,23 @@ import { sendMail } from "@/lib/mailer";
 import { orderConfirmationTemplate } from "@/lib/templates/orderConfirmationTemplate";
 import { orderConfirmationTemplateAdmin } from "@/lib/templates/orderConfirmationTemplateAdmin";
 
+const generateInvoiceNumber = async () => {
+    const lastInvoice = await prisma.orders.findFirst({
+        where: { invoiceNumber: { not: null } },
+        orderBy: { invoiceDate: "desc" },
+    });
+
+    let nextNumber = 1;
+
+    if (lastInvoice?.invoiceNumber) {
+        const last = parseInt(lastInvoice.invoiceNumber.split("-")[1]);
+        nextNumber = last + 1;
+    }
+
+    return `INV-${String(nextNumber).padStart(5, "0")}`;
+};
+console.log("generateInvoiceNumber", generateInvoiceNumber)
+
 export async function POST(req) {
     try {
 
@@ -48,11 +65,23 @@ export async function POST(req) {
 
         if (status === "SENT_FOR_CAPTURE") {
 
-            // 1️⃣ Update payment status
+            const invoiceNumber = await generateInvoiceNumber();
+
             await prisma.orders.update({
                 where: { orderNumber: merchantTxnId },
-                data: { paymentStatus: "PAID" }
+                data: {
+                    status: "PENDING",
+                    paymentStatus: "PAID",
+                    invoiceNumber,
+                    invoiceDate: new Date()
+                },
             });
+
+            // // 1️⃣ Update payment status
+            // await prisma.orders.update({
+            //     where: { orderNumber: merchantTxnId },
+            //     data: { paymentStatus: "PAID" }
+            // });
 
             // 2️⃣ Clear Cart
             await prisma.cart.updateMany({

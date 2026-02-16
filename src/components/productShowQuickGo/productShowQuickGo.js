@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image"
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -239,6 +239,24 @@ const Page = () => {
         router.push(`/hecate-quickGo/product/${product.id}`);
     }
 
+    const herbsProducts = useMemo(() => {
+        return delhiProducts.filter(
+            (p) => p.categoryId === herbsCategory?.id
+        );
+    }, [delhiProducts, herbsCategory]);
+
+
+    const getRandomProducts = (products, count = 9) => {
+        if (!products) return [];
+
+        const shuffled = [...products].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
+    };
+
+    const randomProducts = useMemo(() => {
+        return getRandomProducts(herbsProducts, 9);
+    }, [herbsProducts]);
+
 
     return (
         <>
@@ -318,12 +336,12 @@ const Page = () => {
                     {(() => {
 
 
-                        const herbsProducts = delhiProducts.filter(
-                            p => p.categoryId === herbsCategory?.id
-                        );
+                        // const herbsProducts = delhiProducts.filter(
+                        //     p => p.categoryId === herbsCategory?.id
+                        // );
 
 
-                        console.log("herbsProducts", herbsProducts)
+                        // console.log("herbsProducts", herbsProducts)
 
                         return (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -369,7 +387,7 @@ const Page = () => {
                                 </div> */}
 
                                 <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                    {herbsProducts?.map((product, i) => (
+                                    {randomProducts?.map((product, i) => (
                                         <div
                                             key={product.id}
                                             onClick={() => prdocuPage(product)}
