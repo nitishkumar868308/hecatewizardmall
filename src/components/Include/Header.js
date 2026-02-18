@@ -50,7 +50,6 @@ const Header = () => {
     const [activeMenuItem, setActiveMenuItem] = useState(null);
 
 
-
     const { headers } = useSelector((state) => state.headers);
     const { categories, loading, error } = useSelector((state) => state.category);
     const { subcategories } = useSelector((state) => state.subcategory);
@@ -120,7 +119,7 @@ const Header = () => {
         dispatch(fetchCategories());
         dispatch(fetchSubcategories());
         dispatch(fetchProducts());
-    }, [dispatch]);
+    }, [dispatch, country]);
 
 
     // useEffect(() => {
@@ -1613,6 +1612,8 @@ const Header = () => {
                                                 const isVariationOfferActive = minRequired > 0 && totalVariationQty >= minRequired;
 
                                                 const fmt = n => Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+                                                const currency = fullProduct?.currency || "₹";
+                                                const currencySymbol = fullProduct?.currencySymbol || "₹";
 
 
 
@@ -1690,7 +1691,7 @@ const Header = () => {
                                                                                 if (!bulkPrice || !minQty) return null;
                                                                                 return (
                                                                                     <li key={i}>
-                                                                                        {c.color}: ₹{fmt(bulkPrice)} per item (Min {minQty})
+                                                                                        {c.color}: {currency} {currencySymbol}{fmt(bulkPrice)} per item (Min {minQty})
                                                                                     </li>
                                                                                 );
                                                                             })}
@@ -1799,22 +1800,19 @@ const Header = () => {
 
                                                                                                     {paid && (
                                                                                                         <div className="text-gray-700 font-semibold">
-                                                                                                            {c.currencySymbol}{fmt(c.pricePerItem)} × {paid.paidQty} =
-                                                                                                            {c.currencySymbol}{fmt(c.pricePerItem * paid.paidQty)}
+                                                                                                           {currency} {currencySymbol}{fmt(c.pricePerItem)} × {paid.paidQty} = {currency} {currencySymbol}{fmt(c.pricePerItem * paid.paidQty)}
                                                                                                         </div>
                                                                                                     )}
 
                                                                                                     {free && (
                                                                                                         <div className="text-green-700 font-semibold">
-                                                                                                            🎁 {free.freeQty} FREE (Saved {c.currencySymbol}
-                                                                                                            {fmt(c.pricePerItem * free.freeQty)})
+                                                                                                            🎁 {free.freeQty} FREE (Saved {currency} {currencySymbol} {fmt(c.pricePerItem * free.freeQty)})
                                                                                                         </div>
                                                                                                     )}
 
                                                                                                     {!paid && !free && (
                                                                                                         <div>
-                                                                                                            {c.currencySymbol}{fmt(c.pricePerItem)} × {c.quantity} =
-                                                                                                            {c.currencySymbol}{fmt(c.pricePerItem * c.quantity)}
+                                                                                                           {currency} {currencySymbol}{fmt(pricePerItem)} × {c.quantity} = {currency}  {currencySymbol}{fmt(pricePerItem * c.quantity)}
                                                                                                         </div>
                                                                                                     )}
                                                                                                 </div>
@@ -1824,22 +1822,19 @@ const Header = () => {
                                                                                         <>
                                                                                             <div>
                                                                                                 <span className="line-through text-gray-400">
-                                                                                                    {c.currencySymbol}{fmt(colorPrice)} × {c.quantity} =
-                                                                                                    {c.currencySymbol}{fmt(originalTotal)}
+                                                                                                    {currency} {currencySymbol}{fmt(colorPrice)} × {c.quantity} = {currency} {currencySymbol}{fmt(originalTotal)}
                                                                                                 </span>
                                                                                             </div>
                                                                                             <div className="text-green-700 font-semibold">
-                                                                                                {c.currencySymbol}{fmt(bulkPrice)} × {c.quantity} =
-                                                                                                {c.currencySymbol}{fmt(discountedTotal)} ✅
+                                                                                               {currency} {currencySymbol}{fmt(bulkPrice)} × {c.quantity} = {currency} {currencySymbol}{fmt(discountedTotal)} ✅
                                                                                             </div>
                                                                                             <div className="text-xs text-green-600">
-                                                                                                You saved {c.currencySymbol}{fmt(saved)} 🎉
+                                                                                                You saved {currency} {currencySymbol}{fmt(saved)} 🎉
                                                                                             </div>
                                                                                         </>
                                                                                     ) : (
                                                                                         <div>
-                                                                                            {c.currencySymbol}{fmt(colorPrice)} × {c.quantity} =
-                                                                                            {c.currencySymbol}{fmt(originalTotal)}
+                                                                                            {currency} {currencySymbol}{fmt(colorPrice)} × {c.quantity} = {currency} {currencySymbol}{fmt(originalTotal)}
                                                                                         </div>
                                                                                     )}
                                                                                 </div>
@@ -1893,16 +1888,16 @@ const Header = () => {
                                                                                 Total:&nbsp;
                                                                                 {savings > 0 ? (
                                                                                     <>
-                                                                                        <span className="line-through text-gray-400 mr-1">₹{fmt(totalOriginal)}</span>
-                                                                                        <span className="text-green-700">₹{fmt(totalAfterOffer)} ✅</span>
+                                                                                        <span className="line-through text-gray-400 mr-1">{currency} {currencySymbol}{fmt(totalOriginal)}</span>
+                                                                                        <span className="text-green-700">{currency} {currencySymbol}{fmt(totalAfterOffer)} ✅</span>
                                                                                     </>
                                                                                 ) : (
-                                                                                    <span>₹{fmt(totalOriginal)}</span>
+                                                                                    <span>{currency} {currencySymbol}{fmt(totalOriginal)}</span>
                                                                                 )}
                                                                             </div>
                                                                             {savings > 0 && (
                                                                                 <div className="text-xs text-green-600 font-semibold mt-1">
-                                                                                    Total Savings: ₹{fmt(savings)}
+                                                                                    Total Savings: {currency} {currencySymbol}{fmt(savings)}
                                                                                 </div>
                                                                             )}
                                                                         </div>
@@ -1939,8 +1934,7 @@ const Header = () => {
 
                                 </div>
                             </div>
-                        )
-                        }
+                        )}
 
 
                         < div className="relative" >

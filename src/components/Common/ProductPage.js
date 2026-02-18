@@ -2253,13 +2253,6 @@ const ProductDetail = () => {
             return isSame;
         };
 
-
-        // const sameCoreVariationSafe = (item) => {
-        //     if (!selectedCore || Object.keys(selectedCore).length === 0) return false;
-        //     return sameCoreVariation(item);
-        // };
-        // console.log("sameCoreVariationSafe" , sameCoreVariationSafe)
-        // 🔹 Compute total group quantity including updated item if cartItemId provided
         const totalGroupQty = userCart.reduce((sum, item) => {
             if (
                 item.productId !== product.id ||
@@ -2390,7 +2383,7 @@ const ProductDetail = () => {
 
             // 3️⃣ Buy X Get Y
             if (offer.discountType === "buyXGetY") {
-                const { buy, get } = offer.discountValue;
+                const { buy, get, free } = offer.discountValue;
                 if (finalGroupQty >= buy) {
                     offerApplied = true;
                     offerDiscount = 0;

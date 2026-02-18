@@ -15,6 +15,8 @@ import {
 } from "@/app/redux/slices/state/addStateSlice";
 import { setSelectedState } from "@/app/redux/slices/selectedStateSlice";
 import { openLocationModal } from "@/app/redux/slices/locationModalSlice";
+import { fetchShippingPricingCountryWise } from "@/app/redux/slices/shippingPricing/shippingPricingSlice";
+import { fetchDonationsCountryWise } from "@/app/redux/slices/donate/donateSlice";
 
 const Topbar = () => {
     const dispatch = useDispatch();
@@ -48,7 +50,6 @@ const Topbar = () => {
     //     }
     // }, []);
 
-
     useEffect(() => {
         // On mount, check localStorage first
         const savedCountry = localStorage.getItem("selectedCountry");
@@ -58,6 +59,15 @@ const Topbar = () => {
             dispatch(setCountry(countryPricing[0].code));
         }
     }, [countryPricing, country, dispatch]);
+
+    useEffect(() => {
+        if (country) {
+            dispatch(fetchShippingPricingCountryWise(country));
+            dispatch(fetchDonationsCountryWise(country))
+        }
+    }, [country, dispatch]);
+
+
 
     const countriesprice = [...countryPricing]
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
@@ -78,7 +88,7 @@ const Topbar = () => {
         const { payload } = await dispatch(fetchCountryTaxes(selectedCountry));
         console.log("Fetched taxes for", selectedCountry, payload);
         const { payload: updatedProducts } = await dispatch(fetchProducts(selectedCountry));
-        console.log("updatedProducts" , updatedProducts)
+        console.log("updatedProducts", updatedProducts)
         try {
             // Update each cart item with new price from updatedProducts
             const promises = userCart.map((item) => {
@@ -102,7 +112,8 @@ const Topbar = () => {
                 const newTotal = newPrice * item.quantity;
                 const currencySymbol = variation.currencySymbol || product.currencySymbol;
                 const currency = variation.currency || product.currency;
-                // const bulkPrice = variation.bulkPrice;
+                const newBulkPrice = variation.bulkPrice || product.bulkPrice || null;
+
 
                 return dispatch(updateCart({
                     id: item.id,
@@ -111,7 +122,7 @@ const Topbar = () => {
                     currencySymbol,
                     selectedCountry: selectedCountryCode,
                     currency,
-                    // bulkPrice : bulkPrice
+                    bulkPrice: newBulkPrice,
                 })).unwrap();
             }).filter(Boolean);
 

@@ -229,6 +229,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { usePathname } from "next/navigation";
 
 
+// import { fetchProducts } from "@/app/redux/slices/products/productSlice"; useing this solve the currency problem
+
 function useInView(threshold = 0.2) {
     const ref = useRef(null);
     const [inView, setInView] = useState(false);
