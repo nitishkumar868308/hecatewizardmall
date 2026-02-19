@@ -1308,7 +1308,7 @@ import Image from "next/image";
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchFastProducts } from "@/app/redux/slices/products/productSlice";
+import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 import { fetchSubcategories } from "@/app/redux/slices/subcategory/subcategorySlice";
 import { fetchCategories } from "@/app/redux/slices/addCategory/addCategorySlice";
 import { fetchTags } from "@/app/redux/slices/tag/tagSlice";
@@ -1462,7 +1462,7 @@ const Categories = () => {
 
 
     useEffect(() => {
-        dispatch(fetchFastProducts());
+        dispatch(fetchProducts());
         dispatch(fetchSubcategories());
         dispatch(fetchCategories());
         dispatch(fetchTags());

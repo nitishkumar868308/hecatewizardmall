@@ -20,14 +20,22 @@ export const fetchDonations = createAsyncThunk(
 // =============================
 // Fetch donation campaigns Country Wise
 // =============================
+// Fetch Country Wise
 export const fetchDonationsCountryWise = createAsyncThunk(
     "donation/fetchDonationsCountryWise",
-    async (_, { rejectWithValue }) => {
+    async (countryCode, { rejectWithValue }) => {
         try {
-            const response = await axios.get("/api/donate/countryWise");
+            const response = await axios.get("/api/donate/countryWise", {
+                headers: {
+                    "x-country": countryCode,
+                },
+            });
+
             return response.data.data;
         } catch (err) {
-            return rejectWithValue(err.response?.data || "Failed to fetch donations");
+            return rejectWithValue(
+                err.response?.data || "Failed to fetch donations"
+            );
         }
     }
 );

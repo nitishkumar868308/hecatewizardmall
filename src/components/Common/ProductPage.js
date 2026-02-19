@@ -3281,7 +3281,7 @@ const ProductDetail = () => {
     const hasOrderedProduct = orders?.some(
         (order) =>
             order.userId === user?.id &&
-            order.paymentStatus === "paid" && // ✅ sirf paid orders
+            order.paymentStatus === "paid" &&
             order.items?.some((item) => item.productId === product.id)
     );
 

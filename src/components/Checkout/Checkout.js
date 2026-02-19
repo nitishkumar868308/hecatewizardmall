@@ -29,6 +29,8 @@ import { fetchPromoCodes, getApplyPromoCode } from "@/app/redux/slices/promoCode
 import {
   fetchDonationsCountryWise,
 } from "@/app/redux/slices/donate/donateSlice";
+import { convertPrice } from "@/lib/priceConverter";
+
 
 const getPhoneYup = (countryCode) =>
   Yup.string()
@@ -1536,17 +1538,25 @@ const Checkout = () => {
     // ======================
     let discountAmount = 0;
     if (code.discountType === "FLAT") {
-      discountAmount = code.discountValue;
+      const { price } = convertPrice(
+        code.discountValue,
+        country,
+        countryPricing
+      );
+      console.log("price" , price)
+      discountAmount = price;
+      // discountAmount = code.discountValue;
     } else if (code.discountType === "PERCENTAGE") {
       discountAmount = (subtotal * code.discountValue) / 100;
     }
-
+    console.log("discountAmount", discountAmount)
     setDiscount(discountAmount);
     setAppliedCode(code.code);
 
     toast.success(
-      `Promo code ${code.code} applied! You saved ₹${discountAmount.toFixed(2)}`
+      `Promo code ${code.code} applied! You saved ${currencySymbol}${discountAmount.toFixed(2)}`
     );
+
   };
   const currentUser = user;
 
@@ -2073,7 +2083,7 @@ const Checkout = () => {
 
               {discount > 0 && (
                 <p className="text-green-600 font-semibold mt-2">
-                  You saved ₹{discount.toFixed(2)} with code {appliedCode}!
+                  You saved {currencySymbol}{discount.toFixed(2)} with code {appliedCode}!
                 </p>
               )}
             </div>
@@ -2242,7 +2252,7 @@ const Checkout = () => {
                           : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
                         }`}
                     >
-                      ₹{amount}
+                      {currencySymbol}{amount}
                     </button>
                   ))}
                 </div>

@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 // =============================
 // GET – LIST DONATIONS (Campaigns)
 // =============================
-export async function GET() {
+export async function GET(req) {
     try {
         const countryCode = req.headers.get("x-country");
 
@@ -24,18 +24,35 @@ export async function GET() {
         });
 
         const donations = convertedDonation.map((item) => {
-            const basePrice = Number(item.price) || 0;
 
-            const { price, currency, currencySymbol } =
-                convertPrice(basePrice, countryCode, countryPricingList);
+            // 🔥 Convert each amount in amounts array
+            const convertedAmounts = (item.amounts || []).map((amt) => {
+                const baseAmount = Number(amt) || 0;
+
+                const { price } = convertPrice(
+                    baseAmount,
+                    countryCode,
+                    countryPricingList
+                );
+
+                return price;
+            });
+
+            // Currency ek baar hi nikalo (first amount se)
+            const { currency, currencySymbol } = convertPrice(
+                1,
+                countryCode,
+                countryPricingList
+            );
 
             return {
                 ...item,
-                price,
+                amounts: convertedAmounts,
                 currency,
                 currencySymbol,
             };
         });
+
 
         return new Response(
             JSON.stringify({
