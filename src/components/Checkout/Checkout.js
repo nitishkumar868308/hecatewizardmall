@@ -30,7 +30,7 @@ import {
   fetchDonationsCountryWise,
 } from "@/app/redux/slices/donate/donateSlice";
 import { convertPrice } from "@/lib/priceConverter";
-
+import { motion } from "framer-motion";
 
 const getPhoneYup = (countryCode) =>
   Yup.string()
@@ -72,7 +72,7 @@ const Checkout = () => {
   // Donate 
   const { campaigns, userDonations, loading } = useSelector((state) => state.donation);
   console.log("campaigns", campaigns)
-
+  const { countryPricing } = useSelector((state) => state.countryPricing);
   // Note state
   const [note, setNote] = useState("");
   const [selected, setSelected] = useState("");
@@ -1543,7 +1543,7 @@ const Checkout = () => {
         country,
         countryPricing
       );
-      console.log("price" , price)
+      console.log("price", price)
       discountAmount = price;
       // discountAmount = code.discountValue;
     } else if (code.discountType === "PERCENTAGE") {
@@ -1589,6 +1589,32 @@ const Checkout = () => {
     setAppliedCode("");
     setPromoCode("");
   };
+
+  useEffect(() => {
+    if (!appliedCode) return;
+
+    const code = promoCodes.find(
+      (p) => p.code.toUpperCase() === appliedCode.toUpperCase() && p.active
+    );
+
+    if (!code) return;
+
+    let discountAmount = 0;
+
+    if (code.discountType === "FLAT") {
+      const { price } = convertPrice(
+        code.discountValue,
+        country,
+        countryPricing
+      );
+      discountAmount = price;
+    } else if (code.discountType === "PERCENTAGE") {
+      discountAmount = (subtotal * code.discountValue) / 100;
+    }
+
+    setDiscount(discountAmount);
+
+  }, [country, subtotal]);  // 🔥 THIS IS THE KEY
 
   return (
     <div className=" bg-gray-50 py-8 px-4">
@@ -1981,29 +2007,19 @@ const Checkout = () => {
 
 
           {/* Promo Code Section */}
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
 
-            {/* Available Promo Codes */}
             {visiblePromoCodes.length > 0 && (
               <div className="bg-gray-100 p-3 rounded-xl">
                 <h4 className="font-semibold mb-2">Available Promo Codes:</h4>
                 <div className="flex gap-2 flex-wrap">
                   {visiblePromoCodes.map((p) => (
-                    // <span
-                    //   key={p.code}
-                    //   className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
-                    // >
-                    //   {p.code} {p.discountType === "PERCENTAGE" ? `(${p.discountValue}%)` : `(₹${p.discountValue})`}
-                    // </span>
                     <div
                       key={p.code}
                       className="flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
                     >
                       <span>
                         {p.code}{" "}
-                        {/* {p.discountType === "PERCENTAGE"
-                          ? `(${p.discountValue}%)`
-                          : `(₹${p.discountValue})`} */}
                       </span>
 
                       <button
@@ -2023,32 +2039,6 @@ const Checkout = () => {
                 </div>
               </div>
             )}
-
-
-            {/* Promo Code Input */}
-            {/* <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
-              <h4 className="text-lg font-semibold text-gray-800 mb-2">Apply Promo Code</h4>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter promo code"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                  className="flex-1 border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                />
-                <button
-                  onClick={applyPromo}
-                  className="bg-gray-800 text-white px-4 py-2 rounded-xl hover:scale-105 transition-transform duration-200"
-                >
-                  Apply
-                </button>
-              </div>
-              {discount > 0 && (
-                <p className="text-green-600 font-semibold mt-2">
-                  You saved ₹{discount.toFixed(2)} with code {appliedCode}!
-                </p>
-              )}
-            </div> */}
             <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
               <h4 className="text-lg font-semibold text-gray-800 mb-2">
                 Apply Promo Code
@@ -2089,8 +2079,81 @@ const Checkout = () => {
             </div>
 
 
-          </div>
+          </div> */}
 
+          <div className="space-y-3 max-w-md"> {/* Compact space ke liye max-width aur spacing kam rakhi hai */}
+
+            {/* Available Promo Codes - Modern Pill Style */}
+            {visiblePromoCodes.length > 0 && (
+              <div className="bg-white/5 border border-dashed border-zinc-700 p-2.5 rounded-2xl">
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#131515] mb-2 ml-1">
+                  Available Promo Codes:
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {visiblePromoCodes.map((p) => (
+                    <div
+                      key={p.code}
+                      className="group flex items-center gap-2 bg-white border border-[#66FCF1]/20 px-3 py-1.5 rounded-xl transition-all hover:border-[#66FCF1]/50"
+                    >
+                      <span className="text-[#131515] text-xs font-black tracking-wider uppercase">
+                        {p.code}
+                      </span>
+                      <button
+                        onClick={() => handleCopy(p.code)}
+                        className="text-zinc-500 hover:text-[#2f2c3c] transition-colors"
+                      >
+                        {copiedCode === p.code ? (
+                          <Check size={14} className="text-gray-900" />
+                        ) : (
+                          <Copy size={14} />
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Apply Section - Compact & Professional */}
+            <div className="bg-white border border-white/5 p-3.5 rounded-2xl shadow-inner">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="PROMO CODE"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    disabled={discount > 0}
+                    className="w-full bg-[#1F2833]/10 border border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold tracking-widest text-black outline-none focus:border-[#66FCF1]/40 transition-all placeholder:text-zinc-700 disabled:opacity-50"
+                  />
+                </div>
+
+                <button
+                  onClick={discount > 0 ? removePromo : applyPromo}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-tighter transition-all active:scale-95 ${discount > 0
+                      ? "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white"
+                      : "bg-[#66FCF1] text-black hover:shadow-[0_0_15px_rgba(102,252,241,0.3)]"
+                    }`}
+                >
+                  {discount > 0 ? "Remove" : "Apply"}
+                </button>
+              </div>
+
+              {/* Success Message - Subtle & Clean */}
+              {discount > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="mt-3 flex items-center gap-2 px-2"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <p className="text-green-400 text-[15px] font-bold italic">
+                    Sweet! You saved {currencySymbol}{discount.toFixed(2)}
+                  </p>
+                </motion.div>
+              )}
+            </div>
+          </div>
 
           {!isIncomplete && (
             <div className="space-y-4">
