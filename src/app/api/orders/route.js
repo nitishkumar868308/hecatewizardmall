@@ -279,12 +279,12 @@ export async function POST(req) {
         // **************************
         if (body.paymentMethod === "PayGlocal") {
 
-            const merchantTxnId = orderNumber; // ✅ unique order number
+            const merchantTxnId = orderNumber;
 
             const payload = {
                 merchantTxnId,
                 paymentData: {
-                    totalAmount: orderRecord.totalAmount.toString(), // ✅ dynamic
+                    totalAmount: orderRecord.totalAmount.toString(),
                     txnCurrency: "INR",
                     billingData: {
                         firstName: body.user?.name?.split(" ")[0] || "Customer",
