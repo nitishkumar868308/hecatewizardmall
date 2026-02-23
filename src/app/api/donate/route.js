@@ -8,7 +8,7 @@ export async function GET() {
     try {
         const donations = await prisma.donationCampaign.findMany({
             include: {
-                userDonations: true, // include who donated
+                userDonations: true,
             },
             orderBy: { createdAt: "desc" },
         });

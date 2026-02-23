@@ -6,7 +6,7 @@ import { fetchCart, deleteCartItem, updateCart } from "@/app/redux/slices/addToC
 import toast from 'react-hot-toast';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CreditCard, CreditCardFront, Wallet, DollarSign, Edit } from "lucide-react";
+import { CreditCard, CreditCardFront, Wallet, DollarSign, Edit, Copy, Check } from "lucide-react";
 import { fetchProducts } from "@/app/redux/slices/products/productSlice";
 import { fetchOffers } from '@/app/redux/slices/offer/offerSlice'
 import {
@@ -22,13 +22,15 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import {
-  fetchShippingPricing,
+  fetchShippingPricingCountryWise,
 } from "@/app/redux/slices/shippingPricing/shippingPricingSlice";
 import { usePathname } from "next/navigation";
 import { fetchPromoCodes, getApplyPromoCode } from "@/app/redux/slices/promoCode/promoCodeSlice";
 import {
-  fetchDonations,
+  fetchDonationsCountryWise,
 } from "@/app/redux/slices/donate/donateSlice";
+import { convertPrice } from "@/lib/priceConverter";
+import { motion } from "framer-motion";
 
 const getPhoneYup = (countryCode) =>
   Yup.string()
@@ -48,6 +50,7 @@ const Checkout = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.me);
+  const [copiedCode, setCopiedCode] = useState(null);
   console.log("user", user)
   // const [selected, setSelected] = useState(
   //   user?.country?.toLowerCase() === "india" ? "PayU" : ""
@@ -69,7 +72,7 @@ const Checkout = () => {
   // Donate 
   const { campaigns, userDonations, loading } = useSelector((state) => state.donation);
   console.log("campaigns", campaigns)
-
+  const { countryPricing } = useSelector((state) => state.countryPricing);
   // Note state
   const [note, setNote] = useState("");
   const [selected, setSelected] = useState("");
@@ -115,7 +118,10 @@ const Checkout = () => {
   const [timeLeft, setTimeLeft] = useState("");
   const isXpress = pathname.includes("/hecate-quickGo");
   useEffect(() => {
-    if (!isXpress) return; // Only for Xpress
+    dispatch(fetchShippingPricingCountryWise());
+  }, [dispatch, country])
+  useEffect(() => {
+    if (!isXpress) return;
 
     const updateTimer = () => {
       const now = new Date();
@@ -144,6 +150,12 @@ const Checkout = () => {
 
     return () => clearInterval(timer);
   }, [isXpress]);
+
+  const handleCopy = async (code) => {
+    await navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
 
   // useEffect(() => {
   //   if (!selected) {
@@ -234,9 +246,7 @@ const Checkout = () => {
   //   setIsModalOpen(false);
   // };
 
-  useEffect(() => {
-    dispatch(fetchShippingPricing());
-  }, [dispatch]);
+  ;
 
   console.log("countryTax", countryTax)
   const [lastCountry, setLastCountry] = useState(null);
@@ -318,7 +328,7 @@ const Checkout = () => {
 
   useEffect(() => {
     dispatch(getApplyPromoCode())
-    dispatch(fetchDonations());
+    dispatch(fetchDonationsCountryWise());
     dispatch(fetchPromoCodes());
     dispatch(fetchCart());
     dispatch(fetchMe());
@@ -638,12 +648,22 @@ const Checkout = () => {
     country: user?.country || "IND"
   }];
 
+  // const finalShippingOptions = isXpress
+  //   ? xpressShippingOption
+  //   : shippingPricings.filter(
+  //     (option) =>
+  //       option.country.toLowerCase() === (user?.country || "IND").toLowerCase()
+  //   );
+  const shippingCountry = user?.country || "IN";
+
   const finalShippingOptions = isXpress
     ? xpressShippingOption
     : shippingPricings.filter(
       (option) =>
-        option.country.toLowerCase() === (user?.country || "IND").toLowerCase()
+        option.country.toLowerCase() === shippingCountry.toLowerCase()
     );
+
+
 
   useEffect(() => {
     if (shippingOptions.length > 0) {
@@ -1518,17 +1538,25 @@ const Checkout = () => {
     // ======================
     let discountAmount = 0;
     if (code.discountType === "FLAT") {
-      discountAmount = code.discountValue;
+      const { price } = convertPrice(
+        code.discountValue,
+        country,
+        countryPricing
+      );
+      console.log("price", price)
+      discountAmount = price;
+      // discountAmount = code.discountValue;
     } else if (code.discountType === "PERCENTAGE") {
       discountAmount = (subtotal * code.discountValue) / 100;
     }
-
+    console.log("discountAmount", discountAmount)
     setDiscount(discountAmount);
     setAppliedCode(code.code);
 
     toast.success(
-      `Promo code ${code.code} applied! You saved ₹${discountAmount.toFixed(2)}`
+      `Promo code ${code.code} applied! You saved ${currencySymbol}${discountAmount.toFixed(2)}`
     );
+
   };
   const currentUser = user;
 
@@ -1556,6 +1584,37 @@ const Checkout = () => {
 
   const activeCampaigns = campaigns?.filter(c => c.active);
 
+  const removePromo = () => {
+    setDiscount(0);
+    setAppliedCode("");
+    setPromoCode("");
+  };
+
+  useEffect(() => {
+    if (!appliedCode) return;
+
+    const code = promoCodes.find(
+      (p) => p.code.toUpperCase() === appliedCode.toUpperCase() && p.active
+    );
+
+    if (!code) return;
+
+    let discountAmount = 0;
+
+    if (code.discountType === "FLAT") {
+      const { price } = convertPrice(
+        code.discountValue,
+        country,
+        countryPricing
+      );
+      discountAmount = price;
+    } else if (code.discountType === "PERCENTAGE") {
+      discountAmount = (subtotal * code.discountValue) / 100;
+    }
+
+    setDiscount(discountAmount);
+
+  }, [country, subtotal]);  // 🔥 THIS IS THE KEY
 
   return (
     <div className=" bg-gray-50 py-8 px-4">
@@ -1645,6 +1704,9 @@ const Checkout = () => {
               const isVariationOfferActive = minRequired > 0 && totalVariationQty >= minRequired;
 
               const fmt = n => Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+              const currency = fullProduct?.currency || "₹";
+              const currencySymbol = fullProduct?.currencySymbol || "₹";
+
 
               return (
                 <div key={index} className="relative flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-5 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow">
@@ -1706,7 +1768,7 @@ const Checkout = () => {
                                 const minQty = Number(c.bulkMinQty ?? matchVar?.minQuantity ?? baseVariation?.minQuantity ?? fullProduct?.minQuantity ?? 0);
                                 if (!bulkPrice || !minQty) return null;
                                 return (
-                                  <li key={i}>{c.color}: ₹{fmt(bulkPrice)} per item (Min {minQty})</li>
+                                  <li key={i}>{c.color}: {currency} {currencySymbol}{fmt(bulkPrice)} per item (Min {minQty})</li>
                                 );
                               })}
                             </ul>
@@ -1773,20 +1835,20 @@ const Checkout = () => {
                                       const paid = offer?.paidItems?.find(p => p.variationId === c.variationId || p.id === c.variationId || p.variationId === c.id);
                                       return (
                                         <div className="flex flex-col">
-                                          {paid && <div className="text-gray-700 font-semibold">₹{fmt(c.pricePerItem)} × {paid.paidQty} = ₹{fmt(c.pricePerItem * paid.paidQty)}</div>}
-                                          {free && <div className="text-green-700 font-semibold">🎁 {free.freeQty} FREE (Saved ₹{fmt(c.pricePerItem * free.freeQty)})</div>}
-                                          {!paid && !free && <div>₹{fmt(c.pricePerItem)} × {c.quantity} = ₹{fmt(c.pricePerItem * c.quantity)}</div>}
+                                          {paid && <div className="text-gray-700 font-semibold">{currency} {currencySymbol}{fmt(c.pricePerItem)} × {paid.paidQty} = {currency} {currencySymbol}{fmt(c.pricePerItem * paid.paidQty)}</div>}
+                                          {free && <div className="text-green-700 font-semibold">🎁 {free.freeQty} FREE (Saved {currency} {currencySymbol}{fmt(c.pricePerItem * free.freeQty)})</div>}
+                                          {!paid && !free && <div>{currency} {currencySymbol}{fmt(c.pricePerItem)} × {c.quantity} = {currency} {currencySymbol}{fmt(c.pricePerItem * c.quantity)}</div>}
                                         </div>
                                       );
                                     })()
                                   ) : isBulkActive ? (
                                     <>
-                                      <div className="text-gray-400 line-through">₹{fmt(colorPrice)} × {c.quantity} = ₹{fmt(originalTotal)}</div>
-                                      <div className="text-green-700 font-semibold">₹{fmt(bulkPrice)} × {c.quantity} = ₹{fmt(discountedTotal)} ✅</div>
-                                      <div className="text-xs text-green-600">You saved ₹{fmt(saved)} 🎉</div>
+                                      <div className="text-gray-400 line-through">{currency} {currencySymbol}{fmt(colorPrice)} × {c.quantity} = {currency} {currencySymbol}{fmt(originalTotal)}</div>
+                                      <div className="text-green-700 font-semibold">{currency} {currencySymbol}{fmt(bulkPrice)} × {c.quantity} = {currency} {currencySymbol}{fmt(discountedTotal)} ✅</div>
+                                      <div className="text-xs text-green-600">You saved {currency} {currencySymbol}{fmt(saved)} 🎉</div>
                                     </>
                                   ) : (
-                                    <div>₹{fmt(colorPrice)} × {c.quantity} = ₹{fmt(originalTotal)}</div>
+                                    <div>{currency} {currencySymbol}{fmt(colorPrice)} × {c.quantity} = {currency} {currencySymbol}{fmt(originalTotal)}</div>
                                   )}
                                 </div>
 
@@ -1850,14 +1912,14 @@ const Checkout = () => {
                               <div>
                                 Total: {isDiscounted ? (
                                   <>
-                                    <span className="line-through text-gray-400 mr-1">₹{fmt(totalOriginal)}</span>
-                                    <span className="text-green-700">₹{fmt(totalAfterOffer)} ✅</span>
+                                    <span className="line-through text-gray-400 mr-1">{currency} {currencySymbol}{fmt(totalOriginal)}</span>
+                                    <span className="text-green-700">{currency} {currencySymbol}{fmt(totalAfterOffer)} ✅</span>
                                   </>
                                 ) : (
-                                  <span>₹{fmt(totalOriginal)}</span>
+                                  <span>{currency} {currencySymbol}{fmt(totalOriginal)}</span>
                                 )}
                               </div>
-                              {isDiscounted && <div className="text-xs text-green-600 font-semibold mt-1">Total Savings: ₹{fmt(savings)}</div>}
+                              {isDiscounted && <div className="text-xs text-green-600 font-semibold mt-1">Total Savings: {currency} {currencySymbol}{fmt(savings)}</div>}
                             </div>
                           );
                         })()}
@@ -1945,53 +2007,153 @@ const Checkout = () => {
 
 
           {/* Promo Code Section */}
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
 
-            {/* Available Promo Codes */}
             {visiblePromoCodes.length > 0 && (
               <div className="bg-gray-100 p-3 rounded-xl">
                 <h4 className="font-semibold mb-2">Available Promo Codes:</h4>
                 <div className="flex gap-2 flex-wrap">
                   {visiblePromoCodes.map((p) => (
-                    <span
+                    <div
                       key={p.code}
-                      className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
+                      className="flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
                     >
-                      {p.code} {p.discountType === "PERCENTAGE" ? `(${p.discountValue}%)` : `(₹${p.discountValue})`}
-                    </span>
+                      <span>
+                        {p.code}{" "}
+                      </span>
+
+                      <button
+                        onClick={() => handleCopy(p.code)}
+                        className="hover:text-green-900 transition"
+                        title="Copy Code"
+                      >
+                        {copiedCode === p.code ? (
+                          <Check size={16} className="text-green-700" />
+                        ) : (
+                          <Copy size={16} />
+                        )}
+                      </button>
+                    </div>
+
                   ))}
                 </div>
               </div>
             )}
-
-
-            {/* Promo Code Input */}
             <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
-              <h4 className="text-lg font-semibold text-gray-800 mb-2">Apply Promo Code</h4>
+              <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                Apply Promo Code
+              </h4>
+
               <div className="flex gap-2">
                 <input
                   type="text"
                   placeholder="Enter promo code"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value)}
-                  className="flex-1 border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  disabled={discount > 0} // disable when applied
+                  className="flex-1 border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:bg-gray-200"
                 />
-                <button
-                  onClick={applyPromo}
-                  className="bg-gray-800 text-white px-4 py-2 rounded-xl hover:scale-105 transition-transform duration-200"
-                >
-                  Apply
-                </button>
+
+                {discount > 0 ? (
+                  <button
+                    onClick={removePromo}
+                    className="bg-red-500 text-white px-4 py-2 rounded-xl hover:scale-105 transition-transform duration-200"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    onClick={applyPromo}
+                    className="bg-gray-800 text-white px-4 py-2 rounded-xl hover:scale-105 transition-transform duration-200"
+                  >
+                    Apply
+                  </button>
+                )}
               </div>
+
               {discount > 0 && (
                 <p className="text-green-600 font-semibold mt-2">
-                  You saved ₹{discount.toFixed(2)} with code {appliedCode}!
+                  You saved {currencySymbol}{discount.toFixed(2)} with code {appliedCode}!
                 </p>
               )}
             </div>
 
-          </div>
 
+          </div> */}
+
+          <div className="space-y-3 max-w-md"> {/* Compact space ke liye max-width aur spacing kam rakhi hai */}
+
+            {/* Available Promo Codes - Modern Pill Style */}
+            {visiblePromoCodes.length > 0 && (
+              <div className="bg-white/5 border border-dashed border-zinc-700 p-2.5 rounded-2xl">
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#131515] mb-2 ml-1">
+                  Available Promo Codes:
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {visiblePromoCodes.map((p) => (
+                    <div
+                      key={p.code}
+                      className="group flex items-center gap-2 bg-white border border-[#66FCF1]/20 px-3 py-1.5 rounded-xl transition-all hover:border-[#66FCF1]/50"
+                    >
+                      <span className="text-[#131515] text-xs font-black tracking-wider uppercase">
+                        {p.code}
+                      </span>
+                      <button
+                        onClick={() => handleCopy(p.code)}
+                        className="text-zinc-500 hover:text-[#2f2c3c] transition-colors"
+                      >
+                        {copiedCode === p.code ? (
+                          <Check size={14} className="text-gray-900" />
+                        ) : (
+                          <Copy size={14} />
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Apply Section - Compact & Professional */}
+            <div className="bg-white border border-white/5 p-3.5 rounded-2xl shadow-inner">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="PROMO CODE"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    disabled={discount > 0}
+                    className="w-full bg-[#1F2833]/10 border border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold tracking-widest text-black outline-none focus:border-[#66FCF1]/40 transition-all placeholder:text-zinc-700 disabled:opacity-50"
+                  />
+                </div>
+
+                <button
+                  onClick={discount > 0 ? removePromo : applyPromo}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-tighter transition-all active:scale-95 ${discount > 0
+                      ? "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white"
+                      : "bg-[#66FCF1] text-black hover:shadow-[0_0_15px_rgba(102,252,241,0.3)]"
+                    }`}
+                >
+                  {discount > 0 ? "Remove" : "Apply"}
+                </button>
+              </div>
+
+              {/* Success Message - Subtle & Clean */}
+              {discount > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="mt-3 flex items-center gap-2 px-2"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <p className="text-green-400 text-[15px] font-bold italic">
+                    Sweet! You saved {currencySymbol}{discount.toFixed(2)}
+                  </p>
+                </motion.div>
+              )}
+            </div>
+          </div>
 
           {!isIncomplete && (
             <div className="space-y-4">
@@ -2033,8 +2195,7 @@ const Checkout = () => {
                             <span className="font-semibold">{option.name}</span>
                             {option.price ? (
                               <span className="font-medium">
-                                {option.currencySymbol}
-                                {option.price.toFixed(2)}
+                                {option.currency} {option.currencySymbol}{option.price}
                               </span>
                             ) : (
                               <span className="font-medium">Price not available</span>
@@ -2125,7 +2286,7 @@ const Checkout = () => {
             activeCampaigns.map((campaign) => (
               <div
                 key={campaign.id}
-                className="bg-gray-50 p-4 sm:p-6 rounded-2xl shadow-sm w-full mb-6"
+                className="bg-white p-4 sm:p-6 rounded-2xl shadow-md border border-gray-100 w-full mb-6"
               >
 
                 {/* Title */}
@@ -2139,7 +2300,7 @@ const Checkout = () => {
                 </p>
 
                 {/* Amount Buttons */}
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 mb-3">
+                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 gap-2 sm:gap-3 mb-3">
                   {campaign.amounts.map((amount) => (
                     <button
                       key={amount}
@@ -2147,16 +2308,18 @@ const Checkout = () => {
                         setDonation(amount);
                         setDonationCustom("");
                       }}
-                      className={`px-4 py-2 rounded-xl border text-sm sm:text-base transition-all duration-200
-              ${donation === amount
-                          ? "bg-gray-800 text-white border-gray-800"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                      className={`w-full px-4 py-2 rounded-xl border text-sm sm:text-base 
+                  font-medium transition-all duration-200
+        ${donation === amount
+                          ? "bg-gray-800 text-white border-gray-800 shadow-md scale-105"
+                          : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
                         }`}
                     >
-                      ₹{amount}
+                      {currencySymbol}{amount}
                     </button>
                   ))}
                 </div>
+
 
                 {/* Custom Amount */}
                 <input

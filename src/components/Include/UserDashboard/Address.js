@@ -14,54 +14,61 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 import Loader from "../Loader";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import ReactSelect from "react-select";
+import { useCountries, getStates, getCities, fetchPincodeData } from "@/lib/CustomHook/useCountries";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 
-const validatePhone = (value) => {
-    if (!value) return "Required";
-    const phone = parsePhoneNumberFromString(value, countryCode);
-    if (!phone || !phone.isValid()) return "Invalid phone number";
-};
+const getPhoneYup = (countryCode) =>
+    Yup.string()
+        .required("Mobile is required")
+        .test("is-valid-phone", "Enter valid number", (value) => {
+            if (!value) return false;
+            const phone = parsePhoneNumberFromString(value, countryCode);
+            return phone ? phone.isValid() : false;
+        });
 
-// const AddressSchema = Yup.object().shape({
-//     name: Yup.string().required("Full name is required"),
-//     mobile: Yup.string()
-//         .matches(/^[0-9]{10}$/, "Enter valid 10-digit number")
-//         .required("Mobile number is required"),
-//     pincode: Yup.string()
-//         .matches(/^[0-9]{6}$/, "Enter valid 6-digit pincode")
-//         .required("Pincode is required"),
-//     address: Yup.string().required("Address is required"),
-//     city: Yup.string().required("City is required"),
-//     state: Yup.string().required("State is required"),
-//     landmark: Yup.string(),
-//     type: Yup.string().required("Address type is required"),
-//     country: Yup.string().required("Country is required"),
+const AddressSchema = Yup.object().shape({
+    name: Yup.string().required("Full name is required"),
 
-// });
-const AddressSchema = (countryCode) =>
-    Yup.object().shape({
-        name: Yup.string().required("Full name is required"),
-        // mobile: Yup.string()
-        //   .required("Mobile number is required")
-        //   .test(
-        //     "is-valid-phone",
-        //     "Invalid phone number",
-        //     function (value) {
-        //       if (!value) return false;
-        //       const phone = parsePhoneNumberFromString(value, countryCode);
-        //       return phone ? phone.isValid() : false;
-        //     }
-        //   ),
-        pincode: Yup.string()
-            .matches(/^[0-9]{6}$/, "Enter valid 6-digit pincode")
-            .required("Pincode is required"),
-        address: Yup.string().required("Address is required"),
-        city: Yup.string().required("City is required"),
-        state: Yup.string().required("State is required"),
-        landmark: Yup.string(),
-        type: Yup.string().required("Address type is required"),
-        country: Yup.string().required("Country is required"),
-    });
+    // pincode: Yup.string()
+    //     .matches(/^[0-9]{6}$/, "Enter valid 6-digit pincode")
+    //     .required("Pincode is required"),
+
+    address: Yup.string().required("Address is required"),
+
+    city: Yup.string().required("City is required"),
+
+    state: Yup.string().required("State is required"),
+
+    landmark: Yup.string(),
+
+    type: Yup.string().required("Address type is required"),
+
+    country: Yup.string().required("Country is required"),
+
+    mobile: Yup.string()
+        .required("Mobile is required")
+        .test("is-valid-phone", "Enter valid number", function (value) {
+            const { country } = this.parent;
+
+            if (!value || !country) return false;
+
+            const countryObj = countriesList.find(
+                (c) => c.name === country
+            );
+
+            const isoCode = countryObj?.code || "IN";
+
+            try {
+                const phone = parsePhoneNumberFromString(value, isoCode);
+                return phone?.isValid() || false;
+            } catch {
+                return false;
+            }
+        }),
+});
+
+let countriesList = [];
 
 const Address = () => {
     const dispatch = useDispatch();
@@ -72,7 +79,13 @@ const Address = () => {
     const [modalType, setModalType] = useState("add");
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [loadingPin, setLoadingPin] = useState(false);
-
+    const { countries } = useCountries();
+    const [states, setStates] = useState([]);
+    const [cities, setCities] = useState([]);
+    const [selectedCountry, setSelectedCountry] = useState("");
+    const [loadingStates, setLoadingStates] = useState(false);
+    const [loadingCities, setLoadingCities] = useState(false);
+    const [selectedState, setSelectedState] = useState([]);
     const { user } = useSelector((state) => state.me);
     const { addresses, loading } = useSelector((state) => state.address);
     const isDashboardAddresses = pathname === "/dashboard" && searchParams.has("addresses");
@@ -90,6 +103,21 @@ const Address = () => {
             setShowModal(true);
         }
     }, [isDashboardAddresses, editId, addresses]);
+
+    useEffect(() => {
+        countriesList = countries;
+    }, [countries]);
+
+    useEffect(() => {
+        if (selectedCountry) {
+            setLoadingStates(true);
+            getStates(selectedCountry)
+                .then((res) => setStates(res))
+                .finally(() => setLoadingStates(false));
+            setCities([]);
+            setSelectedState("");
+        }
+    }, [selectedCountry]);
 
     useEffect(() => {
         if (!user) {
@@ -299,36 +327,76 @@ const Address = () => {
                                             />
                                         </div>
 
-                                        {/* Mobile */}
+                                        {/* Country */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Mobile Number
+                                                Country
                                             </label>
-                                            <Field
-                                                name="mobile"
-                                                placeholder="Enter mobile number"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-black focus:border-black outline-none"
+                                            <ReactSelect
+                                                options={countries.map(c => ({
+                                                    value: c.name,
+                                                    label: `${c.name} (${c.phoneCode})`
+                                                }))}
+                                                value={
+                                                    values.country
+                                                        ? { value: values.country, label: values.country }
+                                                        : null
+                                                }
+                                                onChange={(option) => {
+                                                    const countryName = option?.value || "";
+
+                                                    setSelectedCountry(countryName);
+                                                    setFieldValue("country", countryName);
+                                                    setFieldValue("state", "");
+                                                    setFieldValue("city", "");
+                                                    setFieldValue("pincode", "");
+
+                                                    setCities([]);
+
+                                                    const phoneCode = countries.find(
+                                                        c => c.name === countryName
+                                                    )?.phoneCode;
+
+                                                    if (phoneCode) {
+                                                        setFieldValue("mobile", phoneCode + " ");
+                                                    }
+                                                }}
+                                                isClearable
+                                                placeholder="Select Country..."
                                             />
+
                                             <ErrorMessage
-                                                name="mobile"
+                                                name="country"
                                                 component="p"
                                                 className="text-red-500 text-xs mt-1"
                                             />
                                         </div>
+
 
                                         {/* Pincode */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                                 Pincode
                                             </label>
-                                            <Field
-                                                name="pincode"
-                                                placeholder="Enter pincode"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-black focus:border-black outline-none"
-                                                onBlur={(e) =>
-                                                    fetchPincodeData(e.target.value, setFieldValue)
-                                                }
-                                            />
+                                            <Field name="pincode">
+                                                {({ field, form }) => (
+                                                    <input
+                                                        {...field}
+                                                        type="text"
+                                                        className="w-full px-4 py-2 border rounded-lg"
+                                                        placeholder="Enter Pincode"
+                                                        onChange={async (e) => {
+                                                            const value = e.target.value;
+                                                            form.setFieldValue("pincode", value);
+
+                                                            if (values.country === "India" && value.length === 6) {
+                                                                await fetchPincodeData(value, form.setFieldValue);
+                                                            }
+                                                        }}
+                                                    />
+                                                )}
+                                            </Field>
+
                                             <ErrorMessage
                                                 name="pincode"
                                                 component="p"
@@ -355,17 +423,57 @@ const Address = () => {
                                             />
                                         </div>
 
+                                        {/* State */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                State
+                                            </label>
+                                            <ReactSelect
+                                                options={states.map(s => ({ value: s, label: s }))}
+                                                value={
+                                                    values.state
+                                                        ? { value: values.state, label: values.state }
+                                                        : null
+                                                }
+                                                onChange={(option) => {
+                                                    setFieldValue("state", option?.value || "");
+                                                    setFieldValue("city", "");
+
+                                                    if (option?.value && selectedCountry) {
+                                                        getCities(selectedCountry, option.value)
+                                                            .then((res) => setCities(res));
+                                                    }
+                                                }}
+                                                isClearable
+                                                placeholder="Select State..."
+                                            />
+
+                                            <ErrorMessage
+                                                name="state"
+                                                component="p"
+                                                className="text-red-500 text-xs mt-1"
+                                            />
+                                        </div>
+
                                         {/* City */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                                 City
                                             </label>
-                                            <Field
-                                                name="city"
-                                                placeholder="Enter city"
-                                                value={values.city}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-black focus:border-black outline-none"
+                                            <ReactSelect
+                                                options={cities.map(c => ({ value: c, label: c }))}
+                                                value={
+                                                    values.city
+                                                        ? { value: values.city, label: values.city }
+                                                        : null
+                                                }
+                                                onChange={(option) =>
+                                                    setFieldValue("city", option?.value || "")
+                                                }
+                                                isClearable
+                                                placeholder="Select City..."
                                             />
+
                                             <ErrorMessage
                                                 name="city"
                                                 component="p"
@@ -373,23 +481,7 @@ const Address = () => {
                                             />
                                         </div>
 
-                                        {/* State */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                State
-                                            </label>
-                                            <Field
-                                                name="state"
-                                                value={values.state}
-                                                placeholder="Enter state"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-black focus:border-black outline-none"
-                                            />
-                                            <ErrorMessage
-                                                name="state"
-                                                component="p"
-                                                className="text-red-500 text-xs mt-1"
-                                            />
-                                        </div>
+
 
                                         {/* Landmark */}
                                         <div >
@@ -403,19 +495,44 @@ const Address = () => {
                                             />
                                         </div>
 
-                                        {/* Country */}
+
+                                        {/* Mobile */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Country
+                                                Mobile Number
                                             </label>
-                                            <Field
-                                                name="country"
-                                                value={values.country}
-                                                placeholder="Enter country"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-black focus:border-black outline-none"
-                                            />
+                                            <Field name="mobile">
+
+                                                {({ field, form }) => {
+                                                    const phoneCode = countries.find(c => c.name === values.country)?.phoneCode || "+";
+                                                    const numberPart = field.value?.replace(/^\+\d+\s*/, "") || "";
+                                                    return (
+                                                        <input
+                                                            type="tel"
+                                                            value={`${phoneCode} ${numberPart}`}
+                                                            placeholder={`${phoneCode} 98765 43210`}
+                                                            className="w-full border h-10 p-3 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                                            onChange={(e) => {
+                                                                const newNumber = e.target.value.replace(/^\+\d+\s*/, "");
+                                                                form.setFieldValue("mobile", `${phoneCode} ${newNumber}`);
+                                                            }}
+                                                            onPaste={(e) => {
+                                                                const pasteData = e.clipboardData.getData("text");
+                                                                const newNumber = pasteData.replace(/^\+\d+\s*/, "");
+                                                                form.setFieldValue("mobile", `${phoneCode} ${newNumber}`);
+                                                                e.preventDefault();
+                                                            }}
+                                                            onKeyDown={(e) => {
+                                                                if (e.target.selectionStart <= phoneCode.length && ["Backspace", "Delete"].includes(e.key)) {
+                                                                    e.preventDefault();
+                                                                }
+                                                            }}
+                                                        />
+                                                    );
+                                                }}
+                                            </Field>
                                             <ErrorMessage
-                                                name="country"
+                                                name="mobile"
                                                 component="p"
                                                 className="text-red-500 text-xs mt-1"
                                             />

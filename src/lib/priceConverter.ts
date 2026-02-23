@@ -136,15 +136,15 @@ export function convertPrice(basePriceINR: number, targetCountryCode: string, co
 
     const targetCountry = countryPricingList.find(c => c.code === targetCountryCode) || baseCountry;
 
-    const conversionRate = targetCountry.conversionRate ?? 1; // step 1: convert to target currency
-    const multiplier = targetCountry.multiplier ?? 1;          // step 2: apply multiplier
+    const conversionRate = targetCountry.conversionRate ?? 1;
+    const multiplier = targetCountry.multiplier ?? 1;
 
-    const priceAfterConversion = Number(basePriceINR) * conversionRate; // INR → target currency
-    const finalPrice = priceAfterConversion * multiplier;               // apply multiplier
+    const priceAfterConversion = Number(basePriceINR) * conversionRate;
+    const finalPrice = priceAfterConversion * multiplier;
 
     // const roundedPrice = Math.round(finalPrice * 2) / 2;
-    const roundedPrice = Math.round(finalPrice); // 3.552 → 4
-
+    //const roundedPrice = Math.round(finalPrice); // 3.552 → 4
+    const roundedPrice = Number(finalPrice.toFixed(2));
     return {
         // price: Math.round(finalPrice * 100) / 100,
         price: roundedPrice,
@@ -160,19 +160,28 @@ export function convertProducts(products: any[], countryCode: string, countryPri
 
     return (products || []).map((p) => {
         const basePrice = Number(p.price) || 0;
+        const baseBulkPrice = Number(p.bulkPrice) || 0;
         const { price, currency, currencySymbol } = convertPrice(basePrice, countryCode, countryPricingList);
+
+        const { price: convertedBulkPrice } =
+            convertPrice(baseBulkPrice, countryCode, countryPricingList);
 
         const matchedMarketLink =
             p.marketLinks?.find(link => link.countryCode?.toUpperCase() === normalizedCountryCode) || null;
 
         const variations = (p.variations || []).map((v) => {
             const varPrice = Number(v.price) || 0;
+            const varBulkPrice = Number(v.bulkPrice) || 0;
             const { price: vPrice, currency: vCurrency, currencySymbol: vSymbol } =
                 convertPrice(varPrice, countryCode, countryPricingList);
+
+            const { price: vBulkConverted } =
+                convertPrice(varBulkPrice, countryCode, countryPricingList);
 
             return {
                 ...v,
                 price: vPrice,
+                bulkPrice: vBulkConverted,
                 currency: vCurrency,
                 currencySymbol: vSymbol,
             };
@@ -181,6 +190,7 @@ export function convertProducts(products: any[], countryCode: string, countryPri
         return {
             ...p,
             price,
+            bulkPrice: convertedBulkPrice,
             currency,
             currencySymbol,
             variations,

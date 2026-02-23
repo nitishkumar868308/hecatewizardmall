@@ -159,6 +159,7 @@ const ProductOffers = ({
     purchasePlatform
 }) => {
     const currency = selectedVariation?.currency || product.currency || "₹";
+    const currencySymbol = selectedVariation?.currencySymbol || product.currencySymbol || "₹";
 
     // 🧩 Extract attributes safely (fallback chain)
     const selectedAttrs =
@@ -249,10 +250,10 @@ const ProductOffers = ({
         selectedVariation?.bulkPrice && {
             id: "bulk-offer",
             description: bulkStatus?.eligible
-                ? `Bulk price applied: ${currency} ${selectedVariation?.bulkPrice
+                ? `Bulk price applied: ${currency} ${currencySymbol}${selectedVariation?.bulkPrice
                 } each`
                 : `Buy ${selectedVariation?.minQuantity ?? product.minQuantity
-                }+ items to get ${currency} ${selectedVariation?.bulkPrice
+                }+ items to get ${currency}  ${currencySymbol}${selectedVariation?.bulkPrice
                 } each`,
             discountType: "bulk",
             applied: bulkStatus?.eligible,

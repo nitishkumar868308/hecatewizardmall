@@ -22,14 +22,16 @@ const BlogPage = () => {
         <div className="bg-[#050505] min-h-screen text-white overflow-hidden">
 
             {/* --- Floating Background Text (Marquee) --- */}
-            <div className="fixed inset-0 flex items-center justify-center pointer-events-none select-none">
+            {/* <div className="fixed inset-0 flex items-center justify-center pointer-events-none select-none" style={{ zIndex: 0 }}>
                 <h1
-                    className="text-[8vw] font-black leading-none whitespace-nowrap uppercase italic tracking-tighter"
-                    style={{ color: "#ffffff", opacity: 0.10 }}
+                    className="text-[8vw] font-black leading-none uppercase italic tracking-tighter"
+                    style={{ color: "#ffffff", opacity: 0.1 }}
                 >
                     Hecate Wizard Mall
                 </h1>
-            </div>
+            </div> */}
+
+
 
             <div className="max-w-[1400px] mx-auto px-4 md:px-10 py-24 relative z-10">
 

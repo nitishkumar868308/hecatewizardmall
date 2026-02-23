@@ -114,6 +114,7 @@ const Page = () => {
         FAILED: "bg-red-100 text-red-700",
         CANCELED: "bg-gray-200 text-gray-700",
         REFUND: "bg-purple-100 text-purple-700",
+        PAID: "bg-emerald-100 text-emerald-700",
     };
 
 
@@ -154,8 +155,10 @@ const Page = () => {
                                     <th className="p-4 text-center">S.No</th>
                                     <th className="p-4 text-center">Item</th>
                                     <th className="p-4 text-center">Order #</th>
+                                    <th className="p-4 text-center">Invoice No.</th>
                                     <th className="p-4 text-center">User</th>
                                     <th className="p-4 text-center">Total</th>
+                                    <th className="p-4 text-center">Payment Status</th>
                                     <th className="p-4 text-center">Order Status</th>
                                     <th className="p-4 text-center">Order By</th>
                                     <th className="p-4 text-center">Action</th>
@@ -205,6 +208,53 @@ const Page = () => {
                                             </div>
                                         </td>
 
+                                        {/* Invoice Number */}
+                                        <td className="p-4 font-semibold text-center">
+                                            {order.invoiceNumber && order.invoiceDate ? (
+                                                <>
+                                                    <div>{order.invoiceNumber}</div>
+                                                    <div className="text-sm text-gray-500 font-normal">
+                                                        ({new Date(order.invoiceDate).toLocaleString("en-IN", {
+                                                            day: "2-digit",
+                                                            month: "short",
+                                                            year: "numeric",
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                            second: "2-digit",
+                                                        })})
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center text-gray-400 text-sm">
+                                                    {/* Icon */}
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="w-5 h-5 mb-1 text-red-400"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                        strokeWidth={2}
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            d="M6 18L18 6M6 6l12 12"
+                                                        />
+                                                    </svg>
+
+                                                    {/* Message */}
+                                                    <span className="font-medium">
+                                                        {order.paymentStatus === "Failed" || order.status === "Failed"
+                                                            ? "Payment Failed"
+                                                            : order.status === "Canceled"
+                                                                ? "Order Cancelled"
+                                                                : "Invoice Not Generated"}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </td>
+
+
 
                                         {/* User Name and Email */}
                                         <td className="p-4 font-semibold text-center">
@@ -220,9 +270,22 @@ const Page = () => {
                                             ₹{order.totalAmount}
                                         </td>
 
+                                        {/* Payment Status */}
+                                        <td className="p-4 text-center font-semibold ">
+                                            <div>
+                                                <span
+                                                    className={`px-3 py-1 rounded-lg text-xs font-semibold ${statusStyles[order.paymentStatus] ||
+                                                        "bg-gray-100 text-gray-700"
+                                                        }`}
+                                                >
+                                                    {order.paymentStatus}
+                                                </span>
+                                            </div>
+                                        </td>
+
                                         {/* Payment Method */}
                                         {/* <td className="p-4 text-center font-semibold">{order.paymentMethod || "-"}</td> */}
-                                        {/* Status */}
+                                        {/* Order Status */}
                                         <td className="p-4 text-center">
                                             <div>
                                                 <span

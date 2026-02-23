@@ -9,9 +9,33 @@ export const fetchDonations = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axios.get("/api/donate");
-            return response.data.data; // array of campaigns with userDonations
+            return response.data.data;
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to fetch donations");
+        }
+    }
+);
+
+
+// =============================
+// Fetch donation campaigns Country Wise
+// =============================
+// Fetch Country Wise
+export const fetchDonationsCountryWise = createAsyncThunk(
+    "donation/fetchDonationsCountryWise",
+    async (countryCode, { rejectWithValue }) => {
+        try {
+            const response = await axios.get("/api/donate/countryWise", {
+                headers: {
+                    "x-country": countryCode,
+                },
+            });
+
+            return response.data.data;
+        } catch (err) {
+            return rejectWithValue(
+                err.response?.data || "Failed to fetch donations"
+            );
         }
     }
 );
@@ -189,6 +213,21 @@ const donationSlice = createSlice({
                 state.campaigns = state.campaigns.map(c =>
                     c.id === updated.id ? updated : c
                 );
+            });
+
+        // Country Wise Fetch
+        builder
+            .addCase(fetchDonationsCountryWise.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchDonationsCountryWise.fulfilled, (state, action) => {
+                state.loading = false;
+                state.campaigns = action.payload;
+            })
+            .addCase(fetchDonationsCountryWise.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || action.error.message;
             });
 
     },

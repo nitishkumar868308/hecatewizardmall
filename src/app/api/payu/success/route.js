@@ -5,6 +5,24 @@ import { orderConfirmationTemplateAdmin } from "@/lib/templates/orderConfirmatio
 
 const prisma = new PrismaClient();
 
+const generateInvoiceNumber = async () => {
+    const lastInvoice = await prisma.orders.findFirst({
+        where: { invoiceNumber: { not: null } },
+        orderBy: { invoiceDate: "desc" },
+    });
+
+    let nextNumber = 1;
+
+    if (lastInvoice?.invoiceNumber) {
+        const last = parseInt(lastInvoice.invoiceNumber.split("-")[1]);
+        nextNumber = last + 1;
+    }
+
+    return `INV-${String(nextNumber).padStart(5, "0")}`;
+};
+console.log("generateInvoiceNumber" , generateInvoiceNumber)
+
+
 export async function POST(req) {
     try {
         const form = await req.formData();
@@ -93,9 +111,19 @@ export async function POST(req) {
         if (orderBy === "website") {
             if (status === "success") {
                 // ✅ Update order as confirmed
+                const invoiceNumber = await generateInvoiceNumber();
+                // await prisma.orders.update({
+                //     where: { id: orderRecord.id },
+                //     data: { status: "PENDING", paymentStatus: "PAID" },
+                // });
                 await prisma.orders.update({
                     where: { id: orderRecord.id },
-                    data: { status: "PENDING", paymentStatus: "PAID" },
+                    data: {
+                        status: "PENDING",
+                        paymentStatus: "PAID",
+                        invoiceNumber,
+                        invoiceDate: new Date()
+                    },
                 });
 
 
@@ -149,10 +177,21 @@ export async function POST(req) {
             }
         } else {
             if (status === "success") {
+                const invoiceNumber = await generateInvoiceNumber();
+                // await prisma.orders.update({
+                //     where: { id: orderRecord.id },
+                //     data: { status: "PENDING", paymentStatus: "PAID" },
+                // });
                 await prisma.orders.update({
                     where: { id: orderRecord.id },
-                    data: { status: "PENDING", paymentStatus: "PAID" },
+                    data: {
+                        status: "PENDING",
+                        paymentStatus: "PAID",
+                        invoiceNumber,
+                        invoiceDate: new Date()
+                    },
                 });
+
 
                 if (orderRecord.userId) {
                     await prisma.cart.updateMany({

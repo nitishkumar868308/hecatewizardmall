@@ -14,6 +14,28 @@ export const fetchShippingPricing = createAsyncThunk(
     }
 );
 
+
+// Fetch Country Wise
+export const fetchShippingPricingCountryWise = createAsyncThunk(
+    "shippingPricing/fetchShippingPricingCountryWise",
+    async (countryCode, { rejectWithValue }) => {
+        try {
+            const response = await axios.get("/api/shipping-pricing/countryWise", {
+                headers: {
+                    "x-country": countryCode,
+                },
+            });
+
+            return response.data.data;
+        } catch (err) {
+            return rejectWithValue(
+                err.response?.data || "Failed to fetch shipping pricing"
+            );
+        }
+    }
+);
+
+
 // Create
 export const createShippingPricing = createAsyncThunk(
     "shippingPricing/createShippingPricing",
@@ -56,7 +78,7 @@ export const deleteShippingPricing = createAsyncThunk(
 const shippingPricingSlice = createSlice({
     name: "shippingPricing",
     initialState: {
-        shippingPricings: [],  // ✔ Correct Key
+        shippingPricings: [],
         loading: false,
         error: null,
     },
@@ -109,6 +131,22 @@ const shippingPricingSlice = createSlice({
                     (p) => p.id !== action.payload.id
                 );
             });
+
+        // Country Wise Fetch
+        builder
+            .addCase(fetchShippingPricingCountryWise.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchShippingPricingCountryWise.fulfilled, (state, action) => {
+                state.loading = false;
+                state.shippingPricings = action.payload;
+            })
+            .addCase(fetchShippingPricingCountryWise.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || action.error.message;
+            });
+
     },
 });
 
