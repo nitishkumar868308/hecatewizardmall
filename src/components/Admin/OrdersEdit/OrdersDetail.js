@@ -323,6 +323,10 @@ import { fetchMe } from "@/app/redux/slices/meProfile/meSlice";
 import OrderChat from "@/components/Common/OrderChat";
 import OrderDetailPrint from "./OrderDetailPrint";
 import { useReactToPrint } from "react-to-print";
+import OtherPricing from "./OtherPricing";
+import { fetchOrderAdjustments } from "@/app/redux/slices/order-adjustments/orderAdjustmentsSlice";
+import { Copy } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function OrderDetail({
     selectedOrder,
@@ -336,10 +340,27 @@ export default function OrderDetail({
     const dispatch = useDispatch();
     const [status, setStatus] = useState(selectedOrder?.status || "");
     const { user } = useSelector((state) => state.me);
+    const { adjustments } = useSelector(
+        (state) => state.orderAdjustments
+    );
     const printRef = useRef();
     useEffect(() => {
         dispatch(fetchMe());
     }, [dispatch]);
+
+    const orderAdjustments = adjustments?.filter(
+        (adj) => adj.orderId === selectedOrder.id
+    );
+    console.log("orderAdjustments", orderAdjustments)
+
+    const latestAdjustment = orderAdjustments?.[0];
+    console.log("latestAdjustment", latestAdjustment)
+
+    useEffect(() => {
+        if (selectedOrder?.id) {
+            dispatch(fetchOrderAdjustments(selectedOrder.id))
+        }
+    }, [dispatch, selectedOrder?.id])
 
     if (!isOpen || !selectedOrder) return null;
 
@@ -371,14 +392,16 @@ export default function OrderDetail({
     const handlePrint = () => {
         if (printRef.current) {
             const printContents = printRef.current.innerHTML;
+            console.log("printContents", printContents)
             const originalContents = document.body.innerHTML;
-
+            console.log("originalContents", originalContents)
             document.body.innerHTML = printContents;
             window.print();
             document.body.innerHTML = originalContents;
             window.location.reload(); // reload react app
         }
     };
+
 
     const getFnSkuForItem = (item) => {
         // Step 1: Find product
@@ -392,9 +415,21 @@ export default function OrderDetail({
                 return { fnsku: variation.barCode || "-", sku: variation.sku || "-" };
             }
         }
-
+        console.log("Searching for:", item.productId);
+        console.log("Available products:", products);
+        console.log("Matched product:", product);
+        console.log("Product variations:", product?.variations);
+        console.log("Item variationId:", item.variationId);
         // Step 3: Fallback to product's main fnsku/sku
         return { fnsku: product.barCode || "-", sku: product.sku || "-" };
+
+    };
+
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+    const handleCopy = (text) => {
+        navigator.clipboard.writeText(text);
+        toast.success("Payment link copied!");
     };
 
     return (
@@ -415,6 +450,10 @@ export default function OrderDetail({
                     receiverId={user?.role === "ADMIN" ? selectedOrder.userId : 1}
                     receiverRole={user?.role === "ADMIN" ? "CUSTOMER" : "ADMIN"}
                 />
+
+                <div className="border-t border-b bg-gray-50">
+                    <OtherPricing orderId={selectedOrder.id} />
+                </div>
 
                 {/* Notes */}
                 <div className="border-t px-4 py-3 font-semibold text-lg bg-gray-50">
@@ -641,13 +680,112 @@ export default function OrderDetail({
                     <div className="mt-6 flex justify-end">
                         <button
                             onClick={handlePrint}
-                            className="px-5 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300 cursor-pointer"
+                            className="px-5 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300 cursor-pointer mb-5"
                         >
                             Download / Print
                         </button>
                     </div>
+
+                    <div className="p-4 border rounded-xl bg-gray-50">
+                        <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                            Order Adjustments
+                        </h3>
+
+                        <div className="space-y-3">
+                            {adjustments
+                                ?.filter((adj) => adj.orderId === selectedOrder?.id)
+                                ?.map((adj) => {
+                                    const fullUrl = adj.paymentTxnId
+                                        ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/adjustments/payu-redirect?txnId=${adj.paymentTxnId}`
+                                        : null;
+
+                                    return (
+                                        <div
+                                            key={adj.id}
+                                            className="p-3 bg-white border rounded-lg text-xs space-y-2"
+                                        >
+                                            {/* Top Row */}
+                                            <div className="flex justify-between items-center">
+                                                <div className="text-left">
+                                                    <p className="font-semibold text-gray-800">
+                                                        ₹ {adj.amount}
+                                                    </p>
+                                                    <p className="text-gray-500">
+                                                        Created At : {new Date(adj.createdAt).toLocaleString()}
+                                                    </p>
+                                                </div>
+
+                                                <span className="px-2 py-1 rounded-md text-[10px] bg-gray-100 text-gray-600">
+                                                    Payment Status : {adj.status}
+                                                    <p className="text-gray-500">
+                                                        Paid At : {adj.paidAt
+                                                            ? new Date(adj.paidAt).toLocaleString()
+                                                            : "No"}
+                                                    </p>
+
+                                                </span>
+
+
+
+                                                <span className="px-2 py-1 rounded-md text-[10px] bg-gray-100 text-gray-600">
+                                                    {adj.adjustmentType}
+                                                </span>
+                                            </div>
+
+
+
+                                            {/* Payment URL */}
+                                            {fullUrl && (
+                                                <div className="flex items-center gap-2 pt-1">
+                                                    <a
+                                                        href={fullUrl}
+                                                        target="_blank"
+                                                        className="text-blue-600 hover:underline break-all flex-1 text-left"
+                                                    >
+                                                        {fullUrl}
+                                                    </a>
+
+                                                    <button
+                                                        onClick={() => handleCopy(fullUrl)}
+                                                        className="p-2 bg-black text-white rounded-md hover:bg-gray-800 transition cursor-pointer"
+                                                        title="Copy Link"
+                                                    >
+                                                        <Copy size={18} />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {(() => {
+                                                const isExpired =
+                                                    adj?.expiresAt && new Date() > new Date(adj.expiresAt);
+
+                                                return (
+                                                    <span
+                                                        className={`px-3 py-1 rounded-full text-[11px] font-medium
+                                                                ${adj?.expiresAt
+                                                                ? isExpired
+                                                                    ? "bg-red-100 text-red-700"
+                                                                    : "bg-green-100 text-green-700"
+                                                                : "bg-gray-100 text-gray-600"
+                                                            }`}
+                                                    >
+                                                        {adj?.expiresAt
+                                                            ? isExpired
+                                                                ? "Expired"
+                                                                : `Expires: ${new Date(adj.expiresAt).toLocaleString()}`
+                                                            : "No Expiry"}
+                                                    </span>
+                                                );
+                                            })()}
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    </div>
+
                 </div>
             </div>
+
 
             <OrderDetailPrint
                 ref={printRef}

@@ -7,7 +7,7 @@ import OrderDetail from "@/components/Custom/OrderDetailUser";
 import { getApplyPromoCode } from "@/app/redux/slices/promoCode/promoCodeSlice";
 import Pagination from "@/components/Pagination";
 import { RxCross2 } from "react-icons/rx";
-
+import { fetchOrderAdjustments } from "@/app/redux/slices/order-adjustments/orderAdjustmentsSlice";
 
 const statusStyles = {
     PENDING: "text-yellow-700 bg-yellow-100",
@@ -27,6 +27,9 @@ const OrderSummary = () => {
     const [openModal, setOpenModal] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const { appliedPromoCodes } = useSelector((s) => s.promoCode);
+    const { adjustments } = useSelector(
+        (state) => state.orderAdjustments
+    );
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -40,6 +43,12 @@ const OrderSummary = () => {
 
     const userOrders = orders.filter((order) => order.userId === user.id);
     console.log("userOrders", userOrders)
+
+    useEffect(() => {
+        if (userOrders?.id) {
+            dispatch(fetchOrderAdjustments(userOrders.id))
+        }
+    }, [dispatch, userOrders?.id])
 
     const totalPages = Math.ceil(userOrders.length / itemsPerPage);
 
@@ -148,6 +157,8 @@ const OrderSummary = () => {
                 ) : (
                     <p className="text-gray-500">You have no orders yet.</p>
                 )}
+
+                {adjustments ? "Yes" : "No"}
 
 
             </div>

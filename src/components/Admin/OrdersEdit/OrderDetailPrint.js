@@ -12,7 +12,11 @@ const OrderDetailPrint = forwardRef(({ selectedOrder, generateInvoiceNumber, pro
             const variation = product.variations.find(v => v.id === item.variationId);
             if (variation) return { fnsku: variation.barCode || "-", sku: variation.sku || "-" };
         }
-
+        console.log("Searching for:", item.productId);
+        console.log("Available products:", products);
+        console.log("Matched product:", product);
+        console.log("Product variations:", product?.variations);
+        console.log("Item variationId:", item.variationId);
         return { fnsku: product.barCode || "-", sku: product.sku || "-" };
     };
 
@@ -29,7 +33,8 @@ const OrderDetailPrint = forwardRef(({ selectedOrder, generateInvoiceNumber, pro
             <div className="border-b pb-4 mb-6">
                 <h2 className="text-3xl font-bold">Order Invoice</h2>
                 <p className="text-sm text-gray-600 mt-1">
-                    Invoice No: <b>{generateInvoiceNumber(selectedOrder.id, selectedOrder.createdAt)}</b>
+                    {/* Invoice No: <b>{generateInvoiceNumber(selectedOrder.id, selectedOrder.createdAt)}</b> */}
+                    Invoice No: <b>{selectedOrder.invoiceNumber || "No Invoice Number"}</b>
                 </p>
                 <p className="text-sm text-gray-500">Order Number: {selectedOrder.orderNumber}</p>
                 <div className="mt-1 text-sm text-gray-500">
@@ -94,7 +99,7 @@ const OrderDetailPrint = forwardRef(({ selectedOrder, generateInvoiceNumber, pro
                                 <tr key={idx} className="border-b hover:bg-gray-50">
                                     <td className="p-2 text-center">{idx + 1}</td>
                                     <td className="p-2 flex justify-center">
-                                        <img src={item.image} alt={item.attributes?.color || "Product Image"} className="w-16 h-16 rounded-lg object-cover shadow" />
+                                        <img src={`${process.env.NEXT_PUBLIC_BASE_URL}${item.image}`} alt={item.attributes?.color || "Product Image"} className="w-16 h-16 rounded-lg object-cover shadow" />
                                     </td>
                                     <td className="p-2 text-center font-medium">{item.productName}</td>
                                     <td className="p-2 text-center">

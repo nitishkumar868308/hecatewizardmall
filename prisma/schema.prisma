@@ -46,6 +46,30 @@ enum ReviewStatusBlog {
   rejected
 }
 
+enum AdjustmentType {
+  SHIPPING
+  NETWORK_FEE
+  ITEM_ADD
+  ITEM_REMOVE
+  ITEM_SHIPPING
+  DISCOUNT
+  PENALTY
+  TAX
+  MANUAL
+}
+
+enum AdjustmentImpact {
+  DEBIT
+  CREDIT
+}
+
+enum AdjustmentStatus {
+  PENDING
+  PAID
+  APPLIED
+  CANCELLED
+}
+
 
 model User {
   id                Int      @id @default(autoincrement())
@@ -401,6 +425,8 @@ model Orders {
   trackingLink     String? 
   invoiceNumber String? @unique
   invoiceDate   DateTime?
+
+  adjustments order_adjustments[]
 }
 
 model ShippingPricing {
@@ -783,4 +809,31 @@ model PasswordReset {
   token     String   @unique
   expires   DateTime
   createdAt DateTime @default(now())
+}
+
+model order_adjustments {
+  id              Int        @id @default(autoincrement())
+
+  orderId         Int
+  order           Orders     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  adjustmentType  AdjustmentType
+  impact          AdjustmentImpact
+
+  amount          Decimal    @db.Decimal(12, 2)
+
+  reason          String?    @db.VarChar(255)
+
+  status          AdjustmentStatus @default(PENDING)
+
+  paymentTxnId    String?    @unique
+  paidAt          DateTime?
+
+  isManual        Boolean   @default(false)
+  manualType      String?   @db.VarChar(200)
+  expiresAt       DateTime?
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
 }

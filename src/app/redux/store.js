@@ -38,7 +38,7 @@ import serviceReducer from "./slices/book_consultant/services/serviceSlice"
 import astrologerReducer from "./slices/book_consultant/astrologer/astrologerSlice";
 import blogReducer from './slices/blog/blogSlice';
 import blogReviewsReducer from './slices/blogReviews/blogReviewsSlice';
-
+import orderAdjustmentsReducer from './slices/order-adjustments/orderAdjustmentsSlice';
 
 // import updateUserReducer from './slices/userSlice';
 
@@ -83,7 +83,7 @@ const store = configureStore({
         astrologers: astrologerReducer,
         blogs: blogReducer,
         blogReviews: blogReviewsReducer,
-
+        orderAdjustments: orderAdjustmentsReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

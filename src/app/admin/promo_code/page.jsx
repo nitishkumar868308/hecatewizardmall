@@ -206,6 +206,9 @@ export default function Page() {
     0
   );
 
+  const afterDiscount =
+    Math.round((Number(totalSubtotal) - Number(totalDiscount)) * 100) / 100;
+
   const getPromoStatus = (promo) => {
     if (isExpired(promo.validTill)) return "EXPIRED";
     if (!isExpired(promo.validTill) && isLiveSoon(promo.validFrom)) return "LIVE_SOON";
@@ -404,9 +407,9 @@ export default function Page() {
                 />
               </div>
 
-              {/* TOTAL SUBTOTAL */}
+              {/* TOTAL Before Discount */}
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <p className="text-xs text-blue-600 font-medium">Total Order Amount</p>
+                <p className="text-xs text-blue-600 font-medium">Before Discount Total Order Amount</p>
                 <p className="text-2xl font-bold text-blue-800">
                   ₹{totalSubtotal.toLocaleString()}
                 </p>
@@ -417,6 +420,14 @@ export default function Page() {
                 <p className="text-xs text-green-600 font-medium">Total Discount Given</p>
                 <p className="text-2xl font-bold text-green-800">
                   ₹{totalDiscount.toLocaleString()}
+                </p>
+              </div>
+
+              {/* TOTAL After Discount */}
+              <div className="bg-red-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-xs text-blue-600 font-medium">After Discount Total Order Amount</p>
+                <p className="text-2xl font-bold text-blue-800">
+                  ₹{afterDiscount}
                 </p>
               </div>
 
@@ -437,8 +448,9 @@ export default function Page() {
                     <th className="px-4 py-3 text-left text-sm">User</th>
                     <th className="px-4 py-3 text-left text-sm">Promo</th>
                     <th className="px-4 py-3 text-left text-sm">Order ID</th>
-                    <th className="px-4 py-3 text-left text-sm">Order Amt</th>
+                    <th className="px-4 py-3 text-left text-sm">Before Disount</th>
                     <th className="px-4 py-3 text-left text-sm">Discount</th>
+                    <th className="px-4 py-3 text-left text-sm">After Disount</th>
                     <th className="px-4 py-3 text-left text-sm">Used At</th>
                   </tr>
                 </thead>
@@ -469,12 +481,19 @@ export default function Page() {
                           {/* ORDER */}
                           <td className="px-4 py-3">#{u.orderId}</td>
 
-                          {/* AMOUNTS */}
+                          {/* Before Disount */}
                           <td className="px-4 py-3">₹{u.subtotal}</td>
 
                           {/* DISCOUNT */}
                           <td className="px-4 py-3 text-green-600 font-semibold">
                             -₹{u.discountAmount}
+                          </td>
+
+                          {/* After Disount */}
+                          <td className="px-4 py-3">
+                            ₹{(
+                              parseFloat(u.subtotal) - parseFloat(u.discountAmount)
+                            ).toFixed(2)}
                           </td>
 
                           {/* USED AT */}
