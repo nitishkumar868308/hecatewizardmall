@@ -175,6 +175,10 @@ export async function POST(req) {
             where: { id: orderRecord.id },
             data: { orderNumber },
         });
+        console.log("orderRecord", orderRecord)
+
+        const orderCurrency =
+            orderRecord.items?.[0]?.currency || "INR";
 
         // ***********************
         // ⭐ PAYU PAYMENT METHOD
@@ -285,7 +289,7 @@ export async function POST(req) {
                 merchantTxnId,
                 paymentData: {
                     totalAmount: orderRecord.totalAmount.toString(),
-                    txnCurrency: "INR",
+                    txnCurrency: orderCurrency,
                     billingData: {
                         firstName: body.user?.name?.split(" ")[0] || "Customer",
                         lastName: body.user?.name?.split(" ")[1] || "",

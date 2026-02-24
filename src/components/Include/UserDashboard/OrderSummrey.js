@@ -33,7 +33,7 @@ const OrderSummary = () => {
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5; // ek page me kitne orders
+    const itemsPerPage = 5;
 
 
     useEffect(() => {
@@ -44,11 +44,11 @@ const OrderSummary = () => {
     const userOrders = orders.filter((order) => order.userId === user.id);
     console.log("userOrders", userOrders)
 
-    useEffect(() => {
-        if (userOrders?.id) {
-            dispatch(fetchOrderAdjustments(userOrders.id))
-        }
-    }, [dispatch, userOrders?.id])
+    // useEffect(() => {
+    //     if (userOrders?.id) {
+    //         dispatch(fetchOrderAdjustments(userOrders.id))
+    //     }
+    // }, [dispatch, userOrders?.id])
 
     const totalPages = Math.ceil(userOrders.length / itemsPerPage);
 
@@ -62,9 +62,14 @@ const OrderSummary = () => {
         return `${orderId}/${year}`;
     };
 
-    const handleViewOrder = (order) => {
+    const handleViewOrder = async (order) => {
         console.log("order", order)
-        setSelectedOrder(order);
+        const response = await dispatch(fetchOrderAdjustments(order.id));
+        const adjustmentsForOrder = response.payload || [];
+        setSelectedOrder({
+            ...order,
+            adjustments: adjustmentsForOrder
+        });
         setOpenModal(true);
     };
 
@@ -157,9 +162,6 @@ const OrderSummary = () => {
                 ) : (
                     <p className="text-gray-500">You have no orders yet.</p>
                 )}
-
-                {adjustments ? "Yes" : "No"}
-
 
             </div>
 

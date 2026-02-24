@@ -266,6 +266,7 @@
 
 
 "use client";
+import { FiLock } from "react-icons/fi";
 
 export default function OrderDetail({
     selectedOrder,
@@ -295,6 +296,14 @@ export default function OrderDetail({
         return acc + (item.pricePerItem * item.quantity);
     }, 0) || subtotal;
 
+    const typeStyles = {
+        SHIPPING: "bg-indigo-100 text-indigo-700",
+        ITEM_ADD: "bg-green-100 text-green-700",
+        ITEM_SHIPPING: "bg-cyan-100 text-cyan-700",
+        DISCOUNT: "bg-blue-100 text-blue-700",
+        PENALTY: "bg-red-100 text-red-700",
+        MANUAL: "bg-purple-100 text-purple-700",
+    };
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex">
@@ -478,6 +487,127 @@ export default function OrderDetail({
                         </tbody>
                     </table>
                 </div>
+
+                {/* Paid Adjustments / Additional Payments */}
+                {selectedOrder.adjustments?.length > 0 && (
+                    <div className="mt-8">
+                        <h3 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
+                            Additional Payments / Adjustments
+                        </h3>
+
+                        <div className="space-y-4">
+                            {selectedOrder.adjustments.map((adj) => {
+                                const fullUrl = adj.paymentTxnId
+                                    ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/adjustments/payu-redirect?txnId=${adj.paymentTxnId}`
+                                    : null;
+
+                                return (
+                                    <div
+                                        key={adj.id}
+                                        className="flex flex-col md:flex-row items-center md:justify-between p-4 bg-white shadow-sm border rounded-xl hover:shadow-md transition"
+                                    >
+                                        {/* LEFT SECTION */}
+                                        <div className="flex-1 space-y-2 text-left">
+                                            {adj.adjustmentType && (
+                                                <span
+                                                    className={`inline-block px-3 py-1 text-xs font-semibold rounded-full
+                                                            ${typeStyles[adj.adjustmentType] || "bg-gray-100 text-gray-700"}
+                                                            `}
+                                                >
+                                                    Type :{" "}
+                                                    {adj.adjustmentType === "MANUAL"
+                                                        ? adj.manualType || "Manual"
+                                                        : adj.adjustmentType.replace("_", " ")}
+                                                </span>
+                                            )}
+
+                                            <p className="text-gray-800 font-semibold text-base">
+                                                Amount: ₹
+                                                {Number(adj.amount).toLocaleString("en-IN", {
+                                                    minimumFractionDigits: 2,
+                                                })}
+                                            </p>
+
+                                            {adj.reason && (
+                                                <p className="text-sm text-gray-600">
+                                                    <span className="font-medium">Reason:</span> {adj.reason}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* CENTER SECTION */}
+                                        <div className="flex-1 flex flex-col items-center justify-center space-y-2 my-3 md:my-0">
+                                            {adj.status && (
+                                                <span
+                                                    className={`px-3 py-1 text-xs font-semibold rounded-full
+        ${adj.status === "PAID"
+                                                            ? "bg-green-100 text-green-700"
+                                                            : adj.status === "PENDING"
+                                                                ? "bg-yellow-100 text-yellow-700"
+                                                                : adj.status === "FAILED"
+                                                                    ? "bg-red-100 text-red-700"
+                                                                    : "bg-gray-100 text-gray-700"
+                                                        }`}
+                                                >
+                                                    Payment : {adj.status}
+                                                </span>
+                                            )}
+
+                                            {adj.paidAt && (
+                                                <p className="text-xs text-gray-500 text-center">
+                                                    Paid At:{" "}
+                                                    {new Date(adj.paidAt).toLocaleString("en-IN", {
+                                                        day: "2-digit",
+                                                        month: "short",
+                                                        year: "numeric",
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                        hour12: true,
+                                                    })}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* RIGHT SECTION */}
+                                        <div className="flex-1 flex justify-end">
+                                            {fullUrl && adj.status !== "PAID" && (
+                                                <>
+                                                    {/* If Link Expired */}
+                                                    {adj.expiresAt && new Date(adj.expiresAt) < new Date() ? (
+                                                        <div className="relative group">
+                                                            <button
+                                                                disabled
+                                                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-300 text-gray-600 text-sm font-medium rounded-lg cursor-not-allowed"
+                                                            >
+                                                                <FiLock size={16} />
+                                                                Link Expired
+                                                            </button>
+
+                                                            {/* Tooltip */}
+                                                            <div className="absolute bottom-full mb-2 hidden group-hover:block bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+                                                                Payment link has expired
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        /* Active Payment Button */
+                                                        <a
+                                                            href={fullUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-block px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition"
+                                                        >
+                                                            Pay Now
+                                                        </a>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* Notes */}
                 {selectedOrder.note && (
