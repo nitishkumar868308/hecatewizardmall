@@ -275,7 +275,7 @@ const VariationsSection = ({
     const [filteredTags, setFilteredTags] = useState([]);
     const [defaultVariationId, setDefaultVariationId] = useState("");
     const { states } = useSelector((state) => state.states);
-    console.log("variationDetails", variationDetails)
+    console.log("currentData", currentData)
 
     useEffect(() => {
         dispatch(fetchStates())
@@ -399,56 +399,27 @@ const VariationsSection = ({
         });
     };
 
-    const findVariationKeyById = (id) => {
-        return Object.keys(variationDetails).find(key => variationDetails[key]?.id === id);
-    };
-
-    console.log("currentData.variations", currentData?.variations);
-    console.log("variationDetails keys", Object.keys(variationDetails));
-
-    const handleRemoveVariation = async (variationKeyOrId) => {
-        console.log("=== handleRemoveVariation called ===");
-        console.log("Input:", variationKeyOrId);
-
-        let variationKey = variationKeyOrId;
-        let variationId = variationDetails[variationKey]?.id;
-
-        console.log("Initial variationKey:", variationKey);
-        console.log("Initial variationId from variationDetails:", variationId);
-
-        // If passed ID instead of key, find the key
+    const handleRemoveVariation = (variationId) => {
         if (!variationId) {
-            variationKey = findVariationKeyById(variationKeyOrId);
-            variationId = variationDetails[variationKey]?.id;
-
-            console.log("After findVariationKeyById:");
-            console.log("Resolved variationKey:", variationKey);
-            console.log("Resolved variationId:", variationId);
+            toast.error("Variation ID not found!");
+            return;
         }
 
-        if (variationId) {
-            console.log("Variation exists on server, attempting delete...");
-            try {
-                const res = await dispatch(deleteVariation(variationId)).unwrap();
-                console.log("Server response:", res);
+        dispatch(deleteVariation(variationId))
+            .unwrap()
+            .then(() => {
                 toast.success("Variation deleted successfully");
-                removeVariationInternal(variationKey);
-                console.log("Variation removed from UI:", variationKey);
-            } catch (err) {
-                toast.error("Failed to delete variation");
-                console.error("Error deleting variation:", err);
-            }
-        } else if (variationKey) {
-            console.log("Variation ID not found on server, cleaning UI for key:", variationKey);
-            toast("Variation already removed from server, cleaning UI...");
-            removeVariationInternal(variationKey);
-            console.log("Variation removed from UI (no server call):", variationKey);
-        } else {
-            console.error("Variation not found anywhere for input:", variationKeyOrId);
-            toast.error("Variation not found");
-        }
 
-        console.log("=== handleRemoveVariation finished ===");
+                // FIND correct variationKey using ID
+                const keyToRemove = Object.keys(variationDetails).find(
+                    (key) => variationDetails[key]?.id === variationId
+                );
+
+                if (keyToRemove) {
+                    removeVariationInternal(keyToRemove);
+                }
+            })
+            .catch(() => toast.error("Failed to delete variation"));
     };
 
     console.log("currentVariations", currentVariations)
@@ -513,9 +484,8 @@ const VariationsSection = ({
                                 <button
                                     type="button"
                                     onClick={(e) => {
-                                        e.stopPropagation();
-                                        const variationId = variationDetails[variationKey]?.id;
-                                        handleRemoveVariation(variationId || variationKey);
+                                        e.stopPropagation(); // prevent expand toggle
+                                        handleRemoveVariation(variationDetails[variationKey]?.id);
                                     }}
                                     className="text-gray-600 cursor-pointer hover:text-red-800 font-semibold text-sm px-3 py-1 rounded-lg bg-red-50 hover:bg-red-100 transition"
                                 >
@@ -548,9 +518,9 @@ const VariationsSection = ({
                                             // stringify variationKey to match dbVariationDetails keys
                                             // const keyStr = JSON.stringify(variationKey);
                                             const keyStr = variationKey;
-                                            console.log("keyStr", keyStr)
+                                            console.log("keyStr" , keyStr)
                                             const variation = variationDetails[keyStr] || {};
-                                            console.log("variationPage", variation)
+                                            console.log("variationPage" , variation)
 
                                             const dimension = {
                                                 weight: variation.weight || "",
