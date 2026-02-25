@@ -275,7 +275,7 @@ const VariationsSection = ({
     const [filteredTags, setFilteredTags] = useState([]);
     const [defaultVariationId, setDefaultVariationId] = useState("");
     const { states } = useSelector((state) => state.states);
-    console.log("currentData", currentData)
+    console.log("variationDetails", variationDetails)
 
     useEffect(() => {
         dispatch(fetchStates())
@@ -483,9 +483,38 @@ const VariationsSection = ({
                                 </button> */}
                                 <button
                                     type="button"
-                                    onClick={(e) => {
+                                    onClick={async (e) => {
                                         e.stopPropagation(); // prevent expand toggle
-                                        handleRemoveVariation(variationDetails[variationKey]?.id);
+
+                                        console.log("=== Remove Button Clicked ===");
+                                        console.log("variationKey:", variationKey);
+                                        console.log("variationDetails:", variationDetails);
+                                        console.log("variationDetails[variationKey]:", variationDetails[variationKey]);
+
+                                        const variationId = variationDetails[variationKey]?.id;
+                                        console.log("variationId:", variationId);
+
+                                        if (!variationId) {
+                                            toast.error("Variation ID not found!");
+                                            console.error("Variation ID not found for key:", variationKey);
+                                            return;
+                                        }
+
+                                        try {
+                                            console.log("Dispatching deleteVariation with ID:", variationId);
+                                            const response = await dispatch(deleteVariation(variationId)).unwrap();
+                                            console.log("Server response:", response);
+
+                                            toast.success("Variation deleted successfully");
+
+                                            // Front-end state cleanup
+                                            console.log("Removing variation from front-end state:", variationKey);
+                                            removeVariationInternal(variationKey);
+
+                                        } catch (err) {
+                                            console.error("Failed to delete variation:", err);
+                                            toast.error("Failed to delete variation");
+                                        }
                                     }}
                                     className="text-gray-600 cursor-pointer hover:text-red-800 font-semibold text-sm px-3 py-1 rounded-lg bg-red-50 hover:bg-red-100 transition"
                                 >
@@ -518,9 +547,9 @@ const VariationsSection = ({
                                             // stringify variationKey to match dbVariationDetails keys
                                             // const keyStr = JSON.stringify(variationKey);
                                             const keyStr = variationKey;
-                                            console.log("keyStr" , keyStr)
+                                            console.log("keyStr", keyStr)
                                             const variation = variationDetails[keyStr] || {};
-                                            console.log("variationPage" , variation)
+                                            console.log("variationPage", variation)
 
                                             const dimension = {
                                                 weight: variation.weight || "",
