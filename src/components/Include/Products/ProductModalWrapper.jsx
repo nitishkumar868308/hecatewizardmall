@@ -666,148 +666,89 @@ const ProductModalWrapper = ({
     // };
 
 
-
-
     // ✅ Load variations from DB in edit mode
     useEffect(() => {
         if (!editProductData) return;
 
-        if (editProductData.variations?.length > 0) {
-            const dbVariations = editProductData.variations.map((v) => {
-                const attrs = parseAttributes(v.variationName);
-                console.log("variation raw:", v);
-                console.log("variation parsed attrs:", attrs);
+        const variationsFromDB = editProductData.variations || [];
 
-
-                return {
-                    ...v,
-                    attributes: attrs,
-                };
-            });
-
-            console.log("dbVariations", dbVariations)
-
-            const dbVariationDetails = {};
-
-            dbVariations.forEach((v) => {
-                const key = getVariationKey(v.attributes);
-                console.log("---- DB Variation Key ----", key);
-                console.log("v.dimension", v.dimension);
-                const dimension = v.dimension || {};
-                dbVariationDetails[key] = {
-                    id: v.id,
-                    short: v.short,
-                    price: v.price,
-                    stock: v.stock,
-                    isDefault: v.isDefault,
-                    sku: v.sku,
-                    description: v.description,
-                    images: v.image ? [v.image] : [],
-                    name: editProductData.name,
-                    "fnsku-code": v.barCode,
-                    MRP: v.MRP,
-                    tags: (v.tags || []).map((t) =>
-                        typeof t === "string" ? { id: t, name: t } : { id: t.id, name: t.name }
-                    ),
-                    marketLinks: Array.isArray(v.marketLinks)
-                        ? v.marketLinks
-                        : v.marketLinks?.connect
-                            ? v.marketLinks.connect.map(link => ({ id: link.id }))
-                            : [],
-                    weight: dimension.weight || v.weight || "",
-                    length: dimension.length || v.length || "",
-                    breadth: dimension.breadth || v.breadth || "",
-                    height: dimension.height || v.height || "",
-                };
-            });
-            console.log("---- All DB Variation Keys ----", Object.keys(dbVariationDetails));
-            console.log("---- DB Variation Details ----", dbVariationDetails);
-
-            setCurrentVariations(dbVariations.map(v => v.attributes));
-            setVariationDetails(dbVariationDetails);
-        } else {
-            setCurrentVariations([]);
-            setVariationDetails({});
-        }
-    }, [editProductData]);
-
-
-    // ✅ Rebuild variations when modal opens in edit mode
-    useEffect(() => {
-        if (!modalOpen) return;
-
-        if (editModalOpen && editProductData) {
-            const preSelectedAttrs = {};
-            const dbVariationDetails = {};
-
-            editProductData.variations?.forEach((v) => {
-                const attrs = parseAttributes(v.variationName);
-                console.log("attrs", attrs)
-                Object.entries(attrs).forEach(([key, val]) => {
-                    if (!preSelectedAttrs[key]) preSelectedAttrs[key] = { values: [] };
-                    if (!preSelectedAttrs[key].values.includes(val)) {
-                        preSelectedAttrs[key].values.push(val);
-                    }
-                });
-
-                const key = getVariationKey(attrs);
-                console.log("keyeditMode", key)
-                dbVariationDetails[key] = {
-                    id: v.id,
-                    short: v.short,
-                    price: v.price,
-                    stock: v.stock,
-                    isDefault: v.isDefault,
-                    sku: v.sku,
-                    description: v.description,
-                    images: v.image ? [v.image] : [],
-                    name: editProductData.name,
-                    "fnsku-code": v.barCode,
-                    weight: v.dimension?.weight,
-                    length: v.dimension?.length,
-                    breadth: v.dimension?.breadth,
-                    height: v.dimension?.height,
-                    MRP: v.MRP,
-                    tags: (v.tags || []).map((t) =>
-                        typeof t === "string" ? { id: t, name: t } : { id: t.id, name: t.name }
-                    ),
-                    marketLinks: Array.isArray(v.marketLinks)
-                        ? v.marketLinks
-                        : v.marketLinks?.connect
-                            ? v.marketLinks.connect.map(link => ({ id: link.id }))
-                            : []
-                };
-            });
-
-            setSelectedAttributes(preSelectedAttrs);
-
-            const attrValues = Object.values(preSelectedAttrs)
-                .filter((a) => a.values?.length)
-                .map((a) => a.values);
-
-            const attrNames = Object.keys(preSelectedAttrs);
-            const cartesian = (arr) =>
-                arr.reduce((a, b) => a.flatMap((d) => b.map((e) => [...d, e])), [[]]);
-            const combinations = cartesian(attrValues);
-
-            const variationsWithKeys = combinations.map((comb) => {
-                const obj = comb.reduce((acc, val, idx) => {
-                    acc[attrNames[idx]] = val;
-                    return acc;
-                }, {});
-                return obj;
-            });
-
-            setCurrentVariations(variationsWithKeys);
-            setVariationDetails(dbVariationDetails);
-
-        } else {
-            // New product
+        if (!variationsFromDB.length) {
             setSelectedAttributes({});
             setCurrentVariations([]);
             setVariationDetails({});
+            return;
         }
-    }, [modalOpen, editModalOpen, editProductData]);
+
+        const dbVariationDetails = {};
+        const realVariations = [];
+        const derivedSelectedAttrs = {};
+
+        variationsFromDB.forEach((v) => {
+
+            const attrs = parseAttributes(v.variationName);
+            realVariations.push(attrs);
+
+            Object.entries(attrs).forEach(([name, value]) => {
+                if (!derivedSelectedAttrs[name]) {
+                    derivedSelectedAttrs[name] = { values: [] };
+                }
+                if (!derivedSelectedAttrs[name].values.includes(value)) {
+                    derivedSelectedAttrs[name].values.push(value);
+                }
+            });
+
+            const key = getVariationKey(attrs);
+
+            dbVariationDetails[key] = {
+                id: v.id,
+                price: v.price,
+                stock: v.stock,
+                sku: v.sku,
+                description: v.description,
+                images: v.image ? [v.image] : [],
+            };
+        });
+
+        setSelectedAttributes(derivedSelectedAttrs);
+        setCurrentVariations(realVariations);
+        setVariationDetails(dbVariationDetails);
+
+    }, [editProductData]);
+
+
+    // useEffect(() => {
+
+    //     // 🔥 Important: DB load ke turant baad run nahi hona chahiye
+    //     if (!Object.keys(selectedAttributes).length) return;
+
+    //     const attrValues = Object.values(selectedAttributes)
+    //         .filter(a => a.values?.length)
+    //         .map(a => a.values);
+
+    //     if (!attrValues.length) {
+    //         setCurrentVariations([]);
+    //         return;
+    //     }
+
+    //     const attrNames = Object.keys(selectedAttributes);
+
+    //     const cartesian = arr =>
+    //         arr.reduce((a, b) =>
+    //             a.flatMap(d => b.map(e => [...d, e])), [[]]
+    //         );
+
+    //     const combinations = cartesian(attrValues);
+
+    //     const variationsWithKeys = combinations.map(comb => {
+    //         return comb.reduce((acc, val, idx) => {
+    //             acc[attrNames[idx]] = val;
+    //             return acc;
+    //         }, {});
+    //     });
+
+    //     setCurrentVariations(variationsWithKeys);
+
+    // }, [selectedAttributes]);
 
     const handleImageUpload = async (file) => {
         const formData = new FormData();
