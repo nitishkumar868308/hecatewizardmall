@@ -627,18 +627,32 @@ const ProductModalWrapper = ({
     }, [selectedAttributes, currentData]);
 
 
-
-    const parseAttributes = (variationName) => {
-        console.log("variationName", variationName)
+    const parseAttributes = (variationName = "") => {
+        console.log("variationName", variationName);
         if (!variationName) return {};
-        // "Color: red1, Size: M" => { Color: "red1", Size: "M" }
+
         const attrs = {};
-        variationName.split("/").forEach((part) => {
-            const [key, value] = part.split(":").map(s => s.trim());
-            if (key && value) attrs[key] = value;
+
+        // Split by slash `/` or comma `,`
+        const parts = variationName.split(/\s*[/,]\s*/);
+
+        parts.forEach((part) => {
+            const [key, value] = part.split(/\s*:\s*/);
+            if (key && value) attrs[key.trim()] = value.trim();
         });
+
         return attrs;
     };
+    // const parseAttributes = (variationName) => {
+    //     console.log("variationName", variationName)
+    //     if (!variationName) return {};
+    //     const attrs = {};
+    //     variationName.split("/").forEach((part) => {
+    //         const [key, value] = part.split(":").map(s => s.trim());
+    //         if (key && value) attrs[key] = value;
+    //     });
+    //     return attrs;
+    // };
     // const parseAttributes = (variationName = "") => {
     //     const attrs = {};
     //     variationName

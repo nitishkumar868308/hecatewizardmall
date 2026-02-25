@@ -399,27 +399,56 @@ const VariationsSection = ({
         });
     };
 
-    const handleRemoveVariation = (variationId) => {
+    const findVariationKeyById = (id) => {
+        return Object.keys(variationDetails).find(key => variationDetails[key]?.id === id);
+    };
+
+    console.log("currentData.variations", currentData?.variations);
+    console.log("variationDetails keys", Object.keys(variationDetails));
+
+    const handleRemoveVariation = async (variationKeyOrId) => {
+        console.log("=== handleRemoveVariation called ===");
+        console.log("Input:", variationKeyOrId);
+
+        let variationKey = variationKeyOrId;
+        let variationId = variationDetails[variationKey]?.id;
+
+        console.log("Initial variationKey:", variationKey);
+        console.log("Initial variationId from variationDetails:", variationId);
+
+        // If passed ID instead of key, find the key
         if (!variationId) {
-            toast.error("Variation ID not found!");
-            return;
+            variationKey = findVariationKeyById(variationKeyOrId);
+            variationId = variationDetails[variationKey]?.id;
+
+            console.log("After findVariationKeyById:");
+            console.log("Resolved variationKey:", variationKey);
+            console.log("Resolved variationId:", variationId);
         }
 
-        dispatch(deleteVariation(variationId))
-            .unwrap()
-            .then(() => {
+        if (variationId) {
+            console.log("Variation exists on server, attempting delete...");
+            try {
+                const res = await dispatch(deleteVariation(variationId)).unwrap();
+                console.log("Server response:", res);
                 toast.success("Variation deleted successfully");
+                removeVariationInternal(variationKey);
+                console.log("Variation removed from UI:", variationKey);
+            } catch (err) {
+                toast.error("Failed to delete variation");
+                console.error("Error deleting variation:", err);
+            }
+        } else if (variationKey) {
+            console.log("Variation ID not found on server, cleaning UI for key:", variationKey);
+            toast("Variation already removed from server, cleaning UI...");
+            removeVariationInternal(variationKey);
+            console.log("Variation removed from UI (no server call):", variationKey);
+        } else {
+            console.error("Variation not found anywhere for input:", variationKeyOrId);
+            toast.error("Variation not found");
+        }
 
-                // FIND correct variationKey using ID
-                const keyToRemove = Object.keys(variationDetails).find(
-                    (key) => variationDetails[key]?.id === variationId
-                );
-
-                if (keyToRemove) {
-                    removeVariationInternal(keyToRemove);
-                }
-            })
-            .catch(() => toast.error("Failed to delete variation"));
+        console.log("=== handleRemoveVariation finished ===");
     };
 
     console.log("currentVariations", currentVariations)
@@ -483,38 +512,10 @@ const VariationsSection = ({
                                 </button> */}
                                 <button
                                     type="button"
-                                    onClick={async (e) => {
-                                        e.stopPropagation(); // prevent expand toggle
-
-                                        console.log("=== Remove Button Clicked ===");
-                                        console.log("variationKey:", variationKey);
-                                        console.log("variationDetails:", variationDetails);
-                                        console.log("variationDetails[variationKey]:", variationDetails[variationKey]);
-
+                                    onClick={(e) => {
+                                        e.stopPropagation();
                                         const variationId = variationDetails[variationKey]?.id;
-                                        console.log("variationId:", variationId);
-
-                                        if (!variationId) {
-                                            toast.error("Variation ID not found!");
-                                            console.error("Variation ID not found for key:", variationKey);
-                                            return;
-                                        }
-
-                                        try {
-                                            console.log("Dispatching deleteVariation with ID:", variationId);
-                                            const response = await dispatch(deleteVariation(variationId)).unwrap();
-                                            console.log("Server response:", response);
-
-                                            toast.success("Variation deleted successfully");
-
-                                            // Front-end state cleanup
-                                            console.log("Removing variation from front-end state:", variationKey);
-                                            removeVariationInternal(variationKey);
-
-                                        } catch (err) {
-                                            console.error("Failed to delete variation:", err);
-                                            toast.error("Failed to delete variation");
-                                        }
+                                        handleRemoveVariation(variationId || variationKey);
                                     }}
                                     className="text-gray-600 cursor-pointer hover:text-red-800 font-semibold text-sm px-3 py-1 rounded-lg bg-red-50 hover:bg-red-100 transition"
                                 >
