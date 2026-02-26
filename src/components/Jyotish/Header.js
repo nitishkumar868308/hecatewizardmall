@@ -14,10 +14,10 @@ const Header = () => {
 
     const navLinks = [
         { name: 'Home', href: '/jyotish' },
-        { name: 'Our Atrologer', href: 'consult-now' },
-        { name: 'About', href: 'about' },
-        { name: 'Contact Us', href: 'contact' },
-        { name: 'Join as Astrologer', href: 'join-astrologer' }
+        { name: 'Our Atrologer', href: '/jyotish/consult-now' },
+        { name: 'About', href: '/jyotish/about' },
+        { name: 'Contact Us', href: '/jyotish/contact' },
+        { name: 'Join as Astrologer', href: '/jyotish/join-astrologer' }
 
     ];
 

@@ -28,7 +28,8 @@ export default function RootLayout({ children }) {
   const isAdmin = pathname.startsWith("/admin");
   const isHome = pathname === "/";
   const isJyotish = pathname.startsWith("/jyotish");
-  const hideLayout = pathname.startsWith("/admin") || pathname.startsWith("/payment-success") || isJyotish;
+  const isJyotishRegtister = pathname.startsWith("/register-jyotish");
+  const hideLayout = pathname.startsWith("/admin") || pathname.startsWith("/payment-success") || isJyotish || isJyotishRegtister;
 
 
   return (
