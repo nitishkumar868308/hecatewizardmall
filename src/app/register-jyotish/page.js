@@ -5,7 +5,9 @@ import DefaultPageJyotish from '@/components/Jyotish/DefaultPageJyotish'
 const page = () => {
     return (
         <>
-            <Register />
+            <DefaultPageJyotish>
+                <Register />
+            </DefaultPageJyotish>
         </>
     )
 }

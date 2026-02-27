@@ -1,318 +1,459 @@
-"use client"
-import React, { useState, useEffect, useRef } from 'react';
-import { User, BookOpen, Award, CheckCircle, ChevronRight, ChevronLeft, UploadCloud, Sparkles, MapPin, Globe } from 'lucide-react';
+"use client";
+
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { registerAstrologer } from "@/app/redux/slices/jyotish/Register/RegisterSlice";
+import { toast } from "react-hot-toast";
+import Loader from "@/components/Include/Loader";
+import {
+    User,
+    Mail,
+    Phone,
+    MapPin,
+    Briefcase,
+    ChevronRight,
+    ChevronLeft,
+    Plus,
+    Trash2,
+    Globe,
+    IndianRupee,
+    Upload,
+    Award,
+    CheckCircle2,
+} from "lucide-react";
 
 const Register = () => {
+    const dispatch = useDispatch();
+    const { loading } = useSelector((state) => state.jyotishRegister);
+
     const [step, setStep] = useState(1);
     const totalSteps = 3;
-    const [stars, setStars] = useState([]);
-    const fileInputRef = useRef(null);
-    const [windowWidth, setWindowWidth] = useState(0);
 
-
-
-    useEffect(() => {
-        const starCount = 60;
-        const newStars = Array.from({ length: starCount }).map((_, i) => ({
-            id: i,
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            size: Math.random() * 2 + 1 + 'px',
-            delay: Math.random() * 5 + 's',
-            duration: Math.random() * 3 + 2 + 's'
-        }));
-        setStars(newStars);
-    }, []);
-
-    const nextStep = () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setStep((prev) => Math.min(prev + 1, totalSteps));
-    };
-    const prevStep = () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setStep((prev) => Math.max(prev - 1, 1));
+    const initialFormState = {
+        fullName: "",
+        email: "",
+        phoneNumber: "",
+        gender: "",
+        experience: "",
+        bio: "",
+        address: "",
+        city: "",
+        state: "",
+        country: "India",
+        languages: [],
+        services: [],
+        documents: [],
     };
 
-    useEffect(() => {
-        setWindowWidth(window.innerWidth);
-    }, []);
+    const [formData, setFormData] = useState(initialFormState);
 
-    const progress = (step / totalSteps) * 100;
+    const [languageInput, setLanguageInput] = useState("");
+    const [newService, setNewService] = useState({ serviceName: "", price: "" });
 
-    const stepsInfo = [
-        { id: 1, label: 'Identity', icon: <User size={16} /> },
-        { id: 2, label: 'Experience', icon: <BookOpen size={16} /> },
-        { id: 3, label: 'Verification', icon: <Award size={16} /> }
+    const serviceOptions = [
+        "Vedic Astrology",
+        "Numerology",
+        "Tarot Reading",
+        "Palmistry",
+        "Vastu",
     ];
 
+    const statesOfIndia = [
+        "Delhi",
+        "Maharashtra",
+        "Karnataka",
+        "Uttar Pradesh",
+        "Gujarat",
+    ];
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const nextStep = () => {
+        if (step === 1 && (!formData.fullName || !formData.email || !formData.phoneNumber)) {
+            return toast.error("Please fill required fields");
+        }
+        setStep((prev) => Math.min(prev + 1, totalSteps));
+    };
+
+    const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
+
+    const addLanguage = () => {
+        if (languageInput.trim()) {
+            setFormData((prev) => ({
+                ...prev,
+                languages: [...prev.languages, languageInput.trim()],
+            }));
+            setLanguageInput("");
+        }
+    };
+
+    const addService = () => {
+        if (!newService.serviceName || !newService.price)
+            return toast.error("Select service and price");
+
+        setFormData((prev) => ({
+            ...prev,
+            services: [...prev.services, newService],
+        }));
+        setNewService({ serviceName: "", price: "" });
+    };
+
+    const handleFileUpload = (type, file) => {
+        if (!file) return;
+        setFormData((prev) => ({
+            ...prev,
+            documents: [
+                ...prev.documents.filter((d) => d.type !== type),
+                { type, fileUrl: file.name },
+            ],
+        }));
+    };
+
+    const handleSubmit = async () => {
+        try {
+
+            const payload = {
+                ...formData,
+                experience: formData.experience
+                    ? parseInt(formData.experience)
+                    : null,
+
+                services: formData.services.map((s) => ({
+                    serviceName: s.serviceName,
+                    price: parseInt(s.price),
+                })),
+            };
+
+            console.log("FINAL PAYLOAD", payload);
+
+            const result = await dispatch(registerAstrologer(payload)).unwrap();
+
+            toast.success(result.message || "Registration successful");
+
+            // ✅ RESET EVERYTHING ONLY ON SUCCESS
+            setFormData(initialFormState);
+            setLanguageInput("");
+            setNewService({ serviceName: "", price: "" });
+            setStep(1);
+
+        } catch (err) {
+            // ❌ DO NOTHING (no reset)
+            toast.error(err.message || "Something went wrong");
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-[#082D3F] flex items-center justify-center p-0 md:p-6 lg:p-12 font-sans relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-[#061c2f] via-[#082D3F] to-[#0e4b63] flex items-center justify-center p-4">
+            {loading && <Loader />}
 
-            {/* Background Animations */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-500/10 rounded-full blur-[120px] animate-pulse"></div>
-                {stars.map((star) => (
-                    <div key={star.id} className="absolute bg-white rounded-full opacity-0 animate-twinkle"
-                        style={{ top: star.top, left: star.left, width: star.size, height: star.size, animationDelay: star.delay, animationDuration: star.duration }}
-                    />
-                ))}
-            </div>
+            <div className="w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl bg-white/10 backdrop-blur-xl border border-white/20 flex flex-col md:flex-row">
 
-            <div className="z-10 w-full max-w-5xl bg-white md:rounded-[40px] shadow-[0_30px_80px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col md:flex-row min-h-screen md:min-h-[700px]">
-
-                {/* --- SIDEBAR (Desktop) / TOP NAV (Mobile) --- */}
-                <div className="md:w-1/3 bg-[#082D3F] p-6 md:p-10 text-white flex flex-col relative overflow-hidden">
-                    {/* Brand Section */}
-                    <div className="relative z-10 flex md:flex-col items-center md:items-start justify-between md:justify-start gap-4 mb-8 md:mb-12">
-                        <div className="w-10 h-10 md:w-14 md:h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-400/20">
-                            <Sparkles className="text-white" size={windowWidth < 768 ? 20 : 30} />
-                        </div>
-                        <div>
-                            <h2 className="text-xl md:text-3xl font-bold leading-tight">Expert Portal</h2>
-                            <p className="hidden md:block mt-3 text-slate-400 text-sm leading-relaxed">
-                                Join the elite circle of cosmic guides and share your wisdom.
-                            </p>
-                        </div>
+                {/* LEFT PANEL */}
+                <div className="md:w-1/3 bg-gradient-to-b from-[#0e4b63] to-[#061c2f] p-10 text-white hidden md:flex flex-col justify-between">
+                    <div>
+                        <h2 className="text-3xl font-extrabold leading-snug">
+                            Join The Divine Network
+                        </h2>
+                        <p className="mt-4 text-sm text-white/70">
+                            Start your journey as a verified spiritual consultant.
+                        </p>
                     </div>
 
-                    {/* Stepper - Desktop pe list, Mobile pe dots/icons */}
-                    <div className="relative z-10 flex md:flex-col justify-between items-center md:items-start md:space-y-8 mb-4 md:mb-0">
-                        {stepsInfo.map((s) => (
-                            <div key={s.id} className={`flex items-center gap-4 transition-all duration-500 ${step === s.id ? 'opacity-100 scale-105' : 'opacity-40 scale-100'}`}>
-                                <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center text-xs md:text-sm font-bold transition-colors ${step >= s.id ? 'border-yellow-400 bg-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.4)]' : 'border-white/30 text-white'}`}>
-                                    {step > s.id ? <CheckCircle size={18} /> : s.id}
-                                </div>
-                                <span className="hidden md:block font-bold tracking-wide text-sm uppercase">{s.label}</span>
-                            </div>
-                        ))}
-                        {/* Connecting line for mobile */}
-                        <div className="absolute top-4 left-0 w-full h-[2px] bg-white/10 md:hidden -z-10"></div>
+                    <div className="space-y-3 text-sm text-white/70">
+                        <div>✔ Secure Verification</div>
+                        <div>✔ Set Your Own Pricing</div>
+                        <div>✔ Earn With Trust</div>
                     </div>
                 </div>
 
-                {/* --- FORM SECTION --- */}
-                <div className="flex-1 bg-white p-6 md:p-12 lg:p-16 flex flex-col">
+                {/* RIGHT PANEL */}
+                <div className="flex-1 bg-white p-6 md:p-12 rounded-t-3xl md:rounded-none">
 
-                    {/* Header for Form */}
-                    <div className="mb-8 md:mb-10">
-                        <div className="flex justify-between items-end mb-3">
-                            <span className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Current Progress</span>
-                            <span className="text-xs font-bold text-[#082D3F]">{Math.round(progress)}%</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-100 rounded-full">
-                            <div className="h-full bg-[#082D3F] transition-all duration-700 ease-out rounded-full shadow-[0_0_10px_rgba(8,45,63,0.2)]" style={{ width: `${progress}%` }}></div>
-                        </div>
+                    {/* STEP INDICATOR */}
+                    <div className="flex justify-between mb-10">
+                        {[1, 2, 3].map((i) => (
+                            <div
+                                key={i}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition ${step >= i
+                                    ? "bg-gradient-to-r from-[#0e4b63] to-[#082D3F] text-white"
+                                    : "bg-gray-200 text-gray-500"
+                                    }`}
+                            >
+                                {step > i ? <CheckCircle2 size={18} /> : i}
+                            </div>
+                        ))}
                     </div>
 
-                    <div className="flex-1">
-                        {step === 1 && (
-                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div>
-                                    <h3 className="text-2xl md:text-3xl font-extrabold text-[#082D3F]">Personal Profile</h3>
-                                    <p className="text-slate-400 text-sm mt-2 font-medium">Basic details to set up your identity.</p>
+                    {/* STEP CONTENT */}
+                    {step === 1 && (
+                        <div className="space-y-5 animate-fade">
+                            <h3 className="text-2xl font-bold text-[#082D3F]">Basic Info</h3>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <Input icon={<User size={16} />} name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} />
+                                <Input icon={<Mail size={16} />} name="email" placeholder="Email" value={formData.email} onChange={handleChange} />
+                                <Input icon={<Phone size={16} />} name="phoneNumber" placeholder="Phone Number" value={formData.phoneNumber} onChange={handleChange} />
+                                <select name="gender" className="input" onChange={handleChange}>
+                                    <option value="">Gender</option>
+                                    <option value="MALE">Male</option>
+                                    <option value="FEMALE">Female</option>
+                                </select>
+                            </div>
+
+                            {/* Languages */}
+                            <div>
+                                <div className="flex gap-3">
+                                    <Input icon={<Globe size={16} />} value={languageInput} onChange={(e) => setLanguageInput(e.target.value)} placeholder="Add Language" />
+                                    <button onClick={addLanguage} className="primary-btn">Add</button>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Full Name</label>
-                                        <input type="text" placeholder="e.g. Rahul Sharma" className="modern-input" />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Email Address</label>
-                                        <input type="email" placeholder="rahul@example.com" className="modern-input" />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Phone Number</label>
-                                        <input type="tel" placeholder="+91 00000 00000" className="modern-input" />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Gender</label>
-                                        <select className="modern-input appearance-none bg-no-repeat bg-[right_1rem_center]">
-                                            <option>Select Gender</option>
-                                            <option>Male</option>
-                                            <option>Female</option>
-                                            <option>Other</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1.5 md:col-span-2">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Languages (Comma separated)</label>
-                                        <input type="text" placeholder="Hindi, English, Marathi" className="modern-input" />
-                                    </div>
+                                <div className="flex flex-wrap gap-2 mt-3">
+                                    {formData.languages.map((l, i) => (
+                                        <span key={i} className="tag">
+                                            {l}
+                                            <Trash2 size={14} onClick={() => setFormData({ ...formData, languages: formData.languages.filter((_, idx) => idx !== i) })} />
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {step === 2 && (
-                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div>
-                                    <h3 className="text-2xl md:text-3xl font-extrabold text-[#082D3F]">Professional Skills</h3>
-                                    <p className="text-slate-400 text-sm mt-2 font-medium">Let us know what you're best at.</p>
+                    {step === 2 && (
+                        <div className="space-y-5 animate-fade">
+                            <h3 className="text-2xl font-bold text-[#082D3F]">Expertise</h3>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <Input icon={<Briefcase size={16} />} value={formData.experience} name="experience" placeholder="Experience (Years)" onChange={handleChange} />
+                                <Input icon={<MapPin size={16} />} name="city" value={formData.city} placeholder="City" onChange={handleChange} />
+                            </div>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <Input name="address" value={formData.address} placeholder="Address" onChange={handleChange} />
+                                <Input name="state" value={formData.state} placeholder="State" onChange={handleChange} />
+                            </div>
+                            <textarea
+                                name="bio"
+                                placeholder="Short Bio"
+                                value={formData.bio}
+                                onChange={handleChange}
+                                className="w-full p-3 rounded-xl border bg-gray-50"
+                            />
+
+                            <div className="bg-gray-50 p-5 rounded-2xl border">
+                                <div className="grid md:grid-cols-2 gap-3 mb-3">
+                                    <select className="input" onChange={(e) => setNewService({ ...newService, serviceName: e.target.value })}>
+                                        <option value="">Select Service</option>
+                                        {serviceOptions.map(s => <option key={s}>{s}</option>)}
+                                    </select>
+
+                                    <Input icon={<IndianRupee size={14} />} placeholder="Price" type="number"
+                                        value={newService.price}
+                                        onChange={(e) => setNewService({ ...newService, price: e.target.value })}
+                                    />
                                 </div>
+                                <button onClick={addService} className="primary-btn w-full">Add Service</button>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Specialty</label>
-                                        <select className="modern-input">
-                                            <option>Vedic Astrology</option>
-                                            <option>Palmistry</option>
-                                            <option>Tarot Reading</option>
-                                            <option>Numerology</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Years of Practice</label>
-                                        <input type="number" placeholder="5" className="modern-input" />
-                                    </div>
-                                    <div className="space-y-1.5 md:col-span-2">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Detailed Bio</label>
-                                        <textarea placeholder="Describe your experience and method..." className="modern-input h-32 resize-none py-4"></textarea>
-                                    </div>
+                                <div className="mt-4 space-y-2">
+                                    {formData.services.map((s, i) => (
+                                        <div key={i} className="flex justify-between bg-white p-3 rounded-xl shadow-sm">
+                                            <span>{s.serviceName}</span>
+                                            <span className="font-bold text-[#0e4b63]">₹{s.price}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {step === 3 && (
-                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="text-center md:text-left">
-                                    <h3 className="text-2xl md:text-3xl font-extrabold text-[#082D3F]">Documentation</h3>
-                                    <p className="text-slate-400 text-sm mt-2 font-medium">Safe & secure verification.</p>
-                                </div>
+                    {step === 3 && (
+                        <div className="space-y-6 text-center animate-fade">
+                            <h3 className="text-2xl font-bold text-[#082D3F]">Verification</h3>
 
-                                <div className="grid grid-cols-1 gap-4">
-                                    <div
-                                        className="upload-card group"
-                                        onClick={() => fileInputRef.current.click()}
-                                    >
-                                        <div className="p-4 bg-slate-100 rounded-2xl group-hover:bg-[#082D3F] group-hover:text-white transition-all">
-                                            <UploadCloud size={24} />
-                                        </div>
-                                        <div className="text-center md:text-left">
-                                            <p className="font-bold text-[#082D3F]">Identity Proof (Aadhar/PAN)</p>
-                                            <p className="text-xs text-slate-400">PDF, JPG up to 5MB</p>
-                                        </div>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <DocCard
+                                    title="ID Proof"
+                                    icon={<Upload size={22} />}
+                                    type="ID_PROOF"
+                                    setFormData={setFormData}
+                                    formData={formData}
+                                />
 
-                                        <input
-                                            type="file"
-                                            className="hidden"
-                                            ref={fileInputRef}
-                                            onChange={(e) => console.log(e.target.files[0])}
-                                        />
-
-                                        <button
-                                            type="button"
-                                            className="ml-auto text-xs font-bold bg-[#082D3F] text-white px-4 py-2 rounded-lg cursor-pointer"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                fileInputRef.current.click();
-                                            }}
-                                        >
-                                            Upload
-                                        </button>
-                                    </div>
-
-                                    <div
-                                        className="upload-card group"
-                                        onClick={() => fileInputRef.current.click()}
-                                    >
-                                        <div className="p-4 bg-slate-100 rounded-2xl group-hover:bg-[#082D3F] group-hover:text-white transition-all">
-                                            <Award size={24} />
-                                        </div>
-                                        <div className="text-center md:text-left">
-                                            <p className="font-bold text-[#082D3F]">Professional Certificate</p>
-                                            <p className="text-xs text-slate-400">Educational degrees or certifications</p>
-                                        </div>
-
-                                        <input
-                                            type="file"
-                                            className="hidden"
-                                            ref={fileInputRef}
-                                            onChange={(e) => console.log(e.target.files[0])}
-                                        />
-
-                                        <button
-                                            type="button"
-                                            className="ml-auto text-xs font-bold bg-[#082D3F] text-white px-4 py-2 rounded-lg cursor-pointer"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                fileInputRef.current.click();
-                                            }}
-                                        >
-                                            Upload
-                                        </button>
-                                    </div>
-                                </div>
+                                <DocCard
+                                    title="Certificate"
+                                    icon={<Award size={22} />}
+                                    type="CERTIFICATE"
+                                    setFormData={setFormData}
+                                    formData={formData}
+                                />
                             </div>
+                        </div>
+                    )}
+
+                    {/* NAV BUTTONS */}
+                    <div className="mt-10 flex justify-between">
+                        {step > 1 && (
+                            <button onClick={prevStep} className="secondary-btn">
+                                <ChevronLeft size={16} /> Back
+                            </button>
                         )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="mt-10 flex items-center justify-between gap-4 pt-8 border-t border-slate-100">
-                        <button onClick={prevStep} disabled={step === 1} className={`flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl transition-all ${step === 1 ? 'opacity-0' : 'text-[#082D3F] hover:bg-slate-50'}`}>
-                            <ChevronLeft size={18} /> <span className="hidden md:inline">Back</span>
-                        </button>
-
-                        <button onClick={step === totalSteps ? undefined : nextStep} className={`flex-1 md:flex-none px-8 py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 transition-all active:scale-95 ${step === totalSteps ? 'bg-emerald-600 shadow-emerald-200' : 'bg-[#082D3F] shadow-[#082D3F]/20'} text-white shadow-xl`}>
-                            {step === totalSteps ? 'Complete Application' : 'Continue'}
-                            {step !== totalSteps && <ChevronRight size={18} />}
+                        <button onClick={step < totalSteps ? nextStep : handleSubmit}
+                            className="primary-btn ml-auto">
+                            {step < totalSteps ? <>Continue <ChevronRight size={16} /></> : "Complete"}
                         </button>
                     </div>
                 </div>
             </div>
 
             <style jsx>{`
-                @keyframes twinkle {
-                    0%, 100% { opacity: 0; transform: scale(0.5); }
-                    50% { opacity: 0.7; transform: scale(1.2); }
-                }
-                .animate-twinkle { animation: twinkle infinite ease-in-out; }
-                
-                .modern-input {
-                    width: 100%;
-                    padding: 1rem 1.25rem;
-                    background-color: #F8FAFC;
-                    border: 2px solid #F1F5F9;
-                    border-radius: 18px;
-                    font-size: 0.95rem;
-                    font-weight: 500;
-                    color: #082D3F;
-                    outline: none;
-                    transition: all 0.2s ease;
-                }
-                .modern-input:focus {
-                    background-color: #FFFFFF;
-                    border-color: #082D3F;
-                    box-shadow: 0 10px 20px -10px rgba(8, 45, 63, 0.2);
-                }
-                
-                .upload-card {
-                    display: flex;
-                    align-items: center;
-                    gap: 1.5rem;
-                    padding: 1.25rem;
-                    border: 2px solid #F1F5F9;
-                    border-radius: 24px;
-                    transition: all 0.3s ease;
-                    cursor: pointer;
-                }
-                .upload-card:hover {
-                    border-color: #082D3F;
-                    background-color: #F8FAFC;
-                    transform: translateY(-2px);
-                }
-
-                @media (max-width: 768px) {
-                    .upload-card {
-                        flex-direction: column;
-                        text-align: center;
-                    }
-                    .upload-card button {
-                        width: 100%;
-                        margin-top: 0.5rem;
-                    }
-                }
-            `}</style>
+        .input {
+          width: 100%;
+          padding: 12px;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          background: white;
+        }
+        .primary-btn {
+          background: linear-gradient(135deg,#0e4b63,#082D3F);
+          color: white;
+          padding: 10px 20px;
+          border-radius: 12px;
+          font-weight: 600;
+          transition: .3s;
+        }
+        .primary-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .secondary-btn {
+          background: #f1f5f9;
+          padding: 10px 20px;
+          border-radius: 12px;
+        }
+        .tag {
+          background:#0e4b63;
+          color:white;
+          padding:4px 10px;
+          border-radius:20px;
+          display:flex;
+          align-items:center;
+          gap:6px;
+        }
+        .animate-fade {
+          animation: fade .4s ease-in-out;
+        }
+        @keyframes fade {
+          from {opacity:0; transform: translateY(10px);}
+          to {opacity:1; transform: translateY(0);}
+        }
+      `}</style>
         </div>
     );
+};
+
+const Input = ({ icon, ...props }) => (
+    <div className="relative w-full">
+        {icon && (
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500 pointer-events-none">
+                {icon}
+            </div>
+        )}
+        <input
+            {...props}
+            className="w-full h-12 pl-11 pr-4 rounded-xl 
+      bg-gray-50 border border-gray-300 
+      focus:border-[#0e4b63] focus:ring-2 focus:ring-[#0e4b63]/20 
+      outline-none transition-all duration-200
+      text-gray-800 placeholder-gray-400"
+        />
+    </div>
+);
+
+const DocCard = ({ title, icon, type, setFormData, formData }) => {
+
+    const uploadedDoc = formData.documents.find(doc => doc.type === type);
+
+    const handleChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const url = await handleImageUpload(file);
+
+            setFormData(prev => ({
+                ...prev,
+                documents: [
+                    ...prev.documents.filter(doc => doc.type !== type),
+                    { type, fileUrl: url, fileName: file.name }
+                ]
+            }));
+
+            toast.success(`${title} uploaded`);
+
+        } catch (err) {
+            toast.error(err.message);
+        }
+    };
+
+    return (
+        <div className="bg-gray-50 p-6 rounded-2xl border border-dashed text-center">
+            <div className="w-12 h-12 mx-auto bg-[#0e4b63]/10 text-[#0e4b63] rounded-full flex items-center justify-center mb-3">
+                {icon}
+            </div>
+
+            <h4 className="font-bold">{title}</h4>
+
+            <input
+                type="file"
+                onChange={handleChange}
+                className="mt-3 text-xs w-full"
+            />
+
+            {uploadedDoc && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl text-sm">
+                    <div className="flex items-center justify-between gap-2">
+
+                        <span className="text-green-700 font-medium truncate max-w-[200px]">
+                            ✅ {uploadedDoc.fileName}
+                        </span>
+
+                        <button
+                            onClick={() =>
+                                setFormData(prev => ({
+                                    ...prev,
+                                    documents: prev.documents.filter(doc => doc.type !== type)
+                                }))
+                            }
+                            className="text-red-500 text-xs hover:underline"
+                        >
+                            Remove
+                        </button>
+
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const handleImageUpload = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+
+    let data;
+    try {
+        data = await res.json();
+    } catch (err) {
+        throw new Error("Server did not return valid JSON");
+    }
+
+    if (!res.ok) throw new Error(data.message || "Upload failed");
+
+    return data.urls;
 };
 
 export default Register;

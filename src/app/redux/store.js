@@ -39,6 +39,7 @@ import astrologerReducer from "./slices/book_consultant/astrologer/astrologerSli
 import blogReducer from './slices/blog/blogSlice';
 import blogReviewsReducer from './slices/blogReviews/blogReviewsSlice';
 import orderAdjustmentsReducer from './slices/order-adjustments/orderAdjustmentsSlice';
+import jyotishRegisterReducer from "./slices/jyotish/Register/RegisterSlice";
 
 // import updateUserReducer from './slices/userSlice';
 
@@ -84,6 +85,7 @@ const store = configureStore({
         blogs: blogReducer,
         blogReviews: blogReviewsReducer,
         orderAdjustments: orderAdjustmentsReducer,
+        jyotishRegister: jyotishRegisterReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });
