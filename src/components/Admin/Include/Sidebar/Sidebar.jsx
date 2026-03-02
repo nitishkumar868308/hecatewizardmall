@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse, ShoppingCart, Image as ImageIcon, Tag, HandCoins, Star, CalendarCheck, PenLine   } from "lucide-react";
+import { Home, Users, Settings, LogOut, X, ChevronDown, ChevronUp, LayoutGrid, Clapperboard, MapPin, Package, FileText, Archive, Warehouse, ShoppingCart, Image as ImageIcon, Tag, HandCoins, Star, CalendarCheck, PenLine, Sparkles, UserPlus } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { FiMessageCircle } from "react-icons/fi";
@@ -15,6 +15,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     const [manuOpenWareHouseLocation, setMenuOpenWareHouseLocation] = useState(false);
     const [manuOpenWareHouseFullfillment, setMenuOpenWareHouseFullfillment] = useState(false);
     const [manuOpenBookConsultant, setMenuOpenBookConsultant] = useState(false);
+    const [manuOpenJyotish, setMenuOpenJyotish] = useState(false);
 
     return (
         <>
@@ -467,8 +468,37 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                         href="/admin/blog"
                         className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
                     >
-                        <PenLine   className="w-5 h-5" /> Blog
-                    </Link> 
+                        <PenLine className="w-5 h-5" /> Blog
+                    </Link>
+
+                    <div>
+                        <button
+                            onClick={() => setMenuOpenJyotish(!manuOpenJyotish)}
+                            className="flex items-center gap-3 px-4 py-2 rounded-lg text-white hover:bg-white hover:text-black transition cursor-pointer"
+                        >
+                            <span className="flex items-center gap-3">
+                                <Sparkles className="w-5 h-5" /> Jyotish
+                            </span>
+                            {manuOpenJyotish ? (
+                                <ChevronUp className="w-4 h-4" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4" />
+                            )}
+                        </button>
+
+                        {/* Dropdown items */}
+                        {manuOpenJyotish && (
+                            <div className="ml-8 mt-2 flex flex-col gap-2">
+                                <Link
+                                    href="/admin/jyotish/astrologerDetail"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    <UserPlus className="w-4 h-4" />
+                                    Register Astrolger
+                                </Link>
+                            </div>
+                        )}
+                    </div>
 
 
                     <Link

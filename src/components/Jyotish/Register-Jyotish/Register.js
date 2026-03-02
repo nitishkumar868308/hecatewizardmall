@@ -195,12 +195,17 @@ const Register = () => {
                             <div className="grid md:grid-cols-2 gap-4">
                                 <Input icon={<User size={16} />} name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} />
                                 <Input icon={<Mail size={16} />} name="email" placeholder="Email" value={formData.email} onChange={handleChange} />
-                                <Input icon={<Phone size={16} />} name="phoneNumber" placeholder="Phone Number" value={formData.phoneNumber} onChange={handleChange} />
                                 <select name="gender" className="input" onChange={handleChange}>
                                     <option value="">Gender</option>
                                     <option value="MALE">Male</option>
                                     <option value="FEMALE">Female</option>
                                 </select>
+                                <Input icon={<Phone size={16} />} name="phoneNumber" placeholder="Phone Number" value={formData.phoneNumber} onChange={handleChange} />
+                                <Input icon={<MapPin size={16} />} name="city" value={formData.city} placeholder="City" onChange={handleChange} />
+                                <Input name="address" value={formData.address} placeholder="Address" onChange={handleChange} />
+                                <Input name="state" value={formData.state} placeholder="State" onChange={handleChange} />
+                                <Input name="country" value={formData.country} placeholder="country" onChange={handleChange} />
+
                             </div>
 
                             {/* Languages */}
@@ -228,12 +233,14 @@ const Register = () => {
 
                             <div className="grid md:grid-cols-2 gap-4">
                                 <Input icon={<Briefcase size={16} />} value={formData.experience} name="experience" placeholder="Experience (Years)" onChange={handleChange} />
-                                <Input icon={<MapPin size={16} />} name="city" value={formData.city} placeholder="City" onChange={handleChange} />
+                                <Input icon={<Briefcase size={16} />} value={formData.experience} name="addharNo" placeholder="Addhar Number" onChange={handleChange} />
+                                <Input icon={<Briefcase size={16} />} value={formData.experience} name="panNo" placeholder="Pan Number" onChange={handleChange} />
+                                {/* <Input icon={<MapPin size={16} />} name="city" value={formData.city} placeholder="City" onChange={handleChange} /> */}
                             </div>
-                            <div className="grid md:grid-cols-2 gap-4">
+                            {/* <div className="grid md:grid-cols-2 gap-4">
                                 <Input name="address" value={formData.address} placeholder="Address" onChange={handleChange} />
                                 <Input name="state" value={formData.state} placeholder="State" onChange={handleChange} />
-                            </div>
+                            </div> */}
                             <textarea
                                 name="bio"
                                 placeholder="Short Bio"
