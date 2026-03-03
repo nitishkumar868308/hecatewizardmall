@@ -98,11 +98,12 @@ const ProductDetail = () => {
     //     setCurrentProduct(prod);
     // }, [products, id, country]);
     console.log("Route ID:", id);
+    console.log("Available slugs:", products.map(p => p.slug));
     useEffect(() => {
         if (!products?.length) return;
 
         const prod = products.find((p) => p?.slug == id);
-        console.log("prodTest" , prod)
+        console.log("prodTest", prod)
 
         setCurrentProduct(prod || null);
     }, [products, id]);
