@@ -89,14 +89,21 @@ const ProductDetail = () => {
     //         setCurrentProduct(prod);
     //     }
     // }, [products, id, currentProduct]);
-    useEffect(() => {
-        const prod = products.find((p) => p.id == id) || null;
-        console.log("prodnew", prod)
-        if (!prod) return;
+    // useEffect(() => {
+    //     const prod = products.find((p) => p.id == id) || null;
+    //     console.log("prodnew", prod)
+    //     if (!prod) return;
 
-        // Always update currentProduct if country changes
-        setCurrentProduct(prod);
-    }, [products, id, country]); // <-- add `country` here
+    //     // Always update currentProduct if country changes
+    //     setCurrentProduct(prod);
+    // }, [products, id, country]);
+    useEffect(() => {
+        if (!products?.length) return;
+
+        const prod = products.find((p) => p.slug === id);
+
+        setCurrentProduct(prod || null);
+    }, [products, id]);
 
     console.log("currentProduct", currentProduct)
     // const product = products.find((p) => p.id === id);
@@ -768,8 +775,9 @@ const ProductDetail = () => {
 
 
 
-    if (!product)
-        return <p className="text-center mt-20 text-gray-500 text-xl">Product not found</p>;
+    // if (!product)
+    //     return <p className="text-center mt-20 text-gray-500 text-xl">Product not found</p>;
+
 
     // const addToCart = async () => {
     //     if (!user || !user.id) {
@@ -3272,9 +3280,9 @@ const ProductDetail = () => {
             : [];
     const baseUrl = isXpress ? "/hecate-quickGo/categories" : "/categories";
 
-    const currency = isXpress
-        ? "INR"
-        : selectedVariation?.currency ?? product.currency ?? "INR";
+    // const currency = isXpress
+    //     ? "INR"
+    //     : selectedVariation?.currency ?? product.currency ?? "INR";
 
     console.log("selectedVariation", selectedVariation)
 
@@ -3323,11 +3331,24 @@ const ProductDetail = () => {
     };
 
     // Filter only approved reviews for this product
-    const productReviews = reviews?.filter(
-        (r) => r.productId === product.id && r.status === "approved"
-    );
+    // const productReviews = reviews?.filter(
+    //     (r) => r.productId === product.id && r.status === "approved"
+    // );
+    const productReviews = product
+        ? reviews?.filter(
+            (r) => r.productId === product.id && r.status === "approved"
+        )
+        : [];
 
 
+
+    // if (productsLoading) {
+    //     return <Loader />;
+    // }
+
+    if (!product) {
+        return <Loader />;
+    }
 
     return (
         <>

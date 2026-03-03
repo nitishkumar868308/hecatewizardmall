@@ -114,7 +114,8 @@ const SubCategoryPage = () => {
                         {filteredProducts.map((product) => (
                             <Link
                                 key={product.id}
-                                href={`/product/${product.id}`}
+                                // href={`/product/${product.id}`}
+                                href={`/product/${product.slug}`}
                                 className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition transform hover:scale-105 cursor-pointer block"
                             >
                                 <div className="h-72 relative mb-4 rounded overflow-hidden">

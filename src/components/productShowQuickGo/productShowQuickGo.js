@@ -234,9 +234,9 @@ const Page = () => {
     };
 
     const prdocuPage = (product) => {
-        if (!product?.id) return; // safety check
+        if (!product?.slug) return; // safety check
 
-        router.push(`/hecate-quickGo/product/${product.id}`);
+        router.push(`/hecate-quickGo/product/${product.slug}`);
     }
 
     const herbsProducts = useMemo(() => {

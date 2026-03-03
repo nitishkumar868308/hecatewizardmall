@@ -2459,11 +2459,18 @@ const Categories = () => {
                                         key={product.id}
                                         className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition transform hover:scale-105"
                                         // onClick={() => router.push(`/product/${product.id}`)}
+                                        // onClick={() => {
+                                        //     if (isXpress) {
+                                        //         router.push(`/hecate-quickGo/product/${product.id}`);
+                                        //     } else {
+                                        //         router.push(`/product/${product.id}`);
+                                        //     }
+                                        // }}
                                         onClick={() => {
                                             if (isXpress) {
-                                                router.push(`/hecate-quickGo/product/${product.id}`);
+                                                router.push(`/hecate-quickGo/product/${product.slug}`);
                                             } else {
-                                                router.push(`/product/${product.id}`);
+                                                router.push(`/product/${product.slug}`);
                                             }
                                         }}
                                     >

@@ -273,8 +273,8 @@ const ProductSlider = ({ showSection = "both" }) => {
         }
     }, [inView]);
 
-    const handleProductClick = (id) => {
-        router.push(`/product/${id}`);
+    const handleProductClick = (slug) => {
+        router.push(`/product/${slug}`);
     };
 
     // Reusable slider JSX
@@ -358,7 +358,7 @@ const ProductSlider = ({ showSection = "both" }) => {
                                     alt={product.name}
                                     fill
                                     className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105 rounded-xl"
-                                    onClick={() => handleProductClick(product.id)}
+                                    onClick={() => handleProductClick(product.slug)}
                                     unoptimized
                                 />
                             ) : (

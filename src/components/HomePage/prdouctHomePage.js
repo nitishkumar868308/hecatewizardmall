@@ -144,7 +144,8 @@ const ProductHomePage = () => {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.1 }}
-                                    onClick={() => router.push(`/product/${product.id}`)}
+                                    // onClick={() => router.push(`/product/${product.id}`)}
+                                    onClick={() => router.push(`/product/${product.slug}`)}
                                     className="group relative flex flex-col cursor-pointer"
                                 >
                                     {/* Image Container */}
@@ -183,8 +184,9 @@ const ProductHomePage = () => {
                                                                 <div
                                                                     key={idx}
                                                                     onClick={(e) => {
-                                                                        e.stopPropagation(); // parent click se bachne ke liye
-                                                                        router.push(`/product/${product.id}`);
+                                                                        e.stopPropagation();
+                                                                        // router.push(`/product/${product.id}`);
+                                                                        router.push(`/product/${product.slug}`)
                                                                     }}
                                                                     className="flex justify-between items-center bg-white/10 p-2 rounded-lg border border-white/5 cursor-pointer hover:bg-white/20"
                                                                 >

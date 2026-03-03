@@ -100,7 +100,7 @@ export async function GET(req) {
                 active: true,
                 createdAt: true,
                 platform : true,
-                
+                slug: true
             },
         });
 

@@ -1,5 +1,3 @@
-// app/sitemap.js
-
 import prisma from "@/lib/prisma"
 
 export default async function sitemap() {
@@ -11,6 +9,10 @@ export default async function sitemap() {
         select: {
             id: true,
             updatedAt: true,
+            slug: true,
+        },
+        where: {
+            active: true,
         },
     })
 
@@ -34,7 +36,8 @@ export default async function sitemap() {
     }))
 
     const productUrls = products.map((product) => ({
-        url: `${baseUrl}/product/${product.id}`,
+        // url: `${baseUrl}/product/${product.id}`,
+        url: `${baseUrl}/product/${product.slug}`,
         lastModified: product.updatedAt,
         priority: 0.9,
     }))
