@@ -66,7 +66,8 @@ export const fetchProducts = createAsyncThunk(
             const state = getState();
             const countryCode = state.country || "IN"; // read from Redux
             const response = await axios.get("/api/products", {
-                headers: { "x-country": countryCode },
+                headers: { "x-country": countryCode, "Cache-Control": "no-cache" },
+
             });
             return response.data;
         } catch (err) {

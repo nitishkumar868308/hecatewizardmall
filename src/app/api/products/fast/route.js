@@ -58,7 +58,7 @@ import { convertProductsFast } from "@/lib/priceConverter";
 
 const prisma = new PrismaClient();
 let countryPricingCache = {};
-let productCache = {}; // cache per page + country
+let productCache = {};
 
 export async function GET(req) {
     try {
