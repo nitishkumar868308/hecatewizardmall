@@ -360,7 +360,7 @@ export async function GET(req) {
                 deleted: 0,
                 active: true,
                 NOT: {
-                    image: { equals: [] }  // image array empty na ho
+                    image: { equals: [] }
                 }
             },
             include: {
@@ -374,7 +374,7 @@ export async function GET(req) {
                 offers: true,
                 primaryOffer: true,
                 tags: true,
-                marketLinks: true,
+                marketLinks: true
             },
         });
 

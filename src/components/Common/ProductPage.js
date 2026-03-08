@@ -27,6 +27,7 @@ import {
 } from "@/app/redux/slices/attribute/attributeSlice";
 import { createReview, fetchReviews } from "@/app/redux/slices/reviews/reviewsSlice";
 import { fetchOrders } from "@/app/redux/slices/order/orderSlice";
+import { fetchBangaloreInventory } from "@/app/redux/slices/bangaloreInventory/bangaloreInventorySlice";
 
 const ProductDetail = () => {
     const { isOpen } = useCart();
@@ -76,8 +77,11 @@ const ProductDetail = () => {
     console.log("dispatches", dispatches)
     const { store } = useSelector((state) => state.delhiStore);
     console.log("store", store)
+    const { inventory } = useSelector(state => state.bangaloreInventory);
+    console.log("inventory", inventory)
     const isXpress = pathname.includes("/hecate-quickGo");
     const purchasePlatform = isXpress ? "xpress" : "website";
+    const selectedState = useSelector(state => state.selectedState);
     // useEffect(() => {
     //     const prod = products.find((p) => p.id == id);
     //     console.log("prod", prod)
@@ -138,7 +142,9 @@ const ProductDetail = () => {
         dispatch(fetchOffers());
         dispatch(fetchDispatches())
         dispatch(fetchDelhiStore())
-    }, [dispatch, country]); // <-- refetch whenever country changes
+        const warehouseCode = localStorage.getItem("warehouseCode");
+        dispatch(fetchBangaloreInventory(warehouseCode));
+    }, [dispatch, country]);
     console.log("selectedVariation", selectedVariation)
 
     const selectedWarehouseId =
@@ -176,6 +182,36 @@ const ProductDetail = () => {
 
     console.log("allowedVariationIds", allowedVariationIds);
 
+    const variationSkuMap = useMemo(() => {
+        const map = {};
+        currentProduct?.variations?.forEach(v => {
+            map[v.sku] = v;
+        });
+        return map;
+    }, [currentProduct]);
+
+    const bangaloreVariationStockMap = useMemo(() => {
+        if (!inventory?.length || !currentProduct) return null;
+
+        const map = {};
+
+        inventory.forEach(item => {
+
+            const sku = item.channelSkuCode;
+
+            const variation = variationSkuMap[sku];
+
+            if (variation) {
+                map[variation.id] = item.quantity;
+            }
+
+        });
+
+        return map;
+
+    }, [inventory, currentProduct]);
+    console.log("bangaloreVariationStockMap", bangaloreVariationStockMap);
+
 
 
     useEffect(() => {
@@ -185,12 +221,21 @@ const ProductDetail = () => {
         setVariationAttributes({});
         setSelectedAttributes({});
         setSelectedVariation(null);
-        if (isXpress && allowedVariationIds === null) return;
+        // if (isXpress && allowedVariationIds  === null) return;
 
+        const isBangalore = selectedState?.toLowerCase() === "benglore";
+        if (isXpress) {
+            if (isBangalore && (!inventory?.length || Object.keys(bangaloreVariationStockMap).length === 0)) return;
+            if (!isBangalore && !allowedVariationIds) return;
+        }
 
-
+        // const variationsToUse = isXpress
+        //     ? currentProduct.variations?.filter(v => allowedVariationIds.includes(v.id))
+        //     : currentProduct.variations;
         const variationsToUse = isXpress
-            ? currentProduct.variations?.filter(v => allowedVariationIds.includes(v.id))
+            ? isBangalore
+                ? currentProduct.variations?.filter(v => bangaloreVariationStockMap[v.id])
+                : currentProduct.variations?.filter(v => allowedVariationIds.includes(v.id))
             : currentProduct.variations;
         console.log("variationsToUse", variationsToUse)
 
@@ -241,7 +286,8 @@ const ProductDetail = () => {
             setCurrentImages([]);
             setMainImage(null);
         }
-    }, [currentProduct, isXpress, allowedVariationIds]);
+    }, [currentProduct, isXpress, allowedVariationIds, bangaloreVariationStockMap,
+        selectedState, inventory]);
 
 
 
@@ -313,11 +359,21 @@ const ProductDetail = () => {
     // };
 
 
-    const selectedStock =
-        selectedVariation?.id
-            ? variationStockMap[selectedVariation.id] || 0
-            : 0;
+    // const selectedStock =
+    //     selectedVariation?.id
+    //         ? variationStockMap[selectedVariation.id] || 0
+    //         : 0;
+    // Selected stock
+    const selectedStock = useMemo(() => {
+        if (!selectedVariation?.id) return null; // null -> inventory abhi load ho rahi
+        const isBangalore = selectedState?.toLowerCase() === "benglore";
+
+        const stockMap = isBangalore ? bangaloreVariationStockMap || {} : variationStockMap || {};
+        return stockMap[selectedVariation.id] ?? 0; // fallback 0
+    }, [selectedVariation?.id, bangaloreVariationStockMap, variationStockMap, selectedState]);
     console.log("selectedStock", selectedStock)
+    console.log("selectedVariationId", selectedVariation?.id);
+    console.log("bangaloreVariationStockMap", bangaloreVariationStockMap);
     // useEffect(() => {
     //     if (!currentProduct) return;
 
@@ -519,8 +575,16 @@ const ProductDetail = () => {
     useEffect(() => {
         if (!product?.variations?.length) return;
 
-        const variationsToUse = isXpress && allowedVariationIds
-            ? product.variations.filter(v => allowedVariationIds.includes(v.id))
+        // const variationsToUse = isXpress && allowedVariationIds
+        //     ? product.variations.filter(v => allowedVariationIds.includes(v.id))
+        //     : product.variations;
+        const isBangalore = selectedState?.toLowerCase() === "benglore";
+         if (!bangaloreVariationStockMap) return; 
+
+        const variationsToUse = isXpress
+            ? isBangalore
+                ? product.variations.filter(v => bangaloreVariationStockMap[v.id] > 0)
+                : product.variations.filter(v => allowedVariationIds?.includes(v.id))
             : product.variations;
 
         const attrs = {};
@@ -577,7 +641,9 @@ const ProductDetail = () => {
             setCurrentImages([]);
             setMainImage(null);
         }
-    }, [product?.variations, attributes, isXpress, allowedVariationIds]);
+    }, [product?.variations, attributes, isXpress, allowedVariationIds, bangaloreVariationStockMap,
+        selectedState
+    ]);
 
 
     // useEffect(() => {
@@ -3260,6 +3326,11 @@ const ProductDetail = () => {
     //         item.variationId === selectedVariation?.id
     // );
 
+    if (!product) {
+        return <Loader />;
+    }
+
+
     const existingCartItem = user?.carts?.find(
         (item) =>
             item.productId === product.id &&
@@ -3349,18 +3420,23 @@ const ProductDetail = () => {
     //     return <Loader />;
     // }
 
-    if (!product) {
-        return <Loader />;
-    }
+    const isBangalore = selectedState?.toLowerCase() === "benglore";
 
     return (
         <>
             <div>
-                {isXpress && allowedVariationIds === null ? (
+
+                {/* {isXpress && allowedVariationIds === null ? (
                     <div>Loading...</div>
                 ) : (
                     ""
-                )}
+                )} */}
+                {isXpress && (
+                    (isBangalore && !inventory?.length) ||
+                    (!isBangalore && allowedVariationIds === null)
+                ) && (
+                        <Loader />
+                    )}
 
             </div>
             <div className="max-w-7xl mx-auto p-8 flex flex-col md:flex-row gap-12">
@@ -3837,7 +3913,7 @@ const ProductDetail = () => {
                         })}
 
 
-                        {isXpress && (
+                        {/* {isXpress && (
                             <p
                                 className={`mt-3 text-sm font-semibold
       ${selectedStock === 0
@@ -3853,6 +3929,25 @@ const ProductDetail = () => {
                                         ? `Only ${selectedStock} left – order soon!`
                                         : ``}
                             </p>
+                        )} */}
+                        {isXpress && (
+                            selectedStock === null
+                                ? <Loader /> // inventory load hone tak loader
+                                : <p
+                                    className={`mt-3 text-sm font-semibold
+          ${selectedStock === 0
+                                            ? "text-red-600"
+                                            : selectedStock <= 10
+                                                ? "text-orange-600"
+                                                : "text-green-700"
+                                        }`}
+                                >
+                                    {selectedStock === 0
+                                        ? "Out of stock"
+                                        : selectedStock <= 10
+                                            ? `Only ${selectedStock} left – order soon!`
+                                            : ``}
+                                </p>
                         )}
 
 

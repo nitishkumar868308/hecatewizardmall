@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = typeof window !== "undefined"
-    ? localStorage.getItem("selectedState") || ""  // page reload ke liye
+    ? localStorage.getItem("selectedState") || ""
     : "";
 
 const selectedStateSlice = createSlice({

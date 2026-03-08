@@ -7,9 +7,9 @@ export async function PUT(req) {
     try {
 
         const username = req.headers.get("username");
-        console.log("username" , username)
+        console.log("username", username)
         const password = req.headers.get("password");
-        consol.log("password" , password)
+        console.log("password", password)
 
         const VALID_USER = "hecate_wizard_mall";
         const VALID_PASS = "Pratiekajain9@";
@@ -79,6 +79,48 @@ export async function PUT(req) {
 
         return NextResponse.json(
             { message: "Inventory update failed" },
+            { status: 500 }
+        );
+
+    }
+}
+
+
+export async function GET(req) {
+    try {
+
+        const { searchParams } = new URL(req.url);
+        const locationCode = searchParams.get("locationCode");
+        console.log("locationCode from frontend:", locationCode);
+
+        if (!locationCode) {
+            return NextResponse.json(
+                { message: "locationCode is required" },
+                { status: 400 }
+            );
+        }
+
+        const inventory = await prisma.bangaloreIncreffInventory.findMany({
+            where: {
+                locationCode: locationCode
+            },
+            select: {
+                locationCode: true,
+                channelSkuCode: true,
+                quantity: true,
+                minExpiry: true
+            }
+        });
+        console.log("inventory" , inventory)
+
+        return NextResponse.json(inventory);
+
+    } catch (error) {
+
+        console.error(error);
+
+        return NextResponse.json(
+            { message: "Failed to fetch inventory" },
             { status: 500 }
         );
 

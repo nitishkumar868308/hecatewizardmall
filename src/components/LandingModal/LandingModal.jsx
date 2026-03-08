@@ -5,7 +5,7 @@ import { fetchWarehouses } from '@/app/redux/slices/warehouse/wareHouseSlice';
 import { setSelectedState } from "@/app/redux/slices/selectedStateSlice";
 import { closeLocationModal } from "@/app/redux/slices/locationModalSlice";
 import { setWarehouseSelection } from "@/app/redux/slices/warehouseSelectionSlice";
-
+import { fetchBangaloreInventory } from "@/app/redux/slices/bangaloreInventory/bangaloreInventorySlice";
 
 export default function LandingModal() {
     const dispatch = useDispatch();
@@ -75,6 +75,7 @@ export default function LandingModal() {
                 pincode: pin,
             })
         );
+        dispatch(fetchBangaloreInventory(matchedWarehouse.code))
         dispatch(closeLocationModal());
         setLocalOpen(false);
         setSelectedStateLocal("");

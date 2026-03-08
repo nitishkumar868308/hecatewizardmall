@@ -15,6 +15,7 @@ import {
 import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispatchUnitsWareHouseSlice";
 import { useRouter } from "next/navigation";
 import { fetchDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
+import { fetchBangaloreInventory } from "@/app/redux/slices/bangaloreInventory/bangaloreInventorySlice";
 
 const Page = () => {
     const router = useRouter();
@@ -30,6 +31,8 @@ const Page = () => {
     console.log("products", products)
     console.log("categories", categories)
     const selectedState = useSelector(state => state.selectedState);
+    const { inventory } = useSelector(state => state.bangaloreInventory);
+    console.log("inventory", inventory)
 
     // Merge store with products, prioritizing variationId
     const mergedProducts = store
@@ -71,7 +74,13 @@ const Page = () => {
         dispatch(fetchSubcategories());
         dispatch(fetchDispatches())
         dispatch(fetchDelhiStore())
-    }, [dispatch]);
+        const warehouseCode = localStorage.getItem("warehouseCode");
+        console.log("selectedState:", selectedState);
+        console.log("warehouseCode:", warehouseCode);
+        if (selectedState?.toLowerCase() == "benglore" && warehouseCode) {
+            dispatch(fetchBangaloreInventory(warehouseCode));
+        }
+    }, [dispatch, selectedState]);
 
     const isXpress = pathname.includes("/hecate-quickGo");
 
@@ -92,6 +101,48 @@ const Page = () => {
     //         return foundProductId;
     //     })
     //     .filter(Boolean); // remove nulls
+
+    const isBangalore = selectedState?.toLowerCase() === "benglore";
+    const warehouseCode =
+        typeof window !== "undefined"
+            ? localStorage.getItem("warehouseCode")
+            : null;
+    console.log("warehouseCode:", warehouseCode);
+    console.log("inventory raw:", inventory);
+    console.log("products:", products);
+
+    const bangaloreProducts = inventory
+        ?.filter(item => item.locationCode === warehouseCode)
+        ?.map(item => {
+
+            const sku = item.channelSkuCode;
+
+            // 1️⃣ First check variation
+            let product = products.find(p =>
+                p.variations?.some(v => v.sku === sku)
+            );
+
+            // 2️⃣ If variation not found → check product sku
+            if (!product) {
+                product = products.find(p => p.sku === sku);
+            }
+
+            if (!product) return null;
+
+            return {
+                ...product,
+                stock: item.quantity
+            };
+
+        })
+        .filter(Boolean)
+        // 3️⃣ remove duplicates
+        .filter(
+            (product, index, self) =>
+                index === self.findIndex(p => p.id === product.id)
+        );
+
+    console.log("bangaloreProducts", bangaloreProducts);
 
     const storeForSelectedWarehouse = store?.filter(
         item => item.warehouseId?.toString() === warehouseId?.toString()
@@ -123,6 +174,10 @@ const Page = () => {
         .filter(p => !isXpress || p.platform?.includes("xpress"))
         .filter(p => !isXpress || allowedCategoryIds.includes(p.categoryId));
 
+    const finalProducts = isBangalore
+        ? bangaloreProducts
+        : delhiProducts;
+    console.log("finalProducts", finalProducts)
 
     const warehouseProductIds = store
         ?.map(dispatch => {
@@ -239,14 +294,19 @@ const Page = () => {
         router.push(`/hecate-quickGo/product/${product.slug}`);
     }
 
+    // const herbsProducts = useMemo(() => {
+    //     return delhiProducts.filter(
+    //         (p) => p.categoryId === herbsCategory?.id
+    //     );
+    // }, [delhiProducts, herbsCategory]);
     const herbsProducts = useMemo(() => {
-        return delhiProducts.filter(
+        return finalProducts.filter(
             (p) => p.categoryId === herbsCategory?.id
         );
-    }, [delhiProducts, herbsCategory]);
+    }, [finalProducts, herbsCategory]);
 
 
-    const getRandomProducts = (products, count = 9) => {
+    const getRandomProducts = (products, count = 6) => {
         if (!products) return [];
 
         const shuffled = [...products].sort(() => 0.5 - Math.random());
@@ -254,7 +314,7 @@ const Page = () => {
     };
 
     const randomProducts = useMemo(() => {
-        return getRandomProducts(herbsProducts, 9);
+        return getRandomProducts(herbsProducts, 6);
     }, [herbsProducts]);
 
 
@@ -437,7 +497,10 @@ const Page = () => {
 
                     {(() => {
 
-                        const oilsProducts = delhiProducts.filter(
+                        // const oilsProducts = delhiProducts.filter(
+                        //     p => p.categoryId === oilsCategory?.id
+                        // );
+                        const oilsProducts = finalProducts.filter(
                             p => p.categoryId === oilsCategory?.id
                         );
 
