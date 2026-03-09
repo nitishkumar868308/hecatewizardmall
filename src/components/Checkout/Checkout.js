@@ -133,8 +133,7 @@ const Checkout = () => {
       target.setHours(15, 0, 0, 0);
 
       if (now >= target) {
-        // Time is over → show tomorrow message
-        setTimeLeft("");
+        if (timeLeft !== "") setTimeLeft(""); // only update if different
         return;
       }
 
@@ -144,14 +143,15 @@ const Checkout = () => {
       const minutes = Math.floor((diff / 1000 / 60) % 60);
       const seconds = Math.floor((diff / 1000) % 60);
 
-      setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+      const newTime = `${hours}h ${minutes}m ${seconds}s`;
+      if (timeLeft !== newTime) setTimeLeft(newTime); // only update if different
     };
 
     updateTimer();
     const timer = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timer);
-  }, [isXpress]);
+  }, [isXpress, timeLeft]);
 
   const handleCopy = async (code) => {
     await navigator.clipboard.writeText(code);
@@ -694,14 +694,21 @@ const Checkout = () => {
   console.log("finalShippingOptions", finalShippingOptions)
 
   useEffect(() => {
-    if (finalShippingOptions.length > 0) {
-      setSelectedShippingOption(finalShippingOptions[0]);
-    } else {
+    if (!Array.isArray(finalShippingOptions)) {
       setSelectedShippingOption(null);
+      return;
     }
-  }, [finalShippingOptions]);
 
+    const firstOption = finalShippingOptions[0] || null;
 
+    // Only update if the ID is different
+    if (
+      (selectedShippingOption?.id || null) !==
+      (firstOption?.id || null)
+    ) {
+      setSelectedShippingOption(firstOption);
+    }
+  }, [finalShippingOptions, selectedShippingOption]);
   useEffect(() => {
     if (shippingOptions.length > 0) {
       const defaultAddr = shippingOptions.find(addr => addr.isDefault);
@@ -915,85 +922,149 @@ const Checkout = () => {
     };
 
     console.log("orderData", orderData)
-    try {
-      const data = await dispatch(createOrder(orderData)).unwrap();
+    console.log("selectedAddress?.state? " , selectedAddress?.state)
 
-      // ⭐ PAYU PAYMENT REDIRECT
-      if (data.gateway === "payu") {
-        const form = document.createElement("form");
-        form.action = data.payuURL;
-        form.method = "POST";
+    if (isXpress && selectedAddress?.state?.toLowerCase() === "karnataka") {
+      const xpressPayload = {
+        orderCode: `A${Date.now()}`, // example unique order code
+        locationCode: "KUD01",
+        orderTime: new Date().toISOString(),
+        orderType: "SO",
+        onHold: false,
+        isPriority: false,
+        gift: false,
+        qcStatus: "PASS",
+        dispatchByTime: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days later
+        startProcessingTime: new Date().toISOString(),
+        paymentMethod: selected === "PayU" ? "NCOD" : selected,
+        shippingAddress: {
+          name: orderData.shippingAddress.name,
+          line1: orderData.shippingAddress.address,
+          line2: "Shipping Address",
+          phone: orderData.shippingAddress.phone,
+          email: orderData.user.email,
+          city: orderData.shippingAddress.city,
+          state: orderData.shippingAddress.state,
+          zip: orderData.shippingAddress.pincode,
+          country: "India",
+        },
+        billingAddress: {
+          name: orderData.billingAddress.name,
+          line1: orderData.billingAddress.address,
+          line2: "Billing Address",
+          phone: orderData.billingAddress.phone,
+          email: orderData.user.email,
+          city: orderData.billingAddress.city,
+          state: orderData.billingAddress.state,
+          zip: orderData.billingAddress.pincode,
+          country: "India",
+        },
+        orderItems: orderData.items.map((item, index) => ({
+          channelSkuCode: `${item.productName}_${item.pricePerItem}`,
+          orderItemCode: `${item.productName}_${item.pricePerItem}_${index + 1}`,
+          quantity: item.quantity,
+          sellingPricePerUnit: item.pricePerItem,
+        })),
+        packType: "PIECE",
+        isSplitRequired: false,
+      };
 
-        Object.keys(data.params).forEach((key) => {
-          const input = document.createElement("input");
-          input.type = "hidden";
-          input.name = key;
-          input.value = data.params[key];
-          form.appendChild(input);
-        });
-
-        const inputOrderBy = document.createElement("input");
-        inputOrderBy.type = "hidden";
-        inputOrderBy.name = "orderBy";
-        inputOrderBy.value = isXpress ? "hecate-quickGo" : "website";
-        form.appendChild(inputOrderBy);
-
-        document.body.appendChild(form);
-        form.submit();
-        return;
-      }
-
-      // PayGlocal Payment
-      if (data.gateway === "payglocal") {
-        window.location.href = data.redirectUrl;
-        return;
-      }
-
-
-      // ⭐ CASHFREE PAYMENT
-      if (data.gateway === "CashFree") {
-        // Load Cashfree in PRODUCTION mode
-        const cashfree = await load({ mode: "production" });
-
-        cashfree.checkout({
-          paymentSessionId: data.sessionId,
-          redirectTarget: "_modal",
-          onComplete: async () => {
-            const res = await fetch(
-              `/api/orders/verify-status?order_id=${data.orderNumber}`
-            );
-            const result = await res.json();
-
-            if (result.success) {
-              window.location.href = `/payment-success?order_id=${data.orderNumber}`;
-            } else {
-              window.location.href = `/payment-failed?order_id=${data.orderNumber}`;
-            }
-          },
-        });
-      }
-
-      // if (data.success) {
-      //   if (orderData.promoCode) {
-      //     await axios.post("/api/promo_user/create", {
-      //       userId: user.id,
-      //       promoCode: orderData.promoCode,
-      //     });
-      //   }
-
-
-      //   if (orderData.donation && orderData.donationCampaignId) {
-      //     await axios.post("/api/user_donation/create", {
-      //       userName: user.name,
-      //       donationCampaignId: orderData.donationCampaignId,
-      //       amount: orderData.donation,
-      //     });
-      //   }
-      // }
-    } catch (err) {
-      console.error("Checkout error:", err);
-      toast.error(err?.message || "Payment failed");
+      // Call Xpress API
+      await fetch("https://apisix-gateway.nextscm.com/api/orders/outwards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:
+            "Basic " +
+            btoa("HECATE-1200063404:a4bfb2fa-3592-4239-b8c9-cb300df45e99"),
+        },
+        body: JSON.stringify(xpressPayload),
+      }).then((res) => {
+        if (!res.ok) throw new Error("Xpress API failed");
+        return res.json();
+      });
+      toast.success("Order sent to Xpress successfully!");
     }
+
+    // try {
+    //   const data = await dispatch(createOrder(orderData)).unwrap();
+
+    //   // ⭐ PAYU PAYMENT REDIRECT
+    //   if (data.gateway === "payu") {
+    //     const form = document.createElement("form");
+    //     form.action = data.payuURL;
+    //     form.method = "POST";
+
+    //     Object.keys(data.params).forEach((key) => {
+    //       const input = document.createElement("input");
+    //       input.type = "hidden";
+    //       input.name = key;
+    //       input.value = data.params[key];
+    //       form.appendChild(input);
+    //     });
+
+    //     const inputOrderBy = document.createElement("input");
+    //     inputOrderBy.type = "hidden";
+    //     inputOrderBy.name = "orderBy";
+    //     inputOrderBy.value = isXpress ? "hecate-quickGo" : "website";
+    //     form.appendChild(inputOrderBy);
+
+    //     document.body.appendChild(form);
+    //     form.submit();
+    //     return;
+    //   }
+
+    //   // PayGlocal Payment
+    //   if (data.gateway === "payglocal") {
+    //     window.location.href = data.redirectUrl;
+    //     return;
+    //   }
+
+
+    //   // ⭐ CASHFREE PAYMENT
+    //   if (data.gateway === "CashFree") {
+    //     // Load Cashfree in PRODUCTION mode
+    //     const cashfree = await load({ mode: "production" });
+
+    //     cashfree.checkout({
+    //       paymentSessionId: data.sessionId,
+    //       redirectTarget: "_modal",
+    //       onComplete: async () => {
+    //         const res = await fetch(
+    //           `/api/orders/verify-status?order_id=${data.orderNumber}`
+    //         );
+    //         const result = await res.json();
+
+    //         if (result.success) {
+    //           window.location.href = `/payment-success?order_id=${data.orderNumber}`;
+    //         } else {
+    //           window.location.href = `/payment-failed?order_id=${data.orderNumber}`;
+    //         }
+    //       },
+    //     });
+    //   }
+
+    //   // if (data.success) {
+    //   //   if (orderData.promoCode) {
+    //   //     await axios.post("/api/promo_user/create", {
+    //   //       userId: user.id,
+    //   //       promoCode: orderData.promoCode,
+    //   //     });
+    //   //   }
+
+
+    //   //   if (orderData.donation && orderData.donationCampaignId) {
+    //   //     await axios.post("/api/user_donation/create", {
+    //   //       userName: user.name,
+    //   //       donationCampaignId: orderData.donationCampaignId,
+    //   //       amount: orderData.donation,
+    //   //     });
+    //   //   }
+    //   // }
+    // } catch (err) {
+    //   console.error("Checkout error:", err);
+    //   toast.error(err?.message || "Payment failed");
+    // }
     console.log("Order Data:", orderData);
   };
 

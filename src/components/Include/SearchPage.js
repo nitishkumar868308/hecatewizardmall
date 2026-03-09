@@ -201,7 +201,7 @@ const SearchPage = () => {
                                                     url = `/categories?tag=${encodeURIComponent(item.name)}`;
                                                 }
                                                 else if (item.type === "Product") {
-                                                    url = `/product/${item.id}`;
+                                                    url = `/product/${item.slug}`;
                                                 }
 
 

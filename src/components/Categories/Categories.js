@@ -1317,7 +1317,7 @@ import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispa
 import { fetchDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
 import Loader from "../Include/Loader";
 import ImageWithSkeleton from "../Common/ImageWithSkeleton";
-
+import { fetchBangaloreInventory } from "@/app/redux/slices/bangaloreInventory/bangaloreInventorySlice";
 
 const sortOptions = ["Price: Low to High", "Price: High to Low"];
 
@@ -1364,9 +1364,10 @@ const Categories = () => {
         }
     }, []);
     const selectedState = useSelector(state => state.selectedState) || (hydrated ? localStorage.getItem("state") : null);
-
+    const { inventory } = useSelector(state => state.bangaloreInventory);
+    console.log("inventory", inventory)
     const { store, loading: storeLoading } = useSelector((state) => state.delhiStore);
-    console.log("store", store)
+    console.log("products", products)
     const isXpress = pathname.includes("/hecate-quickGo");
 
     useEffect(() => {
@@ -1439,7 +1440,63 @@ const Categories = () => {
     //         })
     //         .filter(Boolean);
     // }, [store, selectedWarehouseId, isXpress]);
-    const warehouseProductIds = useMemo(() => {
+    // const warehouseProductIds = useMemo(() => {
+    //     if (!isXpress || !store?.length || !selectedWarehouseId) return [];
+
+    //     return [
+    //         ...new Set(
+    //             store
+    //                 .filter(
+    //                     s => s.warehouseId?.toString() === selectedWarehouseId.toString()
+    //                 )
+    //                 .map(s => s.productId)
+    //         )
+    //     ];
+    // }, [store, selectedWarehouseId, isXpress]);
+    const bangaloreProductIds = useMemo(() => {
+
+        if (!isXpress || !inventory?.length || !products?.length) return [];
+
+        const skuSet = new Set(
+            inventory.map(i => i.channelSkuCode?.toLowerCase())
+        );
+
+        console.log("SKU Set", skuSet);
+
+        const ids = [];
+
+        products.forEach(p => {
+
+            console.log("Checking Product", p.name, p.sku);
+
+            // variation match
+            const variationMatch = p.variations?.some(v => {
+                console.log("Variation SKU", v.sku);
+                return skuSet.has(v.sku?.toLowerCase());
+            });
+
+            if (variationMatch) {
+                console.log("Matched Variation → Product ID:", p.id);
+                ids.push(p.id);
+                return;
+            }
+
+            // product sku fallback
+            if (skuSet.has(p.sku?.toLowerCase())) {
+                console.log("Matched Product SKU → Product ID:", p.id);
+                ids.push(p.id);
+            }
+
+        });
+
+        console.log("Final Bangalore Product IDs", ids);
+
+        return ids;
+
+    }, [inventory, products, isXpress]);
+
+    const delhiProductIds = useMemo(() => {
+
         if (!isXpress || !store?.length || !selectedWarehouseId) return [];
 
         return [
@@ -1451,7 +1508,24 @@ const Categories = () => {
                     .map(s => s.productId)
             )
         ];
+
     }, [store, selectedWarehouseId, isXpress]);
+    const isBangalore = selectedState?.toLowerCase() === "bengaluru";
+    console.log("selectedState", selectedState);
+    console.log("isBangalore", isBangalore);
+    const warehouseProductIds = useMemo(() => {
+
+        if (!isXpress) return [];
+
+        if (isBangalore) {
+            return bangaloreProductIds;
+        } else {
+            return delhiProductIds;
+        }
+
+        return [];
+
+    }, [isBangalore, bangaloreProductIds, delhiProductIds, isXpress]);
 
     console.log("warehouseProductIds", warehouseProductIds);
     console.log("fastproducts", products)
@@ -1468,6 +1542,8 @@ const Categories = () => {
         dispatch(fetchTags());
         dispatch(fetchDispatches())
         dispatch(fetchDelhiStore())
+        const warehouseCode = localStorage.getItem("warehouseCode");
+        dispatch(fetchBangaloreInventory(warehouseCode));
     }, [dispatch]);
 
     console.log("store", store)
@@ -1495,6 +1571,7 @@ const Categories = () => {
     // }, [store, selectedState, isXpress]);
     // console.log("stateProductIds", stateProductIds)
     const stateProductIds = useMemo(() => {
+        if (isBangalore) return [];
         if (!isXpress || !store?.length || !selectedWarehouseId) return [];
 
         return store
@@ -1545,11 +1622,14 @@ const Categories = () => {
     // ]);
 
     const variationBaseProducts = useMemo(() => {
+        if (isXpress && warehouseProductIds.length === 0) {
+            return []; // wait until warehouse data loads
+        }
         return products.filter(p => {
-
+            console.log("isXpress", isXpress)
             if (isXpress) {
                 // if (!selectedState) return false;
-                if (!warehouseProductIds.includes(p.id)) return false;
+                if (!warehouseProductIds.some(id => id === p.id)) return false;
             }
 
             const matchCategory =
@@ -1561,6 +1641,15 @@ const Categories = () => {
             const matchPlatform = isXpress
                 ? p.platform.includes("xpress")
                 : p.platform.includes("website");
+
+            console.log("DEBUG PRODUCT", {
+                id: p.id,
+                category: matchCategory,
+                subcategory: matchSubcategory,
+                platform: matchPlatform,
+                priceValue: p.price,
+                priceRange
+            });
 
 
             return (
@@ -1580,7 +1669,7 @@ const Categories = () => {
         selectedState,
         priceRange
     ]);
-
+    console.log("variationBaseProducts", variationBaseProducts)
 
 
     const mobileVariationBaseProducts = useMemo(() => {

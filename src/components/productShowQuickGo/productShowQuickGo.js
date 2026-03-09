@@ -77,7 +77,7 @@ const Page = () => {
         const warehouseCode = localStorage.getItem("warehouseCode");
         console.log("selectedState:", selectedState);
         console.log("warehouseCode:", warehouseCode);
-        if (selectedState?.toLowerCase() == "benglore" && warehouseCode) {
+        if (selectedState?.toLowerCase() == "bengaluru" && warehouseCode) {
             dispatch(fetchBangaloreInventory(warehouseCode));
         }
     }, [dispatch, selectedState]);
@@ -102,7 +102,7 @@ const Page = () => {
     //     })
     //     .filter(Boolean); // remove nulls
 
-    const isBangalore = selectedState?.toLowerCase() === "benglore";
+    const isBangalore = selectedState?.toLowerCase() === "bengaluru";
     const warehouseCode =
         typeof window !== "undefined"
             ? localStorage.getItem("warehouseCode")

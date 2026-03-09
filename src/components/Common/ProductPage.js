@@ -101,28 +101,45 @@ const ProductDetail = () => {
     //     // Always update currentProduct if country changes
     //     setCurrentProduct(prod);
     // }, [products, id, country]);
-    console.log("Route ID:", id);
-    console.log("Available slugs:", products.map(p => p.slug));
-    useEffect(() => {
-        if (!products?.length) return;
+    // console.log("Route ID:", id);
+    // console.log("Available slugs:", products.map(p => p.slug));
+    // useEffect(() => {
+    //     if (!products?.length) return;
 
-        const prod = products.find((p) => p?.slug == id);
-        console.log("prodTest", prod)
+    //     const prod = products.find((p) => p?.slug == id);
+
+    //     setCurrentProduct(prod || null);
+    // }, [products, id]);
+    console.log("Route ID:", id);
+    console.log("Available slugs:", products?.map(p => p?.slug));
+
+    useEffect(() => {
+        if (!products?.length || !id) return;
+
+        const prod = products.find((p) => p?.slug === id);
 
         setCurrentProduct(prod || null);
+
     }, [products, id]);
+
 
     console.log("currentProduct", currentProduct)
     // const product = products.find((p) => p.id === id);
+    useEffect(() => {
+        if (items && Array.isArray(items) && user?.id) {
+            const filtered = items.filter((item) => item.userId == String(user.id));
+            setUserCart(filtered);
+        }
+    }, [items, user]);
+
     const cartItem = userCart?.find(
         (item) =>
             item.variationId === selectedVariation?.id &&
             item.purchasePlatform === purchasePlatform // <-- check platform
     );
+    console.log("cartItem", cartItem)
 
     const isInCart = !!cartItem;
-
-    console.log("currentProduct", currentProduct)
     // 🟢 whenever selectedVariation or cart changes → sync quantity
     useEffect(() => {
         if (cartItem) {
@@ -131,6 +148,8 @@ const ProductDetail = () => {
             setQuantity(1); // ✅ reset when variation not in cart
         }
     }, [cartItem, selectedVariation]);
+
+
 
     useEffect(() => {
         dispatch(fetchReviews())
@@ -146,6 +165,9 @@ const ProductDetail = () => {
         dispatch(fetchBangaloreInventory(warehouseCode));
     }, [dispatch, country]);
     console.log("selectedVariation", selectedVariation)
+
+
+
 
     const selectedWarehouseId =
         typeof window !== "undefined"
@@ -213,69 +235,87 @@ const ProductDetail = () => {
     console.log("bangaloreVariationStockMap", bangaloreVariationStockMap);
 
 
-
     useEffect(() => {
-        if (!currentProduct) return;
+        if (!currentProduct?.variations?.length) return;
 
-        // Wait for allowedVariationIds if Xpress
-        setVariationAttributes({});
-        setSelectedAttributes({});
-        setSelectedVariation(null);
-        // if (isXpress && allowedVariationIds  === null) return;
+        const isBangalore = selectedState?.toLowerCase() === "bengaluru";
 
-        const isBangalore = selectedState?.toLowerCase() === "benglore";
+        let variationsToUse = currentProduct.variations;
+
         if (isXpress) {
-            if (isBangalore && (!inventory?.length || Object.keys(bangaloreVariationStockMap).length === 0)) return;
-            if (!isBangalore && !allowedVariationIds) return;
+            if (isBangalore) {
+                if (!bangaloreVariationStockMap) return;
+                variationsToUse = variationsToUse.filter(v => bangaloreVariationStockMap[v.id] > 0);
+            } else {
+                if (!allowedVariationIds) return;
+                variationsToUse = variationsToUse.filter(v => allowedVariationIds.includes(v.id));
+            }
         }
 
-        // const variationsToUse = isXpress
-        //     ? currentProduct.variations?.filter(v => allowedVariationIds.includes(v.id))
-        //     : currentProduct.variations;
-        const variationsToUse = isXpress
-            ? isBangalore
-                ? currentProduct.variations?.filter(v => bangaloreVariationStockMap[v.id])
-                : currentProduct.variations?.filter(v => allowedVariationIds.includes(v.id))
-            : currentProduct.variations;
-        console.log("variationsToUse", variationsToUse)
-
-        if (!variationsToUse || variationsToUse.length === 0) {
-            setSelectedVariation(null);
+        if (!variationsToUse.length) {
             setVariationAttributes({});
+            setSelectedVariation(null);
             return;
         }
 
-
-        // Build variation attributes
+        // Build attributes
         const attrs = {};
         variationsToUse.forEach(v => {
-            v.variationName.split(" / ").forEach(part => {
-                const [key, val] = part.split(":").map(p => p.trim());
-                if (!attrs[key]) attrs[key] = new Set();
-                attrs[key].add(val);
+            const parsed = parseVariationName(v.variationName);
+
+            Object.entries(parsed).forEach(([k, val]) => {
+                if (!attrs[k]) attrs[k] = new Set();
+                attrs[k].add(val);
             });
         });
 
         const finalAttrs = {};
-        Object.entries(attrs).forEach(([k, v]) => finalAttrs[k] = Array.from(v));
+        Object.entries(attrs).forEach(([k, v]) => {
+            finalAttrs[k] = Array.from(v);
+        });
+
         setVariationAttributes(finalAttrs);
 
-        // Initial selected attributes
+        // Initial selection
+        // const initialSelected = {};
+        // Object.entries(finalAttrs).forEach(([attr, values]) => {
+        //     const defaultVal = currentProduct?.isDefault?.[attr];
+        //     initialSelected[attr] =
+        //         defaultVal && values.includes(defaultVal)
+        //             ? defaultVal
+        //             : values[0];
+        // });
         const initialSelected = {};
-        Object.entries(finalAttrs).forEach(([attr, values]) => initialSelected[attr] = values[0]);
+
+        Object.entries(finalAttrs).forEach(([attr, values]) => {
+
+            const defaultEntry = Object.entries(currentProduct?.isDefault || {})
+                .find(([k]) => k.toLowerCase() === attr.toLowerCase());
+
+            const defaultVal = defaultEntry?.[1];
+
+            const matchedDefault = values.find(
+                v => v.toLowerCase() === defaultVal?.toLowerCase()
+            );
+
+            initialSelected[attr] = matchedDefault || values[0];
+
+        });
+
         setSelectedAttributes(initialSelected);
 
-        // Match variation
-        const matchedVariation = variationsToUse.find(v => {
-            const parts = parseVariationName(v.variationName);
-            return Object.entries(initialSelected).every(
-                ([k, val]) => parts[k.toLowerCase()] === val
-            );
-        }) || variationsToUse[0];
+        // Find matched variation
+        const matchedVariation =
+            variationsToUse.find(v => {
+                const parsed = parseVariationName(v.variationName);
+                return Object.entries(initialSelected).every(
+                    ([k, val]) => parsed[k] === val
+                );
+            }) || variationsToUse[0];
 
         setSelectedVariation(matchedVariation);
 
-        // Set images
+        // Images
         if (matchedVariation?.image?.length) {
             setCurrentImages(matchedVariation.image);
             setMainImage(matchedVariation.image[0]);
@@ -286,8 +326,93 @@ const ProductDetail = () => {
             setCurrentImages([]);
             setMainImage(null);
         }
-    }, [currentProduct, isXpress, allowedVariationIds, bangaloreVariationStockMap,
-        selectedState, inventory]);
+
+        console.log("DEFAULT", currentProduct?.isDefault);
+        console.log("ATTRIBUTES", finalAttrs);
+        console.log("INITIAL SELECTED", initialSelected);
+
+    }, [
+        currentProduct,
+        isXpress,
+        allowedVariationIds,
+        bangaloreVariationStockMap,
+        selectedState
+    ]);
+
+    // useEffect(() => {
+    //     if (!currentProduct) return;
+
+    //     // Wait for allowedVariationIds if Xpress
+    //     setVariationAttributes({});
+    //     setSelectedAttributes({});
+    //     setSelectedVariation(null);
+    //     // if (isXpress && allowedVariationIds  === null) return;
+
+    //     const isBangalore = selectedState?.toLowerCase() === "benglore";
+    //     if (isXpress) {
+    //         if (isBangalore && (!inventory?.length || Object.keys(bangaloreVariationStockMap).length === 0)) return;
+    //         if (!isBangalore && !allowedVariationIds) return;
+    //     }
+
+    //     // const variationsToUse = isXpress
+    //     //     ? currentProduct.variations?.filter(v => allowedVariationIds.includes(v.id))
+    //     //     : currentProduct.variations;
+    //     const variationsToUse = isXpress
+    //         ? isBangalore
+    //             ? currentProduct.variations?.filter(v => bangaloreVariationStockMap[v.id])
+    //             : currentProduct.variations?.filter(v => allowedVariationIds.includes(v.id))
+    //         : currentProduct.variations;
+    //     console.log("variationsToUse", variationsToUse)
+
+    //     if (!variationsToUse || variationsToUse.length === 0) {
+    //         setSelectedVariation(null);
+    //         setVariationAttributes({});
+    //         return;
+    //     }
+
+
+    //     // Build variation attributes
+    //     const attrs = {};
+    //     variationsToUse.forEach(v => {
+    //         v.variationName.split(" / ").forEach(part => {
+    //             const [key, val] = part.split(":").map(p => p.trim());
+    //             if (!attrs[key]) attrs[key] = new Set();
+    //             attrs[key].add(val);
+    //         });
+    //     });
+
+    //     const finalAttrs = {};
+    //     Object.entries(attrs).forEach(([k, v]) => finalAttrs[k] = Array.from(v));
+    //     setVariationAttributes(finalAttrs);
+
+    //     // Initial selected attributes
+    //     const initialSelected = {};
+    //     Object.entries(finalAttrs).forEach(([attr, values]) => initialSelected[attr] = values[0]);
+    //     setSelectedAttributes(initialSelected);
+
+    //     // Match variation
+    //     const matchedVariation = variationsToUse.find(v => {
+    //         const parts = parseVariationName(v.variationName);
+    //         return Object.entries(initialSelected).every(
+    //             ([k, val]) => parts[k.toLowerCase()] === val
+    //         );
+    //     }) || variationsToUse[0];
+
+    //     setSelectedVariation(matchedVariation);
+
+    //     // Set images
+    //     if (matchedVariation?.image?.length) {
+    //         setCurrentImages(matchedVariation.image);
+    //         setMainImage(matchedVariation.image[0]);
+    //     } else if (currentProduct.image?.length) {
+    //         setCurrentImages(currentProduct.image);
+    //         setMainImage(currentProduct.image[0]);
+    //     } else {
+    //         setCurrentImages([]);
+    //         setMainImage(null);
+    //     }
+    // }, [currentProduct, isXpress, allowedVariationIds, bangaloreVariationStockMap,
+    //     selectedState, inventory]);
 
 
 
@@ -366,7 +491,7 @@ const ProductDetail = () => {
     // Selected stock
     const selectedStock = useMemo(() => {
         if (!selectedVariation?.id) return null; // null -> inventory abhi load ho rahi
-        const isBangalore = selectedState?.toLowerCase() === "benglore";
+        const isBangalore = selectedState?.toLowerCase() === "bengaluru";
 
         const stockMap = isBangalore ? bangaloreVariationStockMap || {} : variationStockMap || {};
         return stockMap[selectedVariation.id] ?? 0; // fallback 0
@@ -521,12 +646,7 @@ const ProductDetail = () => {
     //     }
     // }, [user, selectedVariation, product]);
 
-    useEffect(() => {
-        if (items && Array.isArray(items) && user?.id) {
-            const filtered = items.filter((item) => item.userId == String(user.id));
-            setUserCart(filtered);
-        }
-    }, [items, user]);
+
 
 
     // useEffect(() => {
@@ -572,78 +692,82 @@ const ProductDetail = () => {
 
     // }, [product?.variations, isXpress, allowedVariationIds]);
 
-    useEffect(() => {
-        if (!product?.variations?.length) return;
+    // useEffect(() => {
+    //     if (!product?.variations?.length) return;
 
-        // const variationsToUse = isXpress && allowedVariationIds
-        //     ? product.variations.filter(v => allowedVariationIds.includes(v.id))
-        //     : product.variations;
-        const isBangalore = selectedState?.toLowerCase() === "benglore";
-         if (!bangaloreVariationStockMap) return; 
+    //     // const variationsToUse = isXpress && allowedVariationIds
+    //     //     ? product.variations.filter(v => allowedVariationIds.includes(v.id))
+    //     //     : product.variations;
+    //     const isBangalore = selectedState?.toLowerCase() === "benglore";
+    //     if (!bangaloreVariationStockMap) return;
 
-        const variationsToUse = isXpress
-            ? isBangalore
-                ? product.variations.filter(v => bangaloreVariationStockMap[v.id] > 0)
-                : product.variations.filter(v => allowedVariationIds?.includes(v.id))
-            : product.variations;
+    //     const variationsToUse = isXpress
+    //         ? isBangalore
+    //             ? product.variations.filter(v => bangaloreVariationStockMap[v.id] > 0)
+    //             : product.variations.filter(v => allowedVariationIds?.includes(v.id))
+    //         : product.variations;
 
-        const attrs = {};
-        variationsToUse.forEach(v => {
-            v.variationName.split(" / ").forEach(part => {
-                const [key, val] = part.split(":").map(p => p.trim());
-                if (!attrs[key]) attrs[key] = new Set();
-                attrs[key].add(val);
-            });
-        });
+    //     const attrs = {};
+    //     variationsToUse.forEach(v => {
+    //         v.variationName.split(" / ").forEach(part => {
+    //             const [key, val] = part.split(":").map(p => p.trim());
+    //             if (!attrs[key]) attrs[key] = new Set();
+    //             attrs[key].add(val);
+    //         });
+    //     });
 
-        const finalAttrs = {};
-        Object.entries(attrs).forEach(([k, v]) => {
-            const masterAttr = attributes.find(a => a.name.toLowerCase() === k.toLowerCase());
-            if (masterAttr) {
-                // Preserve master order
-                finalAttrs[k] = masterAttr.values.filter(val => v.has(val));
-            } else {
-                finalAttrs[k] = Array.from(v);
-            }
-        });
+    //     const finalAttrs = {};
+    //     Object.entries(attrs).forEach(([k, v]) => {
+    //         const masterAttr = attributes.find(a => a.name.toLowerCase() === k.toLowerCase());
+    //         if (masterAttr) {
+    //             // Preserve master order
+    //             finalAttrs[k] = masterAttr.values.filter(val => v.has(val));
+    //         } else {
+    //             finalAttrs[k] = Array.from(v);
+    //         }
+    //     });
 
-        setVariationAttributes(finalAttrs);
+    //     setVariationAttributes(finalAttrs);
 
-        // Step 2: Set initial selectedAttributes based on master order + default
-        const initialSelected = {};
-        Object.entries(finalAttrs).forEach(([attr, vals]) => {
-            const defaultVal = product?.isDefault?.[attr];
-            initialSelected[attr] = defaultVal && vals.includes(defaultVal) ? defaultVal : vals[0];
-        });
+    //     // Step 2: Set initial selectedAttributes based on master order + default
+    //     const initialSelected = {};
+    //     Object.entries(finalAttrs).forEach(([attr, vals]) => {
+    //         const defaultVal = product?.isDefault?.[attr];
+    //         initialSelected[attr] = defaultVal && vals.includes(defaultVal) ? defaultVal : vals[0];
+    //     });
 
-        setSelectedAttributes(initialSelected);
+    //     // setSelectedAttributes(initialSelected);
+    //     setSelectedAttributes(prev => {
+    //         if (Object.keys(prev).length) return prev;
+    //         return initialSelected;
+    //     });
 
-        // Step 3: Match variation
-        const matchedVariation = variationsToUse.find(v => {
-            const parts = v.variationName.split(" / ").reduce((acc, part) => {
-                const [k, val] = part.split(":").map(p => p.trim());
-                acc[k] = val;
-                return acc;
-            }, {});
-            return Object.entries(initialSelected).every(([k, val]) => parts[k] === val);
-        }) || variationsToUse[0];
+    //     // Step 3: Match variation
+    //     const matchedVariation = variationsToUse.find(v => {
+    //         const parts = v.variationName.split(" / ").reduce((acc, part) => {
+    //             const [k, val] = part.split(":").map(p => p.trim());
+    //             acc[k] = val;
+    //             return acc;
+    //         }, {});
+    //         return Object.entries(initialSelected).every(([k, val]) => parts[k] === val);
+    //     }) || variationsToUse[0];
 
-        setSelectedVariation(matchedVariation);
+    //     setSelectedVariation(matchedVariation);
 
-        // Set images
-        if (matchedVariation?.image?.length) {
-            setCurrentImages(matchedVariation.image);
-            setMainImage(matchedVariation.image[0]);
-        } else if (product.image?.length) {
-            setCurrentImages(product.image);
-            setMainImage(product.image[0]);
-        } else {
-            setCurrentImages([]);
-            setMainImage(null);
-        }
-    }, [product?.variations, attributes, isXpress, allowedVariationIds, bangaloreVariationStockMap,
-        selectedState
-    ]);
+    //     // Set images
+    //     if (matchedVariation?.image?.length) {
+    //         setCurrentImages(matchedVariation.image);
+    //         setMainImage(matchedVariation.image[0]);
+    //     } else if (product.image?.length) {
+    //         setCurrentImages(product.image);
+    //         setMainImage(product.image[0]);
+    //     } else {
+    //         setCurrentImages([]);
+    //         setMainImage(null);
+    //     }
+    // }, [product?.variations, attributes, isXpress, allowedVariationIds, bangaloreVariationStockMap,
+    //     selectedState
+    // ]);
 
 
     // useEffect(() => {
@@ -680,56 +804,59 @@ const ProductDetail = () => {
     //     }
     // }, [product?.id, product?.variations?.length, Object.keys(variationAttributes).length]);
 
-    useEffect(() => {
-        if (!product?.variations?.length || !variationAttributes || !Object.keys(variationAttributes).length) return;
+    // useEffect(() => {
+    //     if (!product?.variations?.length || !variationAttributes || !Object.keys(variationAttributes).length) return;
 
-        let initialSelected = {};
+    //     let initialSelected = {};
 
-        if (product?.isDefault && Object.keys(product.isDefault).length > 0) {
-            // ✅ Use isDefault attributes first
-            initialSelected = { ...product.isDefault };
+    //     if (product?.isDefault && Object.keys(product.isDefault).length > 0) {
+    //         // ✅ Use isDefault attributes first
+    //         initialSelected = { ...product.isDefault };
 
-            // अगर किसी attribute का default value variationAttributes में मौजूद नहीं है
-            Object.entries(variationAttributes).forEach(([attr, values]) => {
-                if (!initialSelected[attr] && values.length) {
-                    initialSelected[attr] = values[0];
-                }
-            });
-        } else {
-            // ✅ Fallback: select first value of each attribute
-            Object.entries(variationAttributes).forEach(([attr, values]) => {
-                if (values.length) initialSelected[attr] = values[0];
-            });
-        }
+    //         // अगर किसी attribute का default value variationAttributes में मौजूद नहीं है
+    //         Object.entries(variationAttributes).forEach(([attr, values]) => {
+    //             if (!initialSelected[attr] && values.length) {
+    //                 initialSelected[attr] = values[0];
+    //             }
+    //         });
+    //     } else {
+    //         // ✅ Fallback: select first value of each attribute
+    //         Object.entries(variationAttributes).forEach(([attr, values]) => {
+    //             if (values.length) initialSelected[attr] = values[0];
+    //         });
+    //     }
 
-        setSelectedAttributes(initialSelected);
+    //     setSelectedAttributes(prev => {
+    //         if (Object.keys(prev).length) return prev;
+    //         return initialSelected;
+    //     });
 
-        // Match the variation with initialSelected
-        const matchingVariations = product.variations.filter(v => {
-            const parts = v.variationName.split(" / ").reduce((acc, part) => {
-                const [k, val] = part.split(":").map(p => p.trim());
-                acc[k] = val;
-                return acc;
-            }, {});
-            return Object.entries(initialSelected).every(([k, val]) => parts[k] === val);
-        });
+    //     // Match the variation with initialSelected
+    //     const matchingVariations = product.variations.filter(v => {
+    //         const parts = v.variationName.split(" / ").reduce((acc, part) => {
+    //             const [k, val] = part.split(":").map(p => p.trim());
+    //             acc[k] = val;
+    //             return acc;
+    //         }, {});
+    //         return Object.entries(initialSelected).every(([k, val]) => parts[k] === val);
+    //     });
 
-        const matchedVariation = matchingVariations.find(v => v.image?.length) || matchingVariations[0] || null;
+    //     const matchedVariation = matchingVariations.find(v => v.image?.length) || matchingVariations[0] || null;
 
-        setSelectedVariation(matchedVariation);
+    //     setSelectedVariation(matchedVariation);
 
-        // Set main image & thumbnails
-        if (matchedVariation?.image?.length) {
-            setCurrentImages(matchedVariation.image);
-            setMainImage(matchedVariation.image[0]);
-        } else if (product.image?.length) {
-            setCurrentImages(product.image);
-            setMainImage(product.image[0]);
-        } else {
-            setCurrentImages([]);
-            setMainImage(null);
-        }
-    }, [product?.id, product?.variations?.length, Object.keys(variationAttributes).length]);
+    //     // Set main image & thumbnails
+    //     if (matchedVariation?.image?.length) {
+    //         setCurrentImages(matchedVariation.image);
+    //         setMainImage(matchedVariation.image[0]);
+    //     } else if (product.image?.length) {
+    //         setCurrentImages(product.image);
+    //         setMainImage(product.image[0]);
+    //     } else {
+    //         setCurrentImages([]);
+    //         setMainImage(null);
+    //     }
+    // }, [product?.id, product?.variations?.length, Object.keys(variationAttributes).length]);
 
 
     // const handleAttributeSelect = (attrName, val) => {
@@ -846,6 +973,9 @@ const ProductDetail = () => {
 
     // if (!product)
     //     return <p className="text-center mt-20 text-gray-500 text-xl">Product not found</p>;
+    if (!product || !currentProduct) {
+        return <Loader />;
+    }
 
 
     // const addToCart = async () => {
@@ -3326,16 +3456,27 @@ const ProductDetail = () => {
     //         item.variationId === selectedVariation?.id
     // );
 
-    if (!product) {
-        return <Loader />;
-    }
-
 
     const existingCartItem = user?.carts?.find(
         (item) =>
-            item.productId === product.id &&
-            item.variationId === selectedVariation?.id
+            item?.productId === product?.id &&
+            item?.variationId === selectedVariation?.id
     );
+
+    // if (!product) {
+    //     return <Loader />;
+    // }
+
+    // if (!currentProduct) {
+    //     return <Loader />;
+    // }
+
+
+    // const existingCartItem = user?.carts?.find(
+    //     (item) =>
+    //         item.productId === product.id &&
+    //         item.variationId === selectedVariation?.id
+    // );
     const existingCartQuantity = existingCartItem?.quantity ?? 0;
 
     // ✅ Calculate total quantity of all same product items in cart
@@ -3420,7 +3561,7 @@ const ProductDetail = () => {
     //     return <Loader />;
     // }
 
-    const isBangalore = selectedState?.toLowerCase() === "benglore";
+    const isBangalore = selectedState?.toLowerCase() === "bengaluru";
 
     return (
         <>
@@ -3843,9 +3984,10 @@ const ProductDetail = () => {
                             }
 
                             // ✅ Update selectedAttributes AFTER default/top value arrangement
-                            if (!selectedAttributes[attrKey] || !sortedValues.includes(selectedAttributes[attrKey])) {
-                                selectedAttributes[attrKey] = sortedValues[0]; // top value highlight
-                            }
+                            // if (!selectedAttributes[attrKey] || !sortedValues.includes(selectedAttributes[attrKey])) {
+                            //     selectedAttributes[attrKey] = sortedValues[0]; // top value highlight
+                            // }
+
 
                             return (
                                 <div key={attrKey} className="mb-6">
