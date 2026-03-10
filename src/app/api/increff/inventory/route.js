@@ -34,6 +34,14 @@ export async function PUT(req) {
             const quantity = item.quantity;
             const clientSkuId = item.client_sku_id;
 
+            if (!sku || !clientSkuId || quantity === undefined || quantity === null) {
+                failureList.push({
+                    sku: sku || null,
+                    reason: "channelSkuCode, client_sku_id and quantity are required"
+                });
+                continue;
+            }
+
             try {
 
                 await prisma.bangaloreIncreffInventory.upsert({
