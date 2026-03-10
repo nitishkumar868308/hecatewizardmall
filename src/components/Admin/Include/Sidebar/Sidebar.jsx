@@ -396,7 +396,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                     Delhi FullFillment Center
                                 </Link>
                                 <Link
-                                    href="/admin/send_to_warehouse"
+                                    href="/admin/banglore_increff_inventory"
                                     className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
                                 >
                                     Banglore FullFillment Center

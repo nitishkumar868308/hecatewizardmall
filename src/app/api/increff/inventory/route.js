@@ -32,25 +32,28 @@ export async function PUT(req) {
 
             const sku = item.channelSkuCode;
             const quantity = item.quantity;
+            const clientSkuId = item.client_sku_id;
 
             try {
 
                 await prisma.bangaloreIncreffInventory.upsert({
                     where: {
-                        locationCode_channelSkuCode: {
+                        locationCode_clientSkuId: {
                             locationCode: locationCode,
-                            channelSkuCode: sku
+                            clientSkuId: clientSkuId
                         }
                     },
                     update: {
                         quantity: quantity,
                         minExpiry: item.minExpiry,
+                        channelSkuCode: sku,
                         channelSerialNo: item.channelSerialNo,
                         payload: item
                     },
                     create: {
                         locationCode: locationCode,
                         channelSkuCode: sku,
+                        clientSkuId: clientSkuId,
                         quantity: quantity,
                         minExpiry: item.minExpiry,
                         channelSerialNo: item.channelSerialNo,
@@ -108,10 +111,11 @@ export async function GET(req) {
                 locationCode: true,
                 channelSkuCode: true,
                 quantity: true,
-                minExpiry: true
+                minExpiry: true,
+                clientSkuId: true,
             }
         });
-        console.log("inventory" , inventory)
+        console.log("inventory", inventory)
 
         return NextResponse.json(inventory);
 

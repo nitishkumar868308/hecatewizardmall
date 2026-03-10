@@ -41,6 +41,7 @@ import blogReviewsReducer from './slices/blogReviews/blogReviewsSlice';
 import orderAdjustmentsReducer from './slices/order-adjustments/orderAdjustmentsSlice';
 import jyotishRegisterReducer from "./slices/jyotish/Register/RegisterSlice";
 import bangaloreInventoryReducer from './slices/bangaloreInventory/bangaloreInventorySlice';
+import increffOrderReducer from "./slices/increffOrder/increffOrderSlice";
 
 // import updateUserReducer from './slices/userSlice';
 
@@ -88,6 +89,7 @@ const store = configureStore({
         orderAdjustments: orderAdjustmentsReducer,
         jyotishRegister: jyotishRegisterReducer,
         bangaloreInventory: bangaloreInventoryReducer,
+        increffOrder: increffOrderReducer
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

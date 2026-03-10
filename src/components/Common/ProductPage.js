@@ -305,13 +305,24 @@ const ProductDetail = () => {
         setSelectedAttributes(initialSelected);
 
         // Find matched variation
+        // const matchedVariation =
+        //     variationsToUse.find(v => {
+        //         const parsed = parseVariationName(v.variationName);
+        //         return Object.entries(initialSelected).every(
+        //             ([k, val]) => parsed[k] == val
+        //         );
+        //     }) || variationsToUse[0];
         const matchedVariation =
             variationsToUse.find(v => {
                 const parsed = parseVariationName(v.variationName);
-                return Object.entries(initialSelected).every(
-                    ([k, val]) => parsed[k] === val
-                );
+
+                return Object.entries(initialSelected).every(([k, val]) => {
+                    const parsedVal = parsed[k.toLowerCase()];
+                    return parsedVal?.toLowerCase() === val?.toLowerCase();
+                });
+
             }) || variationsToUse[0];
+        console.log("matchedVariation", matchedVariation)
 
         setSelectedVariation(matchedVariation);
 
@@ -436,6 +447,8 @@ const ProductDetail = () => {
 
     //     return map;
     // }, [dispatches, selectedWarehouseId]);
+
+
     const variationStockMap = useMemo(() => {
         if (!store?.length || !selectedWarehouseId) return {};
 
@@ -3968,13 +3981,17 @@ const ProductDetail = () => {
 
                         {Object.entries(variationAttributes).map(([attrKey, values]) => {
                             const keyLower = attrKey.toLowerCase();
-
+                            console.log("variationAttributes", variationAttributes);
+                            console.log("attributes master", attributes);
                             // Get attribute master order
                             const masterAttr = attributes.find(a => a.name.toLowerCase() === keyLower);
                             let sortedValues = values;
 
                             if (masterAttr) {
-                                sortedValues = masterAttr.values.filter(v => values.includes(v));
+                                // sortedValues = masterAttr.values.filter(v => values.includes(v));
+                                sortedValues = masterAttr.values.filter(v =>
+                                    values.some(val => val.toLowerCase() === v.toLowerCase())
+                                );
                             }
 
                             // Place default value top (if exists)
@@ -4039,7 +4056,7 @@ const ProductDetail = () => {
                                                     <button
                                                         onClick={() => handleAttributeSelect(attrKey, val)}
                                                         className={`px-4 py-2 cursor-pointer rounded-lg text-sm font-semibold transition-all duration-300 transform
-                                    ${selectedAttributes[attrKey] === val
+                                    ${selectedAttributes[attrKey]?.toLowerCase() === val?.toLowerCase()
                                                                 ? "bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 text-white shadow-lg scale-105"
                                                                 : "bg-gray-100 text-gray-800 hover:bg-gray-200 hover:scale-105"
                                                             }`}
