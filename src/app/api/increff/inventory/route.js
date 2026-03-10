@@ -25,6 +25,19 @@ export async function PUT(req) {
 
         const { locationCode, inventories } = body;
 
+        const warehouse = await prisma.wareHouse.findFirst({
+            where: { state: "Bengaluru" },
+            select: { code: true }
+        });
+
+        if (!warehouse || warehouse.code !== locationCode) {
+            return NextResponse.json(
+                { message: "Invalid locationCode." },
+                { status: 400 }
+            );
+        }
+
+
         let successList = [];
         let failureList = [];
 
