@@ -125,13 +125,54 @@ const SearchPage = () => {
         (item) => item.name.toLowerCase() === normalizedQuery
     );
 
+    const getRelevanceScore = (item) => {
+        let score = 0;
+
+        const fields = [
+            item.name,
+            item.short,
+            item.description,
+            item.category?.name,
+            item.subcategory?.name,
+            ...(item.tags || []).map(t => typeof t === "string" ? t : t.name),
+            ...(item.variations || []).map(v => v.variationName)
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+        queryWords.forEach(word => {
+
+            // strong match
+            if (fields.includes(word)) score += 5;
+
+            // fuzzy match (spelling mistake tolerance)
+            if (fields.split(" ").some(w => w.startsWith(word))) score += 3;
+
+            // even looser match
+            if (fields.includes(word.slice(0, 3))) score += 1;
+
+        });
+
+        return score;
+    };
+
     // Apply filter: exact match ko priority do
-    const filtered =
-        normalizedQuery === ""
-            ? []
-            : exactMatches.length > 0
-                ? exactMatches
-                : combinedResults.filter((item) => matchesQuery(item));
+    // const filtered =
+    //     normalizedQuery === ""
+    //         ? []
+    //         : exactMatches.length > 0
+    //             ? exactMatches
+    //             : combinedResults.filter((item) => matchesQuery(item));
+    const filtered = normalizedQuery
+        ? combinedResults
+            .map(item => ({
+                ...item,
+                relevance: getRelevanceScore(item)
+            }))
+            .filter(item => item.relevance > 0)
+            .sort((a, b) => b.relevance - a.relevance)
+        : [];
 
 
 

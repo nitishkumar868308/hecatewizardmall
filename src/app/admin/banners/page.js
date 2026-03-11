@@ -36,6 +36,7 @@ const BannerPage = () => {
         countries: [],
         states: [],
         text: "",
+        link: "",
         active: true,
     });
 
@@ -67,6 +68,7 @@ const BannerPage = () => {
         // Form state: only necessary fields + countries/states as code/id
         setForm({
             text: banner.text || "",
+            link: banner.link || "",
             active: banner.active,
             image: banner.image || null,
             countries: (banner.countries || []).map(c => c.countryCode),
@@ -148,6 +150,7 @@ const BannerPage = () => {
         formData.append("states", JSON.stringify(form.states));
         formData.append("countryNumbers", JSON.stringify(countryNumbers));
         formData.append("stateNumbers", JSON.stringify(stateNumbers));
+        formData.append("link", form.link);
 
         if (imageUrl) {
             formData.append("image", imageUrl);
@@ -751,14 +754,13 @@ const BannerPage = () => {
                         {/* TEXT & STATUS */}
                         <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label className="block text-sm font-semibold mb-1">Banner Text</label>
-                                <textarea
+                                <label className="block text-sm font-semibold mb-1">Link</label>
+                                <input
                                     className="border rounded px-3 py-2 w-full"
-                                    rows={3}
-                                    placeholder="Enter banner text"
-                                    value={form.text}
+                                    placeholder="Enter Link"
+                                    value={form.link}
                                     onChange={(e) =>
-                                        setForm({ ...form, text: e.target.value })
+                                        setForm({ ...form, link: e.target.value })
                                     }
                                 />
                             </div>
@@ -776,6 +778,19 @@ const BannerPage = () => {
                                     <option value="inactive">Inactive</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold mb-1">Banner Text</label>
+                            <textarea
+                                className="border rounded px-3 py-2 w-full"
+                                rows={3}
+                                placeholder="Enter banner text"
+                                value={form.text}
+                                onChange={(e) =>
+                                    setForm({ ...form, text: e.target.value })
+                                }
+                            />
                         </div>
 
                         {/* ACTIONS */}

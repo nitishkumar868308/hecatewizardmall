@@ -555,6 +555,7 @@ model ChatMessage {
 model Banner {
   id         Int      @id @default(autoincrement())
   text       String?
+  link       String?
   image      String?
   platform   String[] // ["XPRESS", "WEBSITE"]
   active     Boolean  @default(true)

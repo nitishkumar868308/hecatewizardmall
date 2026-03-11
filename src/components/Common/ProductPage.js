@@ -276,18 +276,31 @@ const ProductDetail = () => {
 
         setVariationAttributes(finalAttrs);
 
-        // Initial selection
-        // const initialSelected = {};
-        // Object.entries(finalAttrs).forEach(([attr, values]) => {
-        //     const defaultVal = currentProduct?.isDefault?.[attr];
-        //     initialSelected[attr] =
-        //         defaultVal && values.includes(defaultVal)
-        //             ? defaultVal
-        //             : values[0];
-        // });
+        const sortedFinalAttrs = {};
+
+        Object.entries(finalAttrs).forEach(([attrKey, values]) => {
+            const keyLower = attrKey.toLowerCase();
+
+            const masterAttr = attributes.find(
+                a => a.name.toLowerCase() === keyLower
+            );
+
+            let sortedValues = values;
+
+            if (masterAttr) {
+                sortedValues = masterAttr.values.filter(v =>
+                    values.some(val => val.toLowerCase() === v.toLowerCase())
+                );
+            }
+
+            sortedFinalAttrs[attrKey] = sortedValues;
+        });
+
+        setVariationAttributes(sortedFinalAttrs);
+
         const initialSelected = {};
 
-        Object.entries(finalAttrs).forEach(([attr, values]) => {
+        Object.entries(sortedFinalAttrs).forEach(([attr, values]) => {
 
             const defaultEntry = Object.entries(currentProduct?.isDefault || {})
                 .find(([k]) => k.toLowerCase() === attr.toLowerCase());
@@ -298,11 +311,21 @@ const ProductDetail = () => {
                 v => v.toLowerCase() === defaultVal?.toLowerCase()
             );
 
-            initialSelected[attr] = matchedDefault || values[0];
-
+            initialSelected[attr] = matchedDefault || values[0]; // ✅ ab yeh sorted first value hoga
         });
 
         setSelectedAttributes(initialSelected);
+
+        // Initial selection
+        // const initialSelected = {};
+        // Object.entries(finalAttrs).forEach(([attr, values]) => {
+        //     const defaultVal = currentProduct?.isDefault?.[attr];
+        //     initialSelected[attr] =
+        //         defaultVal && values.includes(defaultVal)
+        //             ? defaultVal
+        //             : values[0];
+        // });
+
 
         // Find matched variation
         // const matchedVariation =

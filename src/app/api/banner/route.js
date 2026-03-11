@@ -30,6 +30,7 @@ export async function POST(req) {
         const formData = await req.formData();
 
         const text = formData.get("text");
+        const link = formData.get("link");
         const active = formData.get("active") === "true";
         const platform = JSON.parse(formData.get("platform"));
         const countries = JSON.parse(formData.get("countries"));
@@ -45,6 +46,7 @@ export async function POST(req) {
         const banner = await prisma.banner.create({
             data: {
                 text,
+                link,
                 image,
                 active,
                 platform: Object.keys(platform).filter(k => platform[k]),
