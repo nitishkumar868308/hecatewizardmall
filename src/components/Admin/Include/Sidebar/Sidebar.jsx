@@ -401,6 +401,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                                 >
                                     Banglore FullFillment Center
                                 </Link>
+                                <Link
+                                    href="/admin/mapping"
+                                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                >
+                                    Banglore Product Mapping
+                                </Link>
                             </div>
                         )}
                     </div>

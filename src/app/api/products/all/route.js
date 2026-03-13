@@ -16,6 +16,7 @@ export async function GET(req) {
                 primaryOffer: true,
                 tags: true,
                 marketLinks: true,
+               
             },
         });
 

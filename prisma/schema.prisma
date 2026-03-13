@@ -918,3 +918,13 @@ model BangaloreIncreffInventory {
 
   @@unique([locationCode, clientSkuId])
 }
+
+model BangaloreIncreffMappingSKU {
+  id          Int      @id @default(autoincrement())
+
+  channelSku  String
+  ourSku      String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
