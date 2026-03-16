@@ -1318,6 +1318,7 @@ import { fetchDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
 import Loader from "../Include/Loader";
 import ImageWithSkeleton from "../Common/ImageWithSkeleton";
 import { fetchBangaloreInventory } from "@/app/redux/slices/bangaloreInventory/bangaloreInventorySlice";
+import { fetchSkuMappings } from "@/app/redux/slices/skuMapping/skuMappingSlice";
 
 const sortOptions = ["Price: Low to High", "Price: High to Low"];
 
@@ -1365,6 +1366,7 @@ const Categories = () => {
     }, []);
     const selectedState = useSelector(state => state.selectedState) || (hydrated ? localStorage.getItem("state") : null);
     const { inventory } = useSelector(state => state.bangaloreInventory);
+    const { mappings } = useSelector((state) => state.skuMapping);
     console.log("inventory", inventory)
     const { store, loading: storeLoading } = useSelector((state) => state.delhiStore);
     console.log("products", products)
@@ -1453,15 +1455,72 @@ const Categories = () => {
     //         )
     //     ];
     // }, [store, selectedWarehouseId, isXpress]);
+    // const bangaloreProductIds = useMemo(() => {
+
+    //     if (!isXpress || !inventory?.length || !products?.length) return [];
+
+    //     const skuSet = new Set(
+    //         inventory.map(i => i.channelSkuCode?.toLowerCase())
+    //     );
+
+    //     console.log("SKU Set", skuSet);
+
+    //     const ids = [];
+
+    //     products.forEach(p => {
+
+    //         console.log("Checking Product", p.name, p.sku);
+
+    //         // variation match
+    //         const variationMatch = p.variations?.some(v => {
+    //             console.log("Variation SKU", v.sku);
+    //             return skuSet.has(v.sku?.toLowerCase());
+    //         });
+
+    //         if (variationMatch) {
+    //             console.log("Matched Variation → Product ID:", p.id);
+    //             ids.push(p.id);
+    //             return;
+    //         }
+
+    //         // product sku fallback
+    //         if (skuSet.has(p.sku?.toLowerCase())) {
+    //             console.log("Matched Product SKU → Product ID:", p.id);
+    //             ids.push(p.id);
+    //         }
+
+    //     });
+
+    //     console.log("Final Bangalore Product IDs", ids);
+
+    //     return ids;
+
+    // }, [inventory, products, isXpress]);
+
     const bangaloreProductIds = useMemo(() => {
 
         if (!isXpress || !inventory?.length || !products?.length) return [];
 
-        const skuSet = new Set(
-            inventory.map(i => i.channelSkuCode?.toLowerCase())
+        // channelSku -> ourSku map
+        const skuMap = new Map(
+            mappings?.map(m => [
+                m.channelSku?.toLowerCase(),
+                m.ourSku?.toLowerCase()
+            ])
         );
 
-        console.log("SKU Set", skuSet);
+        console.log("SKU Mapping Map", skuMap);
+
+        // inventory se mapped SKUs nikalo
+        const skuSet = new Set(
+            inventory
+                .map(i => {
+                    const channelSku = i.channelSkuCode?.toLowerCase();
+                    return skuMap.get(channelSku) || channelSku; // fallback
+                })
+        );
+
+        console.log("Final SKU Set", skuSet);
 
         const ids = [];
 
@@ -1469,11 +1528,10 @@ const Categories = () => {
 
             console.log("Checking Product", p.name, p.sku);
 
-            // variation match
-            const variationMatch = p.variations?.some(v => {
-                console.log("Variation SKU", v.sku);
-                return skuSet.has(v.sku?.toLowerCase());
-            });
+            // 1️⃣ variation match first
+            const variationMatch = p.variations?.some(v =>
+                skuSet.has(v.sku?.toLowerCase())
+            );
 
             if (variationMatch) {
                 console.log("Matched Variation → Product ID:", p.id);
@@ -1481,7 +1539,7 @@ const Categories = () => {
                 return;
             }
 
-            // product sku fallback
+            // 2️⃣ product sku fallback
             if (skuSet.has(p.sku?.toLowerCase())) {
                 console.log("Matched Product SKU → Product ID:", p.id);
                 ids.push(p.id);
@@ -1493,7 +1551,7 @@ const Categories = () => {
 
         return ids;
 
-    }, [inventory, products, isXpress]);
+    }, [inventory, products, mappings, isXpress]);
 
     const delhiProductIds = useMemo(() => {
 
@@ -1542,6 +1600,7 @@ const Categories = () => {
         dispatch(fetchTags());
         dispatch(fetchDispatches())
         dispatch(fetchDelhiStore())
+        dispatch(fetchSkuMappings())
         const warehouseCode = localStorage.getItem("warehouseCode");
         dispatch(fetchBangaloreInventory(warehouseCode));
     }, [dispatch]);

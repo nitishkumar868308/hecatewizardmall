@@ -28,6 +28,7 @@ import {
 import { createReview, fetchReviews } from "@/app/redux/slices/reviews/reviewsSlice";
 import { fetchOrders } from "@/app/redux/slices/order/orderSlice";
 import { fetchBangaloreInventory } from "@/app/redux/slices/bangaloreInventory/bangaloreInventorySlice";
+import { fetchSkuMappings } from "@/app/redux/slices/skuMapping/skuMappingSlice";
 
 const ProductDetail = () => {
     const { isOpen } = useCart();
@@ -78,6 +79,7 @@ const ProductDetail = () => {
     const { store } = useSelector((state) => state.delhiStore);
     console.log("store", store)
     const { inventory } = useSelector(state => state.bangaloreInventory);
+    const { mappings } = useSelector((state) => state.skuMapping);
     console.log("inventory", inventory)
     const isXpress = pathname.includes("/hecate-quickGo");
     const purchasePlatform = isXpress ? "xpress" : "website";
@@ -157,10 +159,11 @@ const ProductDetail = () => {
         dispatch(fetchAttributes())
         dispatch(fetchCart());
         dispatch(fetchMe());
-        dispatch(fetchProducts()); // always fetch for current country
+        dispatch(fetchProducts());
         dispatch(fetchOffers());
         dispatch(fetchDispatches())
         dispatch(fetchDelhiStore())
+        dispatch(fetchSkuMappings())
         const warehouseCode = localStorage.getItem("warehouseCode");
         dispatch(fetchBangaloreInventory(warehouseCode));
     }, [dispatch, country]);
@@ -204,35 +207,91 @@ const ProductDetail = () => {
 
     console.log("allowedVariationIds", allowedVariationIds);
 
+    // const variationSkuMap = useMemo(() => {
+    //     const map = {};
+    //     currentProduct?.variations?.forEach(v => {
+    //         map[v.sku] = v;
+    //     });
+    //     return map;
+    // }, [currentProduct]);
+
+    // const bangaloreVariationStockMap = useMemo(() => {
+    //     if (!inventory?.length || !currentProduct) return null;
+
+    //     const map = {};
+
+    //     inventory.forEach(item => {
+
+    //         const sku = item.channelSkuCode;
+
+    //         const variation = variationSkuMap[sku];
+
+    //         if (variation) {
+    //             map[variation.id] = item.quantity;
+    //         }
+
+    //     });
+
+    //     return map;
+
+    // }, [inventory, currentProduct]);
+
     const variationSkuMap = useMemo(() => {
         const map = {};
+
         currentProduct?.variations?.forEach(v => {
-            map[v.sku] = v;
+            map[v.sku?.toLowerCase()] = v;   // ✅ FIX
         });
+
         return map;
+
     }, [currentProduct]);
 
     const bangaloreVariationStockMap = useMemo(() => {
-        if (!inventory?.length || !currentProduct) return null;
+        if (!inventory?.length || !currentProduct) return {};
+
+        // channelSku -> ourSku map
+        const skuMap = new Map(
+            mappings?.map(m => [
+                m.channelSku?.toLowerCase(),
+                m.ourSku?.toLowerCase()
+            ])
+        );
+
+        // variations map (all lowercase keys)
+        const variationMap = {};
+        currentProduct?.variations?.forEach(v => {
+            variationMap[v.sku?.toLowerCase()] = v;
+        });
 
         const map = {};
 
         inventory.forEach(item => {
+            const channelSku = item.channelSkuCode?.toLowerCase();
+            const ourSku = skuMap.get(channelSku) || channelSku;
 
-            const sku = item.channelSkuCode;
+            console.log("channelSku", channelSku);
+            console.log("ourSku", ourSku);
 
-            const variation = variationSkuMap[sku];
+            // 1️⃣ Try variation first
+            let variation = variationMap[ourSku?.toLowerCase()];
 
-            if (variation) {
-                map[variation.id] = item.quantity;
+            // 2️⃣ Fallback: match product SKU if variation not found
+            let productId = null;
+            if (!variation && currentProduct?.sku?.toLowerCase() === ourSku?.toLowerCase()) {
+                productId = currentProduct.id;
+            } else if (variation) {
+                productId = variation.id;
             }
 
+            if (productId !== null) {
+                map[productId] = item.quantity;
+            }
         });
 
         return map;
-
-    }, [inventory, currentProduct]);
-    console.log("bangaloreVariationStockMap", bangaloreVariationStockMap);
+    }, [inventory, currentProduct, mappings]);
+    console.log("bangaloreVariationStockMap" , bangaloreVariationStockMap)
 
 
     useEffect(() => {

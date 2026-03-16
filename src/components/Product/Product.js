@@ -274,7 +274,10 @@ const ProductSlider = ({ showSection = "both" }) => {
     }, [inView]);
 
     const handleProductClick = (slug) => {
-        router.push(`/product/${slug}`);
+        const url = pathname.includes("/hecate-quickGo")
+            ? `/hecate-quickGo/product/${slug}`
+            : `/product/${slug}`;
+        router.push(url);
     };
 
     // Reusable slider JSX

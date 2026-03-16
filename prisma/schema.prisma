@@ -909,14 +909,14 @@ model BangaloreIncreffInventory {
   locationCode   String
   channelSkuCode String
   quantity       Int
-  clientSkuId     String?
+  clientSkuId    String?
   minExpiry      String?
   channelSerialNo String?
   payload        Json
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  @@unique([locationCode, clientSkuId])
+  @@unique([locationCode, channelSkuCode])
 }
 
 model BangaloreIncreffMappingSKU {

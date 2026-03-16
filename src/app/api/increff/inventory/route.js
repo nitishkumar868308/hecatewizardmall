@@ -47,46 +47,77 @@ export async function PUT(req) {
             const quantity = item.quantity;
             const clientSkuId = item.client_sku_id;
 
-            if (!sku || !clientSkuId || quantity === undefined || quantity === null) {
+            if (!sku || quantity === undefined || quantity === null) {
                 failureList.push({
                     sku: sku || null,
-                    reason: "channelSkuCode, client_sku_id and quantity are required"
+                    reason: "channelSkuCode, quantity are required"
                 });
                 continue;
             }
 
             try {
 
-                await prisma.bangaloreIncreffInventory.upsert({
+                const existingInventory = await prisma.bangaloreIncreffInventory.findUnique({
                     where: {
-                        locationCode_clientSkuId: {
+                        locationCode_channelSkuCode: {
                             locationCode: locationCode,
-                            clientSkuId: clientSkuId
+                            channelSkuCode: sku
                         }
-                    },
-                    update: {
-                        quantity: quantity,
-                        minExpiry: item.minExpiry,
-                        channelSkuCode: sku,
-                        channelSerialNo: item.channelSerialNo,
-                        payload: item
-                    },
-                    create: {
-                        locationCode: locationCode,
-                        channelSkuCode: sku,
-                        clientSkuId: clientSkuId,
-                        quantity: quantity,
-                        minExpiry: item.minExpiry,
-                        channelSerialNo: item.channelSerialNo,
-                        payload: item
                     }
                 });
 
-                successList.push(sku);
+                if (existingInventory) {
+
+                    await prisma.bangaloreIncreffInventory.update({
+                        where: {
+                            locationCode_channelSkuCode: {
+                                locationCode: locationCode,
+                                channelSkuCode: sku
+                            }
+                        },
+                        data: {
+                            quantity: quantity,
+                            minExpiry: item.minExpiry,
+                            clientSkuId: clientSkuId,
+                            channelSerialNo: item.channelSerialNo,
+                            payload: item
+                        }
+                    });
+
+                    successList.push({
+                        sku: sku,
+                        message: "Quantity updated successfully"
+                    });
+
+                } else {
+
+                    await prisma.bangaloreIncreffInventory.create({
+                        data: {
+                            locationCode: locationCode,
+                            channelSkuCode: sku,
+                            clientSkuId: clientSkuId,
+                            quantity: quantity,
+                            minExpiry: item.minExpiry,
+                            channelSerialNo: item.channelSerialNo,
+                            payload: item
+                        }
+                    });
+
+                    successList.push({
+                        sku: sku,
+                        message: "Inventory created successfully"
+                    });
+
+                }
 
             } catch (err) {
 
-                failureList.push(sku);
+                console.error("Inventory error:", err);
+
+                failureList.push({
+                    sku: sku,
+                    error: err.message
+                });
 
             }
 
@@ -97,9 +128,9 @@ export async function PUT(req) {
             failureList
         });
 
-    } catch (error) {
+    } catch (err) {
 
-        console.error(error);
+        console.log("UPSERT ERROR:", err);
 
         return NextResponse.json(
             { message: "Inventory update failed" },

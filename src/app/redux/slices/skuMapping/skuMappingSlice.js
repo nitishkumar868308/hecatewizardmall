@@ -34,6 +34,42 @@ export const fetchSkuMappings = createAsyncThunk(
 );
 
 
+// UPDATE SKU MAPPING
+export const updateSkuMapping = createAsyncThunk(
+    "skuMapping/updateSkuMapping",
+    async (payload, { rejectWithValue }) => {
+        try {
+            const response = await axios.put("/api/sku-mapping", payload);
+            return response.data;
+        } catch (err) {
+            return rejectWithValue(
+                err.response?.data || "Failed to update SKU Mapping"
+            );
+        }
+    }
+);
+
+
+// DELETE SKU MAPPING
+export const deleteSkuMapping = createAsyncThunk(
+    "skuMapping/deleteSkuMapping",
+    async (payload, { rejectWithValue }) => {
+        try {
+            const response = await axios.delete("/api/sku-mapping", {
+                data: payload
+            });
+
+            return { ...response.data, id: payload.id };
+
+        } catch (err) {
+            return rejectWithValue(
+                err.response?.data || "Failed to delete SKU Mapping"
+            );
+        }
+    }
+);
+
+
 const skuMappingSlice = createSlice({
     name: "skuMapping",
 
@@ -94,6 +130,31 @@ const skuMappingSlice = createSlice({
             .addCase(fetchSkuMappings.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload || action.error.message;
+            })
+
+
+            // UPDATE MAPPING
+            .addCase(updateSkuMapping.fulfilled, (state, action) => {
+                if (action.payload?.data) {
+
+                    const index = state.mappings.findIndex(
+                        (item) => item.id === action.payload.data.id
+                    );
+
+                    if (index !== -1) {
+                        state.mappings[index] = action.payload.data;
+                    }
+                }
+            })
+
+
+            // DELETE MAPPING
+            .addCase(deleteSkuMapping.fulfilled, (state, action) => {
+
+                state.mappings = state.mappings.filter(
+                    (item) => item.id !== action.payload.id
+                );
+
             });
 
     },

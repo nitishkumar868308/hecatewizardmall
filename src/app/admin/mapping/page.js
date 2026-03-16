@@ -5,9 +5,12 @@ import DefaultPageAdmin from "@/components/Admin/Include/DefaultPageAdmin/Defaul
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllProducts } from "@/app/redux/slices/products/productSlice";
 import { fetchAllInventory } from "@/app/redux/slices/bangaloreInventory/bangaloreInventorySlice";
-import { Search, ArrowRight, Package, Link as LinkIcon, ChevronDown, CheckCircle2, Info, Eye, Pencil, Trash2, ArrowUpDown, Filter , ChevronLeft , ChevronRight  } from "lucide-react";
-import { createSkuMapping, fetchSkuMappings } from "@/app/redux/slices/skuMapping/skuMappingSlice";
+import { Search, ArrowRight, Package, Link as LinkIcon, ChevronDown, CheckCircle2, Info, Eye, Pencil, Trash2, ArrowUpDown, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { createSkuMapping, fetchSkuMappings, updateSkuMapping, deleteSkuMapping } from "@/app/redux/slices/skuMapping/skuMappingSlice";
 import toast from 'react-hot-toast';
+import ViewSkuMappingModal from "@/components/Admin/SkuMapping/ViewSkuMappingModal";
+import EditSkuMappingModal from "@/components/Admin/SkuMapping/EditSkuMappingModal";
+import DeleteSkuMappingModal from "@/components/Admin/SkuMapping/DeleteSkuMappingModal";
 
 const Page = () => {
     const dispatch = useDispatch();
@@ -19,6 +22,10 @@ const Page = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const [viewModal, setViewModal] = useState(false);
+    const [editModal, setEditModal] = useState(false);
+    const [deleteModal, setDeleteModal] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
     console.log("mappings", mappings)
     // Local States
     const [mapping, setMapping] = useState({
@@ -58,14 +65,31 @@ const Page = () => {
         return list;
     }, [products]);
 
-    // Filtering Logic
     const filteredOurSku = ourSkuList.filter((s) =>
         `${s.label} ${s.value}`.toLowerCase().includes(search.toLowerCase())
     );
 
-    const filteredChannelSku = allInventory.filter((s) =>
-        s.channelSkuCode.toLowerCase().includes(search.toLowerCase())
+    // Filtering Logic
+    const mappingChannelSkus = new Set(
+        mappings
+            ?.filter(m => m.channelSku)
+            .map(m => m.channelSku.trim().toLowerCase())
     );
+
+    const filteredChannelSku = allInventory
+        .filter(
+            (item) =>
+                !mappingChannelSkus.has(item.channelSkuCode?.toLowerCase())
+        )
+        .filter((item) =>
+            item.channelSkuCode?.toLowerCase().includes(search.toLowerCase())
+        );
+
+    console.log("filteredChannelSku", filteredChannelSku);
+
+    // const filteredChannelSku = allInventory.filter((s) =>
+    //     s.channelSkuCode.toLowerCase().includes(search.toLowerCase())
+    // );
 
     const handleSave = async () => {
         try {
@@ -85,6 +109,10 @@ const Page = () => {
                     channelSku: "",
                     ourSku: ""
                 });
+            } else {
+
+                toast.error(res.message);
+
             }
 
         } catch (error) {
@@ -143,7 +171,8 @@ const Page = () => {
                                         Source: Channel SKU
                                     </label>
                                     <button
-                                        onClick={() => { setOpenDropdown("channel"); setSearch(""); }}
+                                        onClick={() => { setOpenDropdown(openDropdown === "channel" ? null : "channel"); setSearch("") }}
+                                        // onClick={() => { setOpenDropdown("channel"); setSearch(""); }}
                                         className={`w-full flex items-center justify-between gap-3 px-4 py-4 rounded-xl border-2 transition-all duration-200 ${mapping.channelSku
                                             ? "border-indigo-100 bg-indigo-50/30 text-indigo-700"
                                             : "border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200"
@@ -209,7 +238,8 @@ const Page = () => {
                                         Target: Our Internal SKU
                                     </label>
                                     <button
-                                        onClick={() => { setOpenDropdown("our"); setSearch(""); }}
+                                        onClick={() => { setOpenDropdown(openDropdown === "our" ? null : "our"); setSearch("") }}
+                                        // onClick={() => { setOpenDropdown("our"); setSearch(""); }}
                                         className={`w-full flex items-center justify-between gap-3 px-4 py-4 rounded-xl border-2 transition-all duration-200 ${mapping.ourSku
                                             ? "border-emerald-100 bg-emerald-50/30 text-emerald-700"
                                             : "border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200"
@@ -336,6 +366,7 @@ const Page = () => {
                                                 <div className="flex items-center gap-2">Internal SKU <ArrowUpDown size={12} /></div>
                                             </th>
                                             <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">Created Date</th>
+                                            <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">Updated Date</th>
                                             <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">Action</th>
                                         </tr>
                                     </thead>
@@ -368,15 +399,33 @@ const Page = () => {
                                                         })}
                                                     </td>
 
+                                                    <td className="px-6 py-4 text-gray-500 whitespace-nowrap text-sm">
+                                                        {new Date(item.updatedAt).toLocaleDateString('en-GB', {
+                                                            day: '2-digit', month: 'short', year: 'numeric'
+                                                        })}
+                                                    </td>
+
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button className="p-2 hover:bg-white hover:shadow-md rounded-lg text-gray-600 hover:text-indigo-600 transition-all">
+                                                            <button onClick={() => {
+                                                                setSelectedItem(item)
+                                                                setViewModal(true)
+                                                            }}
+                                                                className="p-2 hover:bg-white hover:shadow-md rounded-lg text-gray-600 hover:text-indigo-600 transition-all cursor-pointer">
                                                                 <Eye size={16} />
                                                             </button>
-                                                            <button className="p-2 hover:bg-white hover:shadow-md rounded-lg text-gray-600 hover:text-yellow-600 transition-all">
+                                                            <button onClick={() => {
+                                                                setSelectedItem(item)
+                                                                setEditModal(true)
+                                                            }}
+                                                                className="p-2 hover:bg-white hover:shadow-md rounded-lg text-gray-600 hover:text-yellow-600 transition-all cursor-pointer">
                                                                 <Pencil size={16} />
                                                             </button>
-                                                            <button className="p-2 hover:bg-white hover:shadow-md rounded-lg text-gray-600 hover:text-red-600 transition-all">
+                                                            <button onClick={() => {
+                                                                setSelectedItem(item)
+                                                                setDeleteModal(true)
+                                                            }}
+                                                                className="p-2 hover:bg-white hover:shadow-md rounded-lg text-gray-600 hover:text-red-600 transition-all cursor-pointer">
                                                                 <Trash2 size={16} />
                                                             </button>
                                                         </div>
@@ -421,8 +470,8 @@ const Page = () => {
                                                     key={i}
                                                     onClick={() => setCurrentPage(i + 1)}
                                                     className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${currentPage === i + 1
-                                                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200"
-                                                            : "text-gray-500 hover:bg-gray-200/50"
+                                                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200"
+                                                        : "text-gray-500 hover:bg-gray-200/50"
                                                         }`}
                                                 >
                                                     {i + 1}
@@ -444,7 +493,64 @@ const Page = () => {
                     </div>
                 </div>
             </div>
-        </DefaultPageAdmin>
+
+            <ViewSkuMappingModal
+                open={viewModal}
+                onClose={() => setViewModal(false)}
+                data={selectedItem}
+                products={products}
+            />
+
+            <EditSkuMappingModal
+                open={editModal}
+                onClose={() => setEditModal(false)}
+                data={selectedItem}
+                products={products}
+                inventory={allInventory}
+                onSave={async (data) => {
+                    try {
+
+                        const res = await dispatch(updateSkuMapping({
+                            id: data.id,
+                            channelSku: data.channelSku,
+                            ourSku: data.ourSku
+                        })).unwrap();
+
+                        toast.success(res.message || "Mapping updated successfully");
+
+                        setEditModal(false);
+
+                    } catch (err) {
+
+                        toast.error(err.message || "Failed to update mapping");
+
+                    }
+                }}
+            />
+
+            <DeleteSkuMappingModal
+                open={deleteModal}
+                onClose={() => setDeleteModal(false)}
+                data={selectedItem}
+                onDelete={async (data) => {
+                    try {
+
+                        const res = await dispatch(deleteSkuMapping({
+                            id: data.id
+                        })).unwrap();
+
+                        toast.success(res.message || "Mapping deleted successfully");
+
+                        setDeleteModal(false);
+
+                    } catch (err) {
+
+                        toast.error(err.message || "Failed to delete mapping");
+
+                    }
+                }}
+            />
+        </DefaultPageAdmin >
     );
 };
 

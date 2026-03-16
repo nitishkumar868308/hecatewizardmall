@@ -16,6 +16,7 @@ import { fetchDispatches } from "@/app/redux/slices/dispatchUnitsWareHouse/dispa
 import { useRouter } from "next/navigation";
 import { fetchDelhiStore } from "@/app/redux/slices/delhiStore/delhiStoreSlice";
 import { fetchBangaloreInventory } from "@/app/redux/slices/bangaloreInventory/bangaloreInventorySlice";
+import { fetchSkuMappings } from "@/app/redux/slices/skuMapping/skuMappingSlice";
 
 const Page = () => {
     const router = useRouter();
@@ -32,7 +33,9 @@ const Page = () => {
     console.log("categories", categories)
     const selectedState = useSelector(state => state.selectedState);
     const { inventory } = useSelector(state => state.bangaloreInventory);
+    const { mappings } = useSelector((state) => state.skuMapping);
     console.log("inventory", inventory)
+    console.log("mappings", mappings)
 
     // Merge store with products, prioritizing variationId
     const mergedProducts = store
@@ -74,6 +77,7 @@ const Page = () => {
         dispatch(fetchSubcategories());
         dispatch(fetchDispatches())
         dispatch(fetchDelhiStore())
+        dispatch(fetchSkuMappings())
         const warehouseCode = localStorage.getItem("warehouseCode");
         console.log("selectedState:", selectedState);
         console.log("warehouseCode:", warehouseCode);
@@ -111,20 +115,58 @@ const Page = () => {
     console.log("inventory raw:", inventory);
     console.log("products:", products);
 
+    // const bangaloreProducts = inventory
+    //     ?.filter(item => item.locationCode === warehouseCode)
+    //     ?.map(item => {
+
+    //         const sku = item.channelSkuCode;
+
+    //         // 1️⃣ First check variation
+    //         let product = products.find(p =>
+    //             p.variations?.some(v => v.sku === sku)
+    //         );
+
+    //         // 2️⃣ If variation not found → check product sku
+    //         if (!product) {
+    //             product = products.find(p => p.sku === sku);
+    //         }
+
+    //         if (!product) return null;
+
+    //         return {
+    //             ...product,
+    //             stock: item.quantity
+    //         };
+
+    //     })
+    //     .filter(Boolean)
+    //     // 3️⃣ remove duplicates
+    //     .filter(
+    //         (product, index, self) =>
+    //             index === self.findIndex(p => p.id === product.id)
+    //     );
     const bangaloreProducts = inventory
         ?.filter(item => item.locationCode === warehouseCode)
         ?.map(item => {
 
-            const sku = item.channelSkuCode;
+            const channelSku = item.channelSkuCode;
 
-            // 1️⃣ First check variation
-            let product = products.find(p =>
-                p.variations?.some(v => v.sku === sku)
+            // 1️⃣ mapping find karo
+            const mapping = mappings.find(m => m.channelSku === channelSku);
+
+            // agar mapping nahi mili to same sku use kar lo
+            const ourSku = mapping?.ourSku || channelSku;
+
+            let product = null;
+
+            // 2️⃣ pehle variation sku se match karo
+            product = products.find(p =>
+                p.variations?.some(v => v.sku === ourSku)
             );
 
-            // 2️⃣ If variation not found → check product sku
+            // 3️⃣ agar variation nahi mila to product sku check karo
             if (!product) {
-                product = products.find(p => p.sku === sku);
+                product = products.find(p => p.sku === ourSku);
             }
 
             if (!product) return null;
@@ -133,10 +175,9 @@ const Page = () => {
                 ...product,
                 stock: item.quantity
             };
-
         })
         .filter(Boolean)
-        // 3️⃣ remove duplicates
+        // duplicate remove
         .filter(
             (product, index, self) =>
                 index === self.findIndex(p => p.id === product.id)
