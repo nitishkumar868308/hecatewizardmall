@@ -449,16 +449,7 @@ model ShippingPricing {
   createdAt      DateTime @default(now())
 }
 
-model State {
-  id        Int      @id @default(autoincrement())
-  name      String
-  active    Boolean  @default(true)
-  deleted   Int      @default(0)
-  createdAt DateTime @default(now())
-  categories Category[] @relation("CategoryStates")
-  subcategories Subcategory[]  @relation("SubcategoryStates")
-  banners BannerState[]
-}
+
 
 model WareHouse {
   id        Int      @id @default(autoincrement())
@@ -927,4 +918,75 @@ model BangaloreIncreffMappingSKU {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Country {
+  id                  Int      @id @default(autoincrement())
+  name                String
+  iso3                String
+  iso2                String
+  numeric_code        String
+  phonecode           String
+  capital             String?
+  currency            String?
+  currency_name       String?
+  currency_symbol     String?
+  nationality         String?
+  postal_code_format  String?
+  postal_code_regex   String?
+  emoji               String?
+  emojiU              String?
+
+  active    Boolean  @default(true)
+  deleted   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  states    State[]
+  cities    City[]
+}
+
+model State {
+  id           Int      @id @default(autoincrement())
+  name         String
+  country_id   Int?
+  country_code String?
+  country_name String?
+  iso2         String?
+  iso3166_2    String?
+  fips_code    String?
+  type         String?
+  latitude     String?
+  longitude    String?
+
+  active       Boolean  @default(true)
+  deleted      Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  categories    Category[] @relation("CategoryStates")
+  subcategories Subcategory[] @relation("SubcategoryStates")
+  banners       BannerState[]
+
+  country       Country? @relation(fields: [country_id], references: [id])
+  cities        City[]
+}
+
+model City {
+  id           Int      @id @default(autoincrement())
+  name         String
+  state_id     Int
+  state_code   String
+  state_name   String
+  country_id   Int
+  country_code String
+  country_name String
+  latitude     String
+  longitude    String
+
+  active       Boolean  @default(true)
+  deleted      Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  state        State    @relation(fields: [state_id], references: [id])
+  country      Country?  @relation(fields: [country_id], references: [id])
 }

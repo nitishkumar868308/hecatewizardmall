@@ -2236,7 +2236,8 @@ const Categories = () => {
         return <Loader />;
     }
 
-
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    console.log("baseUrl", baseUrl)
 
     return (
         <div className="md:flex-row gap-6 p-6 max-w-7xl mx-auto font-functionPro relative">
@@ -2569,7 +2570,8 @@ const Categories = () => {
                                     <div className="h-72 relative mb-4 rounded overflow-hidden">
                                         {sub.image ? (
                                             <Image
-                                                src={sub.image}
+                                                src={encodeURI(sub.image.startsWith("http") ? sub.image : `${baseUrl}${sub.image}`)}
+                                                //src={sub.image}
                                                 alt={sub.name}
                                                 fill
                                                 className="object-cover"
