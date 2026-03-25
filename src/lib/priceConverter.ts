@@ -201,7 +201,7 @@ export function convertProducts(products: any[], countryCode: string, countryPri
 }
 
 
-let conversionRatesCache = null;
+let conversionRatesCache: any[] | null = null;
 
 export function convertProductsFast(products, countryCode, countryPricingList) {
     const normalizedCountryCode = (countryCode.length === 3 ? countryCode.slice(0, 2) : countryCode).toUpperCase();
