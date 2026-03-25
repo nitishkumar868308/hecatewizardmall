@@ -28,6 +28,9 @@ const ProductForm = ({
     const { tags } = useSelector((state) => state.tags);
     const dispatch = useDispatch();
     const isEdit = editModalOpen;
+    // const [isCustomizable, setIsCustomizable] = useState(false);
+    // const [customFields, setCustomFields] = useState([]);
+    // const [customImages, setCustomImages] = useState([]);
     const currentData = isEdit ? editProductData : newProduct;
     const setCurrentData = isEdit ? setEditProductData : setNewProduct;
     console.log("productOffers", productOffers)
@@ -147,6 +150,29 @@ const ProductForm = ({
         }
     }, [editModalOpen, isEdit]);
 
+    // useEffect(() => {
+    //     if (currentData?.isCustomizable) {
+    //         setCurrentData((prev) => {
+    //             // agar already values hain to overwrite mat karo
+    //             if (
+    //                 prev.customName ||
+    //                 prev.customPrice ||
+    //                 prev.customShort ||
+    //                 prev.customDescription
+    //             ) {
+    //                 return prev;
+    //             }
+
+    //             return {
+    //                 ...prev,
+    //                 customName: prev.name || "",
+    //                 customPrice: prev.price || "",
+    //                 customShort: prev.short || "",
+    //                 customDescription: prev.description || "",
+    //             };
+    //         });
+    //     }
+    // }, [currentData?.isCustomizable]);
 
     console.log("editProductData", editProductData);
 
@@ -326,6 +352,7 @@ const ProductForm = ({
                         className="w-full border border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
                     />
                 </div>
+
 
                 {/* SKU */}
                 <div className="flex flex-col">
@@ -766,9 +793,136 @@ const ProductForm = ({
                 </div>
 
 
+                {/* <div className="flex items-center gap-3 mt-4">
+                    <input
+                        type="checkbox"
+                        checked={currentData?.isCustomizable || false}
+                        onChange={(e) => {
+                            const checked = e.target.checked;
 
+                            setCurrentData((prev) => ({
+                                ...prev,
+                                isCustomizable: checked,
 
+                                ...(checked && !prev.customName && {
+                                    customName: prev.name || "",
+                                    customPrice: prev.price || "",
+                                    customShort: prev.short || "",
+                                    customDescription: prev.description || "",
+                                }),
+                            }));
+                        }}
+                    />
+                    <label className="text-gray-700 font-medium">
+                        Customizable Product
+                    </label>
+                </div> */}
 
+                {/* {currentData?.isCustomizable && (
+                    <div className="col-span-2 border p-6 rounded-xl">
+                        <h3 className="text-xl font-semibold mb-4">Custom Product Builder</h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    
+                            <div className="flex flex-col">
+                                <label className="mb-1 text-gray-600">Custom Product Name</label>
+                                <input
+                                    type="text"
+                                    value={currentData.customName || ""}
+                                    onChange={(e) =>
+                                        setCurrentData({ ...currentData, customName: e.target.value })
+                                    }
+                                    className="border px-3 py-2 rounded-lg"
+                                />
+                            </div>
+
+                     
+                            <div className="flex flex-col">
+                                <label className="mb-1 text-gray-600">Custom Price</label>
+                                <input
+                                    type="number"
+                                    value={currentData.customPrice || ""}
+                                    onChange={(e) =>
+                                        setCurrentData({ ...currentData, customPrice: e.target.value })
+                                    }
+                                    className="border px-3 py-2 rounded-lg"
+                                />
+                            </div>
+
+                      
+                            <div className="flex flex-col ">
+                                <label className="mb-1 text-gray-600">Short Description</label>
+                                <input
+                                    type="text"
+                                    value={currentData.customShort || ""}
+                                    onChange={(e) =>
+                                        setCurrentData({ ...currentData, customShort: e.target.value })
+                                    }
+                                    className="border px-3 py-2 rounded-lg"
+                                />
+                            </div>
+
+       
+                            <div className="flex flex-col ">
+                                <label className="mb-1 text-gray-600">Description</label>
+                                <RichTextEditor
+                                    value={currentData.customDescription || ""}
+                                    onChange={(val) =>
+                                        setCurrentData({ ...currentData, customDescription: val })
+                                    }
+                                />
+                            </div>
+
+                    
+                            <div className="flex flex-col md:col-span-2">
+                                <label className="mb-2 text-gray-600">Custom Product Images</label>
+
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={(e) =>
+                                        setCurrentData((prev) => ({
+                                            ...prev,
+                                            customImages: [
+                                                ...(prev.customImages || []),
+                                                ...Array.from(e.target.files),
+                                            ],
+                                        }))
+                                    }
+                                    className="file:mr-3 file:py-2 file:px-4 file:rounded-full
+                    file:border-0 file:text-sm file:bg-blue-50 file:text-blue-600 
+                    cursor-pointer"
+                                />
+
+                                <div className="flex gap-3 flex-wrap mt-3">
+                                    {(currentData.customImages || []).map((img, idx) => (
+                                        <div key={idx} className="relative w-28 h-28">
+                                            <img
+                                                src={URL.createObjectURL(img)}
+                                                className="w-full h-full object-cover rounded-lg border"
+                                            />
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setCurrentData((prev) => ({
+                                                        ...prev,
+                                                        customImages: prev.customImages?.filter((_, i) => i !== idx),
+                                                    }))
+                                                }
+                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )} */}
 
             </form>
         </div>

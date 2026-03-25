@@ -33,8 +33,8 @@ const ProductsPage = ({
     //     p.name.toLowerCase().includes(search.toLowerCase())
     // );
     const filteredProducts = (products ?? []).filter(p =>
-    (p.name ?? "").toLowerCase().includes((search ?? "").toLowerCase())
-);
+        (p.name ?? "").toLowerCase().includes((search ?? "").toLowerCase())
+    );
 
 
     console.log("categoriesProductPage", categories)

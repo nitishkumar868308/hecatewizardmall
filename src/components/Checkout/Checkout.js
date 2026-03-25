@@ -695,21 +695,19 @@ const Checkout = () => {
   console.log("finalShippingOptions", finalShippingOptions)
 
   useEffect(() => {
-    if (!Array.isArray(finalShippingOptions)) {
+    if (!Array.isArray(finalShippingOptions) || finalShippingOptions.length === 0) {
       setSelectedShippingOption(null);
       return;
     }
 
-    const firstOption = finalShippingOptions[0] || null;
+    const exists = finalShippingOptions.find(
+      (opt) => opt.id === selectedShippingOption?.id
+    );
 
-    // Only update if the ID is different
-    if (
-      (selectedShippingOption?.id || null) !==
-      (firstOption?.id || null)
-    ) {
-      setSelectedShippingOption(firstOption);
+    if (!exists) {
+      setSelectedShippingOption(finalShippingOptions[0]);
     }
-  }, [finalShippingOptions, selectedShippingOption]);
+  }, [finalShippingOptions]);
   useEffect(() => {
     if (shippingOptions.length > 0) {
       const defaultAddr = shippingOptions.find(addr => addr.isDefault);
@@ -2310,7 +2308,7 @@ const Checkout = () => {
                     /* Normal Mode → Show shipping options */
                     <div className="flex flex-col gap-3">
                       {finalShippingOptions.map((option) => {
-                        const isSelected = selectedShippingOption?.id === option.id;
+                        const isSelected = selectedShippingOption?.id == option.id;
 
                         return (
                           <button

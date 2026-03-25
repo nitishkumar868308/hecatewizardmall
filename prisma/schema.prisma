@@ -176,6 +176,8 @@ model Product {
   MRP             String?      // Add MRP
   platform      String[]      @default([])  // ["xpress", "website"]
   dimension       Json?
+
+  
 }
 
 model ProductVariation {
@@ -990,3 +992,5 @@ model City {
   state        State    @relation(fields: [state_id], references: [id])
   country      Country?  @relation(fields: [country_id], references: [id])
 }
+
+

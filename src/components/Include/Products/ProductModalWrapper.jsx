@@ -600,6 +600,14 @@ const ProductModalWrapper = ({
                 tags: existingVar?.tags ?? currentData.tags ?? [],
                 marketLinks: existingVar?.marketLinks ?? currentData.marketLinks ?? [],
                 sku: existingVar?.sku ?? generateSKU(currentData.sku || "", variationObj),
+                // ...(
+                //     currentData?.isCustomized // toggle ON check
+                //         ? {
+                //             customFields: existingVar?.customFields ?? currentData.customFields ?? {},
+                //             customOptions: existingVar?.customOptions ?? currentData.customOptions ?? [],
+                //         }
+                //         : {}
+                // ),
 
             };
             // newVariationDetails[variationKey] = {
