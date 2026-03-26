@@ -1,27 +1,48 @@
 const fs = require('fs');
+const path = require('path');
 
-// 1. Aapki original file read karna
+// Read JSON
 const rawData = fs.readFileSync('cities.json');
 const cities = JSON.parse(rawData);
 
-// 2. Data ko transform karna (Aapke bataye huye format mein)
-const transformedData = cities.map(city => ({
-    id: city.id,
-    name: city.name,
-    state_id: city.state_id,
-    state_code: city.state_code,
-    state_name: city.state_name,
-    country_id: city.country_id,
-    country_code: city.country_code,
-    country_name: city.country_name,
-    latitude: city.latitude,
-    longitude: city.longitude,
-    active: true, // Naya field
-    deleted: 0,   // Naya field
-    createdAt: "2024-05-23T10:00:00.000Z" // Naya field
-}));
+// ✅ DB column order (match Prisma model)
+const headers = [
+  "id",
+  "name",
+  "state_id",
+  "state_code",
+  "state_name",
+  "country_id",
+  "country_code",
+  "country_name",
+  "latitude",
+  "longitude",
+  "active",
+  "deleted",
+  "createdAt"
+];
 
-// 3. Nayi file save karna
-fs.writeFileSync('converted_cities.json', JSON.stringify(transformedData, null, 4));
+// Convert JSON → CSV
+const rows = cities.map(c => [
+  c.id,
+  `"${c.name}"`,
+  c.state_id ?? '',
+  c.state_code ? `"${c.state_code}"` : '',
+  c.state_name ? `"${c.state_name}"` : '',
+  c.country_id ?? '',
+  c.country_code ? `"${c.country_code}"` : '',
+  c.country_name ? `"${c.country_name}"` : '',
+  c.latitude ? `"${c.latitude}"` : '',
+  c.longitude ? `"${c.longitude}"` : '',
+  true,   // active
+  0,      // deleted
+  `"2024-05-23T10:00:00.000Z"`
+].join(','));
 
-console.log("Done! 'converted_cities.json' ban gayi hai.");
+// Combine
+const csvData = [headers.join(','), ...rows].join('\n');
+
+// Save file
+fs.writeFileSync(path.join(__dirname, 'cities_fixed.csv'), csvData);
+
+console.log("✅ cities_fixed.csv ready 🚀");

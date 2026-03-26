@@ -45,7 +45,9 @@ export async function POST(req) {
         const {
             fullName,
             email,
-            phoneNumber,
+            phone,         // ✅ full number
+            countryCode,   // ✅ +91
+            phoneLocal,    // ✅ 9876543210
             gender,
             experience,
             bio,
@@ -58,7 +60,7 @@ export async function POST(req) {
             documents,
         } = body;
 
-        if (!fullName || !email || !phoneNumber) {
+        if (!fullName || !email || !phone) {
             return new Response(
                 JSON.stringify({ message: "Full name, email and phone number are required" }),
                 { status: 400 }
@@ -77,7 +79,7 @@ export async function POST(req) {
         }
 
         const existingPhone = await prisma.astrologerAccount.findUnique({
-            where: { phoneNumber }
+            where: { phone }
         });
 
         if (existingPhone) {
@@ -91,7 +93,9 @@ export async function POST(req) {
             data: {
                 fullName,
                 email,
-                phoneNumber,
+                phone,         // +919876543210
+                countryCode,   // +91
+                phoneLocal,    // 9876543210
                 gender,
 
                 profile: {
@@ -110,6 +114,10 @@ export async function POST(req) {
                     create: services?.map((service) => ({
                         serviceName: service.serviceName,
                         price: service.price,
+
+                        // ✅ ADD THESE
+                        currency: service.currency,
+                        currencySymbol: service.currencySymbol,
                     })) || [],
                 },
 

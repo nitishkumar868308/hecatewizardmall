@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { registerAstrologer } from "@/app/redux/slices/jyotish/Register/RegisterSlice";
 import { toast } from "react-hot-toast";
@@ -20,15 +20,42 @@ import {
     Upload,
     Award,
     CheckCircle2,
+    Users,
+    ChevronDown,
+    Hash,
+    Home,
+    Languages,
+    Navigation,
+    X,
+    Fingerprint,
+    CreditCard,
+    TextQuote
 } from "lucide-react";
+import { fetchCountries } from "@/app/redux/slices/country/countrySlice";
+import { fetchStates } from "@/app/redux/slices/countryState/countryStateSlice";
+import { fetchCities } from "@/app/redux/slices/countryCity/countryCitySlice";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { fetchServices } from "@/app/redux/slices/book_consultant/services/serviceSlice";
 
 const Register = () => {
+    const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+    const [countrySearch, setCountrySearch] = useState("");
+    const [showStateDropdown, setShowStateDropdown] = useState(false);
+    const [stateSearch, setStateSearch] = useState("");
+    const [showCityDropdown, setShowCityDropdown] = useState(false);
+    const [citySearch, setCitySearch] = useState("");
     const dispatch = useDispatch();
     const { loading } = useSelector((state) => state.jyotishRegister);
-
+    const countries = useSelector((state) => state.countries.countries);
+    const states = useSelector((state) => state.countriesStates.states);
+    const cities = useSelector((state) => state.countriesCities.cities);
+    const { services } = useSelector((state) => state.services);
     const [step, setStep] = useState(1);
     const totalSteps = 3;
-
+    console.log("states", states)
+    console.log("countries", countries)
+    console.log("cities", cities)
+    console.log("services", services)
     const initialFormState = {
         fullName: "",
         email: "",
@@ -39,7 +66,11 @@ const Register = () => {
         address: "",
         city: "",
         state: "",
-        country: "India",
+        country: "",
+        addharNo: "",
+        panNo: "",
+        postalCode: "",
+        phoneCode: "",
         languages: [],
         services: [],
         documents: [],
@@ -48,32 +79,57 @@ const Register = () => {
     const [formData, setFormData] = useState(initialFormState);
 
     const [languageInput, setLanguageInput] = useState("");
-    const [newService, setNewService] = useState({ serviceName: "", price: "" });
+    const [newService, setNewService] = useState({ serviceNames: [], price: "" });
 
-    const serviceOptions = [
-        "Vedic Astrology",
-        "Numerology",
-        "Tarot Reading",
-        "Palmistry",
-        "Vastu",
-    ];
+    useEffect(() => {
+        if (countries.length === 0) {
+            dispatch(fetchCountries());
+        }
+        dispatch(fetchStates());
+        dispatch(fetchCities());
+        dispatch(fetchServices());
+    }, [countries.length, dispatch]);
 
-    const statesOfIndia = [
-        "Delhi",
-        "Maharashtra",
-        "Karnataka",
-        "Uttar Pradesh",
-        "Gujarat",
-    ];
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+
+        if (name === "phoneNumber") {
+            // ✅ Only digits allow
+            const cleanedValue = value.replace(/\D/g, "");
+
+            setFormData((prev) => ({
+                ...prev,
+                [name]: cleanedValue,
+            }));
+        } else {
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        }
     };
 
     const nextStep = () => {
         if (step === 1 && (!formData.fullName || !formData.email || !formData.phoneNumber)) {
             return toast.error("Please fill required fields");
+        }
+        if (!validatePhone()) return;
+        if (!validatePostalCode()) return;
+        if (!validateLocation()) return;
+
+        if (step === 2) {
+            if (!formData.services.length) {
+                return toast.error("Please add at least one service");
+            }
+
+            if (!formData.bio || formData.bio.trim().length < 20) {
+                return toast.error("Bio should be at least 20 characters");
+            }
+
+            if (!formData.experience || isNaN(formData.experience) || Number(formData.experience) <= 0) {
+                return toast.error("Please enter valid experience (in years)");
+            }
         }
         setStep((prev) => Math.min(prev + 1, totalSteps));
     };
@@ -81,50 +137,81 @@ const Register = () => {
     const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
     const addLanguage = () => {
-        if (languageInput.trim()) {
-            setFormData((prev) => ({
-                ...prev,
-                languages: [...prev.languages, languageInput.trim()],
-            }));
-            setLanguageInput("");
+        if (!languageInput.trim()) return;
+
+        if (formData.languages.includes(languageInput.trim())) {
+            return toast.error("Language already added");
         }
+
+        setFormData(prev => ({
+            ...prev,
+            languages: [...prev.languages, languageInput.trim()],
+        }));
+
+        setLanguageInput("");
     };
 
     const addService = () => {
-        if (!newService.serviceName || !newService.price)
-            return toast.error("Select service and price");
+        if (!newService.serviceNames.length || !newService.price) {
+            return toast.error("Select services and price");
+        }
 
         setFormData((prev) => ({
             ...prev,
             services: [...prev.services, newService],
         }));
-        setNewService({ serviceName: "", price: "" });
+
+        setNewService({
+            serviceNames: [],
+            price: ""
+        });
     };
 
-    const handleFileUpload = (type, file) => {
-        if (!file) return;
-        setFormData((prev) => ({
-            ...prev,
-            documents: [
-                ...prev.documents.filter((d) => d.type !== type),
-                { type, fileUrl: file.name },
-            ],
-        }));
-    };
+    const selectedCountry = countries.find(c => c.name === formData.country);
+
+    const currencySymbol = selectedCountry?.currency_symbol || "₹";
 
     const handleSubmit = async () => {
         try {
 
+            if (!validatePhone()) return;
+            if (!validatePostalCode()) return;
+
+            if (!formData.languages.length) {
+                return toast.error("Please add at least one language");
+            }
+
+            // ❗ Service validation
+            if (!formData.services.length) {
+                return toast.error("Please add at least one service");
+            }
+
+            const hasIdProof = formData.documents.some(doc => doc.type === "ID_PROOF");
+            const hasCertificate = formData.documents.some(doc => doc.type === "CERTIFICATE");
+
+            if (!hasIdProof || !hasCertificate) {
+                return toast.error("Please upload both ID Proof and Certificate");
+            }
+
             const payload = {
                 ...formData,
+                phone: `+${formData.phoneCode}${formData.phoneNumber}`, // FULL NUMBER
+                countryCode: `+${formData.phoneCode}`,                 // +91
+                phoneLocal: formData.phoneNumber,                      // 9876543210
                 experience: formData.experience
                     ? parseInt(formData.experience)
                     : null,
 
-                services: formData.services.map((s) => ({
-                    serviceName: s.serviceName,
-                    price: parseInt(s.price),
-                })),
+                services: formData.services.flatMap((s) =>
+                    s.serviceNames.map((name) => ({
+                        serviceName: name,
+                        price: parseInt(s.price),
+
+                        // ✅ ADD THESE
+                        currency: selectedCountry?.currency || "INR",
+                        currencySymbol: selectedCountry?.currency_symbol || "₹",
+                    }))
+                ),
             };
 
             console.log("FINAL PAYLOAD", payload);
@@ -136,7 +223,7 @@ const Register = () => {
             // ✅ RESET EVERYTHING ONLY ON SUCCESS
             setFormData(initialFormState);
             setLanguageInput("");
-            setNewService({ serviceName: "", price: "" });
+            setNewService({ serviceNames: [], price: "" });
             setStep(1);
 
         } catch (err) {
@@ -144,6 +231,70 @@ const Register = () => {
             toast.error(err.message || "Something went wrong");
         }
     };
+
+    const validatePhone = () => {
+        const phone = formData.phoneNumber;
+
+        if (!phone) return true;
+
+        if (!formData.phoneCode) {
+            toast.error("Please select country first");
+            return false;
+        }
+
+        try {
+            const fullPhone = `+${formData.phoneCode}${phone}`;
+
+            const phoneNumber = parsePhoneNumberFromString(fullPhone);
+
+            if (!phoneNumber || !phoneNumber.isValid()) {
+                toast.error("Invalid phone number for selected country");
+                return false;
+            }
+
+            return true;
+
+        } catch (err) {
+            toast.error("Invalid phone number");
+            return false;
+        }
+    };
+
+    const validatePostalCode = () => {
+        const value = formData.postalCode;
+
+        // Agar country postal code require karti hai
+        if (formData.postalRegex) {
+            if (!value) {
+                toast.error("Postal code is required for selected country");
+                return false;
+            }
+
+            const regex = new RegExp(formData.postalRegex);
+
+            if (!regex.test(value)) {
+                toast.error("Invalid postal code format");
+                return false;
+            }
+        }
+
+        // Agar country postal code not required, allow empty
+        return true;
+    };
+
+    const validateLocation = () => {
+        if (!formData.state) {
+            toast.error("Please select a state");
+            return false;
+        }
+        if (!formData.city) {
+            toast.error("Please select a city");
+            return false;
+        }
+        return true;
+    };
+
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#061c2f] via-[#082D3F] to-[#0e4b63] flex items-center justify-center p-4">
@@ -189,85 +340,449 @@ const Register = () => {
 
                     {/* STEP CONTENT */}
                     {step === 1 && (
-                        <div className="space-y-5 animate-fade">
-                            <h3 className="text-2xl font-bold text-[#082D3F]">Basic Info</h3>
+                        <div className="max-w-4xl mx-auto space-y-5 animate-fade p-2">
+                            <h3 className="text-xl font-bold text-[#082D3F] border-b pb-2">Basic Information</h3>
 
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <Input icon={<User size={16} />} name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} />
-                                <Input icon={<Mail size={16} />} name="email" placeholder="Email" value={formData.email} onChange={handleChange} />
-                                <select name="gender" className="input" onChange={handleChange}>
-                                    <option value="">Gender</option>
-                                    <option value="MALE">Male</option>
-                                    <option value="FEMALE">Female</option>
-                                </select>
-                                <Input icon={<Phone size={16} />} name="phoneNumber" placeholder="Phone Number" value={formData.phoneNumber} onChange={handleChange} />
-                                <Input icon={<MapPin size={16} />} name="city" value={formData.city} placeholder="City" onChange={handleChange} />
-                                <Input name="address" value={formData.address} placeholder="Address" onChange={handleChange} />
-                                <Input name="state" value={formData.state} placeholder="State" onChange={handleChange} />
-                                <Input name="country" value={formData.country} placeholder="country" onChange={handleChange} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
-                            </div>
-
-                            {/* Languages */}
-                            <div>
-                                <div className="flex gap-3">
-                                    <Input icon={<Globe size={16} />} value={languageInput} onChange={(e) => setLanguageInput(e.target.value)} placeholder="Add Language" />
-                                    <button onClick={addLanguage} className="primary-btn">Add</button>
+                                {/* Full Name */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Full Name</label>
+                                    <Input icon={<User size={16} className="text-gray-400" />} name="fullName" placeholder="John Doe" value={formData.fullName} onChange={handleChange} />
                                 </div>
 
-                                <div className="flex flex-wrap gap-2 mt-3">
-                                    {formData.languages.map((l, i) => (
-                                        <span key={i} className="tag">
-                                            {l}
-                                            <Trash2 size={14} onClick={() => setFormData({ ...formData, languages: formData.languages.filter((_, idx) => idx !== i) })} />
-                                        </span>
-                                    ))}
+                                {/* Email */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email Address</label>
+                                    <Input icon={<Mail size={16} className="text-gray-400" />} name="email" placeholder="john@example.com" value={formData.email} onChange={handleChange} />
                                 </div>
+
+                                {/* Gender */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Gender</label>
+                                    <div className="relative flex items-center">
+                                        <span className="absolute left-3 z-10 text-gray-400"><Users size={16} /></span>
+                                        <select name="gender" className="w-full h-11 pl-10 pr-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none cursor-pointer text-sm" onChange={handleChange} value={formData.gender}>
+                                            <option value="">Select Gender</option>
+                                            <option value="MALE">Male</option>
+                                            <option value="FEMALE">Female</option>
+                                            <option value="OTHER">Other</option>
+                                        </select>
+                                        <div className="absolute right-3 pointer-events-none text-gray-400"><ChevronDown size={14} /></div>
+                                    </div>
+                                </div>
+
+                                {/* Country */}
+                                <div className="flex flex-col gap-1 relative">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">
+                                        Country
+                                    </label>
+
+                                    <div className="relative">
+                                        <div
+                                            className="w-full h-11 pl-10 pr-10 flex items-center rounded-xl border border-gray-200 bg-gray-50 cursor-pointer"
+                                            onClick={() => setShowCountryDropdown(prev => !prev)}
+                                        >
+                                            <span className="absolute left-3 text-gray-400">
+                                                <Globe size={16} />
+                                            </span>
+
+                                            <span className="text-sm text-gray-800">
+                                                {formData.country || "Select Country"}
+                                            </span>
+
+                                            <ChevronDown className="absolute right-3 text-gray-400" size={14} />
+                                        </div>
+
+                                        {/* DROPDOWN */}
+                                        {showCountryDropdown && (
+                                            <div className="absolute top-12 left-0 w-full bg-white border rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+
+                                                {/* SEARCH */}
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search country..."
+                                                    className="w-full p-2 border-b outline-none"
+                                                    onChange={(e) => setCountrySearch(e.target.value)}
+                                                />
+
+                                                {/* LIST */}
+                                                {countries
+                                                    .filter(c =>
+                                                        c.name.toLowerCase().includes(countrySearch.toLowerCase())
+                                                    )
+                                                    .map(c => (
+                                                        <div
+                                                            key={c.id}
+                                                            onClick={() => {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    country: c.name,
+                                                                    phoneCode: c.phonecode || "",
+                                                                    postalRegex: c.postal_code_regex || "",
+                                                                    postalFormat: c.postal_code_format || "",
+                                                                    state: "",
+                                                                    city: ""
+                                                                }));
+                                                                setShowCountryDropdown(false);
+                                                            }}
+                                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                                                        >
+                                                            <span>{c.emoji}</span>
+                                                            <span>{c.name}</span>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* State */}
+                                {/* State */}
+                                <div className="flex flex-col gap-1 relative">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">
+                                        State
+                                    </label>
+
+                                    <div className="relative">
+                                        <div
+                                            className="w-full h-11 pl-10 pr-10 flex items-center rounded-xl border border-gray-200 bg-gray-50 cursor-pointer"
+                                            onClick={() => setShowStateDropdown(prev => !prev)}
+                                        >
+                                            <span className="absolute left-3 text-gray-400">
+                                                <MapPin size={16} />
+                                            </span>
+
+                                            <span className="text-sm text-gray-800">
+                                                {formData.state || "Select State"}
+                                            </span>
+
+                                            <ChevronDown className="absolute right-3 text-gray-400" size={14} />
+                                        </div>
+
+                                        {/* DROPDOWN */}
+                                        {showStateDropdown && (
+                                            <div className="absolute top-12 left-0 w-full bg-white border rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+
+                                                {/* SEARCH */}
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search state..."
+                                                    className="w-full p-2 border-b outline-none"
+                                                    onChange={(e) => setStateSearch(e.target.value)}
+                                                />
+
+                                                {/* LIST */}
+                                                {states
+                                                    .filter(s =>
+                                                        s.country_name === formData.country &&
+                                                        s.name.toLowerCase().includes(stateSearch.toLowerCase())
+                                                    )
+                                                    .map(s => (
+                                                        <div
+                                                            key={s.id}
+                                                            onClick={() => {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    state: s.name,
+                                                                    state_id: s.id,
+                                                                    city: ""
+                                                                }));
+                                                                setShowStateDropdown(false);
+                                                            }}
+                                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                                        >
+                                                            {s.name}
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* City */}
+                                {/* City */}
+                                <div className="flex flex-col gap-1 relative">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">
+                                        City
+                                    </label>
+
+                                    <div className="relative">
+                                        <div
+                                            className="w-full h-11 pl-10 pr-10 flex items-center rounded-xl border border-gray-200 bg-gray-50 cursor-pointer"
+                                            onClick={() => setShowCityDropdown(prev => !prev)}
+                                        >
+                                            <span className="absolute left-3 text-gray-400">
+                                                <Navigation size={16} />
+                                            </span>
+
+                                            <span className="text-sm text-gray-800">
+                                                {formData.city || "Select City"}
+                                            </span>
+
+                                            <ChevronDown className="absolute right-3 text-gray-400" size={14} />
+                                        </div>
+
+                                        {/* DROPDOWN */}
+                                        {showCityDropdown && (
+                                            <div className="absolute top-12 left-0 w-full bg-white border rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+
+                                                {/* SEARCH */}
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search city..."
+                                                    className="w-full p-2 border-b outline-none"
+                                                    onChange={(e) => setCitySearch(e.target.value)}
+                                                />
+
+                                                {/* LIST */}
+                                                {cities
+                                                    .filter(c =>
+                                                        c.state_name === formData.state &&
+                                                        c.name.toLowerCase().includes(citySearch.toLowerCase())
+                                                    )
+                                                    .map(c => (
+                                                        <div
+                                                            key={c.id}
+                                                            onClick={() => {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    city: c.name
+                                                                }));
+                                                                setShowCityDropdown(false);
+                                                            }}
+                                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                                        >
+                                                            {c.name}
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Postal Code */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Postal Code</label>
+                                    <Input icon={<Hash size={16} className="text-gray-400" />} name="postalCode" placeholder="110001" value={formData.postalCode} onChange={(e) => setFormData(p => ({ ...p, postalCode: e.target.value }))} onBlur={(e) => {
+                                        const value = e.target.value;
+
+                                        if (!formData.postalRegex) {
+                                            // toast.error("This country does not support postal codes");
+                                            return;
+                                        }
+
+                                        if (formData.postalRegex && value) {
+                                            const regex = new RegExp(formData.postalRegex);
+                                            if (!regex.test(value)) {
+                                                toast.error("Invalid postal code format");
+                                            }
+                                        }
+                                    }} />
+                                </div>
+
+                                {/* Address */}
+                                <div className="flex flex-col gap-1 md:col-span-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Street Address</label>
+                                    <Input icon={<Home size={16} className="text-gray-400" />} name="address" value={formData.address} placeholder="Flat, Street, Landmark" onChange={handleChange} />
+                                </div>
+
+                                {/* Phone Number */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Phone Number</label>
+                                    <div className="flex items-center border border-gray-200 rounded-xl bg-gray-50 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:bg-white transition-all h-11">
+                                        <div className="flex items-center gap-1.5 px-3 border-r bg-gray-100 h-full">
+                                            <span className="text-base">{countries.find(c => c.name === formData.country)?.emoji || "🏳️"}</span>
+                                            <span className="text-xs font-bold text-gray-600">+{formData.phoneCode || "0"}</span>
+                                        </div>
+                                        <input type="tel" onBlur={validatePhone} name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="Mobile number" className="flex-1 px-3 bg-transparent outline-none text-sm text-gray-800" />
+                                    </div>
+                                </div>
+
+                                {/* Languages */}
+                                <div className="flex flex-col gap-1 md:col-span-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Languages</label>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <Input icon={<Languages size={16} className="text-gray-400" />} value={languageInput} onChange={(e) => setLanguageInput(e.target.value)} placeholder="Add e.g. English" />
+                                        </div>
+                                        <button onClick={addLanguage} className="bg-[#082D3F] text-white px-6 rounded-xl text-sm font-medium hover:scale-[1.02] active:scale-95 transition-all">Add</button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                        {formData.languages.map((l, i) => (
+                                            <span key={i} className="flex items-center gap-1.5 bg-gray-100 text-[#082D3F] px-2.5 py-1 rounded-lg text-xs font-semibold border border-gray-200">
+                                                {l}
+                                                <X size={12} className="cursor-pointer hover:text-red-500" onClick={() => setFormData({ ...formData, languages: formData.languages.filter((_, idx) => idx !== i) })} />
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     )}
 
                     {step === 2 && (
-                        <div className="space-y-5 animate-fade">
-                            <h3 className="text-2xl font-bold text-[#082D3F]">Expertise</h3>
+                        <div className="max-w-4xl mx-auto space-y-6 animate-fade p-2">
+                            <h3 className="text-xl font-bold text-[#082D3F] border-b pb-2">Professional Expertise</h3>
 
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <Input icon={<Briefcase size={16} />} value={formData.experience} name="experience" placeholder="Experience (Years)" onChange={handleChange} />
-                                <Input icon={<Briefcase size={16} />} value={formData.experience} name="addharNo" placeholder="Addhar Number" onChange={handleChange} />
-                                <Input icon={<Briefcase size={16} />} value={formData.experience} name="panNo" placeholder="Pan Number" onChange={handleChange} />
-                                {/* <Input icon={<MapPin size={16} />} name="city" value={formData.city} placeholder="City" onChange={handleChange} /> */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Experience */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Experience (Years)</label>
+                                    <Input icon={<Briefcase size={16} className="text-gray-400" />} value={formData.experience} name="experience" placeholder="e.g. 5" onChange={handleChange} />
+                                </div>
+
+                                {/* Aadhaar Number */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Id Proof 1</label>
+                                    <Input icon={<Fingerprint size={16} className="text-gray-400" />} value={formData.addharNo} name="addharNo" placeholder="Driving Licence Or Aadhaar Number  " onChange={handleChange} />
+                                </div>
+
+                                {/* PAN Number */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Id Proof 2</label>
+                                    <Input icon={<CreditCard size={16} className="text-gray-400" />} value={formData.panNo} name="panNo" placeholder="ABCDE1234F" onChange={handleChange} />
+                                </div>
                             </div>
-                            {/* <div className="grid md:grid-cols-2 gap-4">
-                                <Input name="address" value={formData.address} placeholder="Address" onChange={handleChange} />
-                                <Input name="state" value={formData.state} placeholder="State" onChange={handleChange} />
-                            </div> */}
-                            <textarea
-                                name="bio"
-                                placeholder="Short Bio"
-                                value={formData.bio}
-                                onChange={handleChange}
-                                className="w-full p-3 rounded-xl border bg-gray-50"
-                            />
 
-                            <div className="bg-gray-50 p-5 rounded-2xl border">
-                                <div className="grid md:grid-cols-2 gap-3 mb-3">
-                                    <select className="input" onChange={(e) => setNewService({ ...newService, serviceName: e.target.value })}>
-                                        <option value="">Select Service</option>
-                                        {serviceOptions.map(s => <option key={s}>{s}</option>)}
-                                    </select>
-
-                                    <Input icon={<IndianRupee size={14} />} placeholder="Price" type="number"
-                                        value={newService.price}
-                                        onChange={(e) => setNewService({ ...newService, price: e.target.value })}
+                            {/* Bio Section */}
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs font-bold text-gray-500 uppercase ml-1 ">Professional Bio</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-3 text-gray-400"><TextQuote size={18} /></span>
+                                    <textarea
+                                        name="bio"
+                                        placeholder="Tell us about your professional journey..."
+                                        value={formData.bio}
+                                        onChange={handleChange}
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[100px] text-sm"
                                     />
                                 </div>
-                                <button onClick={addService} className="primary-btn w-full">Add Service</button>
+                            </div>
 
-                                <div className="mt-4 space-y-2">
+                            {/* Pricing & Services Card */}
+                            <div className="bg-[#f8fafb] p-5 rounded-2xl border border-gray-100 shadow-sm">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="bg-[#082D3F] p-1.5 rounded-lg">
+                                        <IndianRupee size={16} className="text-white" />
+                                    </div>
+                                    <h4 className="font-bold text-[#082D3F]">Services & Pricing</h4>
+                                </div>
+                                <div className="flex flex-col gap-4">
+
+                                    {/* SERVICES SELECT */}
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-xs font-bold text-gray-400 uppercase ml-1">
+                                            Select Services (Multiple)
+                                        </label>
+
+                                        <div className="relative">
+                                            <select
+                                                className="w-full h-11 pl-4 pr-10 rounded-xl border border-gray-200 bg-white"
+                                                onChange={(e) => {
+                                                    const selectedId = e.target.value;
+                                                    const selectedService = services.find(s => s.id == selectedId);
+
+                                                    if (
+                                                        selectedService &&
+                                                        !newService.serviceNames.includes(selectedService.title)
+                                                    ) {
+                                                        setNewService({
+                                                            ...newService,
+                                                            serviceNames: [...newService.serviceNames, selectedService.title]
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                <option value="">Choose Service...</option>
+                                                {services.map((s) => (
+                                                    <option key={s.id} value={s.id}>
+                                                        {s.title}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* SELECTED TAGS */}
+                                    {newService.serviceNames.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 p-2 bg-white rounded-lg border border-dashed">
+                                            {newService.serviceNames.map((sn, idx) => (
+                                                <span key={idx} className="bg-blue-50 text-blue-600 px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+                                                    {sn}
+                                                    <X size={12} onClick={() =>
+                                                        setNewService({
+                                                            ...newService,
+                                                            serviceNames: newService.serviceNames.filter(name => name !== sn)
+                                                        })
+                                                    } />
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* PRICE INPUT (GLOBAL) */}
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-xs font-bold text-gray-400 uppercase ml-1">
+                                            Package Price (Applies to all selected services)
+                                        </label>
+
+                                        <Input
+                                            icon={<span className="text-sm font-bold">{currencySymbol}</span>}
+                                            placeholder="Enter package price"
+                                            type="number"
+                                            value={newService.price}
+                                            onChange={(e) =>
+                                                setNewService({ ...newService, price: e.target.value })
+                                            }
+                                        />
+                                    </div>
+
+                                    {/* ADD BUTTON */}
+                                    <button
+                                        onClick={addService}
+                                        className="h-11 bg-[#082D3F] text-white rounded-xl font-bold text-sm"
+                                    >
+                                        Add Package
+                                    </button>
+
+                                </div>
+
+                                {/* Selected Services Preview Tags */}
+                                {newService.serviceNames.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-3 p-2 bg-white rounded-lg border border-dashed border-gray-200">
+                                        {newService.serviceNames.map((sn, idx) => (
+                                            <span key={idx} className="bg-blue-50 text-blue-600 px-2 py-1 rounded-md text-[11px] font-bold flex items-center gap-1">
+                                                {sn}
+                                                <X size={12} className="cursor-pointer" onClick={() => setNewService({ ...newService, serviceNames: newService.serviceNames.filter(name => name !== sn) })} />
+                                            </span>
+                                        ))}
+                                        <p className="text-[10px] text-gray-400 w-full italic">*These services will be added under the specified price.</p>
+                                    </div>
+                                )}
+
+                                {/* Display Added Service Packages */}
+                                <div className="mt-6 space-y-3">
                                     {formData.services.map((s, i) => (
-                                        <div key={i} className="flex justify-between bg-white p-3 rounded-xl shadow-sm">
-                                            <span>{s.serviceName}</span>
-                                            <span className="font-bold text-[#0e4b63]">₹{s.price}</span>
+                                        <div key={i} className="flex flex-col md:flex-row md:items-center justify-between bg-white p-4 rounded-xl border border-gray-100 shadow-sm gap-3 group hover:border-blue-200 transition-all">
+                                            <div className="flex flex-wrap gap-2 flex-1">
+                                                {/* Assuming s.serviceNames is an array in your state now */}
+                                                {s.serviceNames.map((name, idx) => (
+                                                    <span key={idx} className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-lg text-xs font-semibold">
+                                                        {name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <div className="flex items-center gap-4 border-l pl-4 border-gray-100">
+                                                <span className="font-extrabold text-[#082D3F] text-lg">{currencySymbol}{s.price}</span>
+                                                <button
+                                                    onClick={() => setFormData({ ...formData, services: formData.services.filter((_, idx) => idx !== i) })}
+                                                    className="text-gray-300 hover:text-red-500 transition-colors"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -379,6 +894,7 @@ const Input = ({ icon, ...props }) => (
 );
 
 const DocCard = ({ title, icon, type, setFormData, formData }) => {
+    const inputRef = useRef();
 
     const uploadedDoc = formData.documents.find(doc => doc.type === type);
 
@@ -405,17 +921,22 @@ const DocCard = ({ title, icon, type, setFormData, formData }) => {
     };
 
     return (
-        <div className="bg-gray-50 p-6 rounded-2xl border border-dashed text-center">
+        <div
+            onClick={() => inputRef.current.click()}
+            className="bg-gray-50 p-6 rounded-2xl border border-dashed text-center cursor-pointer hover:bg-gray-100 transition"
+        >
             <div className="w-12 h-12 mx-auto bg-[#0e4b63]/10 text-[#0e4b63] rounded-full flex items-center justify-center mb-3">
                 {icon}
             </div>
 
             <h4 className="font-bold">{title}</h4>
 
+            {/* Hidden Input */}
             <input
+                ref={inputRef}
                 type="file"
                 onChange={handleChange}
-                className="mt-3 text-xs w-full"
+                className="hidden"
             />
 
             {uploadedDoc && (
@@ -427,12 +948,13 @@ const DocCard = ({ title, icon, type, setFormData, formData }) => {
                         </span>
 
                         <button
-                            onClick={() =>
+                            onClick={(e) => {
+                                e.stopPropagation(); // ❗ important
                                 setFormData(prev => ({
                                     ...prev,
                                     documents: prev.documents.filter(doc => doc.type !== type)
-                                }))
-                            }
+                                }));
+                            }}
                             className="text-red-500 text-xs hover:underline"
                         >
                             Remove

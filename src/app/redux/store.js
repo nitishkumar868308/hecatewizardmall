@@ -43,7 +43,9 @@ import jyotishRegisterReducer from "./slices/jyotish/Register/RegisterSlice";
 import bangaloreInventoryReducer from './slices/bangaloreInventory/bangaloreInventorySlice';
 import increffOrderReducer from "./slices/increffOrder/increffOrderSlice";
 import skuMappingReducer from "./slices/skuMapping/skuMappingSlice";
-
+import countryDataReducer from "./slices/country/countrySlice";
+import stateDataReducer from "./slices/countryState/countryStateSlice";
+import cityDataReducer from "./slices/countryCity/countryCitySlice";
 // import updateUserReducer from './slices/userSlice';
 
 const store = configureStore({
@@ -92,6 +94,9 @@ const store = configureStore({
         bangaloreInventory: bangaloreInventoryReducer,
         increffOrder: increffOrderReducer,
         skuMapping: skuMappingReducer,
+        countries: countryDataReducer,
+        countriesStates: stateDataReducer,
+        countriesCities: cityDataReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

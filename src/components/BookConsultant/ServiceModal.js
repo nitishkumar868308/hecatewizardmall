@@ -60,29 +60,29 @@ const ServiceModal = ({ isOpen, onClose, serviceToEdit }) => {
     };
 
 
-    const selectedDurationIds = priceRows
-        .map(r => r.durationId)
-        .filter(Boolean);
+    // const selectedDurationIds = priceRows
+    //     .map(r => r.durationId)
+    //     .filter(Boolean);
 
-    const availableDurations = (currentId) =>
-        durations.filter(d =>
-            // active duration OR already selected (edit case)
-            (d.active || d.id === currentId) &&
-            (!selectedDurationIds.includes(d.id) || d.id === currentId)
-        );
-    const handleRowChange = (index, field, value) => {
-        const updated = [...priceRows];
-        updated[index][field] = field === "price" ? Number(value) : Number(value);
-        setPriceRows(updated);
-    };
+    // const availableDurations = (currentId) =>
+    //     durations.filter(d =>
+    //         // active duration OR already selected (edit case)
+    //         (d.active || d.id === currentId) &&
+    //         (!selectedDurationIds.includes(d.id) || d.id === currentId)
+    //     );
+    // const handleRowChange = (index, field, value) => {
+    //     const updated = [...priceRows];
+    //     updated[index][field] = field === "price" ? Number(value) : Number(value);
+    //     setPriceRows(updated);
+    // };
 
-    const addRow = () => {
-        setPriceRows([...priceRows, { durationId: "", price: "" }]);
-    };
+    // const addRow = () => {
+    //     setPriceRows([...priceRows, { durationId: "", price: "" }]);
+    // };
 
-    const removeRow = (index) => {
-        setPriceRows(priceRows.filter((_, i) => i !== index));
-    };
+    // const removeRow = (index) => {
+    //     setPriceRows(priceRows.filter((_, i) => i !== index));
+    // };
 
     if (!isOpen) return null;
 
@@ -128,14 +128,6 @@ const ServiceModal = ({ isOpen, onClose, serviceToEdit }) => {
     const handleSubmit = async () => {
         if (!title) return toast.error("Title is required");
 
-        const validRows = priceRows.filter(
-            r => r.durationId && r.price && r.price > 0
-        );
-
-        if (validRows.length === 0) {
-            return toast.error("Enter price for at least one duration");
-        }
-
         setLoading(true);
 
         try {
@@ -144,10 +136,6 @@ const ServiceModal = ({ isOpen, onClose, serviceToEdit }) => {
                 shortDesc,
                 longDesc,
                 image,
-                prices: validRows.map(r => ({
-                    durationId: Number(r.durationId),
-                    price: Number(r.price),
-                })),
             };
 
             if (serviceToEdit) {
@@ -225,12 +213,12 @@ const ServiceModal = ({ isOpen, onClose, serviceToEdit }) => {
                     </div>
 
                     {/* DURATION + PRICE */}
-                    <div className="space-y-3">
+                    {/* <div className="space-y-3">
                         <label className="font-medium block">Durations & Prices</label>
 
                         {priceRows.map((row, index) => (
                             <div key={index} className="flex gap-3 items-center">
-                                {/* Duration Select */}
+                      
                                 <select
                                     className="flex-1 border rounded-lg p-2.5"
                                     value={row.durationId}
@@ -246,7 +234,6 @@ const ServiceModal = ({ isOpen, onClose, serviceToEdit }) => {
                                     ))}
                                 </select>
 
-                                {/* Price */}
                                 <input
                                     type="number"
                                     min="0"
@@ -258,7 +245,7 @@ const ServiceModal = ({ isOpen, onClose, serviceToEdit }) => {
                                     }
                                 />
 
-                                {/* Remove */}
+                        
                                 {priceRows.length > 1 && (
                                     <button
                                         onClick={() => removeRow(index)}
@@ -270,7 +257,6 @@ const ServiceModal = ({ isOpen, onClose, serviceToEdit }) => {
                             </div>
                         ))}
 
-                        {/* Add More */}
                         <button
                             type="button"
                             onClick={addRow}
@@ -278,7 +264,7 @@ const ServiceModal = ({ isOpen, onClose, serviceToEdit }) => {
                         >
                             + Add more
                         </button>
-                    </div>
+                    </div> */}
 
                 </div>
 

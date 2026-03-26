@@ -10,9 +10,6 @@ export async function GET() {
         const services = await prisma.service.findMany({
             where: { deleted: false },
             orderBy: { createdAt: "desc" },
-            include: {
-                prices: true, // assuming you have a ServicePrice table linking durationId & price
-            },
         });
 
         return new Response(
@@ -39,7 +36,7 @@ export async function GET() {
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { title, shortDesc, longDesc, image, active, prices } = body;
+        const { title, shortDesc, longDesc, image, active } = body;
 
         if (!title) {
             return new Response(
@@ -67,13 +64,13 @@ export async function POST(req) {
                 longDesc,
                 image,
                 active: active ?? true,
-                prices: {
-                    create: prices || [],
-                },
+                // prices: {
+                //     create: prices || [],
+                // },
             },
-            include: {
-                prices: true,
-            },
+            // include: {
+            //     prices: true,
+            // },
         });
 
         return new Response(
@@ -105,7 +102,6 @@ export async function PUT(req) {
 
         const existing = await prisma.service.findUnique({
             where: { id },
-            include: { prices: true },
         });
 
         if (!existing) {
@@ -141,23 +137,8 @@ export async function PUT(req) {
             },
         });
 
-        // Update prices if provided
-        if (prices && Array.isArray(prices)) {
-            // Delete existing prices
-            await prisma.serviceDuration.deleteMany({ where: { serviceId: id } });
-            // Create new prices
-            await prisma.serviceDuration.createMany({
-                data: prices.map(p => ({ serviceId: id, durationId: p.durationId, price: p.price })),
-            });
-        }
-
-        const serviceWithPrices = await prisma.service.findUnique({
-            where: { id },
-            include: { prices: true },
-        });
-
         return new Response(
-            JSON.stringify({ message: "Service updated successfully", data: serviceWithPrices }),
+            JSON.stringify({ message: "Service updated successfully", data: updatedService }),
             { status: 200 }
         );
     } catch (error) {

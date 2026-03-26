@@ -452,6 +452,17 @@ model ShippingPricing {
 }
 
 
+model State {
+  id        Int      @id @default(autoincrement())
+  name      String
+  active    Boolean  @default(true)
+  deleted   Int      @default(0)
+  createdAt DateTime @default(now())
+  categories Category[] @relation("CategoryStates")
+  subcategories Subcategory[]  @relation("SubcategoryStates")
+  banners BannerState[]
+}
+
 
 model WareHouse {
   id        Int      @id @default(autoincrement())
@@ -703,22 +714,19 @@ model Duration {
 model Service {
   id          Int                  @id @default(autoincrement())
   title       String
-  shortDesc   String?              // optional short description
-  longDesc    String?              // optional long description
-  image       String?              // URL of the service image
+  shortDesc   String?              
+  longDesc    String?              
+  image       String?              
   active      Boolean              @default(true)
   deleted     Boolean              @default(false)
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
 
-  // Relation to prices per duration
-  prices      ServiceDuration[]    // one-to-many relation
 }
 
 model ServiceDuration {
   id         Int       @id @default(autoincrement())
-  service    Service   @relation(fields: [serviceId], references: [id])
-  serviceId  Int
+  
   duration   Duration  @relation(fields: [durationId], references: [id])
   durationId Int
   price      Float     // price for this service for this duration
@@ -841,7 +849,9 @@ model AstrologerAccount {
   id          Int      @id @default(autoincrement())
   fullName    String
   email       String   @unique
-  phoneNumber String   @unique
+  phone       String   @unique
+  countryCode String          
+  phoneLocal  String          
   gender      Gender?
   
   createdAt   DateTime @default(now())
@@ -874,6 +884,8 @@ model AstrologerService {
   astrologerId Int
   serviceName  String
   price        Float?
+  currency     String
+  currencySymbol String
 
   astrologer   AstrologerAccount @relation(fields: [astrologerId], references: [id])
 
@@ -944,11 +956,11 @@ model Country {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  states    State[]
-  cities    City[]
+  states    StateCountry[]
+  cities    CityCountry[]
 }
 
-model State {
+model StateCountry {
   id           Int      @id @default(autoincrement())
   name         String
   country_id   Int?
@@ -965,15 +977,11 @@ model State {
   deleted      Int      @default(0)
   createdAt    DateTime @default(now())
 
-  categories    Category[] @relation("CategoryStates")
-  subcategories Subcategory[] @relation("SubcategoryStates")
-  banners       BannerState[]
-
   country       Country? @relation(fields: [country_id], references: [id])
-  cities        City[]
+  cities        CityCountry[] @relation("StateToCity") 
 }
 
-model City {
+model CityCountry {
   id           Int      @id @default(autoincrement())
   name         String
   state_id     Int
@@ -989,7 +997,7 @@ model City {
   deleted      Int      @default(0)
   createdAt    DateTime @default(now())
 
-  state        State    @relation(fields: [state_id], references: [id])
+  state        StateCountry @relation("StateToCity", fields: [state_id], references: [id])
   country      Country?  @relation(fields: [country_id], references: [id])
 }
 

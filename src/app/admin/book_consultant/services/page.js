@@ -139,8 +139,8 @@ const ServicePage = () => {
                                 <th className="px-6 py-4 text-sm font-semibold">#</th>
                                 <th className="px-6 py-4 text-sm font-semibold">Title</th>
                                 <th className="px-6 py-4 text-sm font-semibold">Short Desc</th>
-                                <th className="px-6 py-4 text-sm font-semibold">Durations & Prices</th>
-                                <th className="px-6 py-4 text-sm font-semibold">Created</th>
+                                <th className="px-6 py-4 text-sm font-semibold">Created At</th>
+                                 <th className="px-6 py-4 text-sm font-semibold">Updated At</th>
                                 <th className="px-6 py-4 text-sm font-semibold">Status</th>
                                 <th className="px-6 py-4 text-sm font-semibold text-right">Action</th>
                             </tr>
@@ -165,33 +165,9 @@ const ServicePage = () => {
                                         <td className="px-6 py-4">{service.title}</td>
                                         <td className="px-6 py-4 text-sm text-gray-600">{service.shortDesc || "No short description"}</td>
 
-                                        {/* Durations & Prices */}
-                                        <td className="px-6 py-4">
-                                            <div className="grid grid-cols-2 gap-y-1 text-sm text-gray-700 max-w-[200px]">
-                                                {durations.map((d) => {
-                                                    const priceObj = service.prices?.find(
-                                                        p => p.durationId === d.id
-                                                    );
-
-                                                    if (!priceObj) return null;
-
-                                                    return (
-                                                        <React.Fragment key={d.id}>
-                                                            <span className="font-medium">
-                                                                {d.minutes} min = ₹{priceObj.price}
-                                                            </span>
-                                                            {/* <span className="font-semibold ">
-                                                                ₹{priceObj.price}
-                                                            </span> */}
-                                                        </React.Fragment>
-                                                    );
-                                                })}
-                                            </div>
-                                        </td>
-
-
-
                                         <td className="px-6 py-4 text-sm text-gray-600">{new Date(service.createdAt).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">{new Date(service.updatedAt).toLocaleDateString()}</td>
+
                                         <td className="px-6 py-4 text-sm font-medium">
                                             {service.active ? (
                                                 <span className="text-green-600 font-semibold">Active</span>
