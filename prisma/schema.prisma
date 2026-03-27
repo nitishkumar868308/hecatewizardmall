@@ -12,6 +12,11 @@ enum DocumentType {
   CERTIFICATE
 }
 
+enum TransactionType {
+  PENALTY
+  PAYMENT
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -848,11 +853,24 @@ model order_adjustments {
 model AstrologerAccount {
   id          Int      @id @default(autoincrement())
   fullName    String
+  displayName String?
   email       String   @unique
   phone       String   @unique
   countryCode String          
   phoneLocal  String          
   gender      Gender?
+
+  isApproved  Boolean  @default(false)      
+  isActive    Boolean  @default(false)    
+  revenueAstrologer Float?
+  revenueAdmin Float?
+  penalty     Float?   
+  paidPenalty Float? 
+  settlementAmount Float? 
+
+  bio String?
+  isRejected   Boolean @default(false)
+  rejectReason String?  
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -860,6 +878,7 @@ model AstrologerAccount {
   profile     AstrologerProfile?
   documents   AstrologerVerificationDocument[]
   services    AstrologerService[]
+  certificates Certificate[]
 }
 
 model AstrologerProfile {
@@ -871,7 +890,10 @@ model AstrologerProfile {
   city          String?
   state         String?
   country       String?
-  languages     String[]   // multiple languages support
+  languages     String[]
+
+  idProofType   String?
+  idProofValue  String?
 
   astrologer    AstrologerAccount @relation(fields: [astrologerId], references: [id])
 
@@ -906,8 +928,24 @@ model AstrologerVerificationDocument {
   updatedAt    DateTime @updatedAt
 }
 
+model AstrologerTransaction {
+    id           Int       @id @default(autoincrement())
+    astrologerId Int
+    type         TransactionType
+    amount       Float
+    createdAt    DateTime @default(now())
+    paidAt       DateTime?
+}
 
+model Certificate {
+  id            Int      @id @default(autoincrement())
+  astrologerId  Int
+  serviceId     Int      // kis service ke liye certificate
 
+  fileUrl       String
+
+  astrologer    AstrologerAccount @relation(fields: [astrologerId], references: [id])
+}
 
 model BangaloreIncreffInventory {
   id             Int      @id @default(autoincrement())

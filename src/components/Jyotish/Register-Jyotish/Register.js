@@ -67,13 +67,12 @@ const Register = () => {
         city: "",
         state: "",
         country: "",
-        addharNo: "",
-        panNo: "",
         postalCode: "",
         phoneCode: "",
         languages: [],
         services: [],
         documents: [],
+        selectedIdProof: "",
     };
 
     const [formData, setFormData] = useState(initialFormState);
@@ -195,9 +194,11 @@ const Register = () => {
 
             const payload = {
                 ...formData,
-                phone: `+${formData.phoneCode}${formData.phoneNumber}`, // FULL NUMBER
-                countryCode: `+${formData.phoneCode}`,                 // +91
-                phoneLocal: formData.phoneNumber,                      // 9876543210
+                phone: `+${formData.phoneCode}${formData.phoneNumber}`,
+                countryCode: `+${formData.phoneCode}`,
+                phoneLocal: formData.phoneNumber,
+                idProofType: formData.selectedIdProof,
+                idProofValue: formData[formData.selectedIdProof],
                 experience: formData.experience
                     ? parseInt(formData.experience)
                     : null,
@@ -633,16 +634,58 @@ const Register = () => {
                                     <Input icon={<Briefcase size={16} className="text-gray-400" />} value={formData.experience} name="experience" placeholder="e.g. 5" onChange={handleChange} />
                                 </div>
 
-                                {/* Aadhaar Number */}
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Id Proof 1</label>
-                                    <Input icon={<Fingerprint size={16} className="text-gray-400" />} value={formData.addharNo} name="addharNo" placeholder="Driving Licence Or Aadhaar Number  " onChange={handleChange} />
-                                </div>
+                                {/* ID Proof Selection Inline */}
+                                <div className="flex flex-col gap-1 md:col-span-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">
+                                        ID Proof
+                                    </label>
 
-                                {/* PAN Number */}
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Id Proof 2</label>
-                                    <Input icon={<CreditCard size={16} className="text-gray-400" />} value={formData.panNo} name="panNo" placeholder="ABCDE1234F" onChange={handleChange} />
+                                    <div className="flex gap-2 items-center">
+                                        {/* Select Dropdown */}
+                                        <div className="relative flex-1">
+                                            <select
+                                                name="selectedIdProof"
+                                                value={formData.selectedIdProof || ""}
+                                                onChange={(e) =>
+                                                    setFormData((prev) => ({ ...prev, selectedIdProof: e.target.value }))
+                                                }
+                                                className="w-full h-11 pl-3 pr-10 rounded-xl  border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm cursor-pointer"
+                                            >
+                                                <option value="">Select ID Proof</option>
+                                                <option value="aadhaar">Aadhaar / Driving Licence</option>
+                                                <option value="pan">PAN Number</option>
+                                                <option value="passport">Passport</option>
+                                                <option value="voterId">Voter ID</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Conditional Input Field */}
+                                        {formData.selectedIdProof && (
+                                            <div className="flex-1">
+                                                <Input
+                                                    icon={
+                                                        formData.selectedIdProof === "aadhaar" ? (
+                                                            <Fingerprint size={16} className="text-gray-400" />
+                                                        ) : formData.selectedIdProof === "pan" ? (
+                                                            <CreditCard size={16} className="text-gray-400" />
+                                                        ) : (
+                                                            <TextQuote size={16} className="text-gray-400" />
+                                                        )
+                                                    }
+                                                    name={formData.selectedIdProof} // dynamic key
+                                                    value={formData[formData.selectedIdProof] || ""}
+                                                    placeholder={
+                                                        formData.selectedIdProof === "aadhaar"
+                                                            ? "Enter Aadhaar / Driving Licence"
+                                                            : formData.selectedIdProof === "pan"
+                                                                ? "ABCDE1234F"
+                                                                : "Enter number"
+                                                    }
+                                                    onChange={handleChange}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

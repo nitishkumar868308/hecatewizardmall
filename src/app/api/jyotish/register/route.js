@@ -14,6 +14,7 @@ export async function GET() {
                 profile: true,
                 services: true,
                 documents: true,
+                certificates: true
             },
             orderBy: { createdAt: "desc" },
         });
@@ -58,6 +59,7 @@ export async function POST(req) {
             languages,
             services,
             documents,
+            selectedIdProof
         } = body;
 
         if (!fullName || !email || !phone) {
@@ -107,6 +109,8 @@ export async function POST(req) {
                         state,
                         country,
                         languages: languages || [],
+                        idProofType: selectedIdProof || null,                 // selected type
+                        idProofValue: body[selectedIdProof] || null,          // user input
                     },
                 },
 
@@ -160,75 +164,89 @@ export async function POST(req) {
 export async function PUT(req) {
     try {
         const body = await req.json();
-        const { id, ...updateData } = body;
+        const { id, ...data } = body;
 
         if (!id) {
-            return new Response(
-                JSON.stringify({ message: "Astrologer ID is required" }),
-                { status: 400 }
-            );
+            return new Response(JSON.stringify({ message: "ID required" }), { status: 400 });
         }
 
         const existing = await prisma.astrologerAccount.findUnique({
-            where: { id },
-            include: { profile: true },
+            where: { id }
         });
 
         if (!existing) {
-            return new Response(
-                JSON.stringify({ message: "Astrologer not found" }),
-                { status: 404 }
-            );
+            return new Response(JSON.stringify({ message: "Not found" }), { status: 404 });
         }
 
-        // Update main account
-        await prisma.astrologerAccount.update({
-            where: { id },
-            data: {
-                fullName: updateData.fullName ?? existing.fullName,
-                email: updateData.email ?? existing.email,
-                phoneNumber: updateData.phoneNumber ?? existing.phoneNumber,
-                gender: updateData.gender ?? existing.gender,
-            },
-        });
+        const updatePayload = {};
 
-        // Update profile separately
-        if (existing.profile) {
-            await prisma.astrologerProfile.update({
-                where: { astrologerId: id },
-                data: {
-                    experience: updateData.experience,
-                    bio: updateData.bio,
-                    address: updateData.address,
-                    city: updateData.city,
-                    state: updateData.state,
-                    country: updateData.country,
-                    languages: updateData.languages,
-                },
-            });
+        // dynamic fields
+        if (data.displayName !== undefined) updatePayload.displayName = data.displayName;
+        if (data.isApproved !== undefined) updatePayload.isApproved = data.isApproved;
+        if (data.isActive !== undefined) updatePayload.isActive = data.isActive;
+        if (data.bio !== undefined) updatePayload.bio = data.bio;
+
+        // ✅ NEW: reject handling
+        if (data.isRejected !== undefined) updatePayload.isRejected = data.isRejected;
+        if (data.rejectReason !== undefined) updatePayload.rejectReason = data.rejectReason;
+
+        // 👉 optional: reject hone par auto reset (light logic, heavy validation nahi)
+        if (data.isRejected === true) {
+            updatePayload.isApproved = false;
+            updatePayload.isActive = false;
         }
 
-        const updated = await prisma.astrologerAccount.findUnique({
+        // penalty
+        if (data.penalty !== undefined) updatePayload.penalty = data.penalty !== null ? parseFloat(data.penalty) : null;
+        if (data.settlementAmount !== undefined) updatePayload.settlementAmount = data.settlementAmount !== null ? parseFloat(data.settlementAmount) : null;
+        if (data.paidPenalty !== undefined) updatePayload.paidPenalty = data.paidPenalty !== null ? parseFloat(data.paidPenalty) : null;
+
+        // revenue
+        if (data.revenueAstrologer !== undefined) {
+            updatePayload.revenueAstrologer = data.revenueAstrologer;
+        }
+
+        if (data.revenueAdmin !== undefined) {
+            updatePayload.revenueAdmin = data.revenueAdmin;
+        }
+
+        // update account
+        const updatedAstro = await prisma.astrologerAccount.update({
             where: { id },
+            data: updatePayload,
             include: {
                 profile: true,
                 services: true,
                 documents: true,
-            },
+                certificates: true
+            }
         });
 
-        return new Response(
-            JSON.stringify({
-                message: "Astrologer updated successfully",
-                data: updated,
-            }),
-            { status: 200 }
-        );
+        // handle certificates separately
+        if (data.serviceDocs) {
+            const entries = Object.entries(data.serviceDocs);
+
+            for (const [serviceId, fileUrl] of entries) {
+                await prisma.certificate.create({
+                    data: {
+                        astrologerId: id,
+                        serviceId: Number(serviceId),
+                        fileUrl,
+                    },
+                });
+            }
+        }
+
+        return new Response(JSON.stringify({
+            message: "Updated successfully",
+            data: updatedAstro
+        }), { status: 200 });
+
     } catch (error) {
-        return new Response(
-            JSON.stringify({ message: "Failed to update astrologer", error: error.message }),
-            { status: 500 }
-        );
+        return new Response(JSON.stringify({
+            message: "Update failed",
+            error: error.message
+        }), { status: 500 });
     }
 }
 
