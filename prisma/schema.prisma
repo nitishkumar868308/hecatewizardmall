@@ -1038,5 +1038,3 @@ model CityCountry {
   state        StateCountry @relation("StateToCity", fields: [state_id], references: [id])
   country      Country?  @relation(fields: [country_id], references: [id])
 }
-
-

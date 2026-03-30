@@ -10,6 +10,7 @@ import { fetchAstrologers, updateAstrologer } from "@/app/redux/slices/jyotish/R
 import toast from "react-hot-toast";
 import PendingAdminUI from "../PendingAdminUI/PendingAdminUI";
 import VerifiedAdminUI from "../VerifiedAdminUI/VerifiedAdminUI";
+import { deleteDocument } from "@/app/redux/slices/documents/documentsSlice";
 
 const AstrologerDetail = () => {
     const dispatch = useDispatch();
@@ -26,6 +27,7 @@ const AstrologerDetail = () => {
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectReason, setRejectReason] = useState("");
     const [penalties, setPenalties] = useState({});
+    const [extraDocuments, setExtraDocuments] = useState([]);
     console.log("astrologers", astrologers)
 
     useEffect(() => {
@@ -172,6 +174,42 @@ const AstrologerDetail = () => {
         return true;
     };
 
+    const handleAddMoreDocument = () => {
+        setExtraDocuments((prev) => [
+            ...prev,
+            {
+                id: Date.now(), // temp id (frontend ke liye safe hai)
+                title: "",
+                file: null,
+                preview: null
+            }
+        ]);
+    };
+
+    const handleExtraTitleChange = (id, value) => {
+        setExtraDocuments((prev) =>
+            prev.map((item) =>
+                item.id === id ? { ...item, title: value } : item
+            )
+        );
+    };
+
+    const handleExtraFileUpload = async (id, file) => {
+        try {
+            const url = await handleImageUpload(file);
+
+            setExtraDocuments((prev) =>
+                prev.map((item) =>
+                    item.id === id
+                        ? { ...item, file: url, preview: url }
+                        : item
+                )
+            );
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     const handleApprove = async (astroId) => {
         if (!validateRevenue(astroId)) return;
 
@@ -245,14 +283,14 @@ const AstrologerDetail = () => {
 
     const handleRemoveCertificate = async (certId) => {
         try {
-            await dispatch(removeCertificate({ id: certId })).unwrap();
+            await dispatch(deleteDocument(certId)).unwrap(); // ✅ ONLY ID
             toast.success("Certificate removed ✅");
+            setSelectedAstro(null);
             await dispatch(fetchAstrologers());
         } catch (err) {
             toast.error(err?.message || "Failed to remove certificate ❌");
         }
     };
-
 
     return (
         <div className="min-h-screen bg-[#F1F5F9] font-sans text-slate-900 selection:bg-indigo-100">
@@ -564,6 +602,11 @@ const AstrologerDetail = () => {
                                     setActivateAfterApprove={setActivateAfterApprove}
                                     setShowRejectModal={setShowRejectModal}
                                     handleImageUpload={handleImageUpload}
+                                    handleExtraFileUpload={handleExtraFileUpload}
+                                    handleAddMoreDocument={handleAddMoreDocument}
+                                    handleExtraTitleChange={handleExtraTitleChange}
+                                    setExtraDocuments={setExtraDocuments}
+                                    extraDocuments={extraDocuments}
                                 />
                             )}
 

@@ -46,6 +46,7 @@ import skuMappingReducer from "./slices/skuMapping/skuMappingSlice";
 import countryDataReducer from "./slices/country/countrySlice";
 import stateDataReducer from "./slices/countryState/countryStateSlice";
 import cityDataReducer from "./slices/countryCity/countryCitySlice";
+import documentsReducer from './slices/documents/documentsSlice';
 // import updateUserReducer from './slices/userSlice';
 
 const store = configureStore({
@@ -97,6 +98,7 @@ const store = configureStore({
         countries: countryDataReducer,
         countriesStates: stateDataReducer,
         countriesCities: cityDataReducer,
+        documents: documentsReducer,
     },
     devTools: process.env.NODE_ENV !== 'production',
 });

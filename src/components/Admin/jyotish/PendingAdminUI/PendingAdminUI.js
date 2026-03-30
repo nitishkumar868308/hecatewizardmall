@@ -16,8 +16,12 @@ const PendingAdminUI = ({
     activateAfterApprove,
     setActivateAfterApprove,
     setShowRejectModal,
-    handleImageUpload
- }) => {
+    handleImageUpload,
+    handleExtraTitleChange,
+    handleAddMoreDocument,
+    handleExtraFileUpload,
+    extraDocuments,
+}) => {
     return (
         <>
             {
@@ -167,6 +171,59 @@ const PendingAdminUI = ({
                                                 </button>
                                             )}
                                         </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* ===== EXTRA DOCUMENTS ===== */}
+                            <div className="space-y-4">
+
+                                {/* Add Button */}
+                                <button
+                                    onClick={handleAddMoreDocument}
+                                    className="px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-xl hover:bg-slate-900 transition"
+                                >
+                                    + Add More Document
+                                </button>
+
+                                {/* Dynamic Fields */}
+                                {extraDocuments.map((doc) => (
+                                    <div
+                                        key={doc.id}
+                                        className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3"
+                                    >
+                                        {/* Title */}
+                                        <input
+                                            type="text"
+                                            placeholder="Enter document title (e.g. Advanced Astrology Certificate)"
+                                            className="w-full px-4 py-2 border rounded-lg text-sm"
+                                            value={doc.title}
+                                            onChange={(e) =>
+                                                handleExtraTitleChange(doc.id, e.target.value)
+                                            }
+                                        />
+
+                                        {/* Upload */}
+                                        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg">
+                                            Upload File
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                onChange={(e) =>
+                                                    handleExtraFileUpload(doc.id, e.target.files[0])
+                                                }
+                                            />
+                                        </label>
+
+                                        {/* Preview */}
+                                        {doc.preview && (
+                                            <button
+                                                onClick={() => handleViewFile(doc.preview)}
+                                                className="text-xs text-emerald-600 font-bold flex items-center gap-1"
+                                            >
+                                                ✅ View Uploaded File
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
