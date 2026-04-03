@@ -191,10 +191,15 @@ export async function POST(req) {
             const firstname = body.user.name;
             const email = body.user.email;
             const phone = body.user.phone;
-
+            const udf1 = body.warehouseCode || "";
+            const udf2 = body.isXpress ? "hecate-quickGo" : "website";
+            const udf3 = "";
+            const udf4 = "";
+            const udf5 = "";
             const productInfo = "Shopping Order";
 
-            const hashString = `${key}|${orderNumber}|${amount}|${productInfo}|${firstname}|${email}|||||||||||${salt}`;
+            const hashString = `${key}|${orderNumber}|${amount}|${productInfo}|${firstname}|${email}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}||||||${salt}`;
+            console.log("HASH STRING:", hashString);
             const hash = crypto.createHash("sha512").update(hashString).digest("hex");
 
             const payuURL =
@@ -219,6 +224,8 @@ export async function POST(req) {
                         surl: `${baseUrl}/api/payu/success`,
                         furl: `${baseUrl}/api/payu/failure`,
                         hash,
+                        udf1, // ✅ MUST
+                        udf2
                     },
                 }),
                 { status: 200 }

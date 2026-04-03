@@ -2,8 +2,11 @@ import { PrismaClient } from "@prisma/client";
 import { sendMail } from "@/lib/mailer";
 import { orderConfirmationTemplate } from "@/lib/templates/orderConfirmationTemplate";
 import { orderConfirmationTemplateAdmin } from "@/lib/templates/orderConfirmationTemplateAdmin";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
+const SECRET = "MY_SUPER_SECRET";
+
 
 const generateInvoiceNumber = async () => {
     const lastInvoice = await prisma.orders.findFirst({
@@ -20,7 +23,91 @@ const generateInvoiceNumber = async () => {
 
     return `INV-${String(nextNumber).padStart(5, "0")}`;
 };
-console.log("generateInvoiceNumber" , generateInvoiceNumber)
+console.log("generateInvoiceNumber", generateInvoiceNumber)
+
+
+const createIncreffPayload = async (orderRecord, warehouseCode) => {
+
+    const locationCode = warehouseCode; // ✅ dynamic from gateway
+
+    if (!locationCode) {
+        console.log("❌ No warehouseCode received");
+        return null;
+    }
+
+    const items = orderRecord.items;
+    const orderItems = [];
+
+    for (let item of items) {
+
+        console.log("🔍 Processing item:", item.variationId);
+
+        // ✅ Step 1: Get variation
+        const variation = await prisma.productVariation.findUnique({
+            where: {
+                id: item.variationId
+            }
+        });
+
+        if (!variation) {
+            console.log("❌ Variation not found:", item.variationId);
+            continue;
+        }
+
+        console.log("✅ Variation SKU:", variation.sku);
+
+        // ✅ Step 2: Map SKU with increff
+        const mapping = await prisma.bangaloreIncreffMappingSKU.findFirst({
+            where: {
+                ourSku: variation.sku
+            }
+        });
+
+        if (!mapping) {
+            console.log("❌ Mapping not found for SKU:", variation.sku);
+            continue;
+        }
+
+        const channelSkuCode = mapping.channelSku;
+
+        console.log("✅ Channel SKU:", channelSkuCode);
+
+        // ✅ Step 3: Check inventory
+        const inventory = await prisma.bangaloreIncreffInventory.findUnique({
+            where: {
+                locationCode_channelSkuCode: {
+                    locationCode,
+                    channelSkuCode
+                }
+            }
+        });
+
+        if (!inventory) {
+            console.log("❌ Inventory not found:", channelSkuCode, locationCode);
+            continue;
+        }
+
+        console.log("✅ Inventory found");
+
+        // ✅ Step 4: Push item
+        orderItems.push({
+            channelSkuCode,
+            quantity: item.quantity,
+            sellingPricePerUnit: item.pricePerItem,
+            orderItemCode: `${orderRecord.orderNumber}_${channelSkuCode}`
+        });
+    }
+
+    return {
+        orderTime: new Date().toISOString(),
+        orderType: "PO",
+        orderCode: orderRecord.orderNumber,
+        locationCode,
+        partnerCode: "Delhi_23",
+        partnerLocationCode: "Delhi_23",
+        orderItems
+    };
+};
 
 
 export async function POST(req) {
@@ -28,7 +115,7 @@ export async function POST(req) {
         const form = await req.formData();
         const orderId = form.get("txnid");
         const status = form.get("status");
-        const orderBy = form.get("orderBy");
+        const orderBy = form.get("udf2");
         console.log("orderBy", orderBy)
         if (!orderId) return new Response("Order ID missing", { status: 400 });
 
@@ -138,6 +225,12 @@ export async function POST(req) {
 
                 await handlePromoAndDonation();
 
+                const token = jwt.sign(
+                    { orderId: orderRecord.orderNumber },
+                    SECRET,
+                    { expiresIn: "5m" }
+                );
+
                 // Send confirmation email to user
                 await sendMail({
                     to: userEmail,
@@ -147,7 +240,7 @@ export async function POST(req) {
                         orderId: orderRecord.orderNumber,
                         total: orderRecord.totalAmount,
                         currency: orderRecord.paymentCurrency || "₹",
-                        downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/invoice/${orderRecord.orderNumber}`
+                        downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/invoice/${orderRecord.orderNumber}?token=${token}`
                     }),
                 });
 
@@ -202,6 +295,13 @@ export async function POST(req) {
 
                 await handlePromoAndDonation();
 
+                const token = jwt.sign(
+                    { orderId: orderRecord.orderNumber },
+                    SECRET,
+                    { expiresIn: "5m" }
+                );
+
+
                 // Send confirmation email to user
                 await sendMail({
                     to: userEmail,
@@ -211,8 +311,7 @@ export async function POST(req) {
                         orderId: orderRecord.orderNumber,
                         total: orderRecord.totalAmount,
                         currency: orderRecord.currency || "₹",
-                        downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/invoice/${orderRecord.orderNumber}`
-
+                        downloadLink: `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/invoice/${orderRecord.orderNumber}?token=${token}`
                     }),
                 });
 
@@ -226,6 +325,47 @@ export async function POST(req) {
                         currency: orderRecord.currency || "₹",
                     }),
                 });
+
+                if (orderRecord.orderBy === "hecate-quickGo" &&
+                    orderRecord.shippingState?.toLowerCase() === "karnataka") {
+
+                    const warehouseCode = form.get("udf1");
+                    if (!warehouseCode) {
+                        console.log("❌ warehouseCode missing from payment gateway");
+                        return;
+                    }
+
+                    try {
+                        const payload = await createIncreffPayload(orderRecord, warehouseCode);
+
+                        if (payload.orderItems.length > 0) {
+
+                            const response = await fetch(
+                                "https://staging-common.omni.increff.com/assure-magic2/orders/inward",
+                                {
+                                    method: "POST",
+                                    headers: {
+                                        "authusername": "HECATE_ERP-1200063404",
+                                        "authpassword": "9381c0d5-6884-4e40-8ded-588faf983eca",
+                                        "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify(payload)
+                                }
+                            );
+
+                            const data = await response;
+                            console.log("data", data)
+
+                            console.log("✅ Increff Response:", data);
+
+                        } else {
+                            console.log("❌ No valid items for Increff");
+                        }
+
+                    } catch (err) {
+                        console.error("❌ Increff Error:", err);
+                    }
+                }
 
                 const baseUrl = new URL(req.url).origin;
                 return Response.redirect(`${baseUrl}/hecate-quickGo/payment-success?order_id=${orderId}`);

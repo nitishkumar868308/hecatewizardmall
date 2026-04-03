@@ -48,6 +48,7 @@ const getPhoneYup = (countryCode) =>
     });
 
 const Checkout = () => {
+  const [removeLoading, setRemoveLoading] = useState(false);
   const pathname = usePathname();
   const [showConfirm, setShowConfirm] = useState(false);
   const dispatch = useDispatch();
@@ -656,7 +657,7 @@ const Checkout = () => {
   const xpressShippingOption = [{
     id: "xpress-99",
     type: "Xpress Shipping",
-    price: 99,
+    price: 1,
     currencySymbol: "₹",
     description: "Fast delivery for Xpress orders",
     country: user?.country || "IND"
@@ -918,92 +919,13 @@ const Checkout = () => {
       total: `${userCart[0]?.currencySymbol || '₹'}${grandTotal.toFixed(2)}`,
       paymentMethod: selected,
       isXpress,
+      warehouseCode: localStorage.getItem("warehouseCode"),
     };
 
     console.log("orderData", orderData)
-    // console.log("selectedAddress?.state? ", selectedAddress?.state)
+    console.log("selectedAddress?.state? ", selectedAddress?.state)
 
-    // if (isXpress && selectedAddress?.state?.toLowerCase() === "karnataka") {
-    //   const xpressPayload = {
-    //     orderCode: `A${Date.now()}`, // example unique order code
-    //     locationCode: "KUD01",
-    //     orderTime: new Date().toISOString(),
-    //     orderType: "SO",
-    //     onHold: false,
-    //     isPriority: false,
-    //     gift: false,
-    //     qcStatus: "PASS",
-    //     dispatchByTime: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-    //     startProcessingTime: new Date().toISOString(),
-    //     paymentMethod: selected === "PayU" ? "NCOD" : selected,
-    //     shippingAddress: {
-    //       name: orderData.shippingAddress.name,
-    //       line1: orderData.shippingAddress.address,
-    //       line2: "Shipping Address",
-    //       phone: orderData.shippingAddress.phone,
-    //       email: orderData.user.email,
-    //       city: orderData.shippingAddress.city,
-    //       state: orderData.shippingAddress.state,
-    //       zip: orderData.shippingAddress.pincode,
-    //       country: "India",
-    //     },
-    //     billingAddress: {
-    //       name: orderData.billingAddress.name,
-    //       line1: orderData.billingAddress.address,
-    //       line2: "Billing Address",
-    //       phone: orderData.billingAddress.phone,
-    //       email: orderData.user.email,
-    //       city: orderData.billingAddress.city,
-    //       state: orderData.billingAddress.state,
-    //       zip: orderData.billingAddress.pincode,
-    //       country: "India",
-    //     },
-    //     orderItems: orderData.items.map((item, index) => ({
-    //       channelSkuCode: `${item.productName}_${item.pricePerItem}`,
-    //       orderItemCode: `${item.productName}_${item.pricePerItem}_${index + 1}`,
-    //       quantity: item.quantity,
-    //       sellingPricePerUnit: item.pricePerItem,
-    //     })),
-    //     packType: "PIECE",
-    //     isSplitRequired: false,
-    //   };
 
-    //   // Call Increff API
-    //   try {
-
-    //     const res = await dispatch(createIncreffOrder(xpressPayload)).unwrap();
-
-    //     console.log("Increff Response:", res);
-
-    //     const successList = res?.successList;
-    //     const failureList = res?.failureList;
-
-    //     if (successList?.length > 0) {
-
-    //       const orderCode = successList[0].orderCode;
-    //       toast.success(`Order ${orderCode} sent to Increff successfully`);
-
-    //     }
-    //     else if (res?.message === "Order created") {
-
-    //       toast.success("Order sent to Increff successfully");
-
-    //     }
-    //     else if (failureList?.length > 0) {
-
-    //       toast.error("Increff Order Failed");
-
-    //     }
-    //     else {
-
-    //       toast.error("Unexpected Increff response");
-
-    //     }
-    //   } catch (err) {
-    //     console.error("Increff API Error:", err);
-    //     toast.error("Increff Order Failed");
-    //   }
-    // }
 
     try {
       const data = await dispatch(createOrder(orderData)).unwrap();
@@ -1022,11 +944,20 @@ const Checkout = () => {
           form.appendChild(input);
         });
 
-        const inputOrderBy = document.createElement("input");
-        inputOrderBy.type = "hidden";
-        inputOrderBy.name = "orderBy";
-        inputOrderBy.value = isXpress ? "hecate-quickGo" : "website";
-        form.appendChild(inputOrderBy);
+        // const inputOrderBy = document.createElement("input");
+        // inputOrderBy.type = "hidden";
+        // inputOrderBy.name = "udf2";
+        // inputOrderBy.value = isXpress ? "hecate-quickGo" : "website";
+        // form.appendChild(inputOrderBy);
+
+        // const warehouseCode = localStorage.getItem("warehouseCode");
+
+        // const inputWarehouse = document.createElement("input");
+        // inputWarehouse.type = "hidden";
+        // inputWarehouse.name = "udf1";
+        // inputWarehouse.value = warehouseCode || "";
+        // form.appendChild(inputWarehouse);
+
 
         document.body.appendChild(form);
         form.submit();
@@ -1089,7 +1020,7 @@ const Checkout = () => {
   // const shipping = selectedShippingOption?.price || 0;
   // const grandTotal = subtotal + shipping;
   const shipping = isXpress
-    ? 99
+    ? 1
     : (selectedShippingOption?.price || 0);
 
   const currentDonation = donationCustom || donation || 0;
@@ -1107,14 +1038,24 @@ const Checkout = () => {
   const currency = firstSelectedItem?.currency || "INR";
 
   const handleDelete = async () => {
+    if (!selectedItemId || removeLoading) return;
+    setRemoveLoading(true);
     try {
       console.log("selectedItemId:", selectedItemId);
 
       // 🟢 CASE 1 → Multiple delete (array of IDs)
+      // if (Array.isArray(selectedItemId) && selectedItemId.length > 0) {
+      //   for (const id of selectedItemId) {
+      //     await dispatch(deleteCartItem({ id })).unwrap();
+      //   }
+      // }
+      // 🟢 MULTIPLE DELETE (PARALLEL)
       if (Array.isArray(selectedItemId) && selectedItemId.length > 0) {
-        for (const id of selectedItemId) {
-          await dispatch(deleteCartItem({ id })).unwrap();
-        }
+        await Promise.all(
+          selectedItemId.map((id) =>
+            dispatch(deleteCartItem({ id })).unwrap()
+          )
+        );
       }
 
       // 🟢 CASE 2 → Single delete (string)
@@ -1129,40 +1070,71 @@ const Checkout = () => {
       }
 
       setShowConfirm(false);
+      setSelectedItemId(null);
+
       // Refresh cart
       const freshCart = await dispatch(fetchCart()).unwrap();
 
       toast.success("Item(s) deleted successfully");
 
       // 🔄 Recalculate offers, bulk, range, free qty
-      for (const item of freshCart) {
-        const fullProduct = products.find((p) => p.id === item.productId);
-        if (!fullProduct) continue;
+      // for (const item of freshCart) {
+      //   const fullProduct = products.find((p) => p.id === item.productId);
+      //   if (!fullProduct) continue;
 
-        const selectedVariation =
-          fullProduct.variations?.find((v) => v.id === item.variationId);
+      //   const selectedVariation =
+      //     fullProduct.variations?.find((v) => v.id === item.variationId);
 
-        const newBulkStatus = computeBulkStatus({
-          product: fullProduct,
-          selectedVariation,
-          selectedAttributes: item.attributes,
-          userCart: freshCart,
-          quantity: item.quantity,
-          cartItem: item,
-        });
+      //   const newBulkStatus = computeBulkStatus({
+      //     product: fullProduct,
+      //     selectedVariation,
+      //     selectedAttributes: item.attributes,
+      //     userCart: freshCart,
+      //     quantity: item.quantity,
+      //     cartItem: item,
+      //   });
 
-        await updateGroupBulkStatus(
-          newBulkStatus,
-          newBulkStatus.eligible,
-          item.quantity,
-          item,
-          fullProduct
-        );
-      }
+      //   await updateGroupBulkStatus(
+      //     newBulkStatus,
+      //     newBulkStatus.eligible,
+      //     item.quantity,
+      //     item,
+      //     fullProduct
+      //   );
+      // }
+      // 🟢 BULK UPDATE (PARALLEL 🚀)
+      await Promise.all(
+        freshCart.map(async (item) => {
+          const fullProduct = products.find((p) => p.id === item.productId);
+          if (!fullProduct) return;
+
+          const selectedVariation =
+            fullProduct.variations?.find((v) => v.id === item.variationId);
+
+          const newBulkStatus = computeBulkStatus({
+            product: fullProduct,
+            selectedVariation,
+            selectedAttributes: item.attributes,
+            userCart: freshCart,
+            quantity: item.quantity,
+            cartItem: item,
+          });
+
+          return updateGroupBulkStatus(
+            newBulkStatus,
+            newBulkStatus.eligible,
+            item.quantity,
+            item,
+            fullProduct
+          );
+        })
+      );
 
 
     } catch (err) {
       toast.error(err.message || "Failed to delete item(s)");
+    } finally {
+      setRemoveLoading(false); // 🔥 MOST IMPORTANT
     }
   };
 
@@ -2298,7 +2270,7 @@ const Checkout = () => {
                     <div className="p-4 bg-gray-200 border border-gray-400 rounded-lg">
                       <div className="flex justify-between">
                         <span className="font-semibold">Hecate QuickGo Shipping</span>
-                        <span className="font-medium">₹99.00</span>
+                        <span className="font-medium">₹1.00</span>
                       </div>
                       <p className="mt-1 text-xs text-gray-800">
                         Fast delivery for Hecate QuickGo orders
@@ -2973,9 +2945,10 @@ const Checkout = () => {
                     </button>
                     <button
                       onClick={handleDelete}
+                      disabled={removeLoading}
                       className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                     >
-                      Remove
+                      {removeLoading ? <Loader /> : "Remove"}
                     </button>
                   </div>
                 </div>

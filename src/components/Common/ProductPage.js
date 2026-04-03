@@ -31,6 +31,7 @@ import { fetchBangaloreInventory } from "@/app/redux/slices/bangaloreInventory/b
 import { fetchSkuMappings } from "@/app/redux/slices/skuMapping/skuMappingSlice";
 
 const ProductDetail = () => {
+    const [qtyLoading, setQtyLoading] = useState(false);
     const { isOpen } = useCart();
     const pathname = usePathname();
     const [showConfirm, setShowConfirm] = useState(false);
@@ -291,7 +292,7 @@ const ProductDetail = () => {
 
         return map;
     }, [inventory, currentProduct, mappings]);
-    console.log("bangaloreVariationStockMap" , bangaloreVariationStockMap)
+    console.log("bangaloreVariationStockMap", bangaloreVariationStockMap)
 
 
     useEffect(() => {
@@ -2288,25 +2289,12 @@ const ProductDetail = () => {
     // };
 
     const increment = async () => {
-        const newQty = quantity + 1;
-        const newBulkStatus = computeBulkStatus({
-            product,
-            selectedVariation,
-            selectedAttributes,
-            userCart,
-            quantity: newQty,
-            cartItem,
-        });
-        if (isInCart) {
-            await updateGroupBulkStatus(newBulkStatus, newBulkStatus.eligible, newQty);
-        }
-        setQuantity(newQty); // last
-    };
+        if (qtyLoading) return;
+        setQtyLoading(true);
 
-    const decrement = async () => {
-        if (quantity === 1 && isInCart) setShowConfirm(true);
-        else {
-            const newQty = Math.max(1, quantity - 1);
+        try {
+            const newQty = quantity + 1;
+
             const newBulkStatus = computeBulkStatus({
                 product,
                 selectedVariation,
@@ -2315,10 +2303,72 @@ const ProductDetail = () => {
                 quantity: newQty,
                 cartItem,
             });
-            if (isInCart) await updateGroupBulkStatus(newBulkStatus, newBulkStatus.eligible, newQty);
+
+            if (isInCart) {
+                await updateGroupBulkStatus(newBulkStatus, newBulkStatus.eligible, newQty);
+            }
+
             setQuantity(newQty);
+        } finally {
+            setQtyLoading(false);
         }
+
+        // const newQty = quantity + 1;
+        // const newBulkStatus = computeBulkStatus({
+        //     product,
+        //     selectedVariation,
+        //     selectedAttributes,
+        //     userCart,
+        //     quantity: newQty,
+        //     cartItem,
+        // });
+        // if (isInCart) {
+        //     await updateGroupBulkStatus(newBulkStatus, newBulkStatus.eligible, newQty);
+        // }
+        // setQuantity(newQty); // last
     };
+
+    const decrement = async () => {
+        if (qtyLoading) return;
+        if (quantity === 1 && isInCart) setShowConfirm(true);
+        setQtyLoading(true);
+
+        try {
+            const newQty = Math.max(1, quantity - 1);
+
+
+            const newBulkStatus = computeBulkStatus({
+                product,
+                selectedVariation,
+                selectedAttributes,
+                userCart,
+                quantity: newQty,
+                cartItem,
+            });
+
+            if (isInCart) {
+                await updateGroupBulkStatus(newBulkStatus, newBulkStatus.eligible, newQty);
+            }
+
+            setQuantity(newQty);
+        } finally {
+            setQtyLoading(false);
+        }
+
+        //     else {
+        // const newQty = Math.max(1, quantity - 1);
+        // const newBulkStatus = computeBulkStatus({
+        //     product,
+        //     selectedVariation,
+        //     selectedAttributes,
+        //     userCart,
+        //     quantity: newQty,
+        //     cartItem,
+        // });
+        // if (isInCart) await updateGroupBulkStatus(newBulkStatus, newBulkStatus.eligible, newQty);
+        // setQuantity(newQty);
+    }
+
 
     const updateGroupBulkStatus = async (bulkStatus, isBulkEligible, newQty) => {
         const { sameGroupItems, variationBulkPrice, variationBulkMinQty } = bulkStatus;
@@ -2425,7 +2475,9 @@ const ProductDetail = () => {
                     productOfferId = groupProductOffer.offerId || null;
                     productOfferMeta = groupProductOffer.offerMeta || null;
 
-                    totalPrice = groupProductOffer.offerMeta.totalPriceAfterOffer;
+                    // totalPrice = groupProductOffer.offerMeta.totalPriceAfterOffer;
+                    const isFree = groupProductOffer.offerMeta.freeItems?.some(f => f.id === item.id);
+                    payload.totalPrice = isFree ? 0 : basePrice * currentQty;
                 }
 
                 const finaldata = await dispatch(updateCart({
@@ -2770,6 +2822,28 @@ const ProductDetail = () => {
             }
         }
 
+
+        // 🔹 Flatten attributes
+        const flatAttributes = {};
+        Object.entries(selectedAttributes).forEach(([key, val]) => {
+            if (val && val !== "N/A") flatAttributes[key.toLowerCase()] = val;
+        });
+
+
+        // 🔹 Check if item already exists in cart
+        const isAlreadyInCart = userCart?.some(
+            item =>
+                item.productId === product.id &&
+                item.variationId === (selectedVariation?.id || null) &&
+                item.attributes?.color === flatAttributes?.color &&
+                item.purchasePlatform === purchasePlatform
+        );
+        if (isAlreadyInCart) {
+            toast.error("This product is already in your cart!");
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -2778,11 +2852,6 @@ const ProductDetail = () => {
             const currencySymbol = selectedVariation?.currencySymbol || product.currencySymbol || "₹";
             const currency = selectedVariation?.currency || product.currency || "INR";
 
-            // 🔹 Flatten attributes
-            const flatAttributes = {};
-            Object.entries(selectedAttributes).forEach(([key, val]) => {
-                if (val && val !== "N/A") flatAttributes[key.toLowerCase()] = val;
-            });
 
             // 🔹 Bulk initialization
             let offerApplied = false;
@@ -2864,19 +2933,6 @@ const ProductDetail = () => {
                 }
             }
 
-            // 🔹 Check if item already exists in cart
-            const isAlreadyInCart = userCart?.some(
-                item =>
-                    item.productId === product.id &&
-                    item.variationId === (selectedVariation?.id || null) &&
-                    item.attributes?.color === flatAttributes?.color &&
-                    item.purchasePlatform === purchasePlatform
-            );
-            if (isAlreadyInCart) {
-                toast.error("This product is already in your cart!");
-                setLoading(false);
-                return;
-            }
 
             console.log("🛒 User cart before applying product offers:", userCart);
 
@@ -3686,7 +3742,8 @@ const ProductDetail = () => {
                             <>
                                 {!imageLoaded && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                                        <span className="loader border-4 border-gray-300 border-t-blue-600 rounded-full w-10 h-10 animate-spin"></span>
+                                        {/* <span className="loader border-4 border-gray-300 border-t-blue-600 rounded-full w-10 h-10 animate-spin"></span> */}
+                                        <Loader />
                                     </div>
                                 )}
                                 <Zoom>
@@ -4100,18 +4157,26 @@ const ProductDetail = () => {
                                                     ? userCart.reduce((sum, item) => {
                                                         const sameProduct = item?.productId === product?.id;
                                                         const colorMatch =
-                                                            item?.attributes?.color?.trim().toLowerCase() ===
-                                                            val.trim().toLowerCase();
-                                                        const selectedWax =
-                                                            selectedAttributes["Type of wax"]?.toLowerCase();
-                                                        const itemWax =
-                                                            item?.attributes?.["type of wax"]?.toLowerCase();
-                                                        const waxMatch =
-                                                            !selectedWax || (itemWax && itemWax === selectedWax);
+                                                            item?.attributes?.color?.toLowerCase() === val?.toLowerCase();
+                                                        console.log("isSameAttributes",)
+
+                                                        const otherAttributesMatch = Object.entries(selectedAttributes).every(
+                                                            ([key, selectedVal]) => {
+                                                                if (key.toLowerCase() === "color") return true; // skip color
+                                                                const itemVal = item?.attributes?.[key?.toLowerCase()];
+                                                                return itemVal?.toLowerCase() === selectedVal?.toLowerCase();
+                                                            }
+                                                        );
+                                                        // const selectedWax =
+                                                        //     selectedAttributes["Type of wax"]?.toLowerCase();
+                                                        // const itemWax =
+                                                        //     item?.attributes?.["type of wax"]?.toLowerCase();
+                                                        // const waxMatch =
+                                                        //     !selectedWax || (itemWax && itemWax === selectedWax);
                                                         if (
                                                             sameProduct &&
                                                             colorMatch &&
-                                                            waxMatch &&
+                                                            otherAttributesMatch &&
                                                             item.purchasePlatform === purchasePlatform
                                                         ) {
                                                             return sum + (Number(item?.quantity) || 0);
@@ -4350,8 +4415,15 @@ const ProductDetail = () => {
                                             : ""
                                             }`}
                                     >
+                                        {/* {quantity === 1 && isInCart ? (
+                                        <Trash2 size={22} />
+                                    ) : (
+                                        "-"
+                                    )} */}
                                         {quantity === 1 && isInCart ? (
                                             <Trash2 size={22} />
+                                        ) : qtyLoading ? (
+                                            <Loader size="small" />
                                         ) : (
                                             "-"
                                         )}
@@ -4363,9 +4435,10 @@ const ProductDetail = () => {
 
                                     <button
                                         onClick={increment}
+                                        disabled={qtyLoading}
                                         className="px-6 py-3 bg-gray-200 hover:bg-gray-300 transition cursor-pointer text-2xl"
                                     >
-                                        +
+                                        {qtyLoading ? <Loader size="small" /> : "+"}
                                     </button>
                                 </div>
 
@@ -4373,9 +4446,11 @@ const ProductDetail = () => {
                                 {!isInCart ? (
                                     <button
                                         onClick={handleAdd}
-                                        className="px-10 py-4 bg-gray-700 text-white rounded-lg hover:bg-black transition cursor-pointer shadow-lg text-xl"
+                                        disabled={loading}
+                                        className={`px-10 py-4 bg-gray-700 text-white rounded-lg transition shadow-lg text-xl 
+                                    ${loading ? "opacity-50 cursor-not-allowed" : "hover:bg-black"}`}
                                     >
-                                        Add to Cart
+                                        {loading ? <Loader /> : "Add to Cart"}
                                     </button>
                                 ) : (
                                     ""
@@ -4446,9 +4521,11 @@ const ProductDetail = () => {
                                     {!isInCart && (
                                         <button
                                             onClick={handleAdd}
-                                            className="h-12 bg-gray-700 text-white rounded-lg text-lg font-medium flex items-center justify-center"
+                                            disabled={loading}
+                                            className={`px-10 py-4 bg-gray-700 text-white rounded-lg transition shadow-lg text-xl 
+                                    ${loading ? "opacity-50 cursor-not-allowed" : "hover:bg-black"}`}
                                         >
-                                            Add to Cart
+                                            {loading ? <Loader /> : "Add to Cart"}
                                         </button>
                                     )}
                                 </div>
