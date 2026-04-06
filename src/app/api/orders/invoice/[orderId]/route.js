@@ -38,30 +38,54 @@ export async function GET(req, { params }) {
             return new Response(JSON.stringify({ message: "Order not found" }), { status: 404 });
         }
 
-        // ================= PRODUCTS + CATEGORY =================
+        // ================= PRODUCTS =================
         const productIds = order.items.map(i => i.productId);
         const products = await prisma.product.findMany({
             where: { id: { in: productIds } },
             include: {
-                category: {
-                    include: { countryTaxes: true },
-                },
+                category: { include: { countryTaxes: true } },
             },
         });
 
         const productMap = {};
         products.forEach(p => { productMap[p.id] = p; });
 
-        // ================= PDF SETUP =================
+        // ================= PDF =================
         const pdfDoc = await PDFDocument.create();
         const page = pdfDoc.addPage([600, 800]);
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-        
+
         let y = 750;
 
-        // ================= HEADER DESIGN =================
-        // Background strip for header
+        // ================= TEXT WRAP =================
+        const drawMultilineText = (text, x, y, maxWidth, font, size, lineHeight = 10) => {
+            const words = text.split(" ");
+            let line = "";
+            let currentY = y;
+
+            for (let word of words) {
+                const testLine = line + word + " ";
+                const width = font.widthOfTextAtSize(testLine, size);
+
+                if (width > maxWidth) {
+                    page.drawText(line, { x, y: currentY, size, font });
+                    line = word + " ";
+                    currentY -= lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+
+            if (line) {
+                page.drawText(line, { x, y: currentY, size, font });
+                currentY -= lineHeight;
+            }
+
+            return currentY;
+        };
+
+        // ================= HEADER =================
         page.drawRectangle({
             x: 0,
             y: 720,
@@ -70,7 +94,6 @@ export async function GET(req, { params }) {
             color: rgb(0.96, 0.96, 0.98),
         });
 
-        // Logo
         try {
             const logoBytes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/image/logo.jpg`)
                 .then(res => res.arrayBuffer());
@@ -78,38 +101,98 @@ export async function GET(req, { params }) {
             page.drawImage(logo, { x: 50, y: 735, width: 50, height: 50 });
         } catch { }
 
-        page.drawText("Hecate Wizard Mall", { x: 110, y: 765, size: 18, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
-        page.drawText("TAX INVOICE", { x: 450, y: 765, size: 18, font: fontBold, color: rgb(0.2, 0.4, 0.8) });
+        page.drawText("Hecate Wizard Mall", { x: 110, y: 765, size: 18, font: fontBold });
+        page.drawText("TAX INVOICE", { x: 450, y: 765, size: 18, font: fontBold });
 
-        // Company Details
-        y = 745;
-        page.drawText("27 Deepali, Pitampura, New Delhi - 110034", { x: 110, y, size: 9, font });
-        page.drawText(`GSTIN: 07ABCDE1234F1Z5`, { x: 110, y: y - 12, size: 9, font });
+        page.drawText("27 Deepali, Pitampura, New Delhi - 110034", { x: 110, y: 745, size: 9, font });
+        page.drawText(`GSTIN: 07ABCDE1234F1Z5`, { x: 110, y: 733, size: 9, font });
 
-        // ================= INVOICE INFO BLOCK =================
-        y = 680;
-        const infoX = 400;
-        page.drawText("Invoice Details", { x: infoX, y: y + 15, size: 10, font: fontBold });
-        page.drawText(`Invoice No:  ${order.invoiceNumber || "-"}`, { x: infoX, y, size: 9, font });
-        page.drawText(`Order No:    ${order.orderNumber}`, { x: infoX, y: y - 14, size: 9, font });
-        page.drawText(`Date:           ${new Date(order.createdAt).toLocaleDateString()}`, { x: infoX, y: y - 28, size: 9, font });
+        // ================= INVOICE INFO =================
+        let invoiceTopY = 740;
 
-        // ================= ADDRESSES =================
-        y = 680;
-        // Bill To
-        page.drawText("BILL TO", { x: 50, y: y + 15, size: 10, font: fontBold, color: rgb(0.4, 0.4, 0.4) });
-        page.drawText(order.billingName || "-", { x: 50, y, size: 11, font: fontBold });
-        page.drawText(order.billingAddress || "-", { x: 50, y: y - 14, size: 9, font, maxWidth: 200 });
-        page.drawText(`${order.billingCity}, ${order.billingState} - ${order.billingPincode}`, { x: 50, y: y - 28, size: 9, font });
+        page.drawText(`Invoice No: ${order.invoiceNumber || "-"}`, { x: 400, y: invoiceTopY, size: 9, font });
+        page.drawText(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, {
+            x: 400,
+            y: invoiceTopY - 14,
+            size: 9,
+            font,
+        });
 
-        // Ship To (Parallel)
-        page.drawText("SHIP TO", { x: 230, y: y + 15, size: 10, font: fontBold, color: rgb(0.4, 0.4, 0.4) });
-        page.drawText(order.shippingName || "-", { x: 230, y, size: 11, font: fontBold });
-        page.drawText(order.shippingAddress || "-", { x: 230, y: y - 14, size: 9, font, maxWidth: 150 });
-        page.drawText(`${order.shippingCity}, ${order.shippingState} - ${order.shippingPincode}`, { x: 230, y: y - 28, size: 9, font });
+        y = invoiceTopY - 60;
+
+        // ================= 3 COLUMN LAYOUT =================
+
+        const col1X = 50;
+        const col2X = 220;
+        const col3X = 390;
+        const colWidth = 150;
+
+        // ===== BILL TO =====
+        page.drawText("BILL TO", { x: col1X, y: y + 15, size: 10, font: fontBold });
+
+        let billY = y;
+        page.drawText(order.billingName || "-", { x: col1X, y: billY, size: 11, font: fontBold });
+
+        billY -= 14;
+        billY = drawMultilineText(order.billingAddress || "-", col1X, billY, colWidth, font, 9);
+
+        billY -= 5;
+        page.drawText(
+            `${order.billingCity}, ${order.billingState} - ${order.billingPincode}`,
+            { x: col1X, y: billY, size: 9, font }
+        );
+
+
+        // ===== SHIP TO =====
+        page.drawText("SHIP TO", { x: col2X, y: y + 15, size: 10, font: fontBold });
+
+        let shipY = y;
+        page.drawText(order.shippingName || "-", { x: col2X, y: shipY, size: 11, font: fontBold });
+
+        shipY -= 14;
+        shipY = drawMultilineText(order.shippingAddress || "-", col2X, shipY, colWidth, font, 9);
+
+        shipY -= 5;
+        page.drawText(
+            `${order.shippingCity}, ${order.shippingState} - ${order.shippingPincode}`,
+            { x: col2X, y: shipY, size: 9, font }
+        );
+
+
+        // ===== PAYMENT DETAILS =====
+        page.drawText("PAYMENT DETAILS", { x: col3X, y: y + 15, size: 10, font: fontBold });
+
+        let paymentY = y;
+
+        paymentY -= 14;
+        page.drawText(`Method: ${order.paymentMethod || "-"}`, {
+            x: col3X,
+            y: paymentY,
+            size: 9,
+            font,
+        });
+
+        paymentY -= 12;
+        page.drawText(`Payment Status: ${order.paymentStatus}`, {
+            x: col3X,
+            y: paymentY,
+            size: 9,
+            font,
+        });
+
+        paymentY -= 12;
+        page.drawText(`Order Status: ${order.status}`, {
+            x: col3X,
+            y: paymentY,
+            size: 9,
+            font,
+        });
+
+
+        // ===== DYNAMIC HEIGHT FIX =====
+        y = Math.min(billY, shipY, paymentY) - 30;
 
         // ================= TABLE HEADER =================
-        y = 590;
         page.drawRectangle({
             x: 50,
             y: y - 5,
@@ -118,74 +201,130 @@ export async function GET(req, { params }) {
             color: rgb(0.2, 0.4, 0.8),
         });
 
-        const headColor = rgb(1, 1, 1);
-        page.drawText("Item Description", { x: 60, y, size: 10, font: fontBold, color: headColor });
-        page.drawText("HSN", { x: 280, y, size: 10, font: fontBold, color: headColor });
-        page.drawText("Qty", { x: 340, y, size: 10, font: fontBold, color: headColor });
-        page.drawText("Price", { x: 390, y, size: 10, font: fontBold, color: headColor });
-        page.drawText("Tax", { x: 450, y, size: 10, font: fontBold, color: headColor });
-        page.drawText("Total", { x: 500, y, size: 10, font: fontBold, color: headColor });
+        const white = rgb(1, 1, 1);
+
+        page.drawText("S.No", { x: 55, y, size: 10, font: fontBold, color: white });
+        page.drawText("Image", { x: 90, y, size: 10, font: fontBold, color: white });
+        page.drawText("Item", { x: 140, y, size: 10, font: fontBold, color: white });
+        page.drawText("HSN", { x: 280, y, size: 10, font: fontBold, color: white });
+        page.drawText("Qty", { x: 340, y, size: 10, font: fontBold, color: white });
+        page.drawText("Price", { x: 390, y, size: 10, font: fontBold, color: white });
+        page.drawText("Tax", { x: 450, y, size: 10, font: fontBold, color: white });
+        page.drawText("Total", { x: 500, y, size: 10, font: fontBold, color: white });
 
         y -= 30;
 
-        // ================= ITEMS LOOP =================
+        // ================= ITEMS =================
+        let index = 1;
+
         for (const item of order.items || []) {
             const product = productMap[item.productId];
+            console.log("product", product)
             const hsn = product?.category?.hsn || "N/A";
             const taxObj = product?.category?.countryTaxes?.find(t => t.country === "India");
-            const taxPercent = taxObj?.taxPercentage || 0;
+            console.log("taxObj", taxObj)
+            const taxPercent = taxObj?.generalTax || 0;
+            console.log("taxPercent ", taxPercent)
 
-            // Row Bottom Line
-            page.drawLine({
-                start: { x: 50, y: y - 15 },
-                end: { x: 550, y: y - 15 },
-                thickness: 0.5,
-                color: rgb(0.9, 0.9, 0.9),
-            });
+            page.drawText(String(index++), { x: 55, y, size: 9, font });
 
-            // Product Name & Variant
-            page.drawText(item.productName || "-", { x: 60, y, size: 9, font: fontBold });
-            if (item.attributes) {
-                const variant = Object.entries(item.attributes).map(([k, v]) => `${k}:${v}`).join(", ");
-                page.drawText(variant, { x: 60, y: y - 10, size: 7, font, color: rgb(0.4, 0.4, 0.4) });
+            try {
+                const imgUrl = `${process.env.NEXT_PUBLIC_BASE_URL}${item.image}`;
+                const imgBytes = await fetch(imgUrl).then(res => res.arrayBuffer());
+
+                const img = imgUrl.endsWith(".png")
+                    ? await pdfDoc.embedPng(imgBytes)
+                    : await pdfDoc.embedJpg(imgBytes);
+
+                page.drawImage(img, { x: 85, y: y - 10, width: 30, height: 30 });
+            } catch { }
+
+            // ================= OFFER LOGIC =================
+            let offerText = "";
+
+            // ===== RANGE OFFER (item.productOffer se) =====
+            if (
+                item.productOfferApplied &&
+                item.productOffer &&
+                item.productOffer.discountType === "rangeBuyXGetY"
+            ) {
+                const offer = item.productOffer;
+
+                offerText = `Buy ${offer.buyQty}-${offer.maxQty} Get ${offer.getQty} Free`;
+            }
+
+            // ===== BULK PRICE (product se) =====
+            if (
+                product?.bulkPrice &&
+                product?.minQuantity &&
+                item.quantity >= Number(product.minQuantity)
+            ) {
+                offerText = `Bulk Price Applied (Min ${product.minQuantity})`;
+            }
+
+            // ================= DRAW =================
+            page.drawText(item.productName || "-", { x: 140, y, size: 9, font: fontBold });
+
+            // 👉 OFFER TEXT niche show karo
+            if (offerText) {
+                page.drawText(offerText, {
+                    x: 140,
+                    y: y - 10,
+                    size: 8,
+                    font
+                });
             }
 
             page.drawText(hsn, { x: 280, y, size: 9, font });
             page.drawText(String(item.quantity), { x: 340, y, size: 9, font });
             page.drawText(`Rs${item.pricePerItem}`, { x: 390, y, size: 9, font });
             page.drawText(`${taxPercent}%`, { x: 450, y, size: 9, font });
+
+            // 👉 IMPORTANT: totalPrice hi use karna hai (already calculated)
             page.drawText(`Rs${item.totalPrice}`, { x: 500, y, size: 9, font: fontBold });
 
-            y -= 35;
+            // 👉 spacing fix (offer ho to extra space)
+            y -= offerText ? 50 : 40;
+            y -= 40;
         }
 
-        // ================= SUMMARY BLOCK =================
+        // ================= TOTAL =================
         y -= 20;
-        const summaryX = 380;
-        const valueX = 500;
 
-        const drawRow = (label, value, isBold = false) => {
-            page.drawText(label, { x: summaryX, y, size: 9, font: isBold ? fontBold : font });
-            page.drawText(value, { x: valueX, y, size: 9, font: isBold ? fontBold : font });
-            y -= 18;
-        };
+        page.drawText(`Subtotal: Rs${order.subtotal}`, { x: 400, y, size: 9, font });
 
-        drawRow("Subtotal:", `Rs${order.subtotal}`);
-        drawRow("Shipping:", `Rs${order.shippingCharges || 0}`);
-        if (order.discountAmount) drawRow("Discount:", `-Rs${order.discountAmount}`);
-        if (order.taxAmount) drawRow("Total GST:", `Rs${order.taxAmount}`);
+        y -= 15;
 
-        y -= 5;
-        page.drawRectangle({ x: summaryX - 10, y: y - 5, width: 180, height: 25, color: rgb(0.2, 0.4, 0.8) });
-        page.drawText("GRAND TOTAL", { x: summaryX, y, size: 11, font: fontBold, color: rgb(1, 1, 1) });
-        page.drawText(`Rs${order.totalAmount}`, { x: valueX, y, size: 11, font: fontBold, color: rgb(1, 1, 1) });
+        // ===== PROMO CODE =====
+        if (order.promoCode && order.discountAmount > 0) {
+            page.drawText(
+                `Promo (${order.promoCode}): -Rs${order.discountAmount}`,
+                { x: 400, y, size: 9, font }
+            );
+            y -= 15;
+        }
 
-        // ================= FOOTER =================
-        page.drawText("TERMS & CONDITIONS:", { x: 50, y: 100, size: 9, font: fontBold });
-        page.drawText("1. Goods once sold will not be taken back.", { x: 50, y: 88, size: 8, font });
-        page.drawText("2. This is a computer generated invoice and does not require a physical signature.", { x: 50, y: 78, size: 8, font });
+        // ===== DONATION =====
+        if (order.donationAmount && order.donationAmount > 0) {
+            page.drawText(
+                `Donation: Rs${order.donationAmount}`,
+                { x: 400, y, size: 9, font }
+            );
+            y -= 15;
+        }
 
-        page.drawText("Thank you for shopping with us!", { x: 220, y: 40, size: 10, font: fontBold, color: rgb(0.2, 0.4, 0.8) });
+        // ===== SHIPPING =====
+        page.drawText(`Shipping: Rs${order.shippingCharges}`, { x: 400, y, size: 9, font });
+
+        y -= 15;
+
+        // ===== FINAL TOTAL =====
+        page.drawText(`Total: Rs${order.totalAmount}`, {
+            x: 400,
+            y,
+            size: 11,
+            font: fontBold
+        });
 
         const pdfBytes = await pdfDoc.save();
 
@@ -193,7 +332,7 @@ export async function GET(req, { params }) {
             status: 200,
             headers: {
                 "Content-Type": "application/pdf",
-                "Content-Disposition": `attachment; filename="Invoice_${order.orderNumber}.pdf"`,
+                "Content-Disposition": `attachment; filename=Invoice_${order.orderNumber}.pdf`,
             },
         });
 

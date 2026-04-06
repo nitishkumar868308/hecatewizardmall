@@ -25,18 +25,24 @@ export async function PUT(req) {
 
         const { locationCode, inventories } = body;
 
-        const warehouse = await prisma.wareHouse.findFirst({
+        const warehouses = await prisma.wareHouse.findMany({
             where: { state: "Bengaluru" },
             select: { code: true }
         });
 
-        if (!warehouse || warehouse.code !== locationCode) {
+        console.log("warehouse", warehouses);
+        console.log("locationCode", locationCode);
+
+        const isValidLocation = warehouses.some(
+            (w) => w.code === locationCode
+        );
+
+        if (!isValidLocation) {
             return NextResponse.json(
                 { message: "Invalid locationCode." },
                 { status: 400 }
             );
         }
-
 
         let successList = [];
         let failureList = [];
@@ -76,7 +82,9 @@ export async function PUT(req) {
                             }
                         },
                         data: {
-                            quantity: quantity,
+                            quantity: {
+                                increment: quantity
+                            },
                             minExpiry: item.minExpiry,
                             clientSkuId: clientSkuId,
                             channelSerialNo: item.channelSerialNo,

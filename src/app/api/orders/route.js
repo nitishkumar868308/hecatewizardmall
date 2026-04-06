@@ -159,7 +159,7 @@ export async function POST(req) {
                 status: "PENDING",
                 paymentStatus: "PENDING",
                 orderBy: body.isXpress ? "hecate-quickGo" : "website",
-
+                locationCode: body.isXpress ? body.warehouseCode : null,
                 // ⭐ Optional fields
                 promoCode: body.promoCode || null,
                 donationAmount: body.donation || null,

@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "public"."Product" ALTER COLUMN "price" SET DATA TYPE TEXT,
-ALTER COLUMN "stock" SET DATA TYPE TEXT;

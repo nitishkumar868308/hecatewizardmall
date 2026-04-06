@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 const VALID_USER = "hecate_wizard_mall";
 const VALID_PASS = "Pratiekajain9@";
 
-const SECRET = "MY_SUPER_SECRET"; // env me daalna better
+const SECRET = "MY_SUPER_SECRET";
 
 function checkAuth(req) {
     const authHeader = req.headers.get("authorization");
@@ -24,6 +24,7 @@ function checkAuth(req) {
 
 export async function GET(req) {
     try {
+        // ✅ Auth check
         if (!checkAuth(req)) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
@@ -33,41 +34,83 @@ export async function GET(req) {
 
         const { searchParams } = new URL(req.url);
         const orderCode = searchParams.get("orderCode");
+        const shipmentCode = searchParams.get("shipmentCode");
 
-        if (!orderCode) {
+        // ✅ Validate params
+        if (!orderCode || !shipmentCode) {
             return NextResponse.json(
-                { success: false, message: "orderCode required" },
+                {
+                    success: false,
+                    message: "orderCode and shipmentCode are required"
+                },
                 { status: 400 }
             );
         }
 
-        const order = await prisma.orders.findFirst({
-            where: { orderNumber: orderCode },
+        // ✅ Check in PACK ORDER TABLE (IMPORTANT)
+        const packOrder = await prisma.bangaloreIncreffPackOrder.findFirst({
+            where: {
+                orderCode,
+                shipmentCode
+            }
         });
 
-        if (!order) {
+        if (!packOrder) {
             return NextResponse.json(
-                { success: false, message: "Order not found" },
+                {
+                    success: false,
+                    message: "Invalid orderCode or shipmentCode"
+                },
                 { status: 404 }
             );
         }
 
-        // ✅ TOKEN GENERATE (5 min expiry)
+        // ✅ Get Order Details (optional but useful)
+        const order = await prisma.orders.findFirst({
+            where: { orderNumber: orderCode },
+        });
+
+        // if (!order?.invoiceNumber) {
+        //     return NextResponse.json(
+        //         {
+        //             success: false,
+        //             message: "Invoice not generated for this order yet"
+        //         },
+        //         { status: 400 }
+        //     );
+        // }
+
+        // ✅ Generate token (secure invoice access)
         const token = jwt.sign(
-            { orderId: order.orderNumber },
+            { orderId: orderCode },
             SECRET,
             { expiresIn: "5m" }
         );
 
-        const invoiceUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/invoice/${order.orderNumber}?token=${token}`;
+        const invoiceUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/invoice/${orderCode}?token=${token}`;
 
+        // ✅ FINAL RESPONSE (Increff format)
         return NextResponse.json({
-            invoiceCode: `INV-${order.orderNumber}`,
+            invoiceCode: order?.invoiceNumber || `INV-${orderCode}`,
             invoiceUrl,
-            invoiceDate: new Date(order.createdAt).toISOString(),
+            invoiceDate: new Date(order?.createdAt || Date.now()).toISOString(),
+
+            // optional fields (abhi dummy / basic)
+            irn: "",
+            qrCode: "",
+            invoice: "",
+
+            orderCustomAttributes: {
+                currency: "INR",
+                channelMetadata: {}
+            },
+
+            invoiceDetails: [] // later fill kar sakte ho
         });
 
     } catch (err) {
+        console.error("Invoice API Error:", err);
+
         return NextResponse.json(
             { success: false, message: "Server error" },
             { status: 500 }

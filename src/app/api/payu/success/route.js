@@ -9,19 +9,36 @@ const SECRET = "MY_SUPER_SECRET";
 
 
 const generateInvoiceNumber = async () => {
+    const now = new Date();
+
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0 = Jan, 3 = April
+
+    // ✅ Financial Year Start
+    const fyStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+
+    const prefix = `APR-${fyStartYear}`;
+
+    // ✅ Sirf current FY ke invoices uthao
     const lastInvoice = await prisma.orders.findFirst({
-        where: { invoiceNumber: { not: null } },
-        orderBy: { invoiceDate: "desc" },
+        where: {
+            invoiceNumber: {
+                startsWith: prefix,
+            },
+        },
+        orderBy: {
+            invoiceNumber: "desc",
+        },
     });
 
     let nextNumber = 1;
 
     if (lastInvoice?.invoiceNumber) {
-        const last = parseInt(lastInvoice.invoiceNumber.split("-")[1]);
-        nextNumber = last + 1;
+        const lastNumber = parseInt(lastInvoice.invoiceNumber.split("-")[2]);
+        nextNumber = lastNumber + 1;
     }
 
-    return `INV-${String(nextNumber).padStart(5, "0")}`;
+    return `${prefix}-${String(nextNumber).padStart(4, "0")}`;
 };
 console.log("generateInvoiceNumber", generateInvoiceNumber)
 

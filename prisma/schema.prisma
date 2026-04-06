@@ -7,6 +7,864 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String    @unique
+  password     String?
+  role         String    @default("USER")
+  createdAt    DateTime  @default(now())
+  address      String?
+  gender       Gender?
+  phone        String?
+  updatedAt    DateTime  @default(now()) @updatedAt
+  profileImage String?
+  city         String?
+  country      String?
+  pincode      String?
+  state        String?
+  provider     String    @default("LOCAL")
+  addresses    Address[]
+  carts        Cart[]
+  orders       Orders[]
+}
+
+model Header {
+  id        Int      @id @default(autoincrement())
+  name      String
+  active    Boolean  @default(true)
+  deleted   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id            Int           @id @default(autoincrement())
+  name          String
+  active        Boolean       @default(true)
+  deleted       Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  image         String?
+  platform      String[]      @default([])
+  hsn           String?
+  countryTaxes  CountryTax[]
+  products      Product[]
+  subcategories Subcategory[]
+  states        State[]       @relation("CategoryStates")
+}
+
+model Subcategory {
+  id         Int       @id @default(autoincrement())
+  name       String
+  categoryId Int
+  image      String?
+  active     Boolean   @default(true)
+  deleted    Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  offerId    Int?
+  platform   String[]  @default([])
+  products   Product[]
+  category   Category  @relation(fields: [categoryId], references: [id])
+  states     State[]   @relation("SubcategoryStates")
+}
+
+model Product {
+  id                  String             @id @default(cuid())
+  name                String
+  subcategoryId       Int
+  sku                 String             @unique
+  description         String?
+  active              Boolean            @default(true)
+  deleted             Int                @default(0)
+  slug                String?            @unique
+  metaTitle           String?
+  metaDescription     String?
+  keywords            String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  color               String[]           @default([])
+  price               String?
+  size                String[]           @default([])
+  stock               String?
+  categoryId          Int?
+  short               String?
+  offerId             Int?
+  otherCountriesPrice String?
+  image               String[]
+  isDefault           Json?
+  bulkPrice           String?
+  minQuantity         String?
+  barCode             String?
+  MRP                 String?
+  platform            String[]           @default([])
+  dimension           Json?
+  marketLinks         MarketLink[]
+  category            Category?          @relation(fields: [categoryId], references: [id])
+  primaryOffer        Offer?             @relation("PrimaryOffer", fields: [offerId], references: [id])
+  subcategory         Subcategory        @relation(fields: [subcategoryId], references: [id])
+  variations          ProductVariation[]
+  offers              Offer[]            @relation("ProductOffers")
+  tags                Tag[]              @relation("ProductTags")
+}
+
+model ProductVariation {
+  id                  String   @id @default(cuid())
+  productId           String
+  variationName       String
+  sku                 String   @unique
+  price               String?
+  stock               String?
+  description         String?
+  active              Boolean  @default(true)
+  deleted             Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  name                String?
+  offerId             Int?
+  otherCountriesPrice String?
+  image               String[]
+  short               String?
+  bulkPrice           String?
+  minQuantity         String?
+  barCode             String?
+  MRP                 String?
+  dimension           Json?
+  offer               Offer?   @relation("OfferToVariation", fields: [offerId], references: [id])
+  product             Product  @relation(fields: [productId], references: [id])
+  tags                Tag[]    @relation("VariationTags")
+}
+
+model Attribute {
+  id        Int      @id @default(autoincrement())
+  name      String
+  values    String[]
+  active    Boolean  @default(true)
+  deleted   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Offer {
+  id                Int                @id @default(autoincrement())
+  name              String
+  discountType      String
+  discountValue     Json
+  type              Json
+  description       String?
+  active            Boolean            @default(true)
+  deleted           Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  primaryProducts   Product[]          @relation("PrimaryOffer")
+  productVariations ProductVariation[] @relation("OfferToVariation")
+  products          Product[]          @relation("ProductOffers")
+}
+
+model CountryPricing {
+  id             Int      @id @default(autoincrement())
+  country        String
+  code           String   @unique
+  multiplier     Float
+  currency       String
+  active         Boolean  @default(true)
+  deleted        Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  currencySymbol String?
+  conversionRate Float?
+}
+
+model Cart {
+  id                   String   @id @default(uuid())
+  productId            String
+  variationId          String?
+  productName          String
+  quantity             Int
+  pricePerItem         Float
+  currencySymbol       String
+  totalPrice           Float
+  attributes           Json
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  image                String?
+  userId               Int?
+  selectedCountry      String?
+  currency             String?
+  is_buy               Boolean? @default(false)
+  bulkMinQty           Int?
+  bulkPrice            Float?
+  offerApplied         Boolean? @default(false)
+  productOfferApplied  Boolean? @default(false)
+  productOfferDiscount Float?
+  productOffer         Json?
+  productOfferId       Int?
+  barCode              String?
+  purchasePlatform     String?  @default("website")
+  user                 User?    @relation(fields: [userId], references: [id])
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  name       String
+  mobile     String
+  pincode    String
+  address    String
+  city       String
+  state      String
+  landmark   String?
+  type       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  userId     Int?
+  customType String?
+  isDefault  Boolean  @default(false)
+  country    String?
+  user       User?    @relation(fields: [userId], references: [id])
+}
+
+model Tag {
+  id         Int                @id @default(autoincrement())
+  name       String
+  active     Boolean            @default(true)
+  image      String?
+  deleted    Boolean            @default(false)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  products   Product[]          @relation("ProductTags")
+  variations ProductVariation[] @relation("VariationTags")
+}
+
+model MarketLink {
+  id          String   @id @default(cuid())
+  countryName String
+  countryCode String
+  name        String
+  url         String
+  deleted     Boolean  @default(false)
+  productId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  product     Product? @relation(fields: [productId], references: [id])
+}
+
+model CountryTax {
+  id          Int      @id @default(autoincrement())
+  country     String
+  categoryId  Int
+  generalTax  Float?
+  gstTax      Float?
+  active      Boolean  @default(true)
+  deleted     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  type        String?
+  countryCode String?
+  category    Category @relation(fields: [categoryId], references: [id])
+}
+
+model VideoStory {
+  id        Int      @id @default(autoincrement())
+  title     String
+  url       String
+  active    Boolean  @default(true)
+  deleted   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContactMessage {
+  id           Int            @id @default(autoincrement())
+  name         String
+  email        String
+  message      String
+  isDeleted    Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  platform     String         @default("website")
+  readByAdmin  Boolean        @default(false)
+  readByUser   Boolean        @default(true)
+  isRegistered Boolean        @default(false)
+  replies      MessageReply[]
+}
+
+model MessageReply {
+  id               Int            @id @default(autoincrement())
+  contactMessageId Int
+  sender           String
+  message          String
+  createdAt        DateTime       @default(now())
+  readByAdmin      Boolean        @default(false)
+  readByUser       Boolean        @default(false)
+  contactMessage   ContactMessage @relation(fields: [contactMessageId], references: [id])
+}
+
+model Orders {
+  id                 Int                 @id @default(autoincrement())
+  userId             Int?
+  shippingName       String?
+  shippingPhone      String?
+  shippingAddress    String?
+  shippingCity       String?
+  shippingState      String?
+  shippingPincode    String?
+  billingName        String?
+  billingPhone       String?
+  billingAddress     String?
+  billingCity        String?
+  billingState       String?
+  billingPincode     String?
+  items              Json
+  subtotal           Float?
+  shippingCharges    Float?
+  taxAmount          Float?
+  discountAmount     Float?
+  totalAmount        Float?
+  paymentMethod      String?
+  status             OrderStatus         @default(PENDING)
+  paymentStatus      PaymentStatus       @default(PENDING)
+  active             Boolean             @default(true)
+  deleted            Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  orderNumber        String?             @unique
+  locationCode  String?
+  paymentCurrency    String?
+  orderBy            String?
+  donationAmount     Float?
+  donationCampaignId Int?
+  note               String?
+  promoCode          String?
+  trackingLink       String?
+  invoiceDate        DateTime?
+  invoiceNumber      String?             @unique
+  user               User?               @relation(fields: [userId], references: [id])
+  adjustments        order_adjustments[]
+}
+
+model ShippingPricing {
+  id             String   @id @default(uuid())
+  name           String
+  price          Float
+  active         Boolean  @default(true)
+  deleted        Int      @default(0)
+  createdAt      DateTime @default(now())
+  description    String?
+  code           String?
+  country        String?
+  currency       String?
+  currencySymbol String?
+  type           String?
+}
+
+model State {
+  id            Int           @id @default(autoincrement())
+  name          String
+  active        Boolean       @default(true)
+  deleted       Int           @default(0)
+  createdAt     DateTime      @default(now())
+  banners       BannerState[]
+  categories    Category[]    @relation("CategoryStates")
+  subcategories Subcategory[] @relation("SubcategoryStates")
+}
+
+model WareHouse {
+  id                     Int         @id @default(autoincrement())
+  state                  String
+  name                   String
+  address                String
+  code                   String
+  pincode                String
+  deleted                Boolean     @default(false)
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  active                 Boolean     @default(true)
+  contact                String?
+  fulfillmentWarehouseId Int?
+  fulfillmentWarehouse   WareHouse?  @relation("WarehouseSelfRelation", fields: [fulfillmentWarehouseId], references: [id])
+  fulfilledWarehouses    WareHouse[] @relation("WarehouseSelfRelation")
+}
+
+model WarehouseTransfer {
+  id            Int      @id @default(autoincrement())
+  productId     String
+  variationId   String?
+  productName   String
+  variationName String?
+  price         String
+  MRP           String
+  FNSKU         String
+  entries       Json
+  active        Boolean  @default(true)
+  deleted       Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  image         String?
+  status        String   @default("pending")
+  sku           String?
+}
+
+model WarehouseDispatch {
+  id           Int      @id @default(autoincrement())
+  entries      Json
+  totalUnits   Int
+  totalFNSKU   Int
+  status       String   @default("pending")
+  active       Boolean  @default(true)
+  deleted      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  dimensions   Json?
+  shippingId   String?
+  trackingId   String?
+  trackingLink String?
+}
+
+model DelhiWarehouseStock {
+  id           Int      @id @default(autoincrement())
+  dispatchId   Int
+  shippingId   String
+  trackingId   String?
+  trackingLink String?
+  status       String   @default("accepted")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  active       Boolean  @default(true)
+  deleted      Boolean  @default(false)
+  productId    String
+  stock        Int
+  variationId  String
+  warehouseId  Int
+
+  @@unique([dispatchId, productId, variationId])
+}
+
+model ChatMessage {
+  id           Int      @id @default(autoincrement())
+  text         String
+  deleted      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orderId      Int
+  receiverRole String
+  senderRole   String
+  receiverId   Int
+  senderId     Int
+}
+
+model Banner {
+  id        Int             @id @default(autoincrement())
+  text      String?
+  image     String?
+  platform  String[]
+  active    Boolean         @default(true)
+  deleted   Boolean         @default(false)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  link      String?
+  countries BannerCountry[]
+  states    BannerState[]
+}
+
+model BannerCountry {
+  id          Int    @id @default(autoincrement())
+  bannerId    Int
+  countryCode String
+  position    Int
+  banner      Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+
+  @@unique([bannerId, countryCode])
+}
+
+model BannerState {
+  id       Int    @id @default(autoincrement())
+  bannerId Int
+  stateId  Int
+  position Int
+  banner   Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  state    State  @relation(fields: [stateId], references: [id])
+
+  @@unique([bannerId, stateId])
+}
+
+model PromoCode {
+  id            Int               @id @default(autoincrement())
+  code          String            @unique
+  active        Boolean           @default(true)
+  deleted       Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  appliesTo     PromoAppliesTo
+  discountType  PromoDiscountType
+  discountValue Float
+  usageLimit    Int?
+  usedCount     Int               @default(0)
+  validFrom     DateTime
+  validTill     DateTime
+  eligibleUsers Json?
+  users         PromoUser[]
+}
+
+model PromoUser {
+  id             Int       @id @default(autoincrement())
+  promoId        Int
+  userId         Int
+  usedCount      Int       @default(1)
+  orderId        Int
+  discountAmount Float?
+  subtotal       Float?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime? @updatedAt
+  promo          PromoCode @relation(fields: [promoId], references: [id])
+
+  @@unique([promoId, orderId])
+}
+
+model DonationCampaign {
+  id            Int            @id @default(autoincrement())
+  title         String
+  description   String
+  amounts       Float[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  active        Boolean        @default(true)
+  userDonations UserDonation[]
+}
+
+model UserDonation {
+  id                 Int              @id @default(autoincrement())
+  userName           String
+  amount             Float
+  donatedAt          DateTime         @default(now())
+  donationCampaignId Int
+  orderId            Int?
+  userId             Int?
+  donationCampaign   DonationCampaign @relation(fields: [donationCampaignId], references: [id])
+}
+
+model Reviews {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  userName  String
+  comment   String
+  rating    Int
+  status    String   @default("pending")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  productId String?
+}
+
+model BangaloreIncreffOrder {
+  id           Int      @id @default(autoincrement())
+  dispatchId   Int
+  orderCode    String
+  locationCode String
+  payload      Json
+  response     Json
+  createdAt    DateTime @default(now())
+}
+
+model Duration {
+  id            Int               @id @default(autoincrement())
+  minutes       Int
+  description   String?
+  active        Boolean           @default(true)
+  deleted       Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  servicePrices ServiceDuration[]
+}
+
+model Service {
+  id        Int      @id @default(autoincrement())
+  title     String
+  shortDesc String?
+  longDesc  String?
+  image     String?
+  active    Boolean  @default(true)
+  deleted   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ServiceDuration {
+  id         Int      @id @default(autoincrement())
+  durationId Int
+  price      Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  duration   Duration @relation(fields: [durationId], references: [id])
+}
+
+model Astrologer {
+  id           Int                  @id @default(autoincrement())
+  fullName     String
+  displayName  String?
+  profileImage String?
+  phone        String?
+  description  String?
+  active       Boolean              @default(true)
+  deleted      Boolean              @default(false)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  service      String?
+  specialty    String?
+  userId       Int?
+  documents    AstrologerDocument[]
+}
+
+model AstrologerDocument {
+  id           Int        @id @default(autoincrement())
+  astrologerId Int
+  fileUrl      String
+  createdAt    DateTime   @default(now())
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+}
+
+model Blog {
+  id          Int      @id @default(autoincrement())
+  title       String
+  slug        String   @unique
+  authorName  String
+  category    String
+  description String
+  excerpt     String?
+  image       String?
+  isPublished Boolean  @default(false)
+  active      Boolean  @default(true)
+  deleted     Boolean  @default(false)
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  authorImage String?
+  readTime    Int?
+}
+
+model BlogReviews {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  userName  String
+  blogId    Int
+  comment   String
+  rating    Int
+  status    ReviewStatusBlog @default(pending)
+  active    Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([userId, blogId])
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+}
+
+model order_adjustments {
+  id             Int              @id @default(autoincrement())
+  orderId        Int
+  adjustmentType AdjustmentType
+  impact         AdjustmentImpact
+  amount         Decimal          @db.Decimal(12, 2)
+  reason         String?          @db.VarChar(255)
+  status         AdjustmentStatus @default(PENDING)
+  paymentTxnId   String?          @unique
+  paidAt         DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  isManual       Boolean          @default(false)
+  manualType     String?          @db.VarChar(200)
+  expiresAt      DateTime?
+  order          Orders           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model AstrologerAccount {
+  id                Int                              @id @default(autoincrement())
+  fullName          String
+  email             String                           @unique
+  gender            Gender?
+  createdAt         DateTime                         @default(now())
+  updatedAt         DateTime                         @updatedAt
+  bio               String?
+  countryCode       String
+  displayName       String?
+  isActive          Boolean                          @default(false)
+  isApproved        Boolean                          @default(false)
+  isRejected        Boolean                          @default(false)
+  paidPenalty       Float?
+  penalty           Float?
+  phone             String                           @unique
+  phoneLocal        String
+  rejectReason      String?
+  revenueAdmin      Float?
+  revenueAstrologer Float?
+  settlementAmount  Float?
+  profile           AstrologerProfile?
+  services          AstrologerService[]
+  documents         AstrologerVerificationDocument[]
+  certificates      Certificate[]
+}
+
+model AstrologerProfile {
+  id           Int               @id @default(autoincrement())
+  astrologerId Int               @unique
+  experience   Int?
+  bio          String?
+  address      String?
+  city         String?
+  state        String?
+  country      String?
+  languages    String[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  idProofType  String?
+  idProofValue String?
+  astrologer   AstrologerAccount @relation(fields: [astrologerId], references: [id])
+}
+
+model AstrologerService {
+  id             Int               @id @default(autoincrement())
+  astrologerId   Int
+  serviceName    String
+  price          Float?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  currency       String
+  currencySymbol String
+  astrologer     AstrologerAccount @relation(fields: [astrologerId], references: [id])
+}
+
+model AstrologerVerificationDocument {
+  id           Int               @id @default(autoincrement())
+  astrologerId Int
+  type         DocumentType
+  fileUrl      String
+  verified     Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  astrologer   AstrologerAccount @relation(fields: [astrologerId], references: [id])
+}
+
+model AstrologerTransaction {
+  id           Int             @id @default(autoincrement())
+  astrologerId Int
+  type         TransactionType
+  amount       Float
+  createdAt    DateTime        @default(now())
+  paidAt       DateTime?
+}
+
+model Certificate {
+  id           Int               @id @default(autoincrement())
+  astrologerId Int
+  serviceId    Int
+  fileUrl      String
+  astrologer   AstrologerAccount @relation(fields: [astrologerId], references: [id])
+}
+
+model BangaloreIncreffInventory {
+  id              Int      @id @default(autoincrement())
+  locationCode    String
+  channelSkuCode  String
+  quantity        Int
+  minExpiry       String?
+  channelSerialNo String?
+  payload         Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  clientSkuId     String?
+
+  @@unique([locationCode, channelSkuCode])
+}
+
+model BangaloreIncreffMappingSKU {
+  id         Int      @id @default(autoincrement())
+  channelSku String
+  ourSku     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Country {
+  id                 Int            @id @default(autoincrement())
+  name               String
+  iso3               String
+  iso2               String
+  numeric_code       String
+  phonecode          String
+  capital            String?
+  currency           String?
+  currency_name      String?
+  currency_symbol    String?
+  nationality        String?
+  postal_code_format String?
+  postal_code_regex  String?
+  active             Boolean        @default(true)
+  deleted            Int            @default(0)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  emoji              String?
+  emojiU             String?
+  cities             CityCountry[]
+  states             StateCountry[]
+}
+
+model StateCountry {
+  id           Int           @id @default(autoincrement())
+  name         String
+  country_id   Int?
+  country_code String?
+  country_name String?
+  iso2         String?
+  iso3166_2    String?
+  fips_code    String?
+  type         String?
+  latitude     String?
+  longitude    String?
+  active       Boolean       @default(true)
+  deleted      Int           @default(0)
+  createdAt    DateTime      @default(now())
+  cities       CityCountry[] @relation("StateToCity")
+  country      Country?      @relation(fields: [country_id], references: [id])
+}
+
+model CityCountry {
+  id           Int          @id @default(autoincrement())
+  name         String
+  state_id     Int
+  state_code   String
+  state_name   String
+  country_id   Int
+  country_code String
+  country_name String
+  latitude     String
+  longitude    String
+  active       Boolean      @default(true)
+  deleted      Int          @default(0)
+  createdAt    DateTime     @default(now())
+  country      Country      @relation(fields: [country_id], references: [id])
+  state        StateCountry @relation("StateToCity", fields: [state_id], references: [id])
+}
+
+model BangaloreIncreffPackOrder {
+  id             Int      @id @default(autoincrement())
+  orderCode      String
+  shipmentId     Int
+  locationCode   String
+  shipmentCode   String?
+  status         String   @default("PACKED")
+  payload        Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([orderCode, shipmentId])
+}
+
 enum DocumentType {
   ID_PROOF
   CERTIFICATE
@@ -29,8 +887,8 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
-  COMPLETED
   FAILED
+  COMPLETED
   REFUND
 }
 
@@ -61,11 +919,11 @@ enum AdjustmentType {
   NETWORK_FEE
   ITEM_ADD
   ITEM_REMOVE
-  ITEM_SHIPPING
   DISCOUNT
   PENALTY
   TAX
   MANUAL
+  ITEM_SHIPPING
 }
 
 enum AdjustmentImpact {
@@ -78,963 +936,4 @@ enum AdjustmentStatus {
   PAID
   APPLIED
   CANCELLED
-}
-
-
-model User {
-  id                Int      @id @default(autoincrement())
-  name              String
-  email             String   @unique
-  profileImage      String?
-  password          String?
-  role              String   @default("USER")
-  gender            Gender?
-  phone             String?
-  address           String?
-  country           String?
-  city              String?
-  pincode           String?
-  state             String?
-  carts             Cart[]
-  addresses         Address[]
-  orders            Orders[] 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now()) @updatedAt
-  provider          String  @default("LOCAL")
-}
-
-model Header {
-  id        Int      @id @default(autoincrement())
-  name      String
-  active    Boolean  @default(true)
-  deleted   Int      @default(0) // 0 = not deleted, 1 = deleted
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Category {
-  id            Int           @id @default(autoincrement())
-  name          String
-  image         String?
-  active        Boolean       @default(true)
-  platform      String[]      @default([])  // ["xpress", "website"]
-  deleted       Int           @default(0) // 0 = not deleted, 1 = deleted
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  subcategories Subcategory[]
-  products  Product[]
-  countryTaxes CountryTax[] 
-  states        State[]       @relation("CategoryStates")
-  hsn           String?
-}
-
-model Subcategory {
-  id         Int      @id @default(autoincrement())
-  name       String
-  categoryId Int
-  category   Category @relation(fields: [categoryId], references: [id])
-  image      String?
-  active     Boolean  @default(true)
-  platform      String[]      @default([])  // ["xpress", "website"]
-  products   Product[]
-  offerId     Int?      
-  deleted    Int      @default(0) // 0 = not deleted, 1 = deleted
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  states        State[]       @relation("SubcategoryStates")
-}
-
-model Product {
-  id              String      @id @default(cuid())
-  name            String
-  short           String?
-  categoryId      Int?
-  category        Category?   @relation(fields: [categoryId], references: [id])
-  subcategoryId   Int
-  subcategory     Subcategory? @relation(fields: [subcategoryId], references: [id])
-  sku             String      @unique       // Unique SKU
-  image           String[]
-  description     String?
-  active          Boolean     @default(true)
-  deleted         Int         @default(0)
-  slug            String?     @unique       // SEO-friendly URL
-  metaTitle       String?     // SEO title
-  metaDescription String?     // SEO description
-  keywords        String?     // Optional keywords for SEO
-  price           String?     // store as string
-  stock           String?     // store as string
-  size            String[]    @default([])  // array, default empty
-  color           String[]    @default([])  // array, default empty
-  otherCountriesPrice String?
-  offerId         Int?        
-  primaryOffer  Offer? @relation("PrimaryOffer", fields: [offerId], references: [id]) 
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  isDefault       Json?
-  variations      ProductVariation[]
-  offers          Offer[] @relation("ProductOffers")
-  tags            Tag[]       @relation("ProductTags") 
-  marketLinks MarketLink[] 
-  minQuantity     String?   
-  bulkPrice       String?  
-  barCode            String?
-  MRP             String?      // Add MRP
-  platform      String[]      @default([])  // ["xpress", "website"]
-  dimension       Json?
-
-  
-}
-
-model ProductVariation {
-  id          String   @id @default(cuid())
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
-  variationName String
-  sku         String   @unique
-  price       String?
-  otherCountriesPrice String?
-  stock       String?
-  short       String?
-  image       String[]
-  name       String?
-  description String?
-  offerId       Int?
-  offer         Offer?   @relation("OfferToVariation", fields: [offerId], references: [id])
-  active          Boolean     @default(true)
-  deleted         Int         @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  tags        Tag[]    @relation("VariationTags")
-  minQuantity     String?   
-  bulkPrice       String?
-  barCode            String?
-  MRP              String?
-  dimension   Json?
-}
-
-
-model Attribute {
-  id        Int      @id @default(autoincrement())
-  name      String
-  values    String[] // array of strings
-  active    Boolean  @default(true)
-  deleted   Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Offer {
-  id            Int      @id @default(autoincrement())
-  name          String
-  discountType  String   
-  discountValue Json     
-  type          Json     
-  description   String?
-  active        Boolean  @default(true)
-  deleted       Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  products          Product[] @relation("ProductOffers") 
-  primaryProducts Product[] @relation("PrimaryOffer") 
-  productVariations ProductVariation[]  @relation("OfferToVariation")
-}
-
-model CountryPricing {
-  id        Int      @id @default(autoincrement())
-  country   String
-  code      String   @unique // e.g., "IN", "US"
-  multiplier Float
-  currency  String
-  currencySymbol String?
-  conversionRate Float?
-  active    Boolean  @default(true)
-  deleted   Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Cart {
-  id            String   @id @default(uuid())
-  productId     String
-  variationId   String?     // optional
-  productName   String
-  quantity      Int
-  pricePerItem  Float
-  bulkPrice       Float?      
-  bulkMinQty      Int?        
-  offerApplied    Boolean?      @default(false) 
-  productOfferApplied Boolean?  @default(false) 
-  productOfferDiscount Float?   
-  productOffer       Json?
-  productOfferId  Int?
-  currency      String?
-  currencySymbol String
-  totalPrice    Float
-  attributes    Json      
-  userId        Int?
-  user          User?     @relation(fields: [userId], references: [id])    
-  image         String?
-  is_buy         Boolean?   @default(false)
-  selectedCountry String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  barCode       String?
-  purchasePlatform    String?   @default("website")
-}
-
-model Address {
-  id        String   @id @default(cuid())
-  name      String
-  mobile    String
-  pincode   String
-  address   String
-  city      String
-  state     String
-  country   String?
-  landmark  String?
-  type      String   // Home | Office | Other
-  customType String?
-  isDefault   Boolean  @default(false)
-  userId    Int?
-  user      User?     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-
-model Tag {
-  id        Int      @id @default(autoincrement())
-  name      String
-  active    Boolean  @default(true)
-  image     String?
-  deleted   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  products  Product[] @relation("ProductTags")
-  variations ProductVariation[] @relation("VariationTags")
-}
-
-model MarketLink {
-  id          String   @id @default(cuid())
-  countryName String
-  countryCode String
-  name        String
-  url         String
-  deleted     Boolean  @default(false)
-  productId   String?  // optional abhi
-  product     Product? @relation(fields: [productId], references: [id])  // optional
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model CountryTax {
-  id         Int       @id @default(autoincrement())
-  country    String
-  countryCode String?
-  categoryId Int
-  category   Category  @relation(fields: [categoryId], references: [id])
-  generalTax Float?
-  gstTax     Float?
-  type       String?
-  active     Boolean   @default(true)
-  deleted    Int       @default(0)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-}
-
-model VideoStory {
-  id        Int      @id @default(autoincrement())
-  title     String
-  url       String
-  active    Boolean  @default(true)
-  deleted   Int      @default(0) // soft delete flag
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ContactMessage {
-  id            Int      @id @default(autoincrement())
-  name          String
-  email         String
-  platform      String   @default("website")
-  message       String
-
-  isRegistered  Boolean  @default(false)
-
-  readByAdmin   Boolean  @default(false)
-  readByUser    Boolean  @default(true)
-
-  isDeleted     Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  replies       MessageReply[]
-}
-
-
-model MessageReply {
-  id               Int      @id @default(autoincrement())
-  contactMessageId Int
-  contactMessage   ContactMessage @relation(fields: [contactMessageId], references: [id])
-
-  sender           String   // "admin" | "user"
-  message          String
-
-  readByAdmin      Boolean  @default(false)
-  readByUser       Boolean  @default(false)
-
-  createdAt        DateTime @default(now())
-}
-
-
-
-
-
-model Orders {
-  id             Int      @id @default(autoincrement())
-  orderNumber    String?  @unique
-  userId         Int?     
-  user           User?    @relation(fields: [userId], references: [id])
-  
-  shippingName    String?
-  shippingPhone   String?
-  shippingAddress String?
-  shippingCity    String?
-  shippingState   String?
-  shippingPincode String?
-
-  billingName    String?
-  billingPhone   String?
-  billingAddress String?
-  billingCity    String?
-  billingState   String?
-  billingPincode String?
-
-  items           Json      
-  subtotal        Float?
-  shippingCharges Float?
-  taxAmount       Float?    
-  discountAmount  Float?    
-  totalAmount     Float?
-  paymentMethod   String?
-  paymentCurrency String?
-  status          OrderStatus   @default(PENDING)  
-  paymentStatus   PaymentStatus @default(PENDING)  
-  promoCode           String?
-  donationAmount      Float? 
-  donationCampaignId  Int? 
-  note                String? 
-
-  active          Boolean  @default(true)
-  deleted         Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  orderBy         String? 
-
-  trackingLink     String? 
-  invoiceNumber String? @unique
-  invoiceDate   DateTime?
-
-  adjustments order_adjustments[]
-}
-
-model ShippingPricing {
-  id             String   @id @default(uuid())
-  name           String
-  price          Float
-  description    String?
-  active         Boolean  @default(true)
-  deleted        Int      @default(0)
-  country        String?  // Country name
-  code           String?  // Country code (e.g., USA → US)
-  currency       String?  // Currency code (e.g., USD)
-  currencySymbol String?  // Currency symbol (e.g., $)
-  type           String?  // "Road" or "Air"
-  createdAt      DateTime @default(now())
-}
-
-
-model State {
-  id        Int      @id @default(autoincrement())
-  name      String
-  active    Boolean  @default(true)
-  deleted   Int      @default(0)
-  createdAt DateTime @default(now())
-  categories Category[] @relation("CategoryStates")
-  subcategories Subcategory[]  @relation("SubcategoryStates")
-  banners BannerState[]
-}
-
-
-model WareHouse {
-  id        Int      @id @default(autoincrement())
-  state     String
-  name      String
-  address   String
-  contact   String?
-  code      String
-  pincode   String
-  active    Boolean  @default(true)
-  deleted   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  fulfillmentWarehouseId Int?
-  fulfillmentWarehouse    WareHouse?   @relation("WarehouseSelfRelation", fields: [fulfillmentWarehouseId], references: [id])
-  fulfilledWarehouses     WareHouse[]  @relation("WarehouseSelfRelation")
-}
-
-model WarehouseTransfer {
-  id             Int       @id @default(autoincrement())
-  productId      String
-  variationId    String?
-  productName    String
-  variationName  String?
-  price          String
-  MRP            String
-  FNSKU          String
-  entries        Json
-  image          String?
-  sku            String?
-  status         String    @default("pending")
-  active         Boolean   @default(true)
-  deleted        Boolean   @default(false)
-
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-}
-
-
-model WarehouseDispatch {
-  id        Int      @id @default(autoincrement())
-  entries   Json      
-  totalUnits Int
-  totalFNSKU Int
-  status    String   @default("pending")
-  active    Boolean  @default(true)
-  deleted   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  dimensions       Json?   
-  trackingId       String?  
-  trackingLink     String? 
-  shippingId       String? 
-}
-
-
-model DelhiWarehouseStock {
-  id            Int      @id @default(autoincrement())
-  dispatchId    Int
-  productId     String
-  variationId   String
-  warehouseId   Int
-  stock         Int
-  shippingId    String
-  trackingId    String?
-  trackingLink  String?
-  status        String   @default("accepted")
-  active        Boolean  @default(true)
-  deleted       Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@unique([dispatchId, productId, variationId])
-}
-
-
-
-
-model ChatMessage {
-  id          Int      @id @default(autoincrement())
-  orderId     Int
-  senderId    Int      // user id
-  senderRole  String
-  receiverId  Int
-  receiverRole String
-  text        String
-  deleted     Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-
-model Banner {
-  id         Int      @id @default(autoincrement())
-  text       String?
-  link       String?
-  image      String?
-  platform   String[] // ["XPRESS", "WEBSITE"]
-  active     Boolean  @default(true)
-  deleted    Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  countries  BannerCountry[]
-  states     BannerState[]
-}
-
-model BannerCountry {
-  id        Int    @id @default(autoincrement())
-  bannerId  Int
-  countryCode String // "IND", "USA"
-  position  Int      // number/order
-
-  banner Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
-
-  @@unique([bannerId, countryCode])
-}
-
-model BannerState {
-  id        Int @id @default(autoincrement())
-  bannerId  Int
-  stateId   Int
-  position  Int
-
-  banner Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
-  state  State  @relation(fields: [stateId], references: [id])
-
-  @@unique([bannerId, stateId])
-}
-
-
-model PromoCode {
-  id              Int      @id @default(autoincrement())
-  code            String   @unique
-  discountType    PromoDiscountType
-  discountValue   Float
-
-  validFrom       DateTime
-  validTill       DateTime
-
-  usageLimit      Int?     // null = unlimited
-  usedCount       Int      @default(0)
-
-  appliesTo       PromoAppliesTo // ALL_USERS | SPECIFIC_USERS
-  active          Boolean  @default(true)
-  deleted         Boolean  @default(false)
-
-  eligibleUsers      Json?    // 🔥 SPECIFIC_USERS ke liye
-
-  users           PromoUser[]
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-
-model PromoUser {
-  id        Int @id @default(autoincrement())
-
-  promoId   Int
-  userId    Int
-  orderId   Int  
-
-  usedCount Int @default(1) 
-  subtotal      Float? 
-  discountAmount Float? 
-
-  createdAt      DateTime @default(now()) 
-  updatedAt      DateTime? @updatedAt       
-
-
-  promo     PromoCode @relation(fields: [promoId], references: [id])
-
-  @@unique([promoId, orderId]) // 🔥 SAME ORDER ME SAME PROMO 2 BAAR NA LAGE
-}
-
-
-
-
-model DonationCampaign {
-  id          Int              @id @default(autoincrement())
-  title       String
-  description String
-  amounts        Float[]
-  active        Boolean          @default(true) 
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  userDonations UserDonation[] // relation to track who donated
-}
-
-model UserDonation {
-  id                 Int              @id @default(autoincrement())
-  userName           String
-  userId             Int? 
-  orderId            Int?             // ✅ Added orderId
-  amount             Float
-  donatedAt          DateTime         @default(now())
-  
-  donationCampaignId Int
-  donationCampaign   DonationCampaign @relation(fields: [donationCampaignId], references: [id])
-}
-
-
-model Reviews {
-  id        Int      @id @default(autoincrement())
-
-  userId    Int
-  userName  String
-
-  productId String?  // 👈 OPTIONAL for now
-
-  comment   String
-  rating    Int
-
-  status    String   @default("pending")
-  active    Boolean  @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-
-model BangaloreIncreffOrder {
-  id               Int      @id @default(autoincrement())
-  dispatchId       Int
-  orderCode        String
-  locationCode     String
-  payload          Json
-  response         Json
-  createdAt        DateTime @default(now())
-}
-
-model Duration {
-  id          Int      @id @default(autoincrement())
-
-  minutes     Int      // 15, 30, 60, ya custom minutes
-  description String?  // optional description
-
-  active      Boolean  @default(true)
-  deleted     Boolean  @default(false)
-
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  servicePrices ServiceDuration[]
-}
-
-
-model Service {
-  id          Int                  @id @default(autoincrement())
-  title       String
-  shortDesc   String?              
-  longDesc    String?              
-  image       String?              
-  active      Boolean              @default(true)
-  deleted     Boolean              @default(false)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-
-}
-
-model ServiceDuration {
-  id         Int       @id @default(autoincrement())
-  
-  duration   Duration  @relation(fields: [durationId], references: [id])
-  durationId Int
-  price      Float     // price for this service for this duration
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-}
-
-
-model Astrologer {
-  id           Int                 @id @default(autoincrement())
-  userId       Int?                // optional link to a User
-  fullName     String
-  displayName  String?
-  phone        String?
-  service      String?             // Service assigned
-  specialty    String?             // Specialty assigned
-  description  String?
-  profileImage String?
-  active       Boolean             @default(true)
-  deleted      Boolean             @default(false)
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-
-  documents    AstrologerDocument[]
-}
-
-model AstrologerDocument {
-  id           Int         @id @default(autoincrement())
-  astrologer   Astrologer  @relation(fields: [astrologerId], references: [id])
-  astrologerId Int
-  fileUrl      String
-  createdAt    DateTime    @default(now())
-}
-
-
-model Blog {
-  id           Int      @id @default(autoincrement())
-
-  title        String
-  slug         String   @unique
-
-  authorName   String
-  authorImage  String?
-
-  category     String
-
-  description  String   @db.Text
-  excerpt      String?  @db.Text
-
-  image        String?
-  readTime     Int? 
-
-  isPublished  Boolean  @default(false)
-  active       Boolean  @default(true)
-  deleted      Boolean  @default(false)
-
-  views        Int      @default(0)
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-
-model BlogReviews {
-  id        Int      @id @default(autoincrement())
-
-  userId    Int
-  userName  String
-
-  blogId    Int
-
-  comment   String
-  rating    Int
-
-  status    ReviewStatusBlog @default(pending)
-  active    Boolean      @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, blogId])
-}
-
-model PasswordReset {
-  id        Int      @id @default(autoincrement())
-  email     String
-  token     String   @unique
-  expires   DateTime
-  createdAt DateTime @default(now())
-}
-
-model order_adjustments {
-  id              Int        @id @default(autoincrement())
-
-  orderId         Int
-  order           Orders     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  adjustmentType  AdjustmentType
-  impact          AdjustmentImpact
-
-  amount          Decimal    @db.Decimal(12, 2)
-
-  reason          String?    @db.VarChar(255)
-
-  status          AdjustmentStatus @default(PENDING)
-
-  paymentTxnId    String?    @unique
-  paidAt          DateTime?
-
-  isManual        Boolean   @default(false)
-  manualType      String?   @db.VarChar(200)
-  expiresAt       DateTime?
-
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-
-}
-
-model AstrologerAccount {
-  id          Int      @id @default(autoincrement())
-  fullName    String
-  displayName String?
-  email       String   @unique
-  phone       String   @unique
-  countryCode String          
-  phoneLocal  String          
-  gender      Gender?
-
-  isApproved  Boolean  @default(false)      
-  isActive    Boolean  @default(false)    
-  revenueAstrologer Float?
-  revenueAdmin Float?
-  penalty     Float?   
-  paidPenalty Float? 
-  settlementAmount Float? 
-
-  bio String?
-  isRejected   Boolean @default(false)
-  rejectReason String?  
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  profile     AstrologerProfile?
-  documents   AstrologerVerificationDocument[]
-  services    AstrologerService[]
-  certificates Certificate[]
-}
-
-model AstrologerProfile {
-  id            Int      @id @default(autoincrement())
-  astrologerId  Int      @unique
-  experience    Int?
-  bio           String?  @db.Text
-  address       String?
-  city          String?
-  state         String?
-  country       String?
-  languages     String[]
-
-  idProofType   String?
-  idProofValue  String?
-
-  astrologer    AstrologerAccount @relation(fields: [astrologerId], references: [id])
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-model AstrologerService {
-  id           Int    @id @default(autoincrement())
-  astrologerId Int
-  serviceName  String
-  price        Float?
-  currency     String
-  currencySymbol String
-
-  astrologer   AstrologerAccount @relation(fields: [astrologerId], references: [id])
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-model AstrologerVerificationDocument {
-  id           Int    @id @default(autoincrement())
-  astrologerId Int
-  type         DocumentType
-  fileUrl      String
-  verified     Boolean @default(false)
-
-  astrologer   AstrologerAccount @relation(fields: [astrologerId], references: [id])
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-model AstrologerTransaction {
-    id           Int       @id @default(autoincrement())
-    astrologerId Int
-    type         TransactionType
-    amount       Float
-    createdAt    DateTime @default(now())
-    paidAt       DateTime?
-}
-
-model Certificate {
-  id            Int      @id @default(autoincrement())
-  astrologerId  Int
-  serviceId     Int      // kis service ke liye certificate
-
-  fileUrl       String
-
-  astrologer    AstrologerAccount @relation(fields: [astrologerId], references: [id])
-}
-
-model BangaloreIncreffInventory {
-  id             Int      @id @default(autoincrement())
-  locationCode   String
-  channelSkuCode String
-  quantity       Int
-  clientSkuId    String?
-  minExpiry      String?
-  channelSerialNo String?
-  payload        Json
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@unique([locationCode, channelSkuCode])
-}
-
-model BangaloreIncreffMappingSKU {
-  id          Int      @id @default(autoincrement())
-
-  channelSku  String
-  ourSku      String
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Country {
-  id                  Int      @id @default(autoincrement())
-  name                String
-  iso3                String
-  iso2                String
-  numeric_code        String
-  phonecode           String
-  capital             String?
-  currency            String?
-  currency_name       String?
-  currency_symbol     String?
-  nationality         String?
-  postal_code_format  String?
-  postal_code_regex   String?
-  emoji               String?
-  emojiU              String?
-
-  active    Boolean  @default(true)
-  deleted   Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  states    StateCountry[]
-  cities    CityCountry[]
-}
-
-model StateCountry {
-  id           Int      @id @default(autoincrement())
-  name         String
-  country_id   Int?
-  country_code String?
-  country_name String?
-  iso2         String?
-  iso3166_2    String?
-  fips_code    String?
-  type         String?
-  latitude     String?
-  longitude    String?
-
-  active       Boolean  @default(true)
-  deleted      Int      @default(0)
-  createdAt    DateTime @default(now())
-
-  country       Country? @relation(fields: [country_id], references: [id])
-  cities        CityCountry[] @relation("StateToCity") 
-}
-
-model CityCountry {
-  id           Int      @id @default(autoincrement())
-  name         String
-  state_id     Int
-  state_code   String
-  state_name   String
-  country_id   Int
-  country_code String
-  country_name String
-  latitude     String
-  longitude    String
-
-  active       Boolean  @default(true)
-  deleted      Int      @default(0)
-  createdAt    DateTime @default(now())
-
-  state        StateCountry @relation("StateToCity", fields: [state_id], references: [id])
-  country      Country?  @relation(fields: [country_id], references: [id])
 }
