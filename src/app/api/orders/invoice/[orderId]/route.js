@@ -111,9 +111,9 @@ export async function GET(req, { params }) {
         // ================= INVOICE INFO =================
         let invoiceTopY = 740;
 
-        page.drawText(`Invoice No: ${order.invoiceNumber || "-"}`, { x: 400, y: invoiceTopY, size: 9, font });
+        page.drawText(`Invoice No: ${order.invoiceNumber || "-"}`, { x: 450, y: invoiceTopY, size: 9, font });
         page.drawText(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, {
-            x: 400,
+            x: 450,
             y: invoiceTopY - 14,
             size: 9,
             font,
@@ -181,13 +181,13 @@ export async function GET(req, { params }) {
             font,
         });
 
-        paymentY -= 12;
-        page.drawText(`Order Status: ${order.status}`, {
-            x: col3X,
-            y: paymentY,
-            size: 9,
-            font,
-        });
+        // paymentY -= 12;
+        // page.drawText(`Order Status: ${order.status}`, {
+        //     x: col3X,
+        //     y: paymentY,
+        //     size: 9,
+        //     font,
+        // });
 
 
         // ===== DYNAMIC HEIGHT FIX =====
