@@ -329,7 +329,6 @@ model Orders {
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   orderNumber        String?             @unique
-  locationCode  String?
   paymentCurrency    String?
   orderBy            String?
   donationAmount     Float?
@@ -339,6 +338,7 @@ model Orders {
   trackingLink       String?
   invoiceDate        DateTime?
   invoiceNumber      String?             @unique
+  locationCode       String?
   user               User?               @relation(fields: [userId], references: [id])
   adjustments        order_adjustments[]
 }
@@ -690,20 +690,20 @@ model AstrologerAccount {
   gender            Gender?
   createdAt         DateTime                         @default(now())
   updatedAt         DateTime                         @updatedAt
-  bio               String?
   countryCode       String
-  displayName       String?
-  isActive          Boolean                          @default(false)
-  isApproved        Boolean                          @default(false)
-  isRejected        Boolean                          @default(false)
-  paidPenalty       Float?
-  penalty           Float?
   phone             String                           @unique
   phoneLocal        String
+  isActive          Boolean                          @default(false)
+  isApproved        Boolean                          @default(false)
+  paidPenalty       Float?
+  penalty           Float?
+  bio               String?
+  displayName       String?
+  isRejected        Boolean                          @default(false)
   rejectReason      String?
+  settlementAmount  Float?
   revenueAdmin      Float?
   revenueAstrologer Float?
-  settlementAmount  Float?
   profile           AstrologerProfile?
   services          AstrologerService[]
   documents         AstrologerVerificationDocument[]
@@ -852,15 +852,15 @@ model CityCountry {
 }
 
 model BangaloreIncreffPackOrder {
-  id             Int      @id @default(autoincrement())
-  orderCode      String
-  shipmentId     Int
-  locationCode   String
-  shipmentCode   String?
-  status         String   @default("PACKED")
-  payload        Json
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  orderCode    String
+  shipmentId   Int
+  locationCode String
+  shipmentCode String?
+  status       String   @default("PACKED")
+  payload      Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([orderCode, shipmentId])
 }

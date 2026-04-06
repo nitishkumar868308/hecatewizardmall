@@ -95,9 +95,10 @@ export async function GET(req, { params }) {
         });
 
         try {
-            const logoBytes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/image/logo.jpg`)
+            const logoBytes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/image/logohwm.png`)
                 .then(res => res.arrayBuffer());
-            const logo = await pdfDoc.embedJpg(logoBytes);
+            // const logo = await pdfDoc.embedJpg(logoBytes);
+            const logo = await pdfDoc.embedPng(logoBytes);
             page.drawImage(logo, { x: 50, y: 735, width: 50, height: 50 });
         } catch { }
 
@@ -289,40 +290,105 @@ export async function GET(req, { params }) {
         }
 
         // ================= TOTAL =================
-        y -= 20;
+        y -= 30;
 
-        page.drawText(`Subtotal: Rs${order.subtotal}`, { x: 400, y, size: 9, font });
+        // Right align start position
+        const labelX = 380;
+        const valueX = 520;
 
-        y -= 15;
+        // ===== Subtotal =====
+        page.drawText("Subtotal:", { x: labelX, y, size: 10, font });
+        page.drawText(`Rs ${order.subtotal.toFixed(2)}`, { x: valueX, y, size: 10, font });
+        y -= 18;
 
-        // ===== PROMO CODE =====
-        if (order.promoCode && order.discountAmount > 0) {
-            page.drawText(
-                `Promo (${order.promoCode}): -Rs${order.discountAmount}`,
-                { x: 400, y, size: 9, font }
-            );
-            y -= 15;
+
+        // ===== PROMO LOGIC =====
+        let promoDiscount = 0;
+        let promoText = "";
+
+        if (order.promoCode) {
+            const promo = await prisma.promoCode.findUnique({
+                where: { code: order.promoCode }
+            });
+
+            if (promo) {
+                if (promo.discountType === "FLAT") {
+                    promoDiscount = promo.discountValue;
+                    promoText = `Promo (${order.promoCode} - Flat Rs ${promo.discountValue})`;
+                } else if (promo.discountType === "PERCENTAGE") {
+                    promoDiscount = (order.subtotal * promo.discountValue) / 100;
+                    promoText = `Promo (${order.promoCode} - ${promo.discountValue}%)`;
+                }
+            }
         }
+
+
+        // ===== PROMO =====
+        if (promoDiscount > 0) {
+            page.drawText(promoText, { x: labelX, y, size: 10, font });
+
+            page.drawText(
+                `- Rs ${promoDiscount.toFixed(2)}`,
+                { x: valueX, y, size: 10, font }
+            );
+            y -= 18;
+        }
+
 
         // ===== DONATION =====
         if (order.donationAmount && order.donationAmount > 0) {
+            page.drawText("Donation:", { x: labelX, y, size: 10, font });
+
             page.drawText(
-                `Donation: Rs${order.donationAmount}`,
-                { x: 400, y, size: 9, font }
+                `Rs ${order.donationAmount.toFixed(2)}`,
+                { x: valueX, y, size: 10, font }
             );
-            y -= 15;
+            y -= 18;
         }
 
+
         // ===== SHIPPING =====
-        page.drawText(`Shipping: Rs${order.shippingCharges}`, { x: 400, y, size: 9, font });
+        page.drawText("Shipping:", { x: labelX, y, size: 10, font });
+        page.drawText(
+            `Rs ${order.shippingCharges.toFixed(2)}`,
+            { x: valueX, y, size: 10, font }
+        );
 
-        y -= 15;
+        y -= 20;
 
-        // ===== FINAL TOTAL =====
-        page.drawText(`Total: Rs${order.totalAmount}`, {
-            x: 400,
+
+        // ===== LINE =====
+        page.drawLine({
+            start: { x: labelX, y },
+            end: { x: 550, y },
+            thickness: 1,
+            color: rgb(0.7, 0.7, 0.7),
+        });
+
+        y -= 20;
+
+
+        // ===== FINAL TOTAL BOX =====
+        // page.drawRectangle({
+        //     x: labelX - 10,
+        //     y: y - 10,
+        //     width: 180,
+        //     height: 30,
+        //     color: rgb(0.9, 0.95, 1),
+        // });
+
+        // ===== TOTAL TEXT =====
+        page.drawText("Total:", {
+            x: labelX,
             y,
-            size: 11,
+            size: 12,
+            font: fontBold
+        });
+
+        page.drawText(`Rs ${order.totalAmount.toFixed(2)}`, {
+            x: valueX,
+            y,
+            size: 12,
             font: fontBold
         });
 

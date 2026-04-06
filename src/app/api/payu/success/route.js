@@ -42,6 +42,25 @@ const generateInvoiceNumber = async () => {
 };
 console.log("generateInvoiceNumber", generateInvoiceNumber)
 
+const getDispatchByTime = () => {
+    const now = new Date();
+
+    const currentHour = now.getHours(); // 0 - 23
+
+    let dispatchDate = new Date(now);
+
+    if (currentHour >= 7 && currentHour < 16) {
+        // ✅ 7 AM - 4 PM → same day 5 PM
+        dispatchDate.setHours(17, 0, 0, 0);
+    } else {
+        // ✅ After 4 PM → next day 10 AM
+        dispatchDate.setDate(dispatchDate.getDate() + 1);
+        dispatchDate.setHours(10, 0, 0, 0);
+    }
+
+    return dispatchDate.toISOString();
+};
+
 
 const createIncreffPayload = async (orderRecord, warehouseCode) => {
 
@@ -117,12 +136,43 @@ const createIncreffPayload = async (orderRecord, warehouseCode) => {
 
     return {
         orderTime: new Date().toISOString(),
-        orderType: "PO",
+        orderType: "SO",
         orderCode: orderRecord.orderNumber,
         locationCode,
         partnerCode: "Delhi_23",
         partnerLocationCode: "Delhi_23",
-        orderItems
+        shippingAddress: {
+            name: orderRecord.shippingName,
+            line1: orderRecord.shippingAddress,
+            line2: "Shipping Address",
+            phone: orderRecord.shippingPhone,
+            email: "test@example.com",
+            city: orderRecord.shippingCity,
+            state: orderRecord.shippingState,
+            zip: orderRecord.shippingPincode,
+            country: "India"
+        },
+        dispatchByTime: getDispatchByTime(),
+        startProcessingTime: new Date().toISOString(),
+        paymentMethod: "NCOD",
+        billingAddress: {
+            name: orderRecord.billingName,
+            line1: orderRecord.billingAddress,
+            line2: "Billing Address",
+            phone: orderRecord.billingPhone,
+            email: "test@example.com",
+            city: orderRecord.billingCity,
+            state: orderRecord.billingState,
+            zip: orderRecord.billingPincode,
+            country: "India"
+        },
+        orderItems,
+        onHold: false,
+        isPriority: false,
+        gift: false,
+        qcStatus: "PASS",
+        packType: "PIECE",
+        isSplitRequired: false
     };
 };
 
@@ -354,16 +404,17 @@ export async function POST(req) {
 
                     try {
                         const payload = await createIncreffPayload(orderRecord, warehouseCode);
+                        console.log("📦 FINAL PAYLOAD:", JSON.stringify(payload, null, 2));
 
                         if (payload.orderItems.length > 0) {
 
                             const response = await fetch(
-                                "https://staging-common.omni.increff.com/assure-magic2/orders/inward",
+                                "https://apisix-gateway.nextscm.com/api/orders/outwards",
                                 {
                                     method: "POST",
                                     headers: {
-                                        "authusername": "HECATE_ERP-1200063404",
-                                        "authpassword": "9381c0d5-6884-4e40-8ded-588faf983eca",
+                                        "authUsername": "HECATE-1200063404",
+                                        "authPassword": "a4bfb2fa-3592-4239-b8c9-cb300df45e99",
                                         "Content-Type": "application/json"
                                     },
                                     body: JSON.stringify(payload)
