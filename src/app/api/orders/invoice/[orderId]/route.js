@@ -5,14 +5,15 @@ import jwt from "jsonwebtoken";
 const prisma = new PrismaClient();
 const SECRET = "MY_SUPER_SECRET";
 
-let currentPage = page;
+// let currentPage = page;
+let page; 
 
 const addNewPage = () => {
-    currentPage = pdfDoc.addPage([600, 800]);
+    page = pdfDoc.addPage([600, 800]);
     y = 750;
 
     // 👉 Table Header (IMPORTANT)
-    currentPage.drawRectangle({
+    page.drawRectangle({
         x: 50,
         y: y - 5,
         width: 500,
@@ -22,14 +23,14 @@ const addNewPage = () => {
 
     const white = rgb(1, 1, 1);
 
-    currentPage.drawText("S.No", { x: 55, y, size: 10, font: fontBold, color: white });
-    currentPage.drawText("Image", { x: 90, y, size: 10, font: fontBold, color: white });
-    currentPage.drawText("Item", { x: 140, y, size: 10, font: fontBold, color: white });
-    currentPage.drawText("HSN", { x: 280, y, size: 10, font: fontBold, color: white });
-    currentPage.drawText("Qty", { x: 340, y, size: 10, font: fontBold, color: white });
-    currentPage.drawText("Price", { x: 390, y, size: 10, font: fontBold, color: white });
-    currentPage.drawText("Tax", { x: 450, y, size: 10, font: fontBold, color: white });
-    currentPage.drawText("Total", { x: 500, y, size: 10, font: fontBold, color: white });
+    page.drawText("S.No", { x: 55, y, size: 10, font: fontBold, color: white });
+    page.drawText("Image", { x: 90, y, size: 10, font: fontBold, color: white });
+    page.drawText("Item", { x: 140, y, size: 10, font: fontBold, color: white });
+    page.drawText("HSN", { x: 280, y, size: 10, font: fontBold, color: white });
+    page.drawText("Qty", { x: 340, y, size: 10, font: fontBold, color: white });
+    page.drawText("Price", { x: 390, y, size: 10, font: fontBold, color: white });
+    page.drawText("Tax", { x: 450, y, size: 10, font: fontBold, color: white });
+    page.drawText("Total", { x: 500, y, size: 10, font: fontBold, color: white });
 
     y -= 30;
 };
@@ -44,7 +45,7 @@ const drawWrappedText = (text, x, y, maxWidth, font, size) => {
         const width = font.widthOfTextAtSize(testLine, size);
 
         if (width > maxWidth) {
-            currentPage.drawText(line, { x, y: currentY, size, font });
+            page.drawText(line, { x, y: currentY, size, font });
             line = word + " ";
             currentY -= 10;
         } else {
@@ -53,7 +54,7 @@ const drawWrappedText = (text, x, y, maxWidth, font, size) => {
     }
 
     if (line) {
-        currentPage.drawText(line, { x, y: currentY, size, font });
+        page.drawText(line, { x, y: currentY, size, font });
         currentY -= 10;
     }
 
