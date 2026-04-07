@@ -7,6 +7,10 @@ const SECRET = "MY_SUPER_SECRET";
 
 // let currentPage = page;
 let page; 
+let pdfDoc;
+let y;
+let font;
+let fontBold;
 
 const addNewPage = () => {
     page = pdfDoc.addPage([600, 800]);
@@ -107,10 +111,10 @@ export async function GET(req, { params }) {
         products.forEach(p => { productMap[p.id] = p; });
 
         // ================= PDF =================
-        const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage([600, 800]);
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        pdfDoc = await PDFDocument.create();
+        page = pdfDoc.addPage([600, 800]);
+        font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
         let y = 750;
 
