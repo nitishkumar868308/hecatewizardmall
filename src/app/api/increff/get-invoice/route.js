@@ -9,15 +9,23 @@ const VALID_PASS = "Pratiekajain9@";
 
 const SECRET = "MY_SUPER_SECRET";
 
+// function checkAuth(req) {
+//     const authHeader = req.headers.get("authorization");
+
+//     if (!authHeader || !authHeader.startsWith("Basic ")) return false;
+
+//     const decoded = Buffer.from(authHeader.split(" ")[1], "base64")
+//         .toString("utf-8");
+
+//     const [username, password] = decoded.split(":");
+
+//     return username === VALID_USER && password === VALID_PASS;
+// }
 function checkAuth(req) {
-    const authHeader = req.headers.get("authorization");
+    const username = req.headers.get("username");
+    const password = req.headers.get("password");
 
-    if (!authHeader || !authHeader.startsWith("Basic ")) return false;
-
-    const decoded = Buffer.from(authHeader.split(" ")[1], "base64")
-        .toString("utf-8");
-
-    const [username, password] = decoded.split(":");
+    if (!username || !password) return false;
 
     return username === VALID_USER && password === VALID_PASS;
 }

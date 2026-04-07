@@ -42,24 +42,27 @@ const generateInvoiceNumber = async () => {
 };
 console.log("generateInvoiceNumber", generateInvoiceNumber)
 
-const getDispatchByTime = () => {
-    const now = new Date();
-
-    const currentHour = now.getHours(); // 0 - 23
+const getDispatchByTime = (orderTime) => {
+    const now = new Date(orderTime);
+    const hour = now.getHours();
 
     let dispatchDate = new Date(now);
 
-    if (currentHour >= 7 && currentHour < 16) {
-        // ✅ 7 AM - 4 PM → same day 5 PM
+    if (hour < 6) {
+        // ✅ 12 AM - 6 AM → same day 10 AM
+        dispatchDate.setHours(10, 0, 0, 0);
+    } else if (hour >= 6 && hour < 16) {
+        // ✅ 6 AM - 4 PM → same day 5 PM
         dispatchDate.setHours(17, 0, 0, 0);
     } else {
-        // ✅ After 4 PM → next day 10 AM
+        // ✅ 4 PM onwards → next day 10 AM
         dispatchDate.setDate(dispatchDate.getDate() + 1);
         dispatchDate.setHours(10, 0, 0, 0);
     }
 
     return dispatchDate.toISOString();
 };
+console.log("getDispatchByTime" , getDispatchByTime)
 
 
 const createIncreffPayload = async (orderRecord, warehouseCode) => {

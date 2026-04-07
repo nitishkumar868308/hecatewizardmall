@@ -5,6 +5,61 @@ import jwt from "jsonwebtoken";
 const prisma = new PrismaClient();
 const SECRET = "MY_SUPER_SECRET";
 
+let currentPage = page;
+
+const addNewPage = () => {
+    currentPage = pdfDoc.addPage([600, 800]);
+    y = 750;
+
+    // 👉 Table Header (IMPORTANT)
+    currentPage.drawRectangle({
+        x: 50,
+        y: y - 5,
+        width: 500,
+        height: 25,
+        color: rgb(0.2, 0.4, 0.8),
+    });
+
+    const white = rgb(1, 1, 1);
+
+    currentPage.drawText("S.No", { x: 55, y, size: 10, font: fontBold, color: white });
+    currentPage.drawText("Image", { x: 90, y, size: 10, font: fontBold, color: white });
+    currentPage.drawText("Item", { x: 140, y, size: 10, font: fontBold, color: white });
+    currentPage.drawText("HSN", { x: 280, y, size: 10, font: fontBold, color: white });
+    currentPage.drawText("Qty", { x: 340, y, size: 10, font: fontBold, color: white });
+    currentPage.drawText("Price", { x: 390, y, size: 10, font: fontBold, color: white });
+    currentPage.drawText("Tax", { x: 450, y, size: 10, font: fontBold, color: white });
+    currentPage.drawText("Total", { x: 500, y, size: 10, font: fontBold, color: white });
+
+    y -= 30;
+};
+
+const drawWrappedText = (text, x, y, maxWidth, font, size) => {
+    const words = text.split(" ");
+    let line = "";
+    let currentY = y;
+
+    for (let word of words) {
+        const testLine = line + word + " ";
+        const width = font.widthOfTextAtSize(testLine, size);
+
+        if (width > maxWidth) {
+            currentPage.drawText(line, { x, y: currentY, size, font });
+            line = word + " ";
+            currentY -= 10;
+        } else {
+            line = testLine;
+        }
+    }
+
+    if (line) {
+        currentPage.drawText(line, { x, y: currentY, size, font });
+        currentY -= 10;
+    }
+
+    return currentY;
+};
+
 export async function GET(req, { params }) {
     try {
         const { orderId } = await params;
@@ -219,6 +274,9 @@ export async function GET(req, { params }) {
         let index = 1;
 
         for (const item of order.items || []) {
+            if (y < 120) {
+                addNewPage();
+            }
             const product = productMap[item.productId];
             console.log("product", product)
             const hsn = product?.category?.hsn || "N/A";
@@ -264,7 +322,14 @@ export async function GET(req, { params }) {
             }
 
             // ================= DRAW =================
-            page.drawText(item.productName || "-", { x: 140, y, size: 9, font: fontBold });
+            let newY = drawWrappedText(
+                item.productName || "-",
+                140,
+                y,
+                120, // 👈 CONTROL WIDTH (IMPORTANT)
+                fontBold,
+                9
+            );
 
             // 👉 OFFER TEXT niche show karo
             if (offerText) {
@@ -286,7 +351,7 @@ export async function GET(req, { params }) {
 
             // 👉 spacing fix (offer ho to extra space)
             y -= offerText ? 50 : 40;
-            y -= 40;
+            y = newY - 20;
         }
 
         // ================= TOTAL =================
