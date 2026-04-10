@@ -695,19 +695,34 @@ model AstrologerAccount {
   phoneLocal        String
   isActive          Boolean                          @default(false)
   isApproved        Boolean                          @default(false)
-  paidPenalty       Float?
-  penalty           Float?
   bio               String?
   displayName       String?
   isRejected        Boolean                          @default(false)
   rejectReason      String?
-  settlementAmount  Float?
   revenueAdmin      Float?
   revenueAstrologer Float?
+  gst               Float?
+  isTop             Boolean  @default(false)
+  topRank           Int?
   profile           AstrologerProfile?
   services          AstrologerService[]
   documents         AstrologerVerificationDocument[]
   certificates      Certificate[]
+  penalties AstrologerPenalty[]
+  extraDocuments AstrologerExtraDocument[]
+}
+
+model AstrologerPenalty {
+  id            Int      @id @default(autoincrement())
+  astrologerId  Int
+  amount        Float
+  reason        String
+  settlement    Float?
+  paid          Float?
+  status        PenaltyStatus @default(PENDING)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime? @updatedAt
+  astrologer    AstrologerAccount @relation(fields: [astrologerId], references: [id])
 }
 
 model AstrologerProfile {
@@ -737,6 +752,16 @@ model AstrologerService {
   currency       String
   currencySymbol String
   astrologer     AstrologerAccount @relation(fields: [astrologerId], references: [id])
+}
+
+model AstrologerExtraDocument {
+  id           Int      @id @default(autoincrement())
+  astrologerId Int
+  title        String
+  fileUrl      String
+  createdAt    DateTime @default(now())
+
+  astrologer   AstrologerAccount @relation(fields: [astrologerId], references: [id])
 }
 
 model AstrologerVerificationDocument {
@@ -936,4 +961,11 @@ enum AdjustmentStatus {
   PAID
   APPLIED
   CANCELLED
+}
+
+
+enum PenaltyStatus {
+  PENDING
+  PARTIAL
+  PAID
 }

@@ -14,7 +14,9 @@ export async function GET() {
                 profile: true,
                 services: true,
                 documents: true,
-                certificates: true
+                certificates: true,
+                penalties: true,
+                extraDocuments: true,
             },
             orderBy: { createdAt: "desc" },
         });
@@ -197,9 +199,109 @@ export async function PUT(req) {
         }
 
         // penalty
-        if (data.penalty !== undefined) updatePayload.penalty = data.penalty !== null ? parseFloat(data.penalty) : null;
-        if (data.settlementAmount !== undefined) updatePayload.settlementAmount = data.settlementAmount !== null ? parseFloat(data.settlementAmount) : null;
-        if (data.paidPenalty !== undefined) updatePayload.paidPenalty = data.paidPenalty !== null ? parseFloat(data.paidPenalty) : null;
+        if (data.penalties && Array.isArray(data.penalties)) {
+            for (const p of data.penalties) {
+
+                if (!p.amount || !p.reason) continue;
+
+                if (p.id) {
+                    // ✅ UPDATE
+                    await prisma.astrologerPenalty.update({
+                        where: { id: p.id },
+                        data: {
+                            amount: Number(p.amount),
+                            reason: p.reason,
+                            settlement: p.settlement ? Number(p.settlement) : null,
+                            paid: p.paid ? Number(p.paid) : null,
+                        }
+                    });
+                } else {
+                    // ✅ CREATE
+                    await prisma.astrologerPenalty.create({
+                        data: {
+                            astrologerId: id,
+                            amount: Number(p.amount),
+                            reason: p.reason,
+                            settlement: p.settlement ? Number(p.settlement) : null,
+                            paid: p.paid ? Number(p.paid) : null,
+                        }
+                    });
+                }
+            }
+        }
+
+        // extra documents
+        if (data.extraDocuments && Array.isArray(data.extraDocuments)) {
+            for (const doc of data.extraDocuments) {
+
+                // ❌ skip invalid
+                if (!doc.title || !doc.fileUrl) continue;
+
+                if (doc.id) {
+                    // ✅ UPDATE
+                    await prisma.astrologerExtraDocument.update({
+                        where: { id: doc.id },
+                        data: {
+                            title: doc.title,
+                            fileUrl: doc.fileUrl
+                        }
+                    });
+                } else {
+                    // ✅ CREATE
+                    await prisma.astrologerExtraDocument.create({
+                        data: {
+                            astrologerId: id,
+                            title: doc.title,
+                            fileUrl: doc.fileUrl
+                        }
+                    });
+                }
+            }
+        }
+
+        if (data.isTop && data.topRank) {
+            const newRank = Number(data.topRank);
+
+            // 👉 agar koi aur already same rank pe hai
+            const existingRankUser = await prisma.astrologerAccount.findFirst({
+                where: {
+                    topRank: newRank,
+                    NOT: { id }
+                }
+            });
+
+            if (existingRankUser) {
+                // 👉 usko next rank pe shift kar do
+                await prisma.astrologerAccount.update({
+                    where: { id: existingRankUser.id },
+                    data: {
+                        topRank: newRank + 1
+                    }
+                });
+            }
+
+            // 👉 max 3 constraint
+            if (newRank > 3) {
+                return new Response(JSON.stringify({
+                    message: "Max rank is 3"
+                }), { status: 400 });
+            }
+        }
+
+        // ✅ NEW FIELDS
+        if (data.isTop !== undefined) {
+            updatePayload.isTop = data.isTop;
+        }
+
+        // 👉 agar isTop false ho → rank hata do
+        if (data.isTop === false) {
+            updatePayload.topRank = null;
+        }
+
+        // 👉 agar isTop true ho → rank set karo
+        if (data.topRank !== undefined) {
+            updatePayload.topRank = Number(data.topRank);
+        }
 
         // revenue
         if (data.revenueAstrologer !== undefined) {
@@ -210,6 +312,10 @@ export async function PUT(req) {
             updatePayload.revenueAdmin = data.revenueAdmin;
         }
 
+        if (data.gst !== undefined) {
+            updatePayload.gst = data.gst;
+        }
+
         // update account
         const updatedAstro = await prisma.astrologerAccount.update({
             where: { id },
@@ -218,7 +324,10 @@ export async function PUT(req) {
                 profile: true,
                 services: true,
                 documents: true,
-                certificates: true
+                certificates: true,
+                penalties: true,
+                extraDocuments: true
+
             }
         });
 

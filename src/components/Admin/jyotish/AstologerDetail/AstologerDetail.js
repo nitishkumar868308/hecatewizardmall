@@ -10,7 +10,9 @@ import { fetchAstrologers, updateAstrologer } from "@/app/redux/slices/jyotish/R
 import toast from "react-hot-toast";
 import PendingAdminUI from "../PendingAdminUI/PendingAdminUI";
 import VerifiedAdminUI from "../VerifiedAdminUI/VerifiedAdminUI";
-import { deleteDocument } from "@/app/redux/slices/documents/documentsSlice";
+import { deleteDocument, deleteExtraDocument } from "@/app/redux/slices/documents/documentsSlice";
+import { deletePenalty } from "@/app/redux/slices/penality/penalitySlice";
+import InactiveAdminUI from "../InactiveAdminUI/InactiveAdminUI";
 
 const AstrologerDetail = () => {
     const dispatch = useDispatch();
@@ -49,6 +51,7 @@ const AstrologerDetail = () => {
                 [selectedAstro.id]: {
                     astrologer: selectedAstro.revenueAstrologer ?? 0,
                     admin: selectedAstro.revenueAdmin ?? 0,
+                    gst: selectedAstro.gst ?? 0,
                 }
             }));
         }
@@ -95,6 +98,44 @@ const AstrologerDetail = () => {
             )
         );
     });
+
+    const handleExtraDocChange = (type, value, index) => {
+        setSelectedAstro((prev) => {
+            let docs = [...(prev.extraDocuments || [])];
+
+            if (type === "addMore") {
+                docs.push({
+                    title: "",
+                    fileUrl: "",
+                    preview: "" // ✅ important
+                });
+            }
+
+            if (type === "title") {
+                docs[index] = {
+                    ...docs[index],
+                    title: value,
+                };
+            }
+
+            if (type === "upload") {
+                docs[index] = {
+                    ...docs[index],
+                    fileUrl: value,   // UI ke liye
+                    preview: value    // ✅ payload ke liye
+                };
+            }
+
+            if (type === "remove") {
+                docs.splice(index, 1);
+            }
+
+            return {
+                ...prev,
+                extraDocuments: docs,
+            };
+        });
+    };
 
     const handleServiceUpload = (serviceId, url) => {
         setServiceUploads((prev) => ({
@@ -158,13 +199,15 @@ const AstrologerDetail = () => {
 
     const validateRevenue = (astroId) => {
         const cuts = revenueCuts[astroId];
+        console.log("Validating revenue cuts for astroId:", astroId, cuts);
 
         if (!cuts) {
             toast.error("Please enter revenue split ❌");
             return false;
         }
 
-        const total = Number(cuts.astrologer) + Number(cuts.admin);
+        const total = Number(cuts.astrologer) + Number(cuts.admin) + Number(cuts?.gst || 0);
+        console.log("total", total)
 
         if (total !== 100) {
             toast.error("Total must be exactly 100% ❌");
@@ -210,22 +253,39 @@ const AstrologerDetail = () => {
         }
     };
 
-    const handleApprove = async (astroId) => {
+    const handleApprove = async (astroId, overrideIsActive = null) => {
         if (!validateRevenue(astroId)) return;
 
         const payload = {
             id: astroId,
             displayName: displayNames[astroId],
             isApproved: true,
-            isActive: selectedAstro.isApproved ? selectedAstro.isActive : activateAfterApprove,
+            // isActive: selectedAstro.isApproved ? selectedAstro.isActive : activateAfterApprove,
+            isActive:
+                overrideIsActive !== null
+                    ? overrideIsActive
+                    : selectedAstro.isActive,
             revenueAstrologer: revenueCuts[astroId]?.astrologer,
             revenueAdmin: revenueCuts[astroId]?.admin,
+            gst: revenueCuts[astroId]?.gst,
             bio: adminBios[astroId],
             serviceDocs: serviceUploads,
-            penalty: penalties[astroId]?.penalty ?? selectedAstro.penalty,
-            settlementAmount: penalties[astroId]?.settlementAmount ?? selectedAstro.settlementAmount,
-            paidPenalty: penalties[astroId]?.paidPenalty ?? selectedAstro.paidPenalty
+            penalties: (selectedAstro.penalties || []).map(p => ({
+                id: p.id, // ⭐ important
+                amount: p.amount,
+                reason: p.reason,
+                settlement: p.settlement,
+                paid: p.paidAmount
+            })),
+            extraDocuments: (selectedAstro.extraDocuments || []).map(doc => ({
+                id: doc.id, // ⭐ important
+                title: doc.title,
+                fileUrl: doc.fileUrl || doc.preview
+            })),
+            isTop: selectedAstro.isTop,
+            topRank: selectedAstro.topRank
         };
+        console.log("payload", payload)
 
         try {
             const res = await dispatch(updateAstrologer(payload)).unwrap();
@@ -270,16 +330,54 @@ const AstrologerDetail = () => {
     };
 
 
-    const handlePenaltyChange = (astroId, field, value) => {
-        setPenalties(prev => ({
-            ...prev,
-            [astroId]: {
-                ...prev[astroId],
-                [field]: value
+    const handlePenaltyChange = (id, field, value, index) => {
+        setSelectedAstro((prev) => {
+            let updatedPenalties = [...(prev.penalties || [])];
+
+            if (field === "addMore") {
+                updatedPenalties.push({
+                    amount: "",
+                    reason: "",
+                    settlement: "",
+                    paidAmount: "",
+                });
             }
-        }));
-        console.log(`Astro ${astroId} - ${field} updated to ${value}`);
+            else if (field === "remove") {
+                updatedPenalties.splice(index, 1);
+            } else {
+                updatedPenalties[index] = {
+                    ...updatedPenalties[index],
+                    [field]: value,
+                };
+            }
+
+            return {
+                ...prev,
+                penalties: updatedPenalties,
+            };
+        });
     };
+
+    const handleDeletePenalty = async (penalty, index) => {
+        try {
+            if (penalty.id) {
+                // ✅ DB delete
+                await dispatch(deletePenalty(penalty.id)).unwrap();
+
+                // UI update
+                setSelectedAstro((prev) => ({
+                    ...prev,
+                    penalties: prev.penalties.filter((_, i) => i !== index),
+                }));
+            } else {
+                // ✅ only local (new unsaved)
+                handlePenaltyChange(selectedAstro.id, "remove", null, index);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
 
     const handleRemoveCertificate = async (certId) => {
         try {
@@ -290,6 +388,55 @@ const AstrologerDetail = () => {
         } catch (err) {
             toast.error(err?.message || "Failed to remove certificate ❌");
         }
+    };
+
+    const handleRemoveExtraDocument = async (docId, index) => {
+        try {
+            // 🔥 Backend call
+            const res = await dispatch(deleteExtraDocument(docId)).unwrap();
+
+            // ✅ Toast (backend message)
+            toast.success(res?.message || "Extra document deleted ✅");
+
+            // ✅ UI update (remove from state)
+            handleExtraDocChange("remove", null, index);
+
+            // optional: refresh
+            await dispatch(fetchAstrologers());
+
+        } catch (err) {
+            console.error(err);
+            toast.error(err?.message || "Failed to delete extra document ❌");
+        }
+    };
+
+    const handleToggleStatus = async () => {
+        const newStatus = !selectedAstro.isActive;
+
+        const updatedAstro = {
+            ...selectedAstro,
+            isActive: newStatus,
+        };
+
+        setSelectedAstro(updatedAstro);
+
+        await handleApprove(updatedAstro.id, newStatus);
+    };
+
+    const handleTopToggle = (id, value) => {
+        setSelectedAstro(prev => ({
+            ...prev,
+            isTop: value,
+            // 👉 agar off kiya to rank hata do
+            topRank: value ? prev.topRank : null
+        }));
+    };
+
+    const handleTopRank = (id, rank) => {
+        setSelectedAstro(prev => ({
+            ...prev,
+            topRank: Number(rank)
+        }));
     };
 
     return (
@@ -626,6 +773,35 @@ const AstrologerDetail = () => {
                                     handlePenaltyChange={handlePenaltyChange}
                                     handleImageUpload={handleImageUpload}
                                     handleRemoveCertificate={handleRemoveCertificate}
+                                    handleExtraDocChange={handleExtraDocChange}
+                                    handleRemoveExtraDocument={handleRemoveExtraDocument}
+                                    handleDeletePenalty={handleDeletePenalty}
+                                    handleToggleStatus={handleToggleStatus}
+                                    handleTopToggle={handleTopToggle}
+                                    handleTopRank={handleTopRank}
+                                />
+                            )}
+
+                            {activeTab === "inactive" && detailTab === "admin" && (
+                                <InactiveAdminUI
+                                    selectedAstro={selectedAstro}
+                                    handleApprove={handleApprove}
+                                    handleDisplayName={handleDisplayName}
+                                    handleRevenueCut={handleRevenueCut}
+                                    handleAdminBio={handleAdminBio}
+                                    handleServiceUpload={handleServiceUpload}
+                                    handleViewFile={handleViewFile}
+                                    serviceUploads={serviceUploads}
+                                    activateAfterApprove={activateAfterApprove}
+                                    setActivateAfterApprove={setActivateAfterApprove}
+                                    setShowRejectModal={setShowRejectModal}
+                                    handlePenaltyChange={handlePenaltyChange}
+                                    handleImageUpload={handleImageUpload}
+                                    handleRemoveCertificate={handleRemoveCertificate}
+                                    handleExtraDocChange={handleExtraDocChange}
+                                    handleRemoveExtraDocument={handleRemoveExtraDocument}
+                                    handleDeletePenalty={handleDeletePenalty}
+                                    handleToggleStatus={handleToggleStatus}
                                 />
                             )}
 

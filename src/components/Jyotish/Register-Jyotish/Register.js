@@ -295,7 +295,7 @@ const Register = () => {
         return true;
     };
 
-
+    const isPackageAdded = formData.services.length > 0;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#061c2f] via-[#082D3F] to-[#0e4b63] flex items-center justify-center p-4">
@@ -722,8 +722,11 @@ const Register = () => {
 
                                         <div className="relative">
                                             <select
-                                                className="w-full h-11 pl-4 pr-10 rounded-xl border border-gray-200 bg-white"
+                                                disabled={isPackageAdded}
+                                                className={`w-full h-11 pl-4 pr-10 rounded-xl border ${isPackageAdded ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+                                                    }`}
                                                 onChange={(e) => {
+                                                    if (isPackageAdded) return;
                                                     const selectedId = e.target.value;
                                                     const selectedService = services.find(s => s.id == selectedId);
 
@@ -739,11 +742,13 @@ const Register = () => {
                                                 }}
                                             >
                                                 <option value="">Choose Service...</option>
-                                                {services.map((s) => (
-                                                    <option key={s.id} value={s.id}>
-                                                        {s.title}
-                                                    </option>
-                                                ))}
+                                                {services
+                                                    .filter((s) => s.active)
+                                                    .map((s) => (
+                                                        <option key={s.id} value={s.id}>
+                                                            {s.title}
+                                                        </option>
+                                                    ))}
                                             </select>
                                         </div>
                                     </div>
@@ -772,6 +777,7 @@ const Register = () => {
                                         </label>
 
                                         <Input
+                                            disabled={isPackageAdded}
                                             icon={<span className="text-sm font-bold">{currencySymbol}</span>}
                                             placeholder="Enter package price"
                                             type="number"

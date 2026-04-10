@@ -83,13 +83,13 @@ const PendingAdminUI = ({
                                     Revenue Split (%)
                                 </label>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-3 gap-4">
                                     {/* Astrologer Cut */}
                                     <div className="bg-indigo-50 p-4 rounded-xl border">
                                         <p className="text-xs text-slate-500 mb-1">Astrologer Earnings</p>
                                         <input
                                             type="number"
-                                            placeholder="50%"
+                                            placeholder="40%"
                                             className="w-full px-3 py-2 border rounded-lg text-sm"
                                             onChange={(e) =>
                                                 handleRevenueCut(selectedAstro.id, "astrologer", e.target.value)
@@ -102,10 +102,23 @@ const PendingAdminUI = ({
                                         <p className="text-xs text-slate-500 mb-1">Platform Fee</p>
                                         <input
                                             type="number"
-                                            placeholder="50%"
+                                            placeholder="40%"
                                             className="w-full px-3 py-2 border rounded-lg text-sm"
                                             onChange={(e) =>
                                                 handleRevenueCut(selectedAstro.id, "admin", e.target.value)
+                                            }
+                                        />
+                                    </div>
+
+                                    {/* GST */}
+                                    <div className="bg-yellow-50 p-4 rounded-xl border">
+                                        <p className="text-xs text-slate-500 mb-1">GST</p>
+                                        <input
+                                            type="number"
+                                            placeholder="20%"
+                                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                                            onChange={(e) =>
+                                                handleRevenueCut(selectedAstro.id, "gst", e.target.value)
                                             }
                                         />
                                     </div>

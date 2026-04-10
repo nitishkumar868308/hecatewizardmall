@@ -1,7 +1,7 @@
 import React from 'react'
 import { CheckCircle, XCircle, FileText } from "lucide-react";
 
-const VerifiedAdminUI = ({
+const InactiveAdminUI = ({
     selectedAstro,
     handleApprove,
     handleDisplayName,
@@ -10,16 +10,13 @@ const VerifiedAdminUI = ({
     handleServiceUpload,
     handleViewFile,
     serviceUploads,
-    setShowRejectModal,
     handlePenaltyChange,
     handleImageUpload,
     handleRemoveCertificate,
     handleExtraDocChange,
     handleRemoveExtraDocument,
     handleDeletePenalty,
-    handleToggleStatus,
-    handleTopToggle,
-    handleTopRank
+    handleToggleStatus
 }) => {
     console.log("selectedAstro", selectedAstro)
 
@@ -74,11 +71,12 @@ const VerifiedAdminUI = ({
                             onChange={(e) =>
                                 handleDisplayName(selectedAstro.id, e.target.value)
                             }
+                            disabled
                         />
                     </div>
 
                     {/* ===== REVENUE SPLIT ===== */}
-                    <div className="space-y-3">
+                    <div className="space-y-3 ">
                         <label className="text-xs font-bold text-slate-500 uppercase">
                             Revenue Split (%)
                         </label>
@@ -95,6 +93,7 @@ const VerifiedAdminUI = ({
                                     onChange={(e) =>
                                         handleRevenueCut(selectedAstro.id, "astrologer", e.target.value)
                                     }
+                                    disabled
                                 />
                             </div>
 
@@ -109,6 +108,7 @@ const VerifiedAdminUI = ({
                                     onChange={(e) =>
                                         handleRevenueCut(selectedAstro.id, "admin", e.target.value)
                                     }
+                                    disabled
                                 />
                             </div>
 
@@ -123,6 +123,7 @@ const VerifiedAdminUI = ({
                                     onChange={(e) =>
                                         handleRevenueCut(selectedAstro.id, "gst", e.target.value)
                                     }
+                                    disabled
                                 />
                             </div>
                         </div>
@@ -141,7 +142,7 @@ const VerifiedAdminUI = ({
                             >
                                 {/* LEFT SIDE */}
                                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                                    <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                                    <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 disabled">
                                         <FileText className="h-5 w-5" />
                                     </div>
 
@@ -163,6 +164,7 @@ const VerifiedAdminUI = ({
                                         <input
                                             type="file"
                                             className="hidden"
+                                            disabled
                                             onChange={async (e) => {
                                                 const file = e.target.files[0];
                                                 if (!file) return;
@@ -198,6 +200,7 @@ const VerifiedAdminUI = ({
                                                     📄 View Existing Certificate
                                                 </button>
                                                 <button
+                                                    disabled
                                                     onClick={() => handleRemoveCertificate(cert.id)}
                                                     className="text-xs text-red-500 font-bold hover:underline"
                                                 >
@@ -221,6 +224,7 @@ const VerifiedAdminUI = ({
                             </label>
 
                             <button
+                                disabled
                                 onClick={() => handleExtraDocChange("addMore")}
                                 className="text-xs bg-indigo-600 text-white px-3 py-1 rounded-lg font-bold"
                             >
@@ -236,6 +240,7 @@ const VerifiedAdminUI = ({
 
                                 {/* TITLE INPUT */}
                                 <input
+                                    disabled
                                     type="text"
                                     placeholder="Enter document title (e.g. Aadhaar, PAN...)"
                                     className="px-3 py-2 border rounded-lg text-sm"
@@ -249,6 +254,7 @@ const VerifiedAdminUI = ({
                                 <label className="cursor-pointer px-3 py-2 bg-indigo-600 text-white text-xs rounded-lg font-bold flex items-center justify-center">
                                     Upload
                                     <input
+                                        disabled
                                         type="file"
                                         className="hidden"
                                         onChange={async (e) => {
@@ -281,6 +287,7 @@ const VerifiedAdminUI = ({
                                                 handleExtraDocChange("remove", null, index); // ✅ frontend only (new doc)
                                             }
                                         }}
+                                        disabled
                                         className="text-xs text-red-500 font-bold hover:underline"
                                     >
                                         ❌ Remove
@@ -297,6 +304,7 @@ const VerifiedAdminUI = ({
                         </label>
 
                         <textarea
+                            disabled
                             rows={4}
                             defaultValue={selectedAstro.bio || ""}
                             placeholder="Write a professional bio for this astrologer (visible to users)..."
@@ -316,6 +324,7 @@ const VerifiedAdminUI = ({
                             </label>
 
                             <button
+                                disabled
                                 onClick={() => handlePenaltyChange(selectedAstro.id, "addMore")}
                                 className="text-xs bg-indigo-600 text-white px-3 py-1 rounded-lg font-bold"
                             >
@@ -368,6 +377,7 @@ const VerifiedAdminUI = ({
                                                 }
                                             }}
                                             className="text-red-500 text-xs font-bold hover:underline"
+                                            disabled
                                         >
                                             ❌ Remove
                                         </button>
@@ -388,6 +398,7 @@ const VerifiedAdminUI = ({
                                                 onChange={(e) =>
                                                     handlePenaltyChange(selectedAstro.id, "amount", e.target.value, index)
                                                 }
+                                                disabled
                                             />
                                         </div>
 
@@ -403,6 +414,7 @@ const VerifiedAdminUI = ({
                                                 onChange={(e) =>
                                                     handlePenaltyChange(selectedAstro.id, "reason", e.target.value, index)
                                                 }
+                                                disabled
                                             />
                                         </div>
 
@@ -418,6 +430,7 @@ const VerifiedAdminUI = ({
                                                 onChange={(e) =>
                                                     handlePenaltyChange(selectedAstro.id, "settlement", e.target.value, index)
                                                 }
+                                                disabled
                                             />
                                         </div>
 
@@ -458,7 +471,7 @@ const VerifiedAdminUI = ({
 
                             {/* Toggle Button */}
                             <button
-                                onClick={handleToggleStatus}
+                               onClick={handleToggleStatus}
                                 className={`w-14 h-7 flex items-center rounded-full p-1 transition-all duration-300 ${selectedAstro.isActive
                                     ? "bg-emerald-500 shadow-md shadow-emerald-200"
                                     : "bg-red-400 shadow-md shadow-red-200"
@@ -477,50 +490,8 @@ const VerifiedAdminUI = ({
                         </p>
                     </div>
 
-                    {/* ===== TOP ASTROLOGER CONTROL ===== */}
-                    <div className="space-y-3">
-                        <label className="text-xs font-bold text-slate-500 uppercase">
-                            Top Astrologer
-                        </label>
-
-                        {/* Toggle */}
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={() =>
-                                    handleTopToggle(selectedAstro.id, !selectedAstro.isTop)
-                                }
-                                className={`w-14 h-7 flex items-center rounded-full p-1 transition ${selectedAstro.isTop ? "bg-emerald-500" : "bg-gray-300"
-                                    }`}
-                            >
-                                <div
-                                    className={`bg-white w-5 h-5 rounded-full shadow transform transition ${selectedAstro.isTop ? "translate-x-7" : "translate-x-0"
-                                        }`}
-                                />
-                            </button>
-
-                            <span className="text-sm font-semibold">
-                                {selectedAstro.isTop ? "Enabled" : "Disabled"}
-                            </span>
-                        </div>
-
-                        {/* Rank Input */}
-                        {selectedAstro.isTop && (
-                            <input
-                                type="number"
-                                min="1"
-                                max="3"
-                                defaultValue={selectedAstro.topRank || ""}
-                                placeholder="Enter Rank (1-3)"
-                                className="w-full px-4 py-2 border rounded-xl text-sm"
-                                onChange={(e) =>
-                                    handleTopRank(selectedAstro.id, e.target.value)
-                                }
-                            />
-                        )}
-                    </div>
-
                     {/* ===== ACTION BUTTONS ===== */}
-                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                    {/* <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
 
                         <button
                             onClick={() => setShowRejectModal(true)}
@@ -535,7 +506,7 @@ const VerifiedAdminUI = ({
                         >
                             Update
                         </button>
-                    </div>
+                    </div> */}
                 </div>
 
             </div>
@@ -543,4 +514,4 @@ const VerifiedAdminUI = ({
     )
 }
 
-export default VerifiedAdminUI
+export default InactiveAdminUI
